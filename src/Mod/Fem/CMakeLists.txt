@@ -252,13 +252,21 @@ SET(FemSolverElmer_SRCS
 SET(FemSolverElmerEquations_SRCS
     femsolver/elmer/equations/__init__.py
     femsolver/elmer/equations/elasticity.py
+    femsolver/elmer/equations/elasticity_writer.py
     femsolver/elmer/equations/electricforce.py
+    femsolver/elmer/equations/electricforce_writer.py
     femsolver/elmer/equations/electrostatic.py
+    femsolver/elmer/equations/electrostatic_writer.py
     femsolver/elmer/equations/equation.py
     femsolver/elmer/equations/flow.py
+    femsolver/elmer/equations/flow_writer.py
     femsolver/elmer/equations/flux.py
+    femsolver/elmer/equations/flux_writer.py
     femsolver/elmer/equations/heat.py
+    femsolver/elmer/equations/heat_writer.py
     femsolver/elmer/equations/linear.py
+    femsolver/elmer/equations/magnetodynamic2D.py
+    femsolver/elmer/equations/magnetodynamic2D_writer.py
     femsolver/elmer/equations/nonlinear.py
 )
 

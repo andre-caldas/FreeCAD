@@ -112,13 +112,19 @@ void DlgSettingsNavigation::saveSettings()
         "User parameter:BaseApp/Preferences/NaviCube");
     hGrp->SetASCII("FontString", ui->naviCubeFontName->currentText().toLatin1());
 
+    recreateNaviCubes();
+}
+
+void DlgSettingsNavigation::recreateNaviCubes()
+{
     // we changed the cube's layout, therefore we must re-initialize it
     // by deleting and the subsequently recreating
-    auto mdi = qobject_cast<View3DInventor*>(getMainWindow()->activeWindow());
-    if (mdi) {
-        auto currentView = mdi->getViewer();
-        currentView->deleteNavigationCube();
-        currentView->createNavigationCube();
+    auto views = getMainWindow()->windows();
+    for (auto view : views) {
+        if (auto view3d = qobject_cast<View3DInventor*>(view)) {
+            auto viewer = view3d->getViewer();
+            viewer->updateNavigationCube();
+        }
     }
 }
 
@@ -175,6 +181,8 @@ void DlgSettingsNavigation::loadSettings()
 
     connect(ui->comboNewDocView, qOverload<int>(&QComboBox::currentIndexChanged),
         this, &DlgSettingsNavigation::onNewDocViewChanged);
+    connect(ui->mouseButton, &QPushButton::clicked,
+        this, &DlgSettingsNavigation::onMouseButtonClicked);
 
     // fill up font styles
     hGrp = App::GetApplication().GetParameterGroupByPath(
@@ -195,7 +203,7 @@ void DlgSettingsNavigation::loadSettings()
     ui->naviCubeFontName->setCurrentIndex(indexFamilyNames);
 }
 
-void DlgSettingsNavigation::on_mouseButton_clicked()
+void DlgSettingsNavigation::onMouseButtonClicked()
 {
     QDialog dlg(this);
     Ui_MouseButtons uimb;
