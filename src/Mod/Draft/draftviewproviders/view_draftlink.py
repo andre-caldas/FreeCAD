@@ -52,6 +52,8 @@ class ViewProviderDraftLink(ViewProviderDraft):
             return ":/icons/Draft_PathTwistedLinkArray.svg"
         elif tp == 'PointArray':
             return ":/icons/Draft_PointLinkArray.svg"
+        elif tp == 'SnapArray':
+            return ":/icons/Draft_SnapLinkArray.svg"
 
     def claimChildren(self):
         obj = self.Object

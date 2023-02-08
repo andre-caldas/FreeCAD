@@ -35,6 +35,7 @@ import draftguitools.gui_circulararray
 import draftguitools.gui_orthoarray
 import draftguitools.gui_patharray
 import draftguitools.gui_pointarray
+import draftguitools.gui_snaparray
 import draftguitools.gui_polararray
 import draftguitools.gui_pathtwistedarray
 
@@ -44,6 +45,7 @@ bool(draftguitools.gui_circulararray.__name__)
 bool(draftguitools.gui_orthoarray.__name__)
 bool(draftguitools.gui_patharray.__name__)
 bool(draftguitools.gui_pointarray.__name__)
+bool(draftguitools.gui_snaparray.__name__)
 bool(draftguitools.gui_polararray.__name__)
 
 
@@ -56,6 +58,7 @@ class ArrayGroup:
                 "Draft_PolarArray", "Draft_CircularArray",
                 "Draft_PathArray", "Draft_PathLinkArray",
                 "Draft_PointArray", "Draft_PointLinkArray",
+                "Draft_SnapArray", "Draft_SnapLinkArray",
                 "Draft_PathTwistedArray", "Draft_PathTwistedLinkArray")
 
     def GetResources(self):

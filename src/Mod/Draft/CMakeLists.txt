@@ -126,6 +126,7 @@ SET(Draft_make_functions
     draftmake/make_patharray.py
     draftmake/make_point.py
     draftmake/make_pointarray.py
+    draftmake/make_snaparray.py
     draftmake/make_polararray.py
     draftmake/make_polygon.py
     draftmake/make_rectangle.py
@@ -161,6 +162,7 @@ SET(Draft_objects
     draftobjects/pathtwistedarray.py
     draftobjects/point.py
     draftobjects/pointarray.py
+    draftobjects/snaparray.py
     draftobjects/polygon.py
     draftobjects/rectangle.py
     draftobjects/shapestring.py
@@ -242,6 +244,7 @@ SET(Modifier_tools
     draftguitools/gui_patharray.py
     draftguitools/gui_pathtwistedarray.py
     draftguitools/gui_pointarray.py
+    draftguitools/gui_snaparray.py
     draftguitools/gui_polararray.py
     draftguitools/gui_clone.py
     draftguitools/gui_mirror.py

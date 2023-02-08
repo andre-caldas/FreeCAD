@@ -326,6 +326,11 @@ from draftobjects.pointarray import (PointArray,
 from draftmake.make_pointarray import (make_point_array,
                                        makePointArray)
 
+from draftobjects.snaparray import (SnapArray,
+                                    _SnapArray)
+from draftmake.make_snaparray import (make_snap_array,
+                                      makeSnapArray)
+
 if App.GuiUp:
     from draftviewproviders.view_array import (ViewProviderDraftArray,
                                                _ViewProviderDraftArray)

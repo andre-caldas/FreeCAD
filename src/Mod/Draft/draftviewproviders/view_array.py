@@ -46,6 +46,8 @@ class ViewProviderDraftArray(ViewProviderDraft):
                 return ":/icons/Draft_CircularArray.svg"
         elif hasattr(self.Object, "PointObject"):
             return ":/icons/Draft_PointArray.svg"
+        elif hasattr(self.Object, "SnapMapObject"):
+            return ":/icons/Draft_SnapArray.svg"
         elif hasattr(self.Object, "RotationFactor"):
             return ":/icons/Draft_PathTwistedArray.svg"
         else:
