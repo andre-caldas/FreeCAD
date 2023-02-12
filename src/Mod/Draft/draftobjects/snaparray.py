@@ -203,7 +203,7 @@ def get_matrix_list(snap_map):
         if geo.TypeId == "Part::GeomLineSegment":
             matrix_list.append(matrix_from_two_points(place, geo.StartPoint, geo.EndPoint))
 
-    pt_list = [v.Point for i,v in enumerate(snap_map.Geometry) if not snap_map.getConstruction(i) and v.TypeId == "Part::GeomPoint"]
+    pt_list = [App.Vector(v.X, v.Y, v.Z) for i,v in enumerate(snap_map.Geometry) if not snap_map.getConstruction(i) and v.TypeId == "Part::GeomPoint"]
     pt_list = remove_equal_vecs(pt_list)
     for pt in pt_list:
         matrix_list.append(matrix_from_two_points(place, pt, pt + App.Vector(1,0,0)))
