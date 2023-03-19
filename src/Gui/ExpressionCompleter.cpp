@@ -35,7 +35,7 @@
 #include <App/Document.h>
 #include <App/DocumentObject.h>
 #include <App/ExpressionParser.h>
-#include <App/ObjectIdentifier.h>
+#include <App/ObjectPath/ObjectIdentifier.h>
 #include <Base/Tools.h>
 #include <CXX/Extensions.hxx>
 

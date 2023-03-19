@@ -20,11 +20,11 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "PreCompiled.h"
+//#include "PreCompiled.h"
 
-#ifndef _PreComp_
+//#ifndef _PreComp_
 # include <cassert>
-#endif
+//#endif
 
 #include <boost/algorithm/string/predicate.hpp>
 
@@ -38,69 +38,18 @@
 #include <CXX/Objects.hxx>
 
 #include "ObjectIdentifier.h"
-#include "Application.h"
-#include "Document.h"
-#include "ExpressionParser.h"
-#include "Link.h"
-#include "Property.h"
+#include "String.h"
+#include "../Application.h"
+#include "../Document.h"
+#include "../ExpressionParser.h"
+#include "../Link.h"
+#include "../Property.h"
 
 
-FC_LOG_LEVEL_INIT("Expression",true,true)
+FC_LOG_LEVEL_INIT("ObjectPath",true,true)
 
 using namespace App;
 using namespace Base;
-
-// Path class
-
-/**
- * @brief Quote input string according to quoting rules for an expression: because " and ' are
- * used to designate inch and foot units, strings are quoted as <<string>>.
- *
- * @param input
- * @return
- */
-
-std::string App::quote(const std::string &input, bool toPython)
-{
-    std::stringstream output;
-
-    std::string::const_iterator cur = input.begin();
-    std::string::const_iterator end = input.end();
-
-    output << (toPython?"'":"<<");
-    while (cur != end) {
-        switch (*cur) {
-        case '\t':
-            output << "\\t";
-            break;
-        case '\n':
-            output << "\\n";
-            break;
-        case '\r':
-            output << "\\r";
-            break;
-        case '\\':
-            output << "\\\\";
-            break;
-        case '\'':
-            output << "\\'";
-            break;
-        case '"':
-            output << "\\\"";
-            break;
-        case '>':
-            output << (toPython?">":"\\>");
-            break;
-        default:
-            output << *cur;
-        }
-        ++cur;
-    }
-    output << (toPython?"'":">>");
-
-    return output.str();
-}
-
 
 /**
  * @brief Construct an ObjectIdentifier object, given an owner and a single-value property.
@@ -508,7 +457,7 @@ bool ObjectIdentifier::updateLabelReference(
         if(documentObjectName.getString()!=obj->Label.getValue())
             return false;
 
-        documentObjectName = ObjectIdentifier::String(newLabel, true);
+        documentObjectName = ObjectPath::String(newLabel, true);
 
         _cache.clear();
         return true;
@@ -519,7 +468,7 @@ bool ObjectIdentifier::updateLabelReference(
         result.resolvedDocumentObjectName.isRealString() &&
         result.resolvedDocumentObjectName.getString()==obj->Label.getValue())
     {
-        components[0].name = ObjectIdentifier::String(newLabel, true);
+        components[0].name = ObjectPath::String(newLabel, true);
         _cache.clear();
         return true;
     }
@@ -706,12 +655,12 @@ ObjectIdentifier::Component ObjectIdentifier::Component::SimpleComponent(const c
  * @return A new Component object.
  */
 
-ObjectIdentifier::Component ObjectIdentifier::Component::SimpleComponent(const ObjectIdentifier::String &_component)
+ObjectIdentifier::Component ObjectIdentifier::Component::SimpleComponent(const ObjectPath::String &_component)
 {
     return Component(_component);
 }
 
-ObjectIdentifier::Component ObjectIdentifier::Component::SimpleComponent(ObjectIdentifier::String &&_component)
+ObjectIdentifier::Component ObjectIdentifier::Component::SimpleComponent(ObjectPath::String &&_component)
 {
     return Component(std::move(_component));
 }
@@ -1356,7 +1305,7 @@ ObjectIdentifier::DocumentMapper::~DocumentMapper()
  * @param force Force name to be set
  */
 
-void ObjectIdentifier::setDocumentName(ObjectIdentifier::String &&name, bool force)
+void ObjectIdentifier::setDocumentName(ObjectPath::String &&name, bool force)
 {
     if(name.getString().empty())
         force = false;
@@ -1386,7 +1335,7 @@ void ObjectIdentifier::setDocumentName(ObjectIdentifier::String &&name, bool for
  * @return Document name as a String object.
  */
 
-ObjectIdentifier::String ObjectIdentifier::getDocumentName() const
+ObjectPath::String ObjectIdentifier::getDocumentName() const
 {
     ResolveResults result(*this);
 
@@ -1403,8 +1352,8 @@ ObjectIdentifier::String ObjectIdentifier::getDocumentName() const
  * @param force Force name to be set.
  */
 
-void ObjectIdentifier::setDocumentObjectName(ObjectIdentifier::String &&name, bool force,
-        ObjectIdentifier::String &&subname, bool checkImport)
+void ObjectIdentifier::setDocumentObjectName(ObjectPath::String &&name, bool force,
+        ObjectPath::String &&subname, bool checkImport)
 {
     if(checkImport) {
         name.checkImport(owner);
@@ -1419,7 +1368,7 @@ void ObjectIdentifier::setDocumentObjectName(ObjectIdentifier::String &&name, bo
 }
 
 void ObjectIdentifier::setDocumentObjectName(const App::DocumentObject *obj, bool force,
-        ObjectIdentifier::String &&subname, bool checkImport)
+        ObjectPath::String &&subname, bool checkImport)
 {
     if(!owner || !obj || !obj->getNameInDocument() || !obj->getDocument())
         FC_THROWM(Base::RuntimeError,"invalid object");
@@ -1458,7 +1407,7 @@ void ObjectIdentifier::setDocumentObjectName(const App::DocumentObject *obj, boo
  * @return String with name of document object as resolved by object identifier.
  */
 
-ObjectIdentifier::String ObjectIdentifier::getDocumentObjectName() const
+ObjectPath::String ObjectIdentifier::getDocumentObjectName() const
 {
     ResolveResults result(*this);
 
@@ -1467,61 +1416,6 @@ ObjectIdentifier::String ObjectIdentifier::getDocumentObjectName() const
 
 bool ObjectIdentifier::hasDocumentObjectName(bool forced) const {
     return !documentObjectName.getString().empty() && (!forced || documentObjectNameSet);
-}
-
-/**
- * @brief Get a string representation of this object identifier.
- * @return String representation.
- */
-
-std::string ObjectIdentifier::String::toString(bool toPython) const
-{
-    if (isRealString())
-        return quote(str,toPython);
-    else
-        return str;
-}
-
-void ObjectIdentifier::String::checkImport(const App::DocumentObject *owner,
-        const App::DocumentObject *obj, String *objName)
-{
-    if(owner && owner->getDocument() && !str.empty() &&
-       ExpressionParser::ExpressionImporter::reader()) {
-        auto reader = ExpressionParser::ExpressionImporter::reader();
-        if (obj || objName) {
-            bool restoreLabel = false;
-            str = PropertyLinkBase::importSubName(*reader,str.c_str(),restoreLabel);
-            if (restoreLabel) {
-                if (!obj) {
-                    std::bitset<32> flags;
-                    obj = getDocumentObject(owner->getDocument(),*objName,flags);
-                    if (!obj) {
-                        FC_ERR("Cannot find object " << objName->toString());
-                    }
-                }
-
-                if (obj) {
-                    PropertyLinkBase::restoreLabelReference(obj,str);
-                }
-            }
-        }
-        else if (str.back()!='@') {
-            str = reader->getName(str.c_str());
-        }
-        else {
-            str.resize(str.size()-1);
-            auto mapped = reader->getName(str.c_str());
-            auto objForMapped = owner->getDocument()->getObject(mapped);
-            if (!objForMapped) {
-                FC_ERR("Cannot find object " << str);
-            }
-            else {
-                isString = true;
-                forceIdentifier = false;
-                str = objForMapped->Label.getValue();
-            }
-        }
-    }
 }
 
 Py::Object ObjectIdentifier::access(const ResolveResults &result,

@@ -33,7 +33,7 @@
 #include <CXX/Objects.hxx>
 
 #include "Property.h"
-#include "ObjectIdentifier.h"
+#include "ObjectPath/ObjectIdentifier.h"
 #include "PropertyContainer.h"
 
 

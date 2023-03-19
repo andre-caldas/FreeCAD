@@ -40,7 +40,7 @@
 
 #include <App/Application.h>
 #include <App/DocumentObject.h>
-#include <App/ObjectIdentifier.h>
+#include <App/ObjectPath/ObjectIdentifier.h>
 #include <App/PropertyUnits.h>
 #include <Base/Interpreter.h>
 #include <Base/MatrixPy.h>
@@ -2788,7 +2788,7 @@ void VariableExpression::addComponent(Component *c) {
                 if(!s)
                     break;
                 var << ObjectIdentifier::MapComponent(
-                        ObjectIdentifier::String(s->getText(),true));
+                        ObjectPath::String(s->getText(),true));
                 return;
             }
             if(!essentiallyInteger(n1->getValue(),l1))

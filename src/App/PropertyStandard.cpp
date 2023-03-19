@@ -40,7 +40,7 @@
 #include "Document.h"
 #include "DocumentObject.h"
 #include "MaterialPy.h"
-#include "ObjectIdentifier.h"
+#include "ObjectPath/ObjectIdentifier.h"
 
 
 using namespace App;

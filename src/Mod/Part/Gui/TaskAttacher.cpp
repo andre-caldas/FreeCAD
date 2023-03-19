@@ -33,7 +33,7 @@
 
 #include <App/Application.h>
 #include <App/Document.h>
-#include <App/ObjectIdentifier.h>
+#include <App/ObjectPath/ObjectIdentifier.h>
 #include <App/OriginFeature.h>
 #include <App/Part.h>
 #include <Gui/Application.h>

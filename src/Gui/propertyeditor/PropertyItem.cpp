@@ -1498,9 +1498,9 @@ void PropertyVectorItem::setZ(double z)
 
 void PropertyVectorItem::propertyBound()
 {
-    m_x->bind(App::ObjectIdentifier(getPath())<<App::ObjectIdentifier::String("x"));
-    m_y->bind(App::ObjectIdentifier(getPath())<<App::ObjectIdentifier::String("y"));
-    m_z->bind(App::ObjectIdentifier(getPath())<<App::ObjectIdentifier::String("z"));
+    m_x->bind(App::ObjectIdentifier(getPath())<<App::ObjectPath::String("x"));
+    m_y->bind(App::ObjectIdentifier(getPath())<<App::ObjectPath::String("y"));
+    m_z->bind(App::ObjectIdentifier(getPath())<<App::ObjectPath::String("z"));
 }
 
 // ---------------------------------------------------------------
@@ -1797,9 +1797,9 @@ void PropertyVectorDistanceItem::setZ(Base::Quantity z)
 void PropertyVectorDistanceItem::propertyBound()
 {
     if (isBound()) {
-        m_x->bind(App::ObjectIdentifier(getPath())<<App::ObjectIdentifier::String("x"));
-        m_y->bind(App::ObjectIdentifier(getPath())<<App::ObjectIdentifier::String("y"));
-        m_z->bind(App::ObjectIdentifier(getPath())<<App::ObjectIdentifier::String("z"));
+        m_x->bind(App::ObjectIdentifier(getPath())<<App::ObjectPath::String("x"));
+        m_y->bind(App::ObjectIdentifier(getPath())<<App::ObjectPath::String("y"));
+        m_z->bind(App::ObjectIdentifier(getPath())<<App::ObjectPath::String("z"));
     };
 }
 
@@ -2449,9 +2449,9 @@ QVariant PropertyRotationItem::editorData(QWidget *editor) const
 void PropertyRotationItem::propertyBound()
 {
     if (isBound()) {
-        m_a->bind(App::ObjectIdentifier(getPath())<<App::ObjectIdentifier::String("Angle"));
+        m_a->bind(App::ObjectIdentifier(getPath())<<App::ObjectPath::String("Angle"));
 
-        m_d->bind(App::ObjectIdentifier(getPath())<<App::ObjectIdentifier::String("Axis"));
+        m_d->bind(App::ObjectIdentifier(getPath())<<App::ObjectPath::String("Axis"));
     }
 }
 
@@ -2763,13 +2763,13 @@ QVariant PropertyPlacementItem::editorData(QWidget *editor) const
 void PropertyPlacementItem::propertyBound()
 {
     if (isBound()) {
-        m_a->bind(App::ObjectIdentifier(getPath())<<App::ObjectIdentifier::String("Rotation")
-                                                  <<App::ObjectIdentifier::String("Angle"));
+        m_a->bind(App::ObjectIdentifier(getPath())<<App::ObjectPath::String("Rotation")
+                                                  <<App::ObjectPath::String("Angle"));
    
-        m_d->bind(App::ObjectIdentifier(getPath())<<App::ObjectIdentifier::String("Rotation")
-                                                  <<App::ObjectIdentifier::String("Axis"));
+        m_d->bind(App::ObjectIdentifier(getPath())<<App::ObjectPath::String("Rotation")
+                                                  <<App::ObjectPath::String("Axis"));
         
-        m_p->bind(App::ObjectIdentifier(getPath())<<App::ObjectIdentifier::String("Base"));
+        m_p->bind(App::ObjectIdentifier(getPath())<<App::ObjectPath::String("Base"));
     }
 }
 
@@ -2792,7 +2792,7 @@ PropertyEnumItem::PropertyEnumItem()
 void PropertyEnumItem::propertyBound()
 {
     if (m_enum && isBound()) 
-        m_enum->bind(App::ObjectIdentifier(getPath())<<App::ObjectIdentifier::String("Enum"));
+        m_enum->bind(App::ObjectIdentifier(getPath())<<App::ObjectPath::String("Enum"));
 }
 
 void PropertyEnumItem::setEnum(QStringList values)

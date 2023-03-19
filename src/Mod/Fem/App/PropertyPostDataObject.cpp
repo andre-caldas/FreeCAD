@@ -225,23 +225,23 @@ void PropertyPostDataObject::getPaths(std::vector<App::ObjectIdentifier>& /*path
  /* paths.push_back(App::ObjectIdentifier(getContainer())
                     << App::ObjectIdentifier::Component::SimpleComponent(getName())
                     << App::ObjectIdentifier::Component::SimpleComponent(
-                           App::ObjectIdentifier::String("ShapeType")));
+                           App::ObjectPath::String("ShapeType")));
     paths.push_back(App::ObjectIdentifier(getContainer())
                     << App::ObjectIdentifier::Component::SimpleComponent(getName())
                     << App::ObjectIdentifier::Component::SimpleComponent(
-                           App::ObjectIdentifier::String("Orientation")));
+                           App::ObjectPath::String("Orientation")));
     paths.push_back(App::ObjectIdentifier(getContainer())
                     << App::ObjectIdentifier::Component::SimpleComponent(getName())
                     << App::ObjectIdentifier::Component::SimpleComponent(
-                           App::ObjectIdentifier::String("Length")));
+                           App::ObjectPath::String("Length")));
     paths.push_back(App::ObjectIdentifier(getContainer())
                     << App::ObjectIdentifier::Component::SimpleComponent(getName())
                     << App::ObjectIdentifier::Component::SimpleComponent(
-                           App::ObjectIdentifier::String("Area")));
+                           App::ObjectPath::String("Area")));
     paths.push_back(App::ObjectIdentifier(getContainer())
                     << App::ObjectIdentifier::Component::SimpleComponent(getName())
                     << App::ObjectIdentifier::Component::SimpleComponent(
-                           App::ObjectIdentifier::String("Volume")));
+                           App::ObjectPath::String("Volume")));
     */
 }
 

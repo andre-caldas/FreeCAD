@@ -40,7 +40,7 @@
 #include "DocumentObjectExtension.h"
 #include "DocumentObjectGroup.h"
 #include "GeoFeatureGroupExtension.h"
-#include "ObjectIdentifier.h"
+#include "ObjectPath/ObjectIdentifier.h"
 #include "PropertyExpressionEngine.h"
 #include "PropertyLinks.h"
 

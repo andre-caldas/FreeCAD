@@ -156,7 +156,7 @@ identifier
 iden
     :  '.' STRING '.' id_or_cell            { /* Path to property of a sub-object of the current object*/
                                                 $$ = ObjectIdentifier(DocumentObject,true);
-                                                $$.setDocumentObjectName(DocumentObject,false,ObjectIdentifier::String(std::move($2),true),true);
+                                                $$.setDocumentObjectName(DocumentObject,false,ObjectPath::String(std::move($2),true),true);
                                                 $$.addComponent(ObjectIdentifier::SimpleComponent($4));
                                             }
     | '.' id_or_cell                        { /* Path to property of the current document object */
@@ -166,7 +166,7 @@ iden
                                             }
     | object '.' STRING '.' id_or_cell      { /* Path to property of a sub-object */
                                                 $$ = ObjectIdentifier(DocumentObject);
-                                                $$.setDocumentObjectName(std::move($1), true, ObjectIdentifier::String(std::move($3),true),true);
+                                                $$.setDocumentObjectName(std::move($1), true, ObjectPath::String(std::move($3),true),true);
                                                 $$.addComponent(ObjectIdentifier::SimpleComponent($5));
                                                 $$.resolveAmbiguity();
                                             }
@@ -187,7 +187,7 @@ iden
     | document '#' object '.' STRING '.' id_or_cell
                                             {   $$ = ObjectIdentifier(DocumentObject);
                                                 $$.setDocumentName(std::move($1), true);
-                                                $$.setDocumentObjectName(std::move($3), true, ObjectIdentifier::String(std::move($5),true));
+                                                $$.setDocumentObjectName(std::move($3), true, ObjectPath::String(std::move($5),true));
                                                 $$.addComponent(ObjectIdentifier::SimpleComponent($7));
                                                 $$.resolveAmbiguity();
                                             }
@@ -213,13 +213,13 @@ indexable
     ;
 
 document
-    : STRING                                { $$ = ObjectIdentifier::String(std::move($1), true); }
-    | IDENTIFIER                            { $$ = ObjectIdentifier::String(std::move($1), false, true);}
+    : STRING                                { $$ = ObjectPath::String(std::move($1), true); }
+    | IDENTIFIER                            { $$ = ObjectPath::String(std::move($1), false, true);}
     ;
 
 object
-    : STRING                                { $$ = ObjectIdentifier::String(std::move($1), true); }
-    | id_or_cell                            { $$ = ObjectIdentifier::String(std::move($1), false);}
+    : STRING                                { $$ = ObjectPath::String(std::move($1), true); }
+    | id_or_cell                            { $$ = ObjectPath::String(std::move($1), false);}
     ;
 
 %%

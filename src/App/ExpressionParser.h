@@ -26,6 +26,8 @@
 #define EXPRESSION_PARSER_H
 
 #include "Expression.h"
+#include "ObjectPath/String.h"
+
 #include <Base/Matrix.h>
 #include <Base/Quantity.h>
 #include <Base/Vector3D.h>
@@ -519,7 +521,7 @@ public:
   std::vector<Expression*> list;
   std::string string;
   std::pair<FunctionExpression::Function,std::string> func;
-  ObjectIdentifier::String string_or_identifier;
+  ObjectPath::String string_or_identifier;
   semantic_type() : component(nullptr), expr(nullptr), ivalue(0), fvalue(0)
                   , func({FunctionExpression::NONE, std::string()}) {}
 };

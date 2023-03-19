@@ -62,7 +62,7 @@
 #include <App/Expression.h>
 #include <App/ExpressionParser.h>
 #include <App/FeaturePythonPyImp.h>
-#include <App/ObjectIdentifier.h>
+#include <App/ObjectPath/ObjectIdentifier.h>
 #include <App/OriginFeature.h>
 #include <App/Part.h>
 #include <Base/Console.h>

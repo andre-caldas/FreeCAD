@@ -37,7 +37,7 @@
 #include "Document.h"
 #include "DocumentObject.h"
 #include "DocumentObjectPy.h"
-#include "ObjectIdentifier.h"
+#include "ObjectPath/ObjectIdentifier.h"
 
 
 FC_LOG_LEVEL_INIT("PropertyLinks",true,true)

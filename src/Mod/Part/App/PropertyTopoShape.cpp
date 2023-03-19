@@ -37,7 +37,7 @@
 
 #include <App/Application.h>
 #include <App/DocumentObject.h>
-#include <App/ObjectIdentifier.h>
+#include <App/ObjectPath/ObjectIdentifier.h>
 #include <Base/Console.h>
 #include <Base/Exception.h>
 #include <Base/FileInfo.h>
@@ -181,15 +181,15 @@ unsigned int PropertyPartShape::getMemSize (void) const
 void PropertyPartShape::getPaths(std::vector<App::ObjectIdentifier> &paths) const
 {
     paths.push_back(App::ObjectIdentifier(getContainer()) << App::ObjectIdentifier::Component::SimpleComponent(getName())
-                    << App::ObjectIdentifier::Component::SimpleComponent(App::ObjectIdentifier::String("ShapeType")));
+                    << App::ObjectIdentifier::Component::SimpleComponent(App::ObjectPath::String("ShapeType")));
     paths.push_back(App::ObjectIdentifier(getContainer()) << App::ObjectIdentifier::Component::SimpleComponent(getName())
-                    << App::ObjectIdentifier::Component::SimpleComponent(App::ObjectIdentifier::String("Orientation")));
+                    << App::ObjectIdentifier::Component::SimpleComponent(App::ObjectPath::String("Orientation")));
     paths.push_back(App::ObjectIdentifier(getContainer()) << App::ObjectIdentifier::Component::SimpleComponent(getName())
-                    << App::ObjectIdentifier::Component::SimpleComponent(App::ObjectIdentifier::String("Length")));
+                    << App::ObjectIdentifier::Component::SimpleComponent(App::ObjectPath::String("Length")));
     paths.push_back(App::ObjectIdentifier(getContainer()) << App::ObjectIdentifier::Component::SimpleComponent(getName())
-                    << App::ObjectIdentifier::Component::SimpleComponent(App::ObjectIdentifier::String("Area")));
+                    << App::ObjectIdentifier::Component::SimpleComponent(App::ObjectPath::String("Area")));
     paths.push_back(App::ObjectIdentifier(getContainer()) << App::ObjectIdentifier::Component::SimpleComponent(getName())
-                    << App::ObjectIdentifier::Component::SimpleComponent(App::ObjectIdentifier::String("Volume")));
+                    << App::ObjectIdentifier::Component::SimpleComponent(App::ObjectPath::String("Volume")));
 }
 
 void PropertyPartShape::Save (Base::Writer &writer) const

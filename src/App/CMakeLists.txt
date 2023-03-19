@@ -218,7 +218,6 @@ SOURCE_GROUP("Document" FILES ${Document_SRCS})
 # The property stuff
 SET(Properties_CPP_SRCS
     DynamicProperty.cpp
-    ObjectIdentifier.cpp
     Property.cpp
     PropertyContainer.cpp
     PropertyContainerPyImp.cpp
@@ -232,7 +231,6 @@ SET(Properties_CPP_SRCS
 )
 SET(Properties_HPP_SRCS
     DynamicProperty.h
-    ObjectIdentifier.h
     Property.h
     PropertyContainer.h
     PropertyFile.h
@@ -248,6 +246,17 @@ SET(Properties_SRCS
     ${Properties_HPP_SRCS}
 )
 SOURCE_GROUP("Properties" FILES ${Properties_SRCS})
+
+SET(ObjectIdentifier_SRCS
+    ObjectPath/ObjectIdentifier.h
+    ObjectPath/ObjectIdentifier.cpp
+    ObjectPath/String.h
+    ObjectPath/String.cpp
+)
+SET(ObjectIdentifier_SRCS
+    ${ObjectIdentifier_SRCS}
+)
+SOURCE_GROUP("ObjectIdentifier" FILES ${ObjectIdentifier_SRCS})
 
 SET(FreeCADApp_CPP_SRCS
     ${Document_CPP_SRCS}
@@ -286,6 +295,7 @@ SET(FreeCADApp_HPP_SRCS
 SET(FreeCADApp_SRCS
     ${FreeCADApp_CPP_SRCS}
     ${FreeCADApp_HPP_SRCS}
+    ${ObjectIdentifier_SRCS}
     ${FreeCADApp_XML_SRCS}
     FreeCADInit.py
     FreeCADTest.py

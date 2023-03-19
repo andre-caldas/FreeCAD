@@ -21,8 +21,8 @@
  ***************************************************************************/
 
 
-#ifndef APP_PATH_H
-#define APP_PATH_H
+#ifndef APP_ObjectIdentifier_H
+#define APP_ObjectIdentifier_H
 
 #include <bitset>
 #include <map>
@@ -32,11 +32,17 @@
 #include <boost/any.hpp>
 #include <FCConfig.h>
 
+#include "String.h"
+
+
 namespace Py {
 class Object;
 }
+
 namespace App
 {
+
+using namespace ObjectPath;
 
 using any = boost::any;
 
@@ -56,8 +62,6 @@ class PropertyContainer;
 class DocumentObject;
 class ExpressionVisitor;
 
-AppExport std::string quote(const std::string &input, bool toPython=false);
-
 // Unfortunately VS2013 does not support default move constructor, so we have
 // to implement them manually
 #define FC_DEFAULT_CTORS(_t) \
@@ -69,6 +73,7 @@ AppExport std::string quote(const std::string &input, bool toPython=false);
 class AppExport ObjectIdentifier {
 
 public:
+    friend class App::ObjectPath::String;
 
     class AppExport DocumentMapper {
     public:
@@ -76,72 +81,6 @@ public:
         ~DocumentMapper();
     };
 
-    class String {
-        friend class ObjectIdentifier;
-
-    public:
-
-        String(const std::string &s = "",
-               bool _isRealString = false,
-               bool _forceIdentifier = false)
-            : str(s),
-            isString(_isRealString),
-            forceIdentifier(_forceIdentifier)
-        {}//explicit bombs
-
-        explicit String(std::string &&s,
-               bool _isRealString = false,
-               bool _forceIdentifier = false)
-            : str(std::move(s)),
-            isString(_isRealString),
-            forceIdentifier(_forceIdentifier)
-        {}
-
-        FC_DEFAULT_CTORS(String) {
-            str = std::move(other.str);
-            isString = other.isString;
-            forceIdentifier = other.forceIdentifier;
-            return *this;
-        }
-
-        // Accessors
-
-        /** Returns the string */
-        const std::string &getString() const { return str; }
-
-        /** Return true is string need to be quoted */
-        bool isRealString() const { return isString; }
-
-        bool isForceIdentifier() const { return forceIdentifier; }
-
-        /** Returns a possibly quoted string */
-        std::string toString(bool toPython=false) const;
-
-        // Operators
-
-        explicit operator std::string() const { return str; }
-
-        explicit operator const char *() const { return str.c_str(); }
-
-        bool operator==(const String & other) const { return str == other.str; }
-
-        bool operator!=(const String & other) const { return str != other.str; }
-
-        bool operator>=(const String & other) const { return str >= other.str; }
-
-        bool operator<(const String & other) const { return str < other.str; }
-
-        bool operator>(const String & other) const { return str > other.str; }
-
-        void checkImport(const App::DocumentObject *owner,
-                const App::DocumentObject *obj=nullptr, String *objName=nullptr);
-    private:
-
-        std::string str;
-        bool isString;
-        bool forceIdentifier;
-
-    };
 
     /**
      * @brief A component is a part of a Path object, and is used to either
@@ -524,4 +463,4 @@ struct hash<App::ObjectIdentifier> {
 };
 }
 
-#endif
+#endif // APP_ObjectIdentifier_H

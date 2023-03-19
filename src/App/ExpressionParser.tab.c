@@ -1705,7 +1705,7 @@ yyreduce:
 #line 136 "ExpressionParser.y" /* yacc.c:1646  */
     { /* Path to property of a sub-object of the current object*/
                                                 (yyval.path) = ObjectIdentifier(DocumentObject,true);
-                                                (yyval.path).setDocumentObjectName(DocumentObject,false,ObjectIdentifier::String(std::move((yyvsp[-2].string)),true),true);
+                                                (yyval.path).setDocumentObjectName(DocumentObject,false,ObjectPath::String(std::move((yyvsp[-2].string)),true),true);
                                                 (yyval.path).addComponent(ObjectIdentifier::SimpleComponent((yyvsp[0].string)));
                                             }
 #line 1712 "ExpressionParser.tab.c" /* yacc.c:1646  */
@@ -1725,7 +1725,7 @@ yyreduce:
 #line 146 "ExpressionParser.y" /* yacc.c:1646  */
     { /* Path to property of a sub-object */
                                                 (yyval.path) = ObjectIdentifier(DocumentObject);
-                                                (yyval.path).setDocumentObjectName(std::move((yyvsp[-4].string_or_identifier)), true, ObjectIdentifier::String(std::move((yyvsp[-2].string)),true),true);
+                                                (yyval.path).setDocumentObjectName(std::move((yyvsp[-4].string_or_identifier)), true, ObjectPath::String(std::move((yyvsp[-2].string)),true),true);
                                                 (yyval.path).addComponent(ObjectIdentifier::SimpleComponent((yyvsp[0].string)));
                                                 (yyval.path).resolveAmbiguity();
                                             }
@@ -1760,7 +1760,7 @@ yyreduce:
 #line 167 "ExpressionParser.y" /* yacc.c:1646  */
     {   (yyval.path) = ObjectIdentifier(DocumentObject);
                                                 (yyval.path).setDocumentName(std::move((yyvsp[-6].string_or_identifier)), true);
-                                                (yyval.path).setDocumentObjectName(std::move((yyvsp[-4].string_or_identifier)), true, ObjectIdentifier::String(std::move((yyvsp[-2].string)),true));
+                                                (yyval.path).setDocumentObjectName(std::move((yyvsp[-4].string_or_identifier)), true, ObjectPath::String(std::move((yyvsp[-2].string)),true));
                                                 (yyval.path).addComponent(ObjectIdentifier::SimpleComponent((yyvsp[0].string)));
                                                 (yyval.path).resolveAmbiguity();
                                             }
@@ -1847,25 +1847,25 @@ yyreduce:
 
   case 68:
 #line 195 "ExpressionParser.y" /* yacc.c:1646  */
-    { (yyval.string_or_identifier) = ObjectIdentifier::String(std::move((yyvsp[0].string)), true); }
+    { (yyval.string_or_identifier) = ObjectPath::String(std::move((yyvsp[0].string)), true); }
 #line 1852 "ExpressionParser.tab.c" /* yacc.c:1646  */
     break;
 
   case 69:
 #line 196 "ExpressionParser.y" /* yacc.c:1646  */
-    { (yyval.string_or_identifier) = ObjectIdentifier::String(std::move((yyvsp[0].string)), false, true);}
+    { (yyval.string_or_identifier) = ObjectPath::String(std::move((yyvsp[0].string)), false, true);}
 #line 1858 "ExpressionParser.tab.c" /* yacc.c:1646  */
     break;
 
   case 70:
 #line 200 "ExpressionParser.y" /* yacc.c:1646  */
-    { (yyval.string_or_identifier) = ObjectIdentifier::String(std::move((yyvsp[0].string)), true); }
+    { (yyval.string_or_identifier) = ObjectPath::String(std::move((yyvsp[0].string)), true); }
 #line 1864 "ExpressionParser.tab.c" /* yacc.c:1646  */
     break;
 
   case 71:
 #line 201 "ExpressionParser.y" /* yacc.c:1646  */
-    { (yyval.string_or_identifier) = ObjectIdentifier::String(std::move((yyvsp[0].string)), false);}
+    { (yyval.string_or_identifier) = ObjectPath::String(std::move((yyvsp[0].string)), false);}
 #line 1870 "ExpressionParser.tab.c" /* yacc.c:1646  */
     break;
 

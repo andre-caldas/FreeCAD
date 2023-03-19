@@ -33,7 +33,7 @@
 #include "GeoFeatureGroupExtension.h"
 #include "Origin.h"
 #include "OriginGroupExtension.h"
-#include "ObjectIdentifier.h"
+#include "ObjectPath/ObjectIdentifier.h"
 
 using namespace App;
 using namespace boost;

@@ -25,7 +25,7 @@
 
 #include <memory>
 #include <string>
-#include <App/ObjectIdentifier.h>
+#include <App/ObjectPath/ObjectIdentifier.h>
 #include <QPalette>
 #include <boost_signals2.hpp>
 

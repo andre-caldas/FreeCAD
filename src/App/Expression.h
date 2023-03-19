@@ -28,7 +28,7 @@
 #include <string>
 
 #include <App/PropertyLinks.h>
-#include <App/ObjectIdentifier.h>
+#include <App/ObjectPath/ObjectIdentifier.h>
 #include <App/Range.h>
 #include <Base/Exception.h>
 #include <Base/BaseClass.h>
