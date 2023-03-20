@@ -39,6 +39,7 @@
 
 #include "ObjectIdentifier.h"
 #include "String.h"
+#include "DocumentMapper.h"
 #include "../Application.h"
 #include "../Document.h"
 #include "../ExpressionParser.h"
@@ -1284,18 +1285,6 @@ ObjectIdentifier ObjectIdentifier::canonicalPath() const
     return result.resolvedProperty->canonicalPath(res);
 }
 
-static const std::map<std::string,std::string> *_DocumentMap;
-ObjectIdentifier::DocumentMapper::DocumentMapper(const std::map<std::string,std::string> &map)
-{
-    assert(!_DocumentMap);
-    _DocumentMap = &map;
-}
-
-ObjectIdentifier::DocumentMapper::~DocumentMapper()
-{
-    _DocumentMap = nullptr;
-}
-
 /**
  * @brief Set the document name for this object identifier.
  *
@@ -1311,16 +1300,16 @@ void ObjectIdentifier::setDocumentName(ObjectPath::String &&name, bool force)
         force = false;
     documentNameSet = force;
     _cache.clear();
-    if(!name.getString().empty() && _DocumentMap) {
+    if(!name.getString().empty() && DocumentMapper::hasMap()) {
         if(name.isRealString()) {
-            auto iter = _DocumentMap->find(name.toString());
-            if(iter!=_DocumentMap->end()) {
+            auto iter = DocumentMapper::find(name.toString());
+            if(iter != DocumentMapper::end()) {
                 documentName = String(iter->second,true);
                 return;
             }
         }else{
-            auto iter = _DocumentMap->find(name.getString());
-            if(iter!=_DocumentMap->end()) {
+            auto iter = DocumentMapper::find(name.getString());
+            if(iter != DocumentMapper::end()) {
                 documentName = String(iter->second,false,true);
                 return;
             }

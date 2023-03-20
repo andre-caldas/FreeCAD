@@ -252,6 +252,8 @@ SET(ObjectIdentifier_SRCS
     ObjectPath/ObjectIdentifier.cpp
     ObjectPath/String.h
     ObjectPath/String.cpp
+    ObjectPath/DocumentMapper.h
+    ObjectPath/DocumentMapper.cpp
 )
 SET(ObjectIdentifier_SRCS
     ${ObjectIdentifier_SRCS}

@@ -31,6 +31,7 @@
 
 #include <App/Document.h>
 #include <App/DocumentObject.h>
+#include <App/ObjectPath/DocumentMapper.h>
 #include <App/Expression.h>
 #include <App/ExpressionParser.h>
 #include <App/ExpressionVisitors.h>
@@ -1603,7 +1604,7 @@ void PropertySheet::afterRestore()
 
     PropertyExpressionContainer::afterRestore();
     {
-        ObjectIdentifier::DocumentMapper mapper(this->_DocMap);
+        ObjectPath::DocumentMapper mapper(this->_DocMap);
         for(auto &d : data)
             d.second->afterRestore();
     }

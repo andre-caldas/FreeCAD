@@ -25,6 +25,7 @@
 #include <App/Application.h>
 #include <App/Document.h>
 #include <App/DocumentObject.h>
+#include <App/ObjectPath/DocumentMapper.h>
 #include <Base/Reader.h>
 #include <Base/Tools.h>
 #include <Base/Writer.h>
@@ -409,7 +410,7 @@ void PropertyExpressionEngine::afterRestore()
         AtomicPropertyChange signaller(*this);
 
         PropertyExpressionContainer::afterRestore();
-        ObjectIdentifier::DocumentMapper mapper(this->_DocMap);
+        ObjectPath::DocumentMapper mapper(this->_DocMap);
 
         for(auto &info : *restoredExpressions) {
             ObjectIdentifier path = ObjectIdentifier::parse(docObj, info.path);

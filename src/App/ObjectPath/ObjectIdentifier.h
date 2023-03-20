@@ -75,13 +75,6 @@ class AppExport ObjectIdentifier {
 public:
     friend class App::ObjectPath::String;
 
-    class AppExport DocumentMapper {
-    public:
-        explicit DocumentMapper(const std::map<std::string,std::string> &);
-        ~DocumentMapper();
-    };
-
-
     /**
      * @brief A component is a part of a Path object, and is used to either
      * name a property or a field within a property. A component can be either
