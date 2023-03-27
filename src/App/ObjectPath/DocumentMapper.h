@@ -21,8 +21,8 @@
  ***************************************************************************/
 
 
-#ifndef APP_Path_DocumentMapper_H
-#define APP_Path_DocumentMapper_H
+#ifndef APP_ObjectPath_DocumentMapper_H
+#define APP_ObjectPath_DocumentMapper_H
 
 #include <map>
 #include <string>
@@ -33,6 +33,8 @@
 namespace App::ObjectPath
 {
 
+class String;
+
 class AppExport DocumentMapper {
     using map_type = std::map<std::string,std::string>;
 
@@ -41,13 +43,15 @@ public:
     ~DocumentMapper();
 
     static bool hasMap ();
-    static map_type::const_iterator find(const std::string& name);
-    static map_type::const_iterator end();
+    static String mapString(const String& from);
 
 private:
     static const map_type *_DocumentMap;
+
+    static map_type::const_iterator find(const std::string& name);
+    static map_type::const_iterator end();
 };
 
 } // namespace App::ObjectPath
 
-#endif // APP_Path_DocumentMapper_H
+#endif // APP_ObjectPath_DocumentMapper_H

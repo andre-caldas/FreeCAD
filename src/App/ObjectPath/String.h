@@ -21,10 +21,11 @@
  ***************************************************************************/
 
 
-#ifndef APP_Path_String_H
-#define APP_Path_String_H
+#ifndef APP_ObjectPath_String_H
+#define APP_ObjectPath_String_H
 
 #include <string>
+#include <FCConfig.h>
 
 namespace App {
 class ObjectIdentifier;
@@ -66,6 +67,8 @@ public:
 
     bool isForceIdentifier() const { return forceIdentifier; }
 
+    bool empty() const { return str.empty(); }
+
     /** Returns a possibly quoted string */
     std::string toString(bool toPython=false) const;
 
@@ -73,7 +76,7 @@ public:
 
     explicit operator std::string() const { return str; }
 
-    explicit operator const char *() const { return str.c_str(); }
+//    explicit operator const char *() const { return str.c_str(); }
 
     bool operator==(const String & other) const { return str == other.str; }
 
@@ -96,4 +99,4 @@ private:
 
 } // namespace App::Path
 
-#endif // APP_Path_String_H
+#endif // APP_ObjectPath_String_H

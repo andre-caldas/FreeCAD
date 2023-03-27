@@ -32,6 +32,8 @@
 #include <App/Document.h>
 #include <App/DocumentObject.h>
 #include <App/ObjectPath/DocumentMapper.h>
+#include <App/ObjectPath/ObjectIdentifier.h>
+#include <App/ObjectPath/SimpleComponent.h>
 #include <App/Expression.h>
 #include <App/ExpressionParser.h>
 #include <App/ExpressionVisitors.h>
@@ -1873,9 +1875,9 @@ PropertySheet::getBinding(const Range &range,
 
     for(int href=0;href<2;++href) {
         ObjectIdentifier path(*this);
-        path << ObjectIdentifier::SimpleComponent(href?"BindHiddenRef":"Bind");
-        path << ObjectIdentifier::SimpleComponent(range.from().toString().c_str());
-        path << ObjectIdentifier::SimpleComponent(range.to().toString().c_str());
+        path << App:ObjectPath::SimpleComponent(href?"BindHiddenRef":"Bind");
+        path << App:ObjectPath::SimpleComponent(range.from().toString().c_str());
+        path << App:ObjectPath::SimpleComponent(range.to().toString().c_str());
         auto res = owner->getExpression(path);
         if(res.expression && res.expression->isDerivedFrom(FunctionExpression::getClassTypeId()))
         {

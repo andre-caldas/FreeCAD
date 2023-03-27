@@ -30,6 +30,7 @@
 
 #include "PropertyUnits.h"
 #include "Expression.h"
+#include "ExpressionAny.h"
 
 
 using namespace App;
@@ -115,7 +116,7 @@ void PropertyQuantity::setPyObject(PyObject *value)
 
 void PropertyQuantity::setPathValue(const ObjectIdentifier & /*path*/, const boost::any &value)
 {
-    auto q = App::anyToQuantity(value);
+    auto q = ExpressionHelper::anyToQuantity(value);
     aboutToSetValue();
     if(!q.getUnit().isEmpty())
         _Unit = q.getUnit();

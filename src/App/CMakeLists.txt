@@ -141,6 +141,9 @@ SET(Document_CPP_SRCS
     DocumentObserverPython.cpp
     DocumentPyImp.cpp
     Expression.cpp
+    ExpressionAny.cpp
+    ExpressionComponent.cpp
+    ExpressionParser.cpp
     ExpressionTokenizer.cpp
     FeaturePython.cpp
     FeatureTest.cpp
@@ -182,6 +185,8 @@ SET(Document_HPP_SRCS
     DocumentObserver.h
     DocumentObserverPython.h
     Expression.h
+    ExpressionAny.h
+    ExpressionComponent.h
     ExpressionParser.h
     ExpressionTokenizer.h
     ExpressionVisitors.h
@@ -250,6 +255,16 @@ SOURCE_GROUP("Properties" FILES ${Properties_SRCS})
 SET(ObjectIdentifier_SRCS
     ObjectPath/ObjectIdentifier.h
     ObjectPath/ObjectIdentifier.cpp
+    ObjectPath/Component.h
+    ObjectPath/Component.cpp
+    ObjectPath/SimpleComponent.h
+    ObjectPath/SimpleComponent.cpp
+    ObjectPath/MapComponent.h
+    ObjectPath/MapComponent.cpp
+    ObjectPath/ArrayComponent.h
+    ObjectPath/ArrayComponent.cpp
+    ObjectPath/RangeComponent.h
+    ObjectPath/RangeComponent.cpp
     ObjectPath/String.h
     ObjectPath/String.cpp
     ObjectPath/DocumentMapper.h

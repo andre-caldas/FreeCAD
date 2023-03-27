@@ -45,10 +45,11 @@ class DocumentObject;
 class Expression;
 class Document;
 
-using ExpressionPtr = std::unique_ptr<Expression>;
+namespace ExpressionHelper {
+class ExpressionComponent;
+}
 
-AppExport bool isAnyEqual(const App::any &v1, const App::any &v2);
-AppExport Base::Quantity anyToQuantity(const App::any &value, const char *errmsg = nullptr);
+using ExpressionPtr = std::unique_ptr<Expression>;
 
 // Map of depending objects to a map of depending property name to the full referencing object identifier
 using ExpressionDeps = std::map<App::DocumentObject*, std::map<std::string, std::vector<ObjectIdentifier> > >;
@@ -130,7 +131,9 @@ public:
 
     static Expression * parse(const App::DocumentObject * owner, const std::string& buffer);
 
-    Expression * copy() const;
+    std::unique_ptr<Expression> copy() const;
+    template<typename T>
+    std::unique_ptr<T> copy() const {return std::unique_ptr<T>(static_cast<T*>(copy().release()));}
 
     virtual int priority() const;
 
@@ -158,7 +161,7 @@ public:
 
     bool adjustLinks(const std::set<App::DocumentObject*> &inList);
 
-    virtual Expression * simplify() const = 0;
+    virtual std::unique_ptr<Expression> simplify() const = 0;
 
     void visit(ExpressionVisitor & v);
 
@@ -168,15 +171,15 @@ public:
     };
 
     App::DocumentObject *  getOwner() const { return owner; }
-    struct Component;
 
-    virtual void addComponent(Component* component);
+    using ExpressionComponentRef = std::unique_ptr<ExpressionHelper::ExpressionComponent>;
+    using ComponentList = std::vector<ExpressionComponentRef>;
 
-    using ComponentList = std::vector<Component*>;
+    virtual void addComponent(ExpressionComponentRef&& component);
 
-    static Component *createComponent(const std::string &n);
-    static Component *createComponent(Expression *e1, Expression *e2=nullptr,
-            Expression *e3=nullptr, bool isRange=false);
+//    static Component *createComponent(const std::string &n);
+//    static Component *createComponent(Expression *e1, Expression *e2=nullptr,
+//            Expression *e3=nullptr, bool isRange=false);
 
     bool hasComponent() const {return !components.empty();}
 
@@ -190,7 +193,7 @@ public:
 
 protected:
     virtual bool _isIndexable() const {return false;}
-    virtual Expression *_copy() const = 0;
+    virtual std::unique_ptr<Expression> _copy() const = 0;
     virtual void _toString(std::ostream &ss, bool persistent, int indent=0) const = 0;
     virtual void _getIdentifiers(std::map<App::ObjectIdentifier,bool> &) const  {}
     virtual bool _adjustLinks(const std::set<App::DocumentObject*> &, ExpressionVisitor &) {return false;}

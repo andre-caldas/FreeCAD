@@ -39,6 +39,7 @@
 #include "PropertyGeo.h"
 #include "Placement.h"
 #include "ObjectPath/ObjectIdentifier.h"
+#include "ObjectPath/SimpleComponent.h"
 
 
 using namespace App;
@@ -170,11 +171,11 @@ void PropertyVector::Paste(const Property &from)
 void PropertyVector::getPaths(std::vector<ObjectIdentifier> &paths) const
 {
     paths.push_back(ObjectIdentifier(*this)
-                    << ObjectIdentifier::SimpleComponent(ObjectPath::String("x")));
+                    << ObjectPath::SimpleComponentVar(ObjectPath::String("x")));
     paths.push_back(ObjectIdentifier(*this)
-                    << ObjectIdentifier::SimpleComponent(ObjectPath::String("y")));
+                    << ObjectPath::SimpleComponentVar(ObjectPath::String("y")));
     paths.push_back(ObjectIdentifier(*this)
-                    << ObjectIdentifier::SimpleComponent(ObjectPath::String("z")));
+                    << ObjectPath::SimpleComponentVar(ObjectPath::String("z")));
 }
 
 const boost::any PropertyVector::getPathValue(const ObjectIdentifier &path) const
@@ -533,29 +534,29 @@ const Base::Placement & PropertyPlacement::getValue()const
 void PropertyPlacement::getPaths(std::vector<ObjectIdentifier> &paths) const
 {
     paths.push_back(ObjectIdentifier(*this)
-                    << ObjectIdentifier::SimpleComponent(ObjectPath::String("Base"))
-                    << ObjectIdentifier::SimpleComponent(ObjectPath::String("x")));
+                    << ObjectPath::SimpleComponentVar(ObjectPath::String("Base"))
+                    << ObjectPath::SimpleComponentVar(ObjectPath::String("x")));
     paths.push_back(ObjectIdentifier(*this)
-                    << ObjectIdentifier::SimpleComponent(ObjectPath::String("Base"))
-                    << ObjectIdentifier::SimpleComponent(ObjectPath::String("y")));
+                    << ObjectPath::SimpleComponentVar(ObjectPath::String("Base"))
+                    << ObjectPath::SimpleComponentVar(ObjectPath::String("y")));
     paths.push_back(ObjectIdentifier(*this)
-                    << ObjectIdentifier::SimpleComponent(ObjectPath::String("Base"))
-                    << ObjectIdentifier::SimpleComponent(ObjectPath::String("z")));
+                    << ObjectPath::SimpleComponentVar(ObjectPath::String("Base"))
+                    << ObjectPath::SimpleComponentVar(ObjectPath::String("z")));
     paths.push_back(ObjectIdentifier(*this)
-                    << ObjectIdentifier::SimpleComponent(ObjectPath::String("Rotation"))
-                    << ObjectIdentifier::SimpleComponent(ObjectPath::String("Angle")));
+                    << ObjectPath::SimpleComponentVar(ObjectPath::String("Rotation"))
+                    << ObjectPath::SimpleComponentVar(ObjectPath::String("Angle")));
     paths.push_back(ObjectIdentifier(*this)
-                    << ObjectIdentifier::SimpleComponent(ObjectPath::String("Rotation"))
-                    << ObjectIdentifier::SimpleComponent(ObjectPath::String("Axis"))
-                    << ObjectIdentifier::SimpleComponent(ObjectPath::String("x")));
+                    << ObjectPath::SimpleComponentVar(ObjectPath::String("Rotation"))
+                    << ObjectPath::SimpleComponentVar(ObjectPath::String("Axis"))
+                    << ObjectPath::SimpleComponentVar(ObjectPath::String("x")));
     paths.push_back(ObjectIdentifier(*this)
-                    << ObjectIdentifier::SimpleComponent(ObjectPath::String("Rotation"))
-                    << ObjectIdentifier::SimpleComponent(ObjectPath::String("Axis"))
-                    << ObjectIdentifier::SimpleComponent(ObjectPath::String("y")));
+                    << ObjectPath::SimpleComponentVar(ObjectPath::String("Rotation"))
+                    << ObjectPath::SimpleComponentVar(ObjectPath::String("Axis"))
+                    << ObjectPath::SimpleComponentVar(ObjectPath::String("y")));
     paths.push_back(ObjectIdentifier(*this)
-                    << ObjectIdentifier::SimpleComponent(ObjectPath::String("Rotation"))
-                    << ObjectIdentifier::SimpleComponent(ObjectPath::String("Axis"))
-                    << ObjectIdentifier::SimpleComponent(ObjectPath::String("z")));
+                    << ObjectPath::SimpleComponentVar(ObjectPath::String("Rotation"))
+                    << ObjectPath::SimpleComponentVar(ObjectPath::String("Axis"))
+                    << ObjectPath::SimpleComponentVar(ObjectPath::String("z")));
 }
 
 namespace {
@@ -1060,16 +1061,16 @@ const Base::Rotation & PropertyRotation::getValue() const
 void PropertyRotation::getPaths(std::vector<ObjectIdentifier> &paths) const
 {
     paths.push_back(ObjectIdentifier(*this)
-                    << ObjectIdentifier::SimpleComponent(ObjectPath::String("Angle")));
+                    << ObjectPath::SimpleComponentVar(ObjectPath::String("Angle")));
     paths.push_back(ObjectIdentifier(*this)
-                    << ObjectIdentifier::SimpleComponent(ObjectPath::String("Axis"))
-                    << ObjectIdentifier::SimpleComponent(ObjectPath::String("x")));
+                    << ObjectPath::SimpleComponentVar(ObjectPath::String("Axis"))
+                    << ObjectPath::SimpleComponentVar(ObjectPath::String("x")));
     paths.push_back(ObjectIdentifier(*this)
-                    << ObjectIdentifier::SimpleComponent(ObjectPath::String("Axis"))
-                    << ObjectIdentifier::SimpleComponent(ObjectPath::String("y")));
+                    << ObjectPath::SimpleComponentVar(ObjectPath::String("Axis"))
+                    << ObjectPath::SimpleComponentVar(ObjectPath::String("y")));
     paths.push_back(ObjectIdentifier(*this)
-                    << ObjectIdentifier::SimpleComponent(ObjectPath::String("Axis"))
-                    << ObjectIdentifier::SimpleComponent(ObjectPath::String("z")));
+                    << ObjectPath::SimpleComponentVar(ObjectPath::String("Axis"))
+                    << ObjectPath::SimpleComponentVar(ObjectPath::String("z")));
 }
 
 void PropertyRotation::setPathValue(const ObjectIdentifier &path, const boost::any &value)

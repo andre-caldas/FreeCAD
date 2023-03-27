@@ -1,5 +1,6 @@
 /***************************************************************************
  *   Copyright (c) 2015 Eivind Kvedalen <eivind@kvedalen.name>             *
+ *   Copyright (c) 2023 André Caldas <andre.em.caldas@gmail.com>           *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -26,61 +27,68 @@
 # include <cassert>
 //#endif
 
-#include <string>
-#include <map>
+#include <sstream>
 
 #include <Base/Console.h>
+#include <CXX/Objects.hxx>
+#include <Base/Exception.h>
+#include <Base/Interpreter.h>
+#include <App/ExpressionParser.h>
 
-#include "String.h"
-
-#include "DocumentMapper.h"
+#include "RangeComponent.h"
 
 
 FC_LOG_LEVEL_INIT("ObjectPath",true,true)
 
-namespace App::ObjectPath {
+using namespace App::ObjectPath;
 
-DocumentMapper::DocumentMapper(const map_type &map)
+
+void RangeComponent::toString(std::ostream& ss, bool /* toPython */) const
 {
-    assert(!_DocumentMap);
-    _DocumentMap = &map;
+    ss << '[';
+//    if(getBegin() != INT_MAX)
+        ss << getBegin();
+    ss << ':';
+//    if(getEnd() != INT_MAX)
+        ss << getEnd();
+    if(getStep() != 1)
+        ss << ':' << getStep();
+    ss << ']';
 }
 
-DocumentMapper::~DocumentMapper()
+bool RangeComponent::isEqual(const Component& other) const
 {
-    _DocumentMap = nullptr;
+    auto& x = dynamic_cast<const RangeComponent&>(other);
+    return getBegin() == x.getBegin() && getEnd() == x.getEnd() && getStep()==x.getStep();
 }
 
-bool DocumentMapper::hasMap()
+Py::Object RangeComponent::get(const Py::Object& pyobj) const
 {
-    return _DocumentMap;
+    Py::Int v1(getBegin());
+    Py::Int v2(getEnd());
+    Py::Int v3(getStep());
+    PyObject *s = PySlice_New(v1.ptr(), v2.ptr(), v3.ptr());
+    if(!s)
+        throw Py::Exception();
+    Py::Object slice(s,true);
+    PyObject *res = PyObject_GetItem(pyobj.ptr(),slice.ptr());
+    if(!res)
+        throw Py::Exception();
+    return Py::asObject(res);
 }
 
-String DocumentMapper::mapString(const String& from)
+void RangeComponent::set(Py::Object& pyobj, const Py::Object& value) const
 {
-    if(from.empty() || !hasMap())
-        return String();
-
-    auto iter = DocumentMapper::find(from.getString());
-    if(iter != DocumentMapper::end()) {
-        return String(iter->second, from.isRealString(), !from.isRealString());
-    }
-
-    return String();
+    if(pyobj.isMapping())
+        Py::Mapping(pyobj).setItem(Py::Int(getBegin()),value);
+    else
+        Py::Sequence(pyobj).setItem(getBegin(),value);
 }
 
-DocumentMapper::map_type::const_iterator DocumentMapper::find(const std::string& name)
+void RangeComponent::del(Py::Object& pyobj) const
 {
-    assert(_DocumentMap);
-    return _DocumentMap->find(name);
+    if(pyobj.isMapping())
+        Py::Mapping(pyobj).delItem(Py::Int(getBegin()));
+    else
+        PySequence_DelItem(pyobj.ptr(),getBegin());
 }
-
-DocumentMapper::map_type::const_iterator DocumentMapper::end()
-{
-    assert(_DocumentMap);
-    return _DocumentMap->end();
-}
-
-const std::map<std::string,std::string> *DocumentMapper::_DocumentMap;
-
-} // namespace App::ObjectPath

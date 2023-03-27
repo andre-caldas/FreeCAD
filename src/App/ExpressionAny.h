@@ -20,67 +20,31 @@
  *                                                                         *
  ***************************************************************************/
 
-//#include "PreCompiled.h"
+#ifndef EXPRESSION_Any_H
+#define EXPRESSION_Any_H
 
-//#ifndef _PreComp_
-# include <cassert>
-//#endif
-
-#include <string>
-#include <map>
-
-#include <Base/Console.h>
-
-#include "String.h"
-
-#include "DocumentMapper.h"
+// This include is just for App::any.
+// Maybe we should have smaller .h files.
+// Maybe we could have <App/ObjectPath/Defs.h>
+#include <App/ObjectPath/ObjectIdentifier.h>
+#include <FCConfig.h>
 
 
-FC_LOG_LEVEL_INIT("ObjectPath",true,true)
-
-namespace App::ObjectPath {
-
-DocumentMapper::DocumentMapper(const map_type &map)
-{
-    assert(!_DocumentMap);
-    _DocumentMap = &map;
+namespace Base {
+class Quantity;
+}
+namespace App {
+class Expression;
 }
 
-DocumentMapper::~DocumentMapper()
-{
-    _DocumentMap = nullptr;
+namespace App::ExpressionHelper {
+
+AppExport bool isAnyEqual(const App::any &v1, const App::any &v2);
+AppExport Base::Quantity anyToQuantity(const App::any &value, const char *errmsg = nullptr);
+AppExport Base::Quantity pyToQuantity(const Py::Object &pyobj, const Expression *e, const char *msg=nullptr);
+AppExport bool pyToQuantity(Base::Quantity &q, const Py::Object &pyobj);
+AppExport Py::Object pyFromQuantity(const Base::Quantity &quantity);
+
 }
 
-bool DocumentMapper::hasMap()
-{
-    return _DocumentMap;
-}
-
-String DocumentMapper::mapString(const String& from)
-{
-    if(from.empty() || !hasMap())
-        return String();
-
-    auto iter = DocumentMapper::find(from.getString());
-    if(iter != DocumentMapper::end()) {
-        return String(iter->second, from.isRealString(), !from.isRealString());
-    }
-
-    return String();
-}
-
-DocumentMapper::map_type::const_iterator DocumentMapper::find(const std::string& name)
-{
-    assert(_DocumentMap);
-    return _DocumentMap->find(name);
-}
-
-DocumentMapper::map_type::const_iterator DocumentMapper::end()
-{
-    assert(_DocumentMap);
-    return _DocumentMap->end();
-}
-
-const std::map<std::string,std::string> *DocumentMapper::_DocumentMap;
-
-} // namespace App::ObjectPath
+#endif // EXPRESSION_Any_H

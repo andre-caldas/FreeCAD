@@ -1,5 +1,6 @@
 /***************************************************************************
  *   Copyright (c) 2015 Eivind Kvedalen <eivind@kvedalen.name>             *
+ *   Copyright (c) 2023 André Caldas <andre.em.caldas@gmail.com>           *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -26,61 +27,72 @@
 # include <cassert>
 //#endif
 
-#include <string>
-#include <map>
+#include <sstream>
 
 #include <Base/Console.h>
+#include <CXX/Objects.hxx>
+#include <Base/Exception.h>
+#include <Base/Interpreter.h>
+#include <App/ExpressionParser.h>
 
-#include "String.h"
-
-#include "DocumentMapper.h"
+#include "ArrayComponent.h"
 
 
 FC_LOG_LEVEL_INIT("ObjectPath",true,true)
 
-namespace App::ObjectPath {
+using namespace App::ObjectPath;
 
-DocumentMapper::DocumentMapper(const map_type &map)
+
+void ArrayComponent::toString(std::ostream& ss, bool /*toPython*/) const
 {
-    assert(!_DocumentMap);
-    _DocumentMap = &map;
+    ss << "[" << getIndex() << "]";
 }
 
-DocumentMapper::~DocumentMapper()
+bool ArrayComponent::isEqual(const Component& other) const
 {
-    _DocumentMap = nullptr;
+    return dynamic_cast<const ArrayComponent&>(other).getIndex() == getIndex();
 }
 
-bool DocumentMapper::hasMap()
+Py::Object ArrayComponent::get(const Py::Object& pyobj) const
 {
-    return _DocumentMap;
+    auto _index = getIndex();
+    Py::Object res;
+    if(pyobj.isMapping())
+        res = Py::Mapping(pyobj).getItem(Py::Int(_index));
+    else
+        res = Py::Sequence(pyobj).getItem(_index);
+
+    if(!res.ptr())
+        Base::PyException::ThrowException();
+    if(PyModule_Check(res.ptr()) && !ExpressionParser::isModuleImported(res.ptr()))
+        FC_THROWM(Base::RuntimeError, "Module '" /*<< getName() <<*/ "' access denied.");
+    return res;
 }
 
-String DocumentMapper::mapString(const String& from)
+void ArrayComponent::set(Py::Object& pyobj, const Py::Object& value) const
 {
-    if(from.empty() || !hasMap())
-        return String();
+    if(pyobj.isMapping())
+        Py::Mapping(pyobj).setItem(Py::Int(getIndex()),value);
+    else
+        Py::Sequence(pyobj).setItem(getIndex(),value);
+}
 
-    auto iter = DocumentMapper::find(from.getString());
-    if(iter != DocumentMapper::end()) {
-        return String(iter->second, from.isRealString(), !from.isRealString());
+void ArrayComponent::del(Py::Object& pyobj) const
+{
+    if(pyobj.isMapping())
+        Py::Mapping(pyobj).delItem(Py::Int(getIndex()));
+    else
+        PySequence_DelItem(pyobj.ptr(),getIndex());
+}
+
+size_t ArrayComponent::getIndex(int count) const {
+    if(getIndex() >= 0) {
+        if(getIndex() < count)
+            return getIndex();
+    } else {
+        int idx = getIndex() + count;
+        if(idx >= 0)
+            return idx;
     }
-
-    return String();
+    FC_THROWM(Base::IndexError, "Array range out of bound: " << getIndex() << ", " << count);
 }
-
-DocumentMapper::map_type::const_iterator DocumentMapper::find(const std::string& name)
-{
-    assert(_DocumentMap);
-    return _DocumentMap->find(name);
-}
-
-DocumentMapper::map_type::const_iterator DocumentMapper::end()
-{
-    assert(_DocumentMap);
-    return _DocumentMap->end();
-}
-
-const std::map<std::string,std::string> *DocumentMapper::_DocumentMap;
-
-} // namespace App::ObjectPath

@@ -31,8 +31,9 @@
 #include <Base/Writer.h>
 #include <CXX/Objects.hxx>
 
-#include "PropertyExpressionEngine.h"
 #include "ExpressionVisitors.h"
+#include "ExpressionAny.h"
+#include "PropertyExpressionEngine.h"
 
 
 FC_LOG_LEVEL_INIT("App", true);
@@ -41,6 +42,7 @@ using namespace App;
 using namespace Base;
 using namespace boost;
 using namespace boost::placeholders;
+using namespace App::ExpressionHelper;
 
 TYPESYSTEM_SOURCE_ABSTRACT(App::PropertyExpressionContainer , App::PropertyXLinkContainer)
 

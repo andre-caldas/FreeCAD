@@ -25,47 +25,14 @@
 #ifndef EXPRESSION_PARSER_H
 #define EXPRESSION_PARSER_H
 
-#include "Expression.h"
-#include "ObjectPath/String.h"
-
 #include <Base/Matrix.h>
 #include <Base/Quantity.h>
 #include <Base/Vector3D.h>
 
+#include "Expression.h"
+#include "ExpressionComponent.h"
+
 namespace App {
-
-////////////////////////////////////////////////////////////////////////////////////
-// Expecting the extended expression is going to be constantly amended (to
-// conform to Python), we move most of the class declarations here to avoid
-// constant recompiling of the whole FC code base, as the expression header is
-// included by everyone
-///////////////////////////////////////////////////////////////////////////////////
-
-struct AppExport Expression::Component {
-    ObjectIdentifier::Component comp;
-    Expression* e1;
-    Expression* e2;
-    Expression* e3;
-
-    explicit Component(const std::string &n);
-    Component(Expression *e1, Expression *e2, Expression *e3, bool isRange=false);
-    explicit Component(const ObjectIdentifier::Component &comp);
-    Component(const Component &other);
-    ~Component();
-    Component &operator=(const Component &)=delete;
-
-    void visit(ExpressionVisitor &v);
-    bool isTouched() const;
-    void toString(std::ostream &ss, bool persistent) const;
-    Component *copy() const;
-    Component *eval() const;
-
-    Py::Object get(const Expression *owner, const Py::Object &pyobj) const;
-    void set(const Expression *owner, Py::Object &pyobj, const Py::Object &value) const;
-    void del(const Expression *owner, Py::Object &pyobj) const;
-};
-
-////////////////////////////////////////////////////////////////////////////////////
 
 /**
   * Part of an expressions that contains a unit.
@@ -79,7 +46,7 @@ public:
 
     ~UnitExpression() override;
 
-    Expression * simplify() const override;
+    std::unique_ptr<App::Expression> simplify() const override;
 
     void setUnit(const Base::Quantity &_quantity);
 
@@ -96,7 +63,7 @@ public:
     double getScaler() const { return quantity.getValue(); }
 
 protected:
-    Expression * _copy() const override;
+    std::unique_ptr<Expression> _copy() const override;
     void _toString(std::ostream &ss, bool persistent, int indent) const override;
     Py::Object _getPyValue() const override;
 
@@ -117,14 +84,14 @@ class AppExport NumberExpression : public UnitExpression {
 public:
     explicit NumberExpression(const App::DocumentObject *_owner = nullptr, const Base::Quantity & quantity = Base::Quantity());
 
-    Expression * simplify() const override;
+    std::unique_ptr<Expression> simplify() const override;
 
     void negate();
 
     bool isInteger(long *v=nullptr) const;
 
 protected:
-    Expression * _copy() const override;
+    std::unique_ptr<Expression> _copy() const override;
     void _toString(std::ostream &ss, bool persistent, int indent) const override;
 };
 
@@ -142,7 +109,7 @@ public:
 protected:
     Py::Object _getPyValue() const override;
     void _toString(std::ostream &ss, bool persistent, int indent) const override;
-    Expression* _copy() const override;
+    std::unique_ptr<Expression> _copy() const override;
 
 protected:
     const char *name;
@@ -176,22 +143,20 @@ public:
     };
     explicit OperatorExpression(const App::DocumentObject *_owner = nullptr, Expression * _left = nullptr, Operator _op = NONE, Expression * _right = nullptr);
 
-    ~OperatorExpression() override;
-
     bool isTouched() const override;
 
-    Expression * simplify() const override;
+    std::unique_ptr<Expression> simplify() const override;
 
     int priority() const override;
 
     Operator getOperator() const { return op; }
 
-    Expression * getLeft() const { return left; }
+    Expression * getLeft() const { return left.get(); }
 
-    Expression * getRight() const { return right; }
+    Expression * getRight() const { return right.get(); }
 
 protected:
-    Expression * _copy() const override;
+    std::unique_ptr<Expression> _copy() const override;
 
     Py::Object _getPyValue() const override;
 
@@ -206,8 +171,8 @@ protected:
     virtual bool isRightAssociative() const;
 
     Operator op;        /**< Operator working on left and right */
-    Expression * left;  /**< Left operand */
-    Expression * right; /**< Right operand */
+    std::unique_ptr<Expression> left;  /**< Left operand */
+    std::unique_ptr<Expression> right; /**< Right operand */
 };
 
 class AppExport ConditionalExpression : public Expression {
@@ -219,12 +184,12 @@ public:
 
     bool isTouched() const override;
 
-    Expression * simplify() const override;
+    std::unique_ptr<Expression> simplify() const override;
 
     int priority() const override;
 
 protected:
-    Expression * _copy() const override;
+    std::unique_ptr<Expression> _copy() const override;
     void _visit(ExpressionVisitor & v) override;
     void _toString(std::ostream &ss, bool persistent, int indent) const override;
     Py::Object _getPyValue() const override;
@@ -316,16 +281,14 @@ public:
     explicit FunctionExpression(const App::DocumentObject *_owner = nullptr, Function _f = NONE,
             std::string &&name = std::string(), std::vector<Expression *> _args = std::vector<Expression*>());
 
-    ~FunctionExpression() override;
-
     bool isTouched() const override;
 
-    Expression * simplify() const override;
+    std::unique_ptr<Expression> simplify() const override;
 
     static Py::Object evaluate(const Expression *owner, int type, const std::vector<Expression*> &args);
 
     Function getFunction() const {return f;}
-    const std::vector<Expression*> &getArgs() const {return args;}
+    const std::vector<std::unique_ptr<Expression>> &getArgs() const {return args;}
 
 protected:
     static Py::Object evalAggregate(const Expression *owner, int type, const std::vector<Expression*> &args);
@@ -337,13 +300,13 @@ protected:
         const Base::Matrix4D *transformationMatrix);
     static Py::Object translationMatrix(double x, double y, double z);
     Py::Object _getPyValue() const override;
-    Expression * _copy() const override;
+    std::unique_ptr<Expression> _copy() const override;
     void _visit(ExpressionVisitor & v) override;
     void _toString(std::ostream &ss, bool persistent, int indent) const override;
 
     Function f;        /**< Function to execute */
     std::string fname;
-    std::vector<Expression *> args; /** Arguments to function*/
+    std::vector<std::unique_ptr<Expression>> args; /** Arguments to function*/
 };
 
 /**
@@ -363,7 +326,7 @@ public:
 
     bool isTouched() const override;
 
-    Expression * simplify() const override;
+    std::unique_ptr<Expression> simplify() const override;
 
     std::string name() const { return var.getPropertyName(); }
 
@@ -373,10 +336,8 @@ public:
 
     const App::Property *getProperty() const;
 
-    void addComponent(Component* component) override;
-
 protected:
-    Expression * _copy() const override;
+    std::unique_ptr<Expression> _copy() const override;
     Py::Object _getPyValue() const override;
     void _toString(std::ostream &ss, bool persistent, int indent) const override;
     bool _isIndexable() const override;
@@ -415,10 +376,11 @@ public:
 
     void setPyValue(Py::Object pyobj);
     void setPyValue(PyObject *pyobj, bool owned=false);
-    Expression * simplify() const override { return copy(); }
+    // TODO: return std::unique_ptr<Expression>
+    std::unique_ptr<Expression> simplify() const override { return copy(); }
 
 protected:
-    Expression* _copy() const override;
+    std::unique_ptr<Expression> _copy() const override;
     void _toString(std::ostream &ss, bool persistent, int indent) const override;
     Py::Object _getPyValue() const override;
 
@@ -437,11 +399,11 @@ public:
     explicit StringExpression(const App::DocumentObject *_owner = nullptr, const std::string & _text = std::string());
     ~StringExpression() override;
 
-    Expression * simplify() const override;
+    std::unique_ptr<Expression> simplify() const override;
 
     virtual std::string getText() const { return text; }
 protected:
-    Expression * _copy() const override;
+    std::unique_ptr<Expression> _copy() const override;
     void _toString(std::ostream &ss, bool persistent, int indent) const override;
     Py::Object _getPyValue() const override;
     bool _isIndexable() const override { return true; }
@@ -460,12 +422,12 @@ public:
 
     bool isTouched() const override;
 
-    App::Expression * simplify() const override;
+    std::unique_ptr<Expression> simplify() const override;
 
     Range getRange() const;
 
 protected:
-    Expression * _copy() const override;
+    std::unique_ptr<Expression> _copy() const override;
     void _toString(std::ostream &ss, bool persistent, int indent) const override;
     Py::Object _getPyValue() const override;
     void _getIdentifiers(std::map<App::ObjectIdentifier,bool> &) const override;
@@ -507,10 +469,10 @@ public:
     Base::Quantity scaler;
     std::string unitStr;
   } quantity;
-  Expression::Component *component;
+  std::shared_ptr<Component> component;
   Expression * expr;
   ObjectIdentifier path;
-  std::deque<ObjectIdentifier::Component> components;
+  std::deque<std::shared_ptr<Component>> components;
   long long int ivalue;
   double fvalue;
   struct {
@@ -522,7 +484,7 @@ public:
   std::string string;
   std::pair<FunctionExpression::Function,std::string> func;
   ObjectPath::String string_or_identifier;
-  semantic_type() : component(nullptr), expr(nullptr), ivalue(0), fvalue(0)
+  semantic_type() : expr(nullptr), ivalue(0), fvalue(0)
                   , func({FunctionExpression::NONE, std::string()}) {}
 };
 

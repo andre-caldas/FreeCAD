@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (c) 2015 Eivind Kvedalen <eivind@kvedalen.name>             *
+ *   Copyright (c) 2023 André Caldas <andre.em.caldas@gmail.com>           *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -20,67 +20,41 @@
  *                                                                         *
  ***************************************************************************/
 
-//#include "PreCompiled.h"
 
-//#ifndef _PreComp_
-# include <cassert>
-//#endif
+#ifndef APP_ObjectPath_SimpleComponent_H
+#define APP_ObjectPath_SimpleComponent_H
 
-#include <string>
-#include <map>
+#include <utility>
+#include <sstream>
+#include <FCConfig.h>
 
-#include <Base/Console.h>
-
-#include "String.h"
-
-#include "DocumentMapper.h"
+#include "Component.h"
 
 
-FC_LOG_LEVEL_INIT("ObjectPath",true,true)
-
-namespace App::ObjectPath {
-
-DocumentMapper::DocumentMapper(const map_type &map)
+namespace App::ObjectPath
 {
-    assert(!_DocumentMap);
-    _DocumentMap = &map;
-}
 
-DocumentMapper::~DocumentMapper()
+class AppExport SimpleComponent : virtual public Component
 {
-    _DocumentMap = nullptr;
-}
+public:
+    Py::Object get(const Py::Object& pyobj) const override;
+    void set(Py::Object& pyobj, const Py::Object& value) const override;
+    void del(Py::Object& pyobj) const override;
 
-bool DocumentMapper::hasMap()
+    void toString(std::ostream& ss, bool toPython=false) const override;
+    bool isEqual(const Component& other) const override;
+
+    bool isSimple() const override {return true;}
+};
+
+class AppExport SimpleComponentVar : public SimpleComponent
 {
-    return _DocumentMap;
-}
+public:
+    template<typename T>
+    SimpleComponentVar(T&& name) : name(std::forward<T>(name)) {}
+    SimpleComponentVar(const char* name) : name(name) {}
+};
 
-String DocumentMapper::mapString(const String& from)
-{
-    if(from.empty() || !hasMap())
-        return String();
+} // namespace App::Path
 
-    auto iter = DocumentMapper::find(from.getString());
-    if(iter != DocumentMapper::end()) {
-        return String(iter->second, from.isRealString(), !from.isRealString());
-    }
-
-    return String();
-}
-
-DocumentMapper::map_type::const_iterator DocumentMapper::find(const std::string& name)
-{
-    assert(_DocumentMap);
-    return _DocumentMap->find(name);
-}
-
-DocumentMapper::map_type::const_iterator DocumentMapper::end()
-{
-    assert(_DocumentMap);
-    return _DocumentMap->end();
-}
-
-const std::map<std::string,std::string> *DocumentMapper::_DocumentMap;
-
-} // namespace App::ObjectPath
+#endif // APP_ObjectPath_SimpleComponent_H

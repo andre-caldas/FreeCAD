@@ -116,7 +116,7 @@ void String::checkImport(const App::DocumentObject *owner,
             if (restoreLabel) {
                 if (!obj) {
                     std::bitset<32> flags;
-                    obj = ObjectIdentifier::getDocumentObject(owner->getDocument(),*objName,flags);
+                    obj = getDocumentObject(owner->getDocument(),*objName,flags);
                     if (!obj) {
                         FC_ERR("Cannot find object " << objName->toString());
                     }

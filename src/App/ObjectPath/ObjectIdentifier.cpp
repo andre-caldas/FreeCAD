@@ -28,6 +28,7 @@
 
 #include <boost/algorithm/string/predicate.hpp>
 
+#include <Base/Console.h>
 #include <App/DocumentObjectPy.h>
 #include <Base/GeometryPyCXX.h>
 #include <Base/Tools.h>
@@ -77,9 +78,9 @@ ObjectIdentifier::ObjectIdentifier(const App::PropertyContainer * _owner,
         }
     }
     if (!property.empty()) {
-        addComponent(SimpleComponent(property));
+        addComponent(SimpleComponentVar(property));
         if(index!=INT_MAX)
-            addComponent(ArrayComponent(index));
+            addComponent(ArrayComponentVar(index));
     }
 }
 
@@ -121,9 +122,9 @@ ObjectIdentifier::ObjectIdentifier(const Property &prop, int index)
 
     setDocumentObjectName(docObj);
 
-    addComponent(SimpleComponent(String(prop.getName())));
+    addComponent(SimpleComponentVar(String(prop.getName())));
     if(index!=INT_MAX)
-        addComponent(ArrayComponent(index));
+        addComponent(ArrayComponentVar(index));
 }
 
 /**
@@ -131,13 +132,13 @@ ObjectIdentifier::ObjectIdentifier(const Property &prop, int index)
  * @return Name
  */
 
-std::string App::ObjectIdentifier::getPropertyName() const
+std::string ObjectIdentifier::getPropertyName() const
 {
     ResolveResults result(*this);
 
     assert(result.propertyIndex >=0 && static_cast<std::size_t>(result.propertyIndex) < components.size());
 
-    return components[result.propertyIndex].getName();
+    return components.at(result.propertyIndex)->getName();
 }
 
 /**
@@ -147,40 +148,31 @@ std::string App::ObjectIdentifier::getPropertyName() const
  * @return A component.
  */
 
-const App::ObjectIdentifier::Component &App::ObjectIdentifier::getPropertyComponent(int i, int *idx) const
+const ObjectPath::Component &ObjectIdentifier::getPropertyComponent(int i, int *idx) const
 {
     ResolveResults result(*this);
 
     i += result.propertyIndex;
-    if (i < 0 || i >= static_cast<int>(components.size()))
-        FC_THROWM(Base::ValueError, "Invalid property component index");
-
     if (idx)
         *idx = i;
 
-    return components[i];
+    return *(components.at(i));
 }
 
-void App::ObjectIdentifier::setComponent(int idx, Component &&comp)
+template<typename CompRef>
+void App::ObjectIdentifier::setComponent(int idx, CompRef &&comp)
 {
-    if (idx < 0 || idx >= static_cast<int>(components.size()))
-        FC_THROWM(Base::ValueError, "Invalid component index");
-    components[idx] = std::move(comp);
+    components.at(idx) = std::move<CompRef>(comp);
     _cache.clear();
 }
 
-void App::ObjectIdentifier::setComponent(int idx, const Component &comp)
-{
-    setComponent(idx, Component(comp));
-}
-
-std::vector<ObjectIdentifier::Component> ObjectIdentifier::getPropertyComponents() const {
+std::vector<ObjectIdentifier::ComponentRef> ObjectIdentifier::getPropertyComponents() const {
     if(components.size()<=1 || documentObjectName.getString().empty())
         return components;
     ResolveResults result(*this);
     if(result.propertyIndex==0)
         return components;
-    std::vector<ObjectIdentifier::Component> res;
+    std::vector<ObjectIdentifier::ComponentRef> res;
     res.insert(res.end(),components.begin()+result.propertyIndex,components.end());
     return res;
 }
@@ -251,12 +243,12 @@ bool ObjectIdentifier::verify(const App::Property &prop, bool silent) const {
             return false;
         FC_THROWM(Base::ValueError,"Invalid property path: single component expected");
     }
-    if(!components[result.propertyIndex].isSimple()) {
+    if(!components.at(result.propertyIndex)->isSimple()) {
         if(silent)
             return false;
         FC_THROWM(Base::ValueError,"Invalid property path: simple component expected");
     }
-    const std::string &name = components[result.propertyIndex].getName();
+    const std::string &name = components.at(result.propertyIndex)->getName();
     CellAddress addr;
     bool isAddress = addr.parseAbsoluteAddress(name.c_str());
     if((isAddress && addr.toString(CellAddress::Cell::ShowRowColumn) != prop.getName()) ||
@@ -294,7 +286,7 @@ const std::string &ObjectIdentifier::toString() const
        (result.resolvedProperty &&
         result.resolvedDocumentObject==owner &&
         components.size()>1 &&
-        components[1].isSimple() &&
+        components.at(1)->isSimple() &&
         result.propertyIndex==0))
     {
         s << '.';
@@ -308,14 +300,14 @@ const std::string &ObjectIdentifier::toString() const
     } else if (documentObjectNameSet && !documentObjectName.getString().empty()) {
         s << documentObjectName.toString() << '.';
     } else if (result.propertyIndex > 0) {
-        components[0].toString(s);
+        components.at(0)->toString(s);
         s << '.';
     }
 
     if(!subObjectName.getString().empty())
         s << subObjectName.toString() << '.';
 
-    s << components[result.propertyIndex].getName();
+    s << components.at(result.propertyIndex)->getName();
     getSubPathStr(s,result);
     const_cast<ObjectIdentifier*>(this)->_cache = s.str();
     return _cache;
@@ -336,7 +328,7 @@ std::string ObjectIdentifier::toPersistentString() const {
        (result.resolvedProperty &&
         result.resolvedDocumentObject==owner &&
         components.size()>1 &&
-        components[1].isSimple() &&
+        components.at(1)->isSimple() &&
         result.propertyIndex==0))
     {
         s << '.';
@@ -358,7 +350,7 @@ std::string ObjectIdentifier::toPersistentString() const {
     } else if (documentObjectNameSet && !documentObjectName.getString().empty()) {
         s << documentObjectName.toString() << '.';
     } else if (result.propertyIndex > 0) {
-        components[0].toString(s);
+        components.at(0)->toString(s);
         s << '.';
     }
 
@@ -369,7 +361,7 @@ std::string ObjectIdentifier::toPersistentString() const {
                         result.resolvedDocumentObject,subname),true).toString() << '.';
     }
 
-    s << components[result.propertyIndex].getName();
+    s << components.at(result.propertyIndex)->getName();
     getSubPathStr(s,result);
     return s.str();
 }
@@ -469,21 +461,21 @@ bool ObjectIdentifier::updateLabelReference(
         result.resolvedDocumentObjectName.isRealString() &&
         result.resolvedDocumentObjectName.getString()==obj->Label.getValue())
     {
-        components[0].name = ObjectPath::String(newLabel, true);
+        components.at(0)->setName(ObjectPath::String(newLabel, true));
         _cache.clear();
         return true;
     }
 
     // If object identifier uses the label then resolving the document object will fail.
     // So, it must be checked if using the new label will succeed
-    if (components.size()>1 && components[0].getName()==obj->Label.getValue()) {
+    if (components.size()>1 && components.at(0)->getName()==obj->Label.getValue()) {
         ObjectIdentifier id(*this);
-        id.components[0].name.str = newLabel;
+        id.components.at(0)->name.str = newLabel;
 
         ResolveResults result(id);
 
         if (result.propertyIndex == 1 && result.resolvedDocumentObject == obj) {
-            components[0].name = id.components[0].name;
+            components.at(0)->name = id.components.at(0)->name;
             _cache.clear();
             return true;
         }
@@ -527,312 +519,11 @@ std::string ObjectIdentifier::getSubPathStr(bool toPython) const {
 }
 
 
-/**
- * @brief Construct a Component part
- * @param _name Name of component
- * @param _type Type; simple, array, range or map
- * @param _begin Array index or beginning of a Range, or INT_MAX for other type.
- * @param _end ending of a Range, or INT_MAX for other type.
- */
-
-ObjectIdentifier::Component::Component(const String &_name,
-        ObjectIdentifier::Component::typeEnum _type, int _begin, int _end, int _step)
-    : name(_name)
-    , type(_type)
-    , begin(_begin)
-    , end(_end)
-    , step(_step)
-{
-}
-
-ObjectIdentifier::Component::Component(String &&_name,
-        ObjectIdentifier::Component::typeEnum _type, int _begin, int _end, int _step)
-    : name(std::move(_name))
-    , type(_type)
-    , begin(_begin)
-    , end(_end)
-    , step(_step)
-{
-}
-
-
-size_t ObjectIdentifier::Component::getIndex(size_t count) const {
-    if(begin>=0) {
-        if(begin<(int)count)
-            return begin;
-    }else {
-        int idx = begin + (int)count;
-        if(idx >= 0)
-            return idx;
-    }
-    FC_THROWM(Base::IndexError, "Array out of bound: " << begin << ", " << count);
-}
-
-Py::Object ObjectIdentifier::Component::get(const Py::Object &pyobj) const {
-    Py::Object res;
-    if(isSimple()) {
-        if(!pyobj.hasAttr(getName()))
-            FC_THROWM(Base::AttributeError, "No attribute named '" << getName() << "'");
-        res = pyobj.getAttr(getName());
-    } else if(isArray()) {
-        if(pyobj.isMapping())
-            res = Py::Mapping(pyobj).getItem(Py::Int(begin));
-        else
-            res = Py::Sequence(pyobj).getItem(begin);
-    }else if(isMap())
-        res = Py::Mapping(pyobj).getItem(getName());
-    else {
-        assert(isRange());
-        Py::Object slice(PySlice_New(Py::Int(begin).ptr(),
-                                    end!=INT_MAX?Py::Int(end).ptr():nullptr,
-                                    step!=1?Py::Int(step).ptr():nullptr),true);
-        PyObject *r = PyObject_GetItem(pyobj.ptr(),slice.ptr());
-        if(!r)
-            Base::PyException::ThrowException();
-        res = Py::asObject(r);
-    }
-    if(!res.ptr())
-        Base::PyException::ThrowException();
-    if(PyModule_Check(res.ptr()) && !ExpressionParser::isModuleImported(res.ptr()))
-        FC_THROWM(Base::RuntimeError, "Module '" << getName() << "' access denied.");
-    return res;
-}
-
-void ObjectIdentifier::Component::set(Py::Object &pyobj, const Py::Object &value) const {
-    if(isSimple()) {
-        if(PyObject_SetAttrString(*pyobj, getName().c_str(), *value ) == -1)
-            Base::PyException::ThrowException();
-    } else if(isArray()) {
-        if(pyobj.isMapping())
-            Py::Mapping(pyobj).setItem(Py::Int(begin),value);
-        else
-            Py::Sequence(pyobj).setItem(begin,value);
-    }else if(isMap())
-        Py::Mapping(pyobj).setItem(getName(),value);
-    else {
-        assert(isRange());
-        Py::Object slice(PySlice_New(Py::Int(begin).ptr(),
-                                    end!=INT_MAX?Py::Int(end).ptr():nullptr,
-                                    step!=1?Py::Int(step).ptr():nullptr),true);
-        if(PyObject_SetItem(pyobj.ptr(),slice.ptr(),value.ptr())<0)
-            Base::PyException::ThrowException();
-    }
-}
-
-void ObjectIdentifier::Component::del(Py::Object &pyobj) const {
-    if(isSimple())
-        pyobj.delAttr(getName());
-    else if(isArray()) {
-        if(pyobj.isMapping())
-            Py::Mapping(pyobj).delItem(Py::Int(begin));
-        else
-            PySequence_DelItem(pyobj.ptr(),begin);
-    } else if(isMap())
-        Py::Mapping(pyobj).delItem(getName());
-    else {
-        assert(isRange());
-        Py::Object slice(PySlice_New(Py::Int(begin).ptr(),
-                                    end!=INT_MAX?Py::Int(end).ptr():nullptr,
-                                    step!=1?Py::Int(step).ptr():nullptr),true);
-        if(PyObject_DelItem(pyobj.ptr(),slice.ptr())<0)
-            Base::PyException::ThrowException();
-    }
-}
-
-/**
- * @brief Create a simple component part with the given name
- * @param _component Name of component.
- * @return A new Component object.
- */
-
-ObjectIdentifier::Component ObjectIdentifier::Component::SimpleComponent(const char *_component)
-{
-    return Component(String(_component));
-}
-
-/**
- * @brief Create a simple component part with the given name
- * @param _component Name of component.
- * @return A new Component object.
- */
-
-ObjectIdentifier::Component ObjectIdentifier::Component::SimpleComponent(const ObjectPath::String &_component)
-{
-    return Component(_component);
-}
-
-ObjectIdentifier::Component ObjectIdentifier::Component::SimpleComponent(ObjectPath::String &&_component)
-{
-    return Component(std::move(_component));
-}
-
-/**
- * @brief Create an array component with given name and index.
- * @param _component Name of component
- * @param _index Index of component
- * @return A new Component object.
- */
-
-ObjectIdentifier::Component ObjectIdentifier::Component::ArrayComponent(int _index)
-{
-    return Component(String(), Component::ARRAY, _index);
-}
-
-/**
- * @brief Create a map component with given name and key.
- * @param _component Name of component
- * @param _key Key of component
- * @return A new Component object.
- */
-
-ObjectIdentifier::Component ObjectIdentifier::Component::MapComponent(const String & _key)
-{
-    return Component(_key, Component::MAP);
-}
-
-ObjectIdentifier::Component ObjectIdentifier::Component::MapComponent(String &&_key)
-{
-    return Component(std::move(_key), Component::MAP);
-}
-
-
-/**
- * @brief Create a range component with given begin and end.
- * @param _begin beginning index of the range
- * @param _end ending index of the range
- * @return A new Component object.
- */
-
-ObjectIdentifier::Component ObjectIdentifier::Component::RangeComponent(int _begin, int _end, int _step)
-{
-    return Component(String(), Component::RANGE, _begin, _end, _step);
-}
-
-/**
- * @brief Comparison operator for Component objects.
- * @param other The object we want to compare to.
- * @return true if they are equal, false if not.
- */
-
-bool ObjectIdentifier::Component::operator ==(const ObjectIdentifier::Component &other) const
-{
-    if (type != other.type)
-        return false;
-
-    switch (type) {
-    case SIMPLE:
-    case MAP:
-        return name == other.name;
-    case ARRAY:
-        return begin == other.begin;
-    case RANGE:
-        return begin == other.begin && end == other.end && step==other.step;
-    default:
-        assert(0);
-        return false;
-    }
-}
-
-/**
- * @brief Create a string representation of a component.
- * @return A string representing the component.
- */
-
-void ObjectIdentifier::Component::toString(std::ostream &ss, bool toPython) const
-{
-    switch (type) {
-    case Component::SIMPLE:
-        ss << name.getString();
-        break;
-    case Component::MAP:
-        ss << "[" << name.toString(toPython) << "]";
-        break;
-    case Component::ARRAY:
-        ss << "[" << begin << "]";
-        break;
-    case Component::RANGE:
-        ss << '[';
-        if(begin!=INT_MAX)
-            ss << begin;
-        ss << ':';
-        if(end!=INT_MAX)
-            ss << end;
-        if(step!=1)
-            ss << ':' << step;
-        ss << ']';
-        break;
-    default:
-        assert(0);
-    }
-}
-
 enum ResolveFlags {
     ResolveByIdentifier,
     ResolveByLabel,
     ResolveAmbiguous,
 };
-
-/**
- * @brief Search for the document object given by name in doc.
- *
- * Name might be the internal name or a label. In any case, it must uniquely define
- * the document object.
- *
- * @param doc Document to search
- * @param name Name to search for.
- * @return Pointer to document object if a unique pointer is found, 0 otherwise.
- */
-
-App::DocumentObject * ObjectIdentifier::getDocumentObject(const App::Document * doc,
-        const String & name, std::bitset<32> &flags)
-{
-    DocumentObject * objectById = nullptr;
-    DocumentObject * objectByLabel = nullptr;
-
-    if(!name.isRealString()) {
-        // No object found with matching label, try using name directly
-        objectById = doc->getObject(static_cast<const char*>(name));
-
-        if (objectById) {
-            flags.set(ResolveByIdentifier);
-            return objectById;
-        }
-        if(name.isForceIdentifier())
-            return nullptr;
-    }
-
-    std::vector<DocumentObject*> docObjects = doc->getObjects();
-    for (std::vector<DocumentObject*>::iterator j = docObjects.begin(); j != docObjects.end(); ++j) {
-        if (strcmp((*j)->Label.getValue(), static_cast<const char*>(name)) == 0) {
-            // Found object with matching label
-            if (objectByLabel)  {
-                FC_WARN("duplicate object label " << doc->getName() << '#' << static_cast<const char*>(name));
-                return nullptr;
-            }
-            objectByLabel = *j;
-        }
-    }
-
-    if (!objectByLabel && !objectById) // Not found at all
-        return nullptr;
-    else if (!objectByLabel) { // Found by name
-        flags.set(ResolveByIdentifier);
-        return objectById;
-    }
-    else if (!objectById) { // Found by label
-        flags.set(ResolveByLabel);
-        return objectByLabel;
-    }
-    else if (objectByLabel == objectById) { // Found by both name and label, same object
-        flags.set(ResolveByIdentifier);
-        flags.set(ResolveByLabel);
-        return objectByLabel;
-    }
-    else {
-        flags.set(ResolveAmbiguous);
-        return nullptr; // Found by both name and label, two different objects
-    }
-}
 
 /**
  * @brief Resolve the object identifier to a concrete document, documentobject, and property.
@@ -880,7 +571,7 @@ void ObjectIdentifier::resolve(ResolveResults &results) const
     /* Document object name specified? */
     if (!documentObjectName.getString().empty()) {
         results.resolvedDocumentObjectName = documentObjectName;
-        results.resolvedDocumentObject = getDocumentObject(
+        results.resolvedDocumentObject = DocumentPath::getDocumentObject(
                 results.resolvedDocument, documentObjectName, results.flags);
         if (!results.resolvedDocumentObject)
             return;
@@ -888,7 +579,7 @@ void ObjectIdentifier::resolve(ResolveResults &results) const
         if (components.empty())
             return;
 
-        results.propertyName = components[ 0 ].name.getString();
+        results.propertyName = components.at(0)->name.getString();
         results.propertyIndex = 0;
         results.getProperty( *this );
     }
@@ -896,30 +587,30 @@ void ObjectIdentifier::resolve(ResolveResults &results) const
         /* Document object name not specified, resolve from path */
 
         /* One component? */
-        if (components.size() == 1 || (components.size()>1 && !components[0].isSimple())) {
+        if (components.size() == 1 || (components.size()>1 && !components.at(0)->isSimple())) {
             /* Yes -- then this must be a property, so we get the document object's name from the owner */
             results.resolvedDocumentObjectName = String(owner->getNameInDocument(), false, true);
             results.resolvedDocumentObject = owner;
-            results.propertyName = components[0].name.getString();
+            results.propertyName = components.at(0)->name.getString();
             results.propertyIndex = 0;
             results.getProperty(*this);
         }
         else if (components.size() >= 2) {
             /* No --  */
-            if (!components[0].isSimple())
+            if (!components.at(0)->isSimple())
                 return;
 
             results.resolvedDocumentObject = getDocumentObject(
-                    results.resolvedDocument, components[0].name, results.flags);
+                    results.resolvedDocument, components.at(0)->name, results.flags);
 
             /* Possible to resolve component to a document object? */
             if (results.resolvedDocumentObject) {
                 /* Yes */
                 results.resolvedDocumentObjectName = String {
-                        components[0].name.getString(),
+                        components.at(0)->name.getString(),
                         false,
                         results.flags.test(ResolveByIdentifier)};
-                results.propertyName = components[1].name.getString();
+                results.propertyName = components.at(1)->name.getString();
                 results.propertyIndex = 1;
                 results.getProperty(*this);
                 if(!results.resolvedProperty) {
@@ -928,11 +619,11 @@ void ObjectIdentifier::resolve(ResolveResults &results) const
                     DocumentObject *sobj = nullptr;
                     results.resolvedProperty = resolveProperty(
                             owner,
-                            components[0].name.toString().c_str(),
+                            components.at(0)->name.toString().c_str(),
                             sobj,
                             results.propertyType);
                     if(results.resolvedProperty) {
-                        results.propertyName = components[0].name.getString();
+                        results.propertyName = components.at(0)->name.getString();
                         results.resolvedDocument = owner->getDocument();
                         results.resolvedDocumentName = String(results.resolvedDocument->getName(), false, true);
                         results.resolvedDocumentObjectName = String(owner->getNameInDocument(), false, true);
@@ -949,7 +640,7 @@ void ObjectIdentifier::resolve(ResolveResults &results) const
                 results.resolvedDocumentObjectName = String(owner->getNameInDocument(), false, true);
                 results.resolvedDocumentObject = owner->getDocument()->getObject(owner->getNameInDocument());
                 results.propertyIndex = 0;
-                results.propertyName = components[results.propertyIndex].name.getString();
+                results.propertyName = components.at(results.propertyIndex)->name.getString();
                 results.getProperty(*this);
             }
         }
@@ -1023,7 +714,7 @@ DocumentObject *ObjectIdentifier::getDocumentObject() const
 
     ResolveResults result(*this);
 
-    return getDocumentObject(doc, result.resolvedDocumentObjectName, dummy);
+    return ObjectPath::getDocumentObject(doc, result.resolvedDocumentObjectName, dummy);
 }
 
 
@@ -1056,7 +747,7 @@ void ObjectIdentifier::getDepLabels(
         if(documentObjectName.isRealString())
             labels.push_back(documentObjectName.getString());
     } else if(result.propertyIndex == 1)
-        labels.push_back(components[0].name.getString());
+        labels.push_back(components.at(0)->name.getString());
     if(!subObjectName.getString().empty())
         PropertyLinkBase::getLabelReferences(labels,subObjectName.getString().c_str());
 }
@@ -1150,7 +841,7 @@ ObjectIdentifier ObjectIdentifier::relativeTo(const ObjectIdentifier &other) con
                 std::move(thisresult.resolvedDocumentObjectName), true, String(subObjectName));
 
     for (std::size_t i = thisresult.propertyIndex; i < components.size(); ++i)
-        result << components[i];
+        result << components.at(i);
 
     return result;
 }
@@ -1189,16 +880,10 @@ std::string ObjectIdentifier::resolveErrorString() const
  * @return Reference to itself.
  */
 
-ObjectIdentifier &ObjectIdentifier::operator <<(const ObjectIdentifier::Component &value)
+template<typename CompRef>
+ObjectIdentifier &ObjectIdentifier::operator <<(CompRef&& value)
 {
-    components.push_back(value);
-    _cache.clear();
-    return *this;
-}
-
-ObjectIdentifier &ObjectIdentifier::operator <<(ObjectIdentifier::Component &&value)
-{
-    components.push_back(std::move(value));
+    components.push_back(std::forward<CompRef>(value));
     _cache.clear();
     return *this;
 }
@@ -1300,22 +985,11 @@ void ObjectIdentifier::setDocumentName(ObjectPath::String &&name, bool force)
         force = false;
     documentNameSet = force;
     _cache.clear();
-    if(!name.getString().empty() && DocumentMapper::hasMap()) {
-        if(name.isRealString()) {
-            auto iter = DocumentMapper::find(name.toString());
-            if(iter != DocumentMapper::end()) {
-                documentName = String(iter->second,true);
-                return;
-            }
-        }else{
-            auto iter = DocumentMapper::find(name.getString());
-            if(iter != DocumentMapper::end()) {
-                documentName = String(iter->second,false,true);
-                return;
-            }
-        }
+    documentName = DocumentMapper::mapString(name);
+    if(documentName.empty())
+    {
+        documentName = std::move(name);
     }
-    documentName = std::move(name);
 }
 
 /**
@@ -1606,17 +1280,17 @@ Py::Object ObjectIdentifier::access(const ResolveResults &result,
         if(PyObject_TypeCheck(*pyobj, &DocumentObjectPy::Type))
             lastObj = static_cast<DocumentObjectPy*>(*pyobj)->getDocumentObjectPtr();
         else if(lastObj) {
-            const char *attr = components[idx].getName().c_str();
+            const char *attr = components.at(idx)->getName().c_str();
             auto prop = lastObj->getPropertyByName(attr);
             if(!prop && !pyobj.hasAttr(attr))
                 attr = nullptr;
             setPropDep(lastObj,prop,attr);
             lastObj = nullptr;
         }
-        pyobj = components[idx].get(pyobj);
+        pyobj = components.at(idx)->get(pyobj);
     }
     if(value) {
-        components[idx].set(pyobj,*value);
+        components.at(idx)->set(pyobj,*value);
         return Py::Object();
     }
     return pyobj;
@@ -1644,7 +1318,7 @@ App::any ObjectIdentifier::getValue(bool pathValue, bool *isPseudoProperty) cons
         if(rs.propertyType == PseudoSelf
                 && isLocalProperty()
                 && rs.propertyIndex+1 < (int)components.size()
-                && owner->getPropertyByName(components[rs.propertyIndex+1].getName().c_str()))
+                && owner->getPropertyByName(components.at(rs.propertyIndex+1].getName().c_str()))
         {
             *isPseudoProperty = false;
         }
@@ -1671,7 +1345,7 @@ Py::Object ObjectIdentifier::getPyValue(bool pathValue, bool *isPseudoProperty) 
         if(rs.propertyType == PseudoSelf
                 && isLocalProperty()
                 && rs.propertyIndex+1 < (int)components.size()
-                && owner->getPropertyByName(components[rs.propertyIndex+1].getName().c_str()))
+                && owner->getPropertyByName(components.at(rs.propertyIndex+1)->getName().c_str()))
         {
             *isPseudoProperty = false;
         }
@@ -1901,3 +1575,64 @@ void ObjectIdentifier::ResolveResults::getProperty(const ObjectIdentifier &oi) {
             resolvedDocumentObject,propertyName.c_str(),resolvedSubObject,propertyType);
 }
 
+/**
+ * @brief Search for the document object given by name in doc.
+ *
+ * Name might be the internal name or a label. In any case, it must uniquely define
+ * the document object.
+ *
+ * @param doc Document to search
+ * @param name Name to search for.
+ * @return Pointer to document object if a unique pointer is found, 0 otherwise.
+ */
+
+App::DocumentObject * ObjectPath::getDocumentObject(const App::Document * doc,
+        const String & name, std::bitset<32> &flags)
+{
+    DocumentObject * objectById = nullptr;
+    DocumentObject * objectByLabel = nullptr;
+
+    if(!name.isRealString()) {
+        // No object found with matching label, try using name directly
+        objectById = doc->getObject(static_cast<const char*>(name));
+
+        if (objectById) {
+            flags.set(ResolveByIdentifier);
+            return objectById;
+        }
+        if(name.isForceIdentifier())
+            return nullptr;
+    }
+
+    std::vector<DocumentObject*> docObjects = doc->getObjects();
+    for (std::vector<DocumentObject*>::iterator j = docObjects.begin(); j != docObjects.end(); ++j) {
+        if (strcmp((*j)->Label.getValue(), static_cast<const char*>(name)) == 0) {
+            // Found object with matching label
+            if (objectByLabel)  {
+                FC_WARN("duplicate object label " << doc->getName() << '#' << static_cast<const char*>(name));
+                return nullptr;
+            }
+            objectByLabel = *j;
+        }
+    }
+
+    if (!objectByLabel && !objectById) // Not found at all
+        return nullptr;
+    else if (!objectByLabel) { // Found by name
+        flags.set(ResolveByIdentifier);
+        return objectById;
+    }
+    else if (!objectById) { // Found by label
+        flags.set(ResolveByLabel);
+        return objectByLabel;
+    }
+    else if (objectByLabel == objectById) { // Found by both name and label, same object
+        flags.set(ResolveByIdentifier);
+        flags.set(ResolveByLabel);
+        return objectByLabel;
+    }
+    else {
+        flags.set(ResolveAmbiguous);
+        return nullptr; // Found by both name and label, two different objects
+    }
+}

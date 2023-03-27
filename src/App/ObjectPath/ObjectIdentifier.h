@@ -24,11 +24,13 @@
 #ifndef APP_ObjectIdentifier_H
 #define APP_ObjectIdentifier_H
 
+#include <utility>
 #include <bitset>
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
+#include <memory>
 #include <boost/any.hpp>
 #include <FCConfig.h>
 
@@ -61,133 +63,15 @@ class Document;
 class PropertyContainer;
 class DocumentObject;
 class ExpressionVisitor;
+namespace ObjectPath {
+class String;
+class Component;
+}
 
-// Unfortunately VS2013 does not support default move constructor, so we have
-// to implement them manually
-#define FC_DEFAULT_CTORS(_t) \
-    _t(const _t &) = default;\
-    _t &operator=(const _t &) = default;\
-    _t(_t &&other) { *this = std::move(other); }\
-    _t &operator=(_t &&other)
 
 class AppExport ObjectIdentifier {
 
 public:
-    friend class App::ObjectPath::String;
-
-    /**
-     * @brief A component is a part of a Path object, and is used to either
-     * name a property or a field within a property. A component can be either
-     * a single entry, and array, or a map to other sub-fields.
-     */
-
-    class AppExport Component {
-
-    private:
-
-        enum typeEnum {
-            SIMPLE,
-            MAP,
-            ARRAY,
-            RANGE,
-        } ;
-
-    public:
-
-        // Constructors
-        FC_DEFAULT_CTORS(Component) {
-            name = std::move(other.name);
-            type = other.type;
-            begin = other.begin;
-            end = other.end;
-            step = other.step;
-            return *this;
-        }
-
-        Component(const String &_name = String(), typeEnum _type=SIMPLE,
-                int begin=INT_MAX, int end=INT_MAX, int step=1);//explicit bombs
-        Component(String &&_name, typeEnum _type=SIMPLE,
-                int begin=INT_MAX, int end=INT_MAX, int step=1);//explicit bombs
-
-        static Component SimpleComponent(const char * _component);
-
-        static Component SimpleComponent(const String & _component);
-        static Component SimpleComponent(String &&_component);
-
-        static Component ArrayComponent(int _index);
-
-        static Component RangeComponent(int _begin, int _end = INT_MAX, int _step=1);
-
-        static Component MapComponent(const String &_key);
-        static Component MapComponent(String &&_key);
-
-        // Type queries
-
-        bool isSimple() const { return type == SIMPLE; }
-
-        bool isMap() const { return type == MAP; }
-
-        bool isArray() const { return type == ARRAY; }
-
-        bool isRange() const { return type == RANGE; }
-
-        // Accessors
-
-        void toString(std::ostream &ss, bool toPython=false) const;
-
-        const std::string &getName() const { return name.getString(); }
-
-        int getIndex() const {return begin;}
-        size_t getIndex(size_t count) const;
-
-        int getBegin() const { return begin; }
-        int getEnd() const { return end; }
-        int getStep() const { return step; }
-
-        // Operators
-
-        bool operator==(const Component & other) const;
-        bool operator<(const Component & other) const;
-
-        Py::Object get(const Py::Object &pyobj) const;
-        void set(Py::Object &pyobj, const Py::Object &value) const;
-        void del(Py::Object &pyobj) const;
-
-    private:
-
-        String name;
-        typeEnum type;
-        int begin;
-        int end;
-        int step;
-        friend class ObjectIdentifier;
-
-    };
-
-    static Component SimpleComponent(const char * _component)
-        {return Component::SimpleComponent(_component);}
-
-    static Component SimpleComponent(const String & _component)
-        {return Component::SimpleComponent(_component);}
-
-    static Component SimpleComponent(String &&_component)
-        {return Component::SimpleComponent(std::move(_component));}
-
-   static Component SimpleComponent(const std::string _component)
-        {return Component::SimpleComponent(_component.c_str());}
-
-    static Component ArrayComponent(int _index)
-        {return Component::ArrayComponent(_index); }
-
-    static Component RangeComponent(int _begin, int _end = INT_MAX, int _step=1)
-        {return Component::RangeComponent(_begin,_end,_step);}
-
-    static Component MapComponent(const String &_key)
-        {return Component::MapComponent(_key);}
-
-    static Component MapComponent(String &&_key)
-        {return Component::MapComponent(_key);}
-
     explicit ObjectIdentifier(const App::PropertyContainer * _owner = nullptr,
             const std::string & property = std::string(), int index=INT_MAX);
 
@@ -195,49 +79,27 @@ public:
 
     ObjectIdentifier(const App::Property & prop, int index=INT_MAX);//explicit bombs
 
-    FC_DEFAULT_CTORS(ObjectIdentifier) {
-        owner = other.owner;
-        documentName = std::move(other.documentName);
-        documentObjectName = std::move(other.documentObjectName);
-        subObjectName = std::move(other.subObjectName);
-        shadowSub = std::move(other.shadowSub);
-        components = std::move(other.components);
-        documentNameSet = other.documentNameSet;
-        documentObjectNameSet = other.documentObjectNameSet;
-        localProperty = other.localProperty;
-        _cache = std::move(other._cache);
-        _hash = other._hash;
-        return *this;
-    }
-
     virtual ~ObjectIdentifier() = default;
 
     App::DocumentObject *getOwner() const { return owner; }
 
     // Components
-    void addComponent(const Component &c) {
-        components.push_back(c);
-        _cache.clear();
-    }
-
-    // Components
-    void addComponent(Component &&c) {
-        components.push_back(std::move(c));
+    using ComponentRef = std::shared_ptr<Component>;
+    template<typename CompRef>
+    void addComponent(CompRef &&c) {
+        components.push_back(std::forward<CompRef>(c));
         _cache.clear();
     }
 
     std::string getPropertyName() const;
 
-    template<typename C>
-    void addComponents(const C &cs) { components.insert(components.end(), cs.begin(), cs.end()); }
-
     const Component & getPropertyComponent(int i, int *idx=nullptr) const;
 
-    void setComponent(int idx, Component &&comp);
-    void setComponent(int idx, const Component &comp);
+    template<typename CompRef>
+    void setComponent(int idx, CompRef &&comp);
 
-    std::vector<Component> getPropertyComponents() const;
-    const std::vector<Component> &getComponents() const { return components; }
+    std::vector<ComponentRef> getPropertyComponents() const;
+    const std::vector<ComponentRef> &getComponents() const { return components; }
 
     std::string getSubPathStr(bool toPython=false) const;
 
@@ -338,8 +200,8 @@ public:
 
     // Operators
 
-    App::ObjectIdentifier & operator<<(const Component & value);
-    App::ObjectIdentifier & operator<<(Component &&value);
+    template<typename CompRef>
+    ObjectIdentifier & operator<<(CompRef&& value);
 
     bool operator==(const ObjectIdentifier & other) const;
 
@@ -407,10 +269,7 @@ protected:
             Py::Object *value=nullptr, Dependencies *deps=nullptr) const;
 
     void resolve(ResolveResults & results) const;
-    void resolveAmbiguity(ResolveResults &results);
-
-    static App::DocumentObject *getDocumentObject(
-            const App::Document *doc, const String &name, std::bitset<32> &flags);
+    void resolveAmbiguity(ResolveResults & results);
 
     void getDepLabels(const ResolveResults &result, std::vector<std::string> &labels) const;
 
@@ -419,7 +278,7 @@ protected:
     String  documentObjectName;
     String  subObjectName;
     std::pair<std::string,std::string> shadowSub;
-    std::vector<Component> components;
+    std::vector<std::shared_ptr<Component>> components;
     bool documentNameSet;
     bool documentObjectNameSet;
     bool localProperty;
@@ -442,7 +301,15 @@ inline std::size_t hash_value(const App::ObjectIdentifier & path) {
 App::any AppExport pyObjectToAny(Py::Object pyobj, bool check=true);
 Py::Object AppExport pyObjectFromAny(const App::any &value);
 //@}
-}
+
+namespace ObjectPath {
+App::DocumentObject *getDocumentObject(const Document *doc,
+                                       const String &name,
+                                       std::bitset<32> &flags);
+
+} // namespace ObjectPath
+
+} // namespace App
 
 namespace std {
 
@@ -454,6 +321,7 @@ struct hash<App::ObjectIdentifier> {
         return s.hash();
     }
 };
-}
+
+} //namespace std
 
 #endif // APP_ObjectIdentifier_H

@@ -1,5 +1,6 @@
 /***************************************************************************
  *   Copyright (c) 2015 Eivind Kvedalen <eivind@kvedalen.name>             *
+ *   Copyright (c) 2023 André Caldas <andre.em.caldas@gmail.com>           *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -26,61 +27,47 @@
 # include <cassert>
 //#endif
 
-#include <string>
-#include <map>
+#include <sstream>
 
 #include <Base/Console.h>
+#include <CXX/Objects.hxx>
+#include <Base/Exception.h>
+#include <Base/Interpreter.h>
+#include <App/ExpressionParser.h>
 
-#include "String.h"
-
-#include "DocumentMapper.h"
+#include "MapComponent.h"
 
 
 FC_LOG_LEVEL_INIT("ObjectPath",true,true)
 
-namespace App::ObjectPath {
+using namespace App::ObjectPath;
 
-DocumentMapper::DocumentMapper(const map_type &map)
+
+void MapComponent::toString(std::ostream& ss, bool toPython) const
 {
-    assert(!_DocumentMap);
-    _DocumentMap = &map;
+    ss << "[" << getKey().toString(toPython) << "]";
 }
 
-DocumentMapper::~DocumentMapper()
+bool MapComponent::isEqual(const Component& other) const
 {
-    _DocumentMap = nullptr;
+    // We could compare just other.key and key.
+    // We used static_cast just because it is a bug if other
+    // is not of type MapComponent.
+    return dynamic_cast<const MapComponent&>(other).getKey() == getKey();
 }
 
-bool DocumentMapper::hasMap()
-{
-    return _DocumentMap;
+Py::Object MapComponent::get(const Py::Object& pyobj) const {
+    auto _key = getKey().getString();
+    Py::Object res = Py::Mapping(pyobj).getItem(_key);
+    if(!res.ptr())
+        throw Py::Exception();
+    return res;
 }
 
-String DocumentMapper::mapString(const String& from)
-{
-    if(from.empty() || !hasMap())
-        return String();
-
-    auto iter = DocumentMapper::find(from.getString());
-    if(iter != DocumentMapper::end()) {
-        return String(iter->second, from.isRealString(), !from.isRealString());
-    }
-
-    return String();
+void MapComponent::set(Py::Object& pyobj, const Py::Object& value) const {
+    Py::Mapping(pyobj).setItem(getKey().getString(),value);
 }
 
-DocumentMapper::map_type::const_iterator DocumentMapper::find(const std::string& name)
-{
-    assert(_DocumentMap);
-    return _DocumentMap->find(name);
+void MapComponent::del(Py::Object& pyobj) const {
+    Py::Mapping(pyobj).delItem(getKey().getString());
 }
-
-DocumentMapper::map_type::const_iterator DocumentMapper::end()
-{
-    assert(_DocumentMap);
-    return _DocumentMap->end();
-}
-
-const std::map<std::string,std::string> *DocumentMapper::_DocumentMap;
-
-} // namespace App::ObjectPath

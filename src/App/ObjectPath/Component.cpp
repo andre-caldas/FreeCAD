@@ -26,61 +26,31 @@
 # include <cassert>
 //#endif
 
+#include <typeinfo>
 #include <string>
-#include <map>
 
 #include <Base/Console.h>
+#include <Base/Exception.h>
 
 #include "String.h"
-
-#include "DocumentMapper.h"
+#include "Component.h"
 
 
 FC_LOG_LEVEL_INIT("ObjectPath",true,true)
 
-namespace App::ObjectPath {
+using namespace App::ObjectPath;
 
-DocumentMapper::DocumentMapper(const map_type &map)
+
+bool Component::operator ==(const Component &other) const
 {
-    assert(!_DocumentMap);
-    _DocumentMap = &map;
-}
-
-DocumentMapper::~DocumentMapper()
-{
-    _DocumentMap = nullptr;
-}
-
-bool DocumentMapper::hasMap()
-{
-    return _DocumentMap;
-}
-
-String DocumentMapper::mapString(const String& from)
-{
-    if(from.empty() || !hasMap())
-        return String();
-
-    auto iter = DocumentMapper::find(from.getString());
-    if(iter != DocumentMapper::end()) {
-        return String(iter->second, from.isRealString(), !from.isRealString());
+    if(typeid(*this) != typeid(other))
+    {
+        return false;
     }
-
-    return String();
+    return isEqual(other);
 }
 
-DocumentMapper::map_type::const_iterator DocumentMapper::find(const std::string& name)
+std::string Component::getName() const
 {
-    assert(_DocumentMap);
-    return _DocumentMap->find(name);
+    return "Unamed component";
 }
-
-DocumentMapper::map_type::const_iterator DocumentMapper::end()
-{
-    assert(_DocumentMap);
-    return _DocumentMap->end();
-}
-
-const std::map<std::string,std::string> *DocumentMapper::_DocumentMap;
-
-} // namespace App::ObjectPath
