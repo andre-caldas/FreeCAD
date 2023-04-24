@@ -222,6 +222,7 @@ SET(Properties_CPP_SRCS
     DynamicProperty.cpp
     ObjectIdentifier.cpp
     Property.cpp
+    PropertyTaggedList.cpp
     PropertyContainer.cpp
     PropertyContainerPyImp.cpp
     PropertyFile.cpp
@@ -236,6 +237,7 @@ SET(Properties_HPP_SRCS
     DynamicProperty.h
     ObjectIdentifier.h
     Property.h
+    PropertyTaggedList.h
     PropertyContainer.h
     PropertyFile.h
     PropertyGeo.h
