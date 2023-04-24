@@ -100,7 +100,10 @@ endif(BUILD_SHOW)
 
 if(BUILD_SKETCHER)
     if(EIGEN3_FOUND)
+
       add_subdirectory(Sketcher)
+      add_subdirectory(NamedSketcher)
+
     else(EIGEN3_FOUND)
       MESSAGE("Due to the missing Eigen3 library the Sketcher module won't be built")
     endif(EIGEN3_FOUND)

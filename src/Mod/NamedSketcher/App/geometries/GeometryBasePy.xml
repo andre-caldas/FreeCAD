@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<GenerateModel xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="generateMetaModel_Module.xsd">
+  <PythonExport
+    Father="PersistencePy"
+    Name="GeometryBasePy"
+    Twin="GeometryBase"
+    TwinPointer="GeometryBase"
+    Include="Mod/NamedSketcher/App/geometries/GeometryBase.h"
+    Namespace="NamedSketcher"
+    FatherInclude="Base/PersistencePy.h"
+    FatherNamespace="Base"
+    Constructor="false"
+    Delete="true">
+
+    <Documentation>
+      <Author Licence="LGPL" Name="André Caldas" EMail="andre.em.caldas@gmail.com" />
+      <UserDocu>Base class for geometry extension used by NamedSketcher</UserDocu>
+    </Documentation>
+    <Attribute Name="Tag" ReadOnly="true">
+        <Documentation>
+            <UserDocu>Get the geometry tag. In NamedSketcher,
+            constraints do not use a 'GeoId' to refer to a geometry.
+            Constraints use a Tag (UUID) or a user provided name.
+            Those classes are not instantiated by the user,
+            they are returned by NamedSketcher::addGeometry().</UserDocu>
+        </Documentation>
+        <Parameter Name="Tag" Type="String"/>
+    </Attribute>
+  </PythonExport>
+</GenerateModel>

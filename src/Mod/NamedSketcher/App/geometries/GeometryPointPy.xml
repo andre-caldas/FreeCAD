@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<GenerateModel xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="generateMetaModel_Module.xsd">
+  <PythonExport
+    Father="GeometryBasePy"
+    Name="GeometryPointPy"
+    Twin="GeometryPoint"
+    TwinPointer="GeometryPoint"
+    Include="Mod/NamedSketcher/App/geometries/GeometryPoint.h"
+    Namespace="NamedSketcher"
+    FatherInclude="Mod/NamedSketcher/App/geometries/GeometryBase.h"
+    FatherNamespace="NamedSketcher"
+    Constructor="false"
+    Delete="true">
+
+    <Documentation>
+      <Author Licence="LGPL" Name="André Caldas" EMail="andre.em.caldas@gmail.com" />
+      <UserDocu>Geometry extension used by NamedSketcher representing one point.
+      This class is not instantiated by the user.
+      It is created by NamedSketcher::addGeometry().</UserDocu>
+    </Documentation>
+  </PythonExport>
+</GenerateModel>

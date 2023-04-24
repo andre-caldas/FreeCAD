@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<GenerateModel xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="generateMetaModel_Module.xsd">
+  <PythonExport
+    Father="PersistencePy"
+    Name="ConstraintBasePy"
+    Twin="ConstraintBase"
+    TwinPointer="Constraint"
+    Include="Mod/NamedSketcher/App/constraints/Constraint.h"
+    Namespace="NamedSketcher"
+    FatherInclude="Base/PersistencePy.h"
+    FatherNamespace="Base"
+    Constructor="false"
+    Delete="true">
+
+    <Documentation>
+      <Author Licence="LGPL" Name="André Caldas" EMail="andre.em.caldas@gmail.com" />
+      <UserDocu>Base class for constraints used by NamedSketcher</UserDocu>
+    </Documentation>
+    <Attribute Name="Tag" ReadOnly="true">
+      <Documentation>
+        <UserDocu>Tag (UUID) of the constraint</UserDocu>
+      </Documentation>
+      <Parameter Name="Name" Type="String"/>
+    </Attribute>
+    <Attribute Name="Name" ReadOnly="false">
+      <Documentation>
+        <UserDocu>(Human given) name of the constraint</UserDocu>
+      </Documentation>
+      <Parameter Name="Name" Type="String"/>
+    </Attribute>
+  </PythonExport>
+</GenerateModel>

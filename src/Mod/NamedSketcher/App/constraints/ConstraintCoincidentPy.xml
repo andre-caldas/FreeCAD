@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<GenerateModel xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="generateMetaModel_Module.xsd">
+  <PythonExport
+    Father="ConstraintBasePy"
+    Name="ConstraintCoincidentPy"
+    Twin="ConstraintCoincident"
+    TwinPointer="ConstraintCoincident"
+    Include="Mod/NamedSketcher/App/constraints/ConstraintCoincident.h"
+    Namespace="NamedSketcher"
+    FatherInclude="Mod/NamedSketcher/App/constraints/ConstraintBase.h"
+    FatherNamespace="NamedSketcher"
+    Constructor="true"
+    Delete="true">
+
+    <Documentation>
+      <Author Licence="LGPL" Name="André Caldas" EMail="andre.em.caldas@gmail.com" />
+      <UserDocu>constraint to impose two OR MORE coincident points</UserDocu>
+    </Documentation>
+    <Methode Name="addPoints">
+      <Documentation>
+        <UserDocu>adds points to the cluster of coincident points</UserDocu>
+      </Documentation>
+    </Methode>
+    <Methode Name="removePoints">
+      <Documentation>
+        <UserDocu>removes points from the cluster of coincident points</UserDocu>
+      </Documentation>
+    </Methode>
+  </PythonExport>
+</GenerateModel>
