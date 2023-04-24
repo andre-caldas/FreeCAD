@@ -16,6 +16,9 @@ class TemplateClassPyExport (template.ModelTemplate):
         path = self.path
         exportName = self.export.Name
         dirname = self.dirname
+        if hasattr(dirname,"decode"): # this is python2. Otherwise this is unicode already
+            dirname = dirname.decode(encoding)
+        os.makedirs(path, exist_ok=True);
         print("TemplateClassPyExport",path + exportName)
         # Imp.cpp must not exist, neither in path nor in dirname
         if(not os.path.exists(path + exportName + "Imp.cpp")):
