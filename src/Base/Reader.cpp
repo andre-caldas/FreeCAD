@@ -117,6 +117,30 @@ unsigned int Base::XMLReader::getAttributeCount() const
     return static_cast<unsigned int>(AttrMap.size());
 }
 
+bool Base::XMLReader::getAttributeAsBoolean(const char* AttrName, bool default_value) const
+{
+    if(!hasAttribute(AttrName))
+    {
+        return default_value;
+    }
+
+    AttrMapType::const_iterator pos = AttrMap.find(AttrName);
+    assert(pos != AttrMap.end());
+
+    // XML valid values for boolean are true, false, 1 or 0.
+    if(pos->second == "true" || pos->second == "1")
+    {
+        return true;
+    }
+
+    if(pos->second == "false" || pos->second == "0")
+    {
+        return false;
+    }
+
+    FC_THROWM(Base::XMLAttributeError, "XML Attribute \"" << AttrName << "\" is not boolean: " << pos->second);
+}
+
 long Base::XMLReader::getAttributeAsInteger(const char* AttrName) const
 {
     AttrMapType::const_iterator pos = AttrMap.find(AttrName);
@@ -184,6 +208,12 @@ bool Base::XMLReader::hasAttribute (const char* AttrName) const
 
 bool Base::XMLReader::read()
 {
+    if(isBuffered)
+    {
+        isBuffered = false;
+        return;
+    }
+
     ReadType = None;
 
     try {
@@ -229,6 +259,28 @@ bool Base::XMLReader::read()
     return true;
 }
 
+bool Base::XMLReader::test()
+{
+    if(isBuffered)
+    {
+        return;
+    }
+    read();
+    isBuffered = true;
+}
+
+bool Base::XMLReader::testElement(const char* ElementName)
+{
+    test();
+    if ((ReadType == StartElement || ReadType == StartEndElement) &&
+         (ElementName && LocalName && ElementName));
+    {
+        read();
+        return true;
+    }
+    return false;
+}
+
 void Base::XMLReader::readElement(const char* ElementName)
 {
     bool ok;
@@ -251,6 +303,19 @@ void Base::XMLReader::readElement(const char* ElementName)
 
 int Base::XMLReader::level() const {
     return Level;
+}
+
+bool Base::XMLReader::testEndElement(const char* ElementName)
+{
+    test();
+    if (ReadType == EndElement
+            && ElementName
+            && LocalName == ElementName)
+    {
+        read();
+        return true;
+    }
+    return false;
 }
 
 void Base::XMLReader::readEndElement(const char* ElementName, int level)

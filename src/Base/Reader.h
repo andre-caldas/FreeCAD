@@ -140,6 +140,14 @@ public:
     /// read until a start element is found (\<name\>) or start-end element (\<name/\>) (with special name if given)
     void readElement   (const char* ElementName=nullptr);
 
+    /// Tests if next element is StartElement of name \a ElementName,
+    /// and consumes it only if it is.
+    bool testElement(const char* ElementName);
+    using pickElement = test;
+    /// Tests if next element is EndElement of name \a ElementName,
+    /// and consumes it only if it is.
+    bool testEndElement(const char* ElementName);
+
     /** read until an end element is found
      *
      * @param ElementName: optional end element name to look for. If given, then
@@ -167,6 +175,8 @@ public:
     unsigned int getAttributeCount() const;
     /// check if the read element has a special attribute
     bool hasAttribute(const char* AttrName) const;
+    /// return the named attribute as an interer (does type checking)
+    bool getAttributeAsBoolean(const char* AttrName, bool default_value) const;
     /// return the named attribute as an interer (does type checking)
     long getAttributeAsInteger(const char* AttrName) const;
     unsigned long getAttributeAsUnsigned(const char* AttrName) const;
@@ -217,6 +227,10 @@ public:
 protected:
     /// read the next element
     bool read();
+    /// reads the next element without consuming it
+    bool test();
+    /// next "read()" shall not consume a new token
+    bool isBuffered = false;
 
     // -----------------------------------------------------------------------
     //  Handlers for the SAX ContentHandler interface
