@@ -282,6 +282,12 @@ private:
 #define ADD_PROPERTY_TYPE(_prop_, _defaultval_, _group_,_type_,_Docu_) \
     _ADD_PROPERTY_TYPE(#_prop_,_prop_,_defaultval_,_group_,_type_,_Docu_)
 
+#define ADD_PROPERTY_TYPE_NO_DEFAULT(_prop_, _group_, _type_, _Docu_) \
+  do { \
+    this->_prop_.setContainer(this); \
+    propertyData.addProperty(static_cast<App::PropertyContainer*>(this), #_prop_, &this->_prop_, (_group_),(_type_),(_Docu_)); \
+  } while (0)
+
 
 #define PROPERTY_HEADER(_class_) \
   TYPESYSTEM_HEADER(); \
