@@ -21,73 +21,79 @@
  *                                                                          *
  ***************************************************************************/
 
+#include "../PreCompiled.h"
 
-#ifndef NAMEDSKETCHER_GeometryBase_H
-#define NAMEDSKETCHER_GeometryBase_H
-
-#include "NamedSketcherGlobal.h"
-
-#include <memory>
+#ifdef _PreComp_
 #include <string>
+#include <sstream>
+#endif // _PreComp_
+#include <utility>
 
-#include <Base/Persistence.h>
-#include <Base/Accessor/NameAndTag.h>
+#include <boost/uuid/random_generator.hpp>
+#include <boost/uuid/string_generator.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
-namespace Part {
-class Geometry;
+#include <Base/Exception.h>
+
+#include "NameAndTag.h"
+
+
+namespace Base::Accessor {
+
+Tag::Tag()
+    : tag(boost::uuids::random_generator()()) {}
+
+NameAndTag::NameAndTag()
+    : name(to_string(tag)) {}
+
+NameAndTag::NameAndTag(std::string name_or_tag)
+{
+    setText(name_or_tag);
 }
 
-namespace App::NamedSketcher
+void NameAndTag::setText(std::string name_or_tag, bool overwrite_tag)
 {
+    if(overwrite_tag)
+    {
+        // Can't we simply check if name_or_tag is a tag?
+        // It would be less noisy.
+        try {
+            tag = boost::uuids::string_generator()(name_or_tag);
+            name.clear();
+            return;
+        } catch (std::runtime_error&) {
+        }
+    }
+    name = std::move(name_or_tag);
+}
 
-class NamedSketcherExport GeometryBase
-        : public Base::Persistence
-        , public Base::NameAndTag
+bool NameAndTag::pointsToMe(NameAndTag& other) const
 {
-    TYPESYSTEM_HEADER();
+     if (tag == other.tag) return true;
+     if ((!name.empty()) && (name == other.name)) return true;
+     return false;
+}
 
-public:
-    GeometryBase(std::unique_ptr<Part::Geometry> geo);
-
-    static std::unique_ptr<GeometryBase> factory(Base::XMLReader& reader);
-
-    bool isConstruction = false;
-    bool isBlocked = false;
-
-    virtual void commitChanges() const = 0;
-
-    /*!
-     * \brief vector of parameters, as used by the GCS solver.
-     * \return a vector representing all points and
-     * all parameters of this geometry (e.g.: radius).
-     */
-    virtual void appendParameterList(std::vector<double*>& parameters) = 0;
-
-    /*!
-     * \brief Methods derived from \class GeometryBase shall not implement
-     * Persistence::Restore. Restore is done by factory().
-     * \param reader
-     */
-    void Restore(Base::XMLReader& reader) override;
-    void Save (Base::Writer& writer) const override;
-    std::string xmlAttributes() const;
-    virtual const char* xmlTagName() const = 0;
-
-protected:
-    std::shared_ptr<Part::Geometry> geometry;
-};
-
-template<typename GeoClass>
-class NamedSketcherExport GeometryBaseT : public GeometryBase
+bool NameAndTag::pointsToMe(std::string_view other) const
 {
-    using reference_type = ;
+    if(name == other)
+    {
+        return true;
+    }
 
-public:
-    using GeometryBase::GeometryBase;
-    GeoClass& getGeometry(void);
-    reference_type getReference() const;
-};
+    // Can't we simply check if name_or_tag is a tag?
+    // It would be less noisy.
+    try {
+        auto tag = boost::uuids::string_generator()(other.cbegin(), other.cend());
+        return pointsToMe(tag);
+    } catch (std::runtime_error&) {
+    }
+    return false;
+}
 
-} // namespace NamedSketcher
+bool NameAndTag::pointsToMe(boost::uuids::uuid other) const
+{
+     return (tag == other);
+}
 
-#endif // NAMEDSKETCHER_GeometryBase_H
+} // namespace Base

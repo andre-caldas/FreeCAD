@@ -21,73 +21,53 @@
  *                                                                          *
  ***************************************************************************/
 
+#ifndef BASE_Accessor_NameAndTag_H
+#define BASE_Accessor_NameAndTag_H
 
-#ifndef NAMEDSKETCHER_GeometryBase_H
-#define NAMEDSKETCHER_GeometryBase_H
-
-#include "NamedSketcherGlobal.h"
-
-#include <memory>
 #include <string>
 
-#include <Base/Persistence.h>
-#include <Base/Accessor/NameAndTag.h>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
-namespace Part {
-class Geometry;
-}
-
-namespace App::NamedSketcher
+namespace Base::Accessor
 {
 
-class NamedSketcherExport GeometryBase
-        : public Base::Persistence
-        , public Base::NameAndTag
+class Tag
 {
-    TYPESYSTEM_HEADER();
-
 public:
-    GeometryBase(std::unique_ptr<Part::Geometry> geo);
+    Tag();
+    Tag(const Tag&) = default;
+    Tag(boost::uuids::uuid tag) : tag(tag) {}
 
-    static std::unique_ptr<GeometryBase> factory(Base::XMLReader& reader);
-
-    bool isConstruction = false;
-    bool isBlocked = false;
-
-    virtual void commitChanges() const = 0;
-
-    /*!
-     * \brief vector of parameters, as used by the GCS solver.
-     * \return a vector representing all points and
-     * all parameters of this geometry (e.g.: radius).
-     */
-    virtual void appendParameterList(std::vector<double*>& parameters) = 0;
-
-    /*!
-     * \brief Methods derived from \class GeometryBase shall not implement
-     * Persistence::Restore. Restore is done by factory().
-     * \param reader
-     */
-    void Restore(Base::XMLReader& reader) override;
-    void Save (Base::Writer& writer) const override;
-    std::string xmlAttributes() const;
-    virtual const char* xmlTagName() const = 0;
+    boost::uuids::uuid getTag () const {return tag;}
 
 protected:
-    std::shared_ptr<Part::Geometry> geometry;
+    boost::uuids::uuid tag;
 };
 
-template<typename GeoClass>
-class NamedSketcherExport GeometryBaseT : public GeometryBase
+class NameAndTag : public Tag
 {
-    using reference_type = ;
-
 public:
-    using GeometryBase::GeometryBase;
-    GeoClass& getGeometry(void);
-    reference_type getReference() const;
+    NameAndTag();
+    NameAndTag(std::string name_or_tag);
+    NameAndTag(boost::uuids::uuid tag) : Tag(tag) {}
+
+    std::string getText() const {return name.empty() ? to_string(tag) : name;}
+    void setText(std::string name_or_tag, bool overwrite_tag = true);
+
+    operator std::string() const {return getText();}
+    bool operator == (std::string_view x) const {return (getText() == x);}
+    bool pointsToMe(NameAndTag& other) const;
+    bool pointsToMe(std::string_view other) const;
+    bool pointsToMe(boost::uuids::uuid other) const;
+
+    bool hasName() const {return !name.empty();}
+    const std::string& onlyName() const {return name;}
+
+protected:
+    std::string name;
 };
 
-} // namespace NamedSketcher
+} //namespace Base::Accessor
 
-#endif // NAMEDSKETCHER_GeometryBase_H
+#endif // BASE_Accessor_NameAndTag_H

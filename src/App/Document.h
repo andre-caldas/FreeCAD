@@ -23,6 +23,8 @@
 #ifndef APP_DOCUMENT_H
 #define APP_DOCUMENT_H
 
+#include <Base/Accessor/ReferencedObject.h>
+
 #include "PropertyContainer.h"
 #include "PropertyLinks.h"
 #include "PropertyStandard.h"
@@ -30,6 +32,7 @@
 #include <map>
 #include <vector>
 #include <QString>
+
 
 namespace Base {
     class Writer;
@@ -175,6 +178,8 @@ public:
 
 
     void clearDocument();
+
+    export_type resolve(Base::Accessor::token_iterator& start, Base::Accessor::token_iterator end) override;
 
     /** @name File handling of the document */
     //@{

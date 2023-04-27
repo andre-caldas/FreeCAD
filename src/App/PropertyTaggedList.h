@@ -71,15 +71,15 @@ class AppExport PropertyTaggedListT
         , public AtomicPropertyChangeInterface<PropertyTaggedListT<T>>
 {
 public:
-    using ptr_handler = std::shared_ptr;
-    using list_type = std::map<boost::uuids::uuid,ptr_handler<T>>;
+    using ptr_handler = std::shared_ptr<T>;
+    using list_type = std::map<boost::uuids::uuid,ptr_handler>;
     using key_type = boost::uuids::uuid;
     using parent_type = PropertyTaggedList;
     using atomic_change = typename AtomicPropertyChangeInterface<PropertyTaggedListT<T>>::AtomicPropertyChange;
 
-    friend class atomic_change;
+    friend atomic_change;
 
-    boost::uuids::uuid addValue(ptr_handler<T>&& value) {
+    boost::uuids::uuid addValue(ptr_handler&& value) {
         boost::uuids::uuid uuid = value->getUuid();
         _lValueList.emplace(uuid, std::move(value));
         return uuid;
@@ -94,7 +94,7 @@ public:
     std::weak_ptr<T> getElement(const ObjectIdentifier &path) const;
 
     bool isSame(const Property& other) const override {
-        if (static_cast<void*>(&other) == static_cast<void*>(this))
+        if (dynamic_cast<void*>(&other) == dynamic_cast<void*>(this))
             return true;
         return this->getTypeId() == other.getTypeId()
             && this->getValue() == static_cast<decltype(this)>(&other)->getValue();

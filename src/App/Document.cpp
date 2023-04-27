@@ -75,6 +75,7 @@ recompute path. Also, it enables more complicated dependencies beyond trees.
 
 #include <boost/regex.hpp>
 #include <random>
+#include <iterator>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -92,6 +93,8 @@ recompute path. Also, it enables more complicated dependencies beyond trees.
 #include <Base/Uuid.h>
 #include <Base/Sequencer.h>
 #include <Base/Stream.h>
+#include <Base/Accessor/ReferenceToObject.h>
+#include <Base/Accessor/Exception.h>
 
 #include "Document.h"
 #include "private/DocumentP.h"
@@ -3984,4 +3987,18 @@ bool Document::mustExecute() const
         if ((*It)->isTouched() || (*It)->mustExecute()==1)
             return true;
     return false;
+}
+
+Document::export_type Document::resolve(Base::Accessor::token_iterator& start, Base::Accessor::token_iterator end)
+{
+    assert(start != end);
+    auto name = start->getText();
+    auto obj = getObject(name.c_str());
+    if(obj == nullptr)
+    {
+        FC_THROWM(Base::Accessor::ExceptionCannotResolve, "No '" << name << "' found when resolving name chain.");
+    }
+    ++start; // Consumes the token
+    // Returns a fake shared_ptr.
+    return export_type(obj, [](auto /*p*/){});
 }

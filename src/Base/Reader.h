@@ -143,7 +143,8 @@ public:
     /// Tests if next element is StartElement of name \a ElementName,
     /// and consumes it only if it is.
     bool testElement(const char* ElementName);
-    using pickElement = test;
+    /// Reads the element without consuming it.
+    void pickElement() {test();}
     /// Tests if next element is EndElement of name \a ElementName,
     /// and consumes it only if it is.
     bool testEndElement(const char* ElementName);
@@ -231,6 +232,8 @@ protected:
     bool test();
     /// next "read()" shall not consume a new token
     bool isBuffered = false;
+    /// next "read()" shall return this if isBuffered == true.
+    bool lastTestReturnValue;
 
     // -----------------------------------------------------------------------
     //  Handlers for the SAX ContentHandler interface

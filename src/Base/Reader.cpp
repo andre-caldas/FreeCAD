@@ -211,7 +211,7 @@ bool Base::XMLReader::read()
     if(isBuffered)
     {
         isBuffered = false;
-        return;
+        return lastTestReturnValue;
     }
 
     ReadType = None;
@@ -263,17 +263,17 @@ bool Base::XMLReader::test()
 {
     if(isBuffered)
     {
-        return;
+        return lastTestReturnValue;
     }
-    read();
     isBuffered = true;
+    lastTestReturnValue = read();
 }
 
 bool Base::XMLReader::testElement(const char* ElementName)
 {
     test();
     if ((ReadType == StartElement || ReadType == StartEndElement) &&
-         (ElementName && LocalName && ElementName));
+            (ElementName && LocalName == ElementName))
     {
         read();
         return true;

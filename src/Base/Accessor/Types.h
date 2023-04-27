@@ -21,73 +21,25 @@
  *                                                                          *
  ***************************************************************************/
 
-
-#ifndef NAMEDSKETCHER_GeometryBase_H
-#define NAMEDSKETCHER_GeometryBase_H
-
-#include "NamedSketcherGlobal.h"
+#ifndef BASE_Accessor_Types_H
+#define BASE_Accessor_Types_H
 
 #include <memory>
+#include <vector>
 #include <string>
 
-#include <Base/Persistence.h>
-#include <Base/Accessor/NameAndTag.h>
-
-namespace Part {
-class Geometry;
-}
-
-namespace App::NamedSketcher
+namespace Base::Accessor
 {
 
-class NamedSketcherExport GeometryBase
-        : public Base::Persistence
-        , public Base::NameAndTag
-{
-    TYPESYSTEM_HEADER();
+class NameAndTag;
+class ReferencedObject;
 
-public:
-    GeometryBase(std::unique_ptr<Part::Geometry> geo);
+using token_item = NameAndTag;
+using token_list = std::vector<token_item>;
+using token_iterator = token_list::const_iterator;
+using object_pointer_type = std::shared_ptr<ReferencedObject>;
+using pointer_list = std::vector<object_pointer_type>;
 
-    static std::unique_ptr<GeometryBase> factory(Base::XMLReader& reader);
+} //namespace Base::Accessor
 
-    bool isConstruction = false;
-    bool isBlocked = false;
-
-    virtual void commitChanges() const = 0;
-
-    /*!
-     * \brief vector of parameters, as used by the GCS solver.
-     * \return a vector representing all points and
-     * all parameters of this geometry (e.g.: radius).
-     */
-    virtual void appendParameterList(std::vector<double*>& parameters) = 0;
-
-    /*!
-     * \brief Methods derived from \class GeometryBase shall not implement
-     * Persistence::Restore. Restore is done by factory().
-     * \param reader
-     */
-    void Restore(Base::XMLReader& reader) override;
-    void Save (Base::Writer& writer) const override;
-    std::string xmlAttributes() const;
-    virtual const char* xmlTagName() const = 0;
-
-protected:
-    std::shared_ptr<Part::Geometry> geometry;
-};
-
-template<typename GeoClass>
-class NamedSketcherExport GeometryBaseT : public GeometryBase
-{
-    using reference_type = ;
-
-public:
-    using GeometryBase::GeometryBase;
-    GeoClass& getGeometry(void);
-    reference_type getReference() const;
-};
-
-} // namespace NamedSketcher
-
-#endif // NAMEDSKETCHER_GeometryBase_H
+#endif // BASE_Accessor_Types_H

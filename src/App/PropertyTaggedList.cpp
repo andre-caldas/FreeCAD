@@ -27,6 +27,7 @@
 #include <cassert>
 #endif
 #include <boost/uuid/uuid.hpp>
+#include <boost/uuid/string_generator.hpp>
 
 #include <Base/Console.h>
 
@@ -39,6 +40,7 @@
 
 #include "PropertyTaggedList.h"
 
+FC_LOG_LEVEL_INIT("Property", true, true)
 
 TYPESYSTEM_SOURCE_ABSTRACT(App::PropertyTaggedList , App::Property)
 
@@ -79,7 +81,7 @@ void PropertyTaggedListT<T>::Restore(Base::XMLReader &reader)
 }
 
 template<typename T>
-const std::weak_ptr<T> PropertyTaggedList<T>::getElement(const ObjectIdentifier &path) const
+std::weak_ptr<T> PropertyTaggedListT<T>::getElement(const ObjectIdentifier &path) const
 {
     if(path.numSubComponents()!=2 || path.getPropertyComponent(0).getName()!=listName())
     {
@@ -105,19 +107,19 @@ const std::weak_ptr<T> PropertyTaggedList<T>::getElement(const ObjectIdentifier 
             return (*it)->second;
         }
     }
-    FC_WARN("Name (" << name_or_tag << ") not found in path " << path.toString() << ".");
+    FC_WARN("Name (" << c.getName() << ") not found in path " << path.toString() << ".");
     return std::weak_ptr<T>();
 }
 
 template<typename T>
-const boost::any PropertyTaggedList<T>::getPathValue(const ObjectIdentifier &path) const
+const boost::any PropertyTaggedListT<T>::getPathValue(const ObjectIdentifier &path) const
 {
     auto element = getElement(path).lock();
     return boost::any(element->getValue());
 }
 
 template<typename T>
-void PropertyTaggedList<T>::getPaths(std::vector<ObjectIdentifier> &paths) const
+void PropertyTaggedListT<T>::getPaths(std::vector<ObjectIdentifier> &paths) const
 {
     for (auto it = _lValueList.begin(); it != _lValueList.end(); ++it) {
         paths.push_back(ObjectIdentifier(*this) << ObjectIdentifier::SimpleComponent((*it)->first));

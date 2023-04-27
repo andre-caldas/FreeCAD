@@ -330,12 +330,26 @@ SET(FreeCADBase_HPP_SRCS
     ZipHeader.h
 )
 
+SET(FreeCADBase_Accessor_SRCS
+    Accessor/Types.h
+    Accessor/NameAndTag.h
+    Accessor/NameAndTag.cpp
+    Accessor/ReferencedObject.h
+    Accessor/ReferencedObject.inl
+    Accessor/ReferenceToObject.h
+    Accessor/ReferenceToObject.inl
+    Accessor/ReferenceToObject.cpp
+    Accessor/Exception.h
+)
+SOURCE_GROUP("Accessor" FILES ${FreeCADBase_Accessor_SRCS})
+
 SET(FreeCADBase_SRCS
     ${PYCXX_SOURCES}
     ${FreeCADBase_CPP_SRCS}
     ${FreeCADBase_HPP_SRCS}
     ${FreeCADBase_XML_SRCS}
     ${FreeCADBase_UNITAPI_SRCS}
+    ${FreeCADBase_Accessor_SRCS}
     PyTools.c
     PyTools.h
     PreCompiled.cpp

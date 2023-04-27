@@ -26,7 +26,9 @@
 
 #include <map>
 #include <cstring>
+
 #include <Base/Persistence.h>
+#include <Base/Accessor/ReferencedObject.h>
 
 #include "DynamicProperty.h"
 
@@ -138,7 +140,9 @@ struct AppExport PropertyData
 
 /** Base class of all classes with properties
  */
-class AppExport PropertyContainer: public Base::Persistence
+class AppExport PropertyContainer
+        : public Base::Persistence
+        , public Base::Accessor::Chainable
 {
 
   TYPESYSTEM_HEADER_WITH_OVERRIDE();

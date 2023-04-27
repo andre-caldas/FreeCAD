@@ -26,7 +26,7 @@
 #include <string>
 #include <vector>
 
-#include <Base/NameAndTag.h>
+#include <Base/Accessor/NameAndTag.h>
 #include <App/PropertyTaggedList.h>
 
 #include "ConstraintBase.h"

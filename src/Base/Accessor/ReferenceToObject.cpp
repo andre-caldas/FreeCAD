@@ -21,73 +21,66 @@
  *                                                                          *
  ***************************************************************************/
 
+#include "../PreCompiled.h"
 
-#ifndef NAMEDSKETCHER_GeometryBase_H
-#define NAMEDSKETCHER_GeometryBase_H
-
-#include "NamedSketcherGlobal.h"
-
-#include <memory>
+#ifndef _PreComp_
 #include <string>
+#endif // _PreComp_
 
-#include <Base/Persistence.h>
-#include <Base/Accessor/NameAndTag.h>
+#include <Base/Exception.h>
 
-namespace Part {
-class Geometry;
+#include "Exception.h"
+
+#include "ReferenceToObject.h"
+
+namespace Base::Accessor {
+
+std::string ReferenceToObject::pathString() const
+{
+    return pathString(object_path.cbegin(), object_path.cend());
 }
 
-namespace App::NamedSketcher
+std::string ReferenceToObject::pathString(token_iterator start, const token_iterator end)
 {
+    std::string result;
+    for(auto pos = start; pos != end; ++pos)
+    {
+        result += pos->getText();
+    }
+    return result;
+}
 
-class NamedSketcherExport GeometryBase
-        : public Base::Persistence
-        , public Base::NameAndTag
+ReferenceToObject::lock_type ReferenceToObject::getLock() const
 {
-    TYPESYSTEM_HEADER();
+    // TODO: Implement different "cache expire" policies.
+    lock_type lock;
+    lock.pointers.reserve(object_path.size());
+    lock.pointers.emplace_back(root.lock());
+    if(!lock.pointers.front())
+    {
+        FC_THROWM(ExceptionCannotResolve, "Root object is not available. Path: '" << pathString() << "'.");
+    }
 
-public:
-    GeometryBase(std::unique_ptr<Part::Geometry> geo);
+    lock.remaining_tokens_start = object_path.cbegin();
+    lock.remaining_tokens_end = object_path.cend();
+    while(lock.remaining_tokens_start != lock.remaining_tokens_end)
+    {
+        auto previous_it = lock.remaining_tokens_start;
+        auto ref_obj = dynamic_cast<Chainable*>(lock.pointers.back().get());
+        if(!ref_obj)
+        {
+            // Current object is not chainable.
+            break;
+        }
+        ref_obj->resolve(lock.remaining_tokens_start, object_path.cend());
 
-    static std::unique_ptr<GeometryBase> factory(Base::XMLReader& reader);
+        if(lock.remaining_tokens_start == previous_it)
+        {
+            FC_THROWM(Base::RuntimeError, "Object's path resolution is not consuming tokens. Path: '" << pathString() << "'. This is a BUG!");
+        }
+    }
 
-    bool isConstruction = false;
-    bool isBlocked = false;
+    return lock;
+}
 
-    virtual void commitChanges() const = 0;
-
-    /*!
-     * \brief vector of parameters, as used by the GCS solver.
-     * \return a vector representing all points and
-     * all parameters of this geometry (e.g.: radius).
-     */
-    virtual void appendParameterList(std::vector<double*>& parameters) = 0;
-
-    /*!
-     * \brief Methods derived from \class GeometryBase shall not implement
-     * Persistence::Restore. Restore is done by factory().
-     * \param reader
-     */
-    void Restore(Base::XMLReader& reader) override;
-    void Save (Base::Writer& writer) const override;
-    std::string xmlAttributes() const;
-    virtual const char* xmlTagName() const = 0;
-
-protected:
-    std::shared_ptr<Part::Geometry> geometry;
-};
-
-template<typename GeoClass>
-class NamedSketcherExport GeometryBaseT : public GeometryBase
-{
-    using reference_type = ;
-
-public:
-    using GeometryBase::GeometryBase;
-    GeoClass& getGeometry(void);
-    reference_type getReference() const;
-};
-
-} // namespace NamedSketcher
-
-#endif // NAMEDSKETCHER_GeometryBase_H
+} // namespace Base::Accessor

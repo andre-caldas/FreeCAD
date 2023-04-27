@@ -21,73 +21,57 @@
  *                                                                          *
  ***************************************************************************/
 
-
-#ifndef NAMEDSKETCHER_GeometryBase_H
-#define NAMEDSKETCHER_GeometryBase_H
-
-#include "NamedSketcherGlobal.h"
+#ifndef BASE_Accessor_ReferencedObject_H
+#define BASE_Accessor_ReferencedObject_H
 
 #include <memory>
 #include <string>
 
-#include <Base/Persistence.h>
-#include <Base/Accessor/NameAndTag.h>
+#include <FCGlobal.h>
 
-namespace Part {
-class Geometry;
-}
+#include "Types.h"
 
-namespace App::NamedSketcher
+namespace Base::Accessor
 {
 
-class NamedSketcherExport GeometryBase
-        : public Base::Persistence
-        , public Base::NameAndTag
+/**
+ * \brief A ReferencedObject is an object that can be queried
+ * to resolve the next step in a path.
+ */
+class BaseExport ReferencedObject
 {
-    TYPESYSTEM_HEADER();
-
 public:
-    GeometryBase(std::unique_ptr<Part::Geometry> geo);
-
-    static std::unique_ptr<GeometryBase> factory(Base::XMLReader& reader);
-
-    bool isConstruction = false;
-    bool isBlocked = false;
-
-    virtual void commitChanges() const = 0;
-
-    /*!
-     * \brief vector of parameters, as used by the GCS solver.
-     * \return a vector representing all points and
-     * all parameters of this geometry (e.g.: radius).
-     */
-    virtual void appendParameterList(std::vector<double*>& parameters) = 0;
-
-    /*!
-     * \brief Methods derived from \class GeometryBase shall not implement
-     * Persistence::Restore. Restore is done by factory().
-     * \param reader
-     */
-    void Restore(Base::XMLReader& reader) override;
-    void Save (Base::Writer& writer) const override;
-    std::string xmlAttributes() const;
-    virtual const char* xmlTagName() const = 0;
-
-protected:
-    std::shared_ptr<Part::Geometry> geometry;
+    virtual ~ReferencedObject() = default;
 };
 
-template<typename GeoClass>
-class NamedSketcherExport GeometryBaseT : public GeometryBase
+template<typename T>
+class BaseExport IExportPointer
 {
-    using reference_type = ;
-
 public:
-    using GeometryBase::GeometryBase;
-    GeoClass& getGeometry(void);
-    reference_type getReference() const;
+    using export_type = T*;
+
+    // TODO: Use range in C++20.
+    virtual export_type resolve(token_iterator& start, token_iterator end);
 };
 
-} // namespace NamedSketcher
+template<typename T>
+class BaseExport IExportShared
+{
+public:
+    using export_type = std::shared_ptr<T>;
 
-#endif // NAMEDSKETCHER_GeometryBase_H
+    // TODO: Use range in C++20.
+    virtual export_type resolve(token_iterator& start, token_iterator end);
+};
+
+class BaseExport Chainable
+        : public ReferencedObject
+        , public IExportShared<ReferencedObject>
+{
+};
+
+} //namespace Base::Accessor
+
+#include "ReferencedObject.inl"
+
+#endif // BASE_Accessor_ReferencedObject_H

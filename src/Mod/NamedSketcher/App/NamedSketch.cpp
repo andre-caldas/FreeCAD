@@ -30,7 +30,7 @@
 
 #include <Base/Console.h>
 #include <Base/Exception.h>
-#include <Base/ReferenceToObject.h>
+#include <Base/Accessor/ReferenceToObject.h>
 #include <boost/format.hpp>
 
 #include <Mod/Sketcher/App/planegcs/GCS.h>
