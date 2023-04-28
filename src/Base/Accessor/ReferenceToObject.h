@@ -43,6 +43,12 @@ class BaseExport ReferenceToObject
 public:
     ReferenceToObject() = delete;
 
+    /*
+     * Variadic constructors! :-)
+     * Thanks to @Artyer:
+     * https://stackoverflow.com/a/76133079/1290711
+     */
+
     /**
      * @brief References an object through an initial @a root
      * and a chain of strings/tags. The ownership of root
@@ -53,14 +59,11 @@ public:
      * @param obj_path - list of token items that identify
      * the path from @root to the referenced resource.
      */
-    template<typename... NameOrTag>
-    ReferenceToObject(std::weak_ptr<ReferencedObject> root,
-                      std::enable_if_t<
-                          std::conjunction_v
-                          <
-                              std::is_convertible_v<Base::Accessor::NameAndTag, NameOrTag>...
-                          >
-                      , NameOrTag&&>... obj_path);
+    template<typename... NameOrTag,
+             std::enable_if_t<std::conjunction_v<
+                     std::is_constructible<Base::Accessor::NameAndTag, NameOrTag>...
+                 >>* = nullptr>
+    ReferenceToObject(std::weak_ptr<ReferencedObject> root, NameOrTag&&... obj_path);
 
     /**
      * @brief (DEPRECATED) References an object using a root
@@ -70,14 +73,11 @@ public:
      * @param obj_path - list of token items that identify
      * the path from @root to the referenced resource.
      */
-    template<typename... NameOrTag>
-    ReferenceToObject(ReferencedObject* root,
-                      std::enable_if_t<
-                          std::conjunction_v
-                          <
-                              std::is_convertible_v<Base::Accessor::NameAndTag, NameOrTag>...
-                          >
-                      , NameOrTag&&>... obj_path);
+    template<typename... NameOrTag,
+             std::enable_if_t<std::conjunction_v<
+                     std::is_constructible<Base::Accessor::NameAndTag, NameOrTag>...
+                 >>* = nullptr>
+    ReferenceToObject(ReferencedObject* root, NameOrTag&&... obj_path);
 
     /**
      * @brief References an object whose root is the current document.
@@ -86,13 +86,11 @@ public:
      * @param obj_path - list of token items that identify
      * the path from @root to the referenced resource.
      */
-    template<typename... NameOrTag>
-    ReferenceToObject(std::enable_if_t<
-                          std::conjunction_v
-                          <
-                              std::is_convertible_v<Base::Accessor::NameAndTag, NameOrTag>...
-                          >
-                      , NameOrTag&&>... obj_path);
+    template<typename... NameOrTag,
+             std::enable_if_t<std::conjunction_v<
+                     std::is_constructible<Base::Accessor::NameAndTag, NameOrTag>...
+                 >>* = nullptr>
+    ReferenceToObject(NameOrTag&&... obj_path);
 
     std::string pathString() const;
     static std::string pathString(token_iterator first, const token_iterator end);

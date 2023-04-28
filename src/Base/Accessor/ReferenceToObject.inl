@@ -21,6 +21,8 @@
  *                                                                          *
  ***************************************************************************/
 
+#include <utility>
+
 #include <Base/Exception.h>
 #include <App/Application.h>
 
@@ -31,41 +33,33 @@
 
 namespace Base::Accessor {
 
-template<typename... NameOrTag>
-ReferenceToObject::ReferenceToObject(std::weak_ptr<ReferencedObject> root,
-                  std::enable_if_t<
-                      std::conjunction_v
-                      <
-                          std::is_convertible_v<Base::Accessor::NameAndTag, NameOrTag>...
-                      >
-                  , NameOrTag&&>... obj_path)
-    : object_path(std::initializer_list<std::string>{std::forward(obj_path)...})
+template<typename... NameOrTag,
+         std::enable_if_t<std::conjunction_v<
+                 std::is_constructible<Base::Accessor::NameAndTag, NameOrTag>...
+             >>*>
+ReferenceToObject::ReferenceToObject(std::weak_ptr<ReferencedObject> root, NameOrTag&&... obj_path)
+    : object_path(std::initializer_list<std::string>{std::forward<NameOrTag>(obj_path)...})
     , root(root)
 {
 }
 
-template<typename... NameOrTag>
-ReferenceToObject::ReferenceToObject(ReferencedObject* root,
-                  std::enable_if_t<
-                      std::conjunction_v
-                      <
-                          std::is_convertible_v<Base::Accessor::NameAndTag, NameOrTag>...
-                      >
-                  , NameOrTag&&>... obj_path)
-    : object_path(std::initializer_list<std::string>{std::forward(obj_path)...})
+template<typename... NameOrTag,
+         std::enable_if_t<std::conjunction_v<
+                 std::is_constructible<Base::Accessor::NameAndTag, NameOrTag>...
+             >>*>
+ReferenceToObject::ReferenceToObject(ReferencedObject* root, NameOrTag&&... obj_path)
+    : object_path(std::initializer_list<std::string>{std::forward<NameOrTag>(obj_path)...})
     , _root(root, [](auto /*p*/){}) // fake shared_ptr.
     , root(_root)
 {
 }
 
-template<typename... NameOrTag>
-ReferenceToObject::ReferenceToObject(std::enable_if_t<
-                      std::conjunction_v
-                      <
-                          std::is_convertible_v<Base::Accessor::NameAndTag, NameOrTag>...
-                      >
-                  , NameOrTag&&>... obj_path)
-    : ReferenceToObject(App::GetApplication().getActiveDocument(), std::forward(obj_path)...)
+template<typename... NameOrTag,
+         std::enable_if_t<std::conjunction_v<
+                 std::is_constructible<Base::Accessor::NameAndTag, NameOrTag>...
+             >>*>
+ReferenceToObject::ReferenceToObject(NameOrTag&&... obj_path)
+    : ReferenceToObject(App::GetApplication().getActiveDocument(), std::forward<NameOrTag>(obj_path)...)
 {
 }
 
