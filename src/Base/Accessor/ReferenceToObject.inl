@@ -31,23 +31,40 @@
 
 namespace Base::Accessor {
 
-template<typename... Strings, typename>
-ReferenceToObject::ReferenceToObject(std::weak_ptr<ReferencedObject> root, Strings&&... obj_path)
+template<typename... NameOrTag>
+ReferenceToObject::ReferenceToObject(std::weak_ptr<ReferencedObject> root,
+                  std::enable_if_t<
+                      std::conjunction_v
+                      <
+                          std::is_convertible_v<Base::Accessor::NameAndTag, NameOrTag>...
+                      >
+                  , NameOrTag&&>... obj_path)
     : object_path(std::initializer_list<std::string>{std::forward(obj_path)...})
     , root(root)
 {
 }
 
-template<typename... Strings, typename>
-ReferenceToObject::ReferenceToObject(ReferencedObject* root, Strings&&... obj_path)
+template<typename... NameOrTag>
+ReferenceToObject::ReferenceToObject(ReferencedObject* root,
+                  std::enable_if_t<
+                      std::conjunction_v
+                      <
+                          std::is_convertible_v<Base::Accessor::NameAndTag, NameOrTag>...
+                      >
+                  , NameOrTag&&>... obj_path)
     : object_path(std::initializer_list<std::string>{std::forward(obj_path)...})
     , _root(root, [](auto /*p*/){}) // fake shared_ptr.
     , root(_root)
 {
 }
 
-template<typename... Strings, typename>
-ReferenceToObject::ReferenceToObject(Strings&&... obj_path)
+template<typename... NameOrTag>
+ReferenceToObject::ReferenceToObject(std::enable_if_t<
+                      std::conjunction_v
+                      <
+                          std::is_convertible_v<Base::Accessor::NameAndTag, NameOrTag>...
+                      >
+                  , NameOrTag&&>... obj_path)
     : ReferenceToObject(App::GetApplication().getActiveDocument(), std::forward(obj_path)...)
 {
 }

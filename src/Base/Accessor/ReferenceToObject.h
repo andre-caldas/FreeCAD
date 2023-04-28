@@ -53,9 +53,14 @@ public:
      * @param obj_path - list of token items that identify
      * the path from @root to the referenced resource.
      */
-    template<typename... Strings,
-             typename = std::enable_if_t<std::is_constructible_v<std::string, Strings...>>>
-    ReferenceToObject(std::weak_ptr<ReferencedObject> root, Strings&&... obj_path);
+    template<typename... NameOrTag>
+    ReferenceToObject(std::weak_ptr<ReferencedObject> root,
+                      std::enable_if_t<
+                          std::conjunction_v
+                          <
+                              std::is_convertible_v<Base::Accessor::NameAndTag, NameOrTag>...
+                          >
+                      , NameOrTag&&>... obj_path);
 
     /**
      * @brief (DEPRECATED) References an object using a root
@@ -65,9 +70,14 @@ public:
      * @param obj_path - list of token items that identify
      * the path from @root to the referenced resource.
      */
-    template<typename... Strings,
-             typename = std::enable_if_t<std::is_constructible_v<std::string, Strings...>>>
-    ReferenceToObject(ReferencedObject* root, Strings&&... obj_path);
+    template<typename... NameOrTag>
+    ReferenceToObject(ReferencedObject* root,
+                      std::enable_if_t<
+                          std::conjunction_v
+                          <
+                              std::is_convertible_v<Base::Accessor::NameAndTag, NameOrTag>...
+                          >
+                      , NameOrTag&&>... obj_path);
 
     /**
      * @brief References an object whose root is the current document.
@@ -76,9 +86,13 @@ public:
      * @param obj_path - list of token items that identify
      * the path from @root to the referenced resource.
      */
-    template<typename... Strings,
-             typename= std::enable_if_t<std::is_constructible_v<std::string, Strings...>>>
-    ReferenceToObject(Strings&&... obj_path);
+    template<typename... NameOrTag>
+    ReferenceToObject(std::enable_if_t<
+                          std::conjunction_v
+                          <
+                              std::is_convertible_v<Base::Accessor::NameAndTag, NameOrTag>...
+                          >
+                      , NameOrTag&&>... obj_path);
 
     std::string pathString() const;
     static std::string pathString(token_iterator first, const token_iterator end);
