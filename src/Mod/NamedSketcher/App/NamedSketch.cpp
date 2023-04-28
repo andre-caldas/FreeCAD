@@ -31,8 +31,8 @@
 #include <Base/Console.h>
 #include <Base/Exception.h>
 #include <Base/Accessor/ReferenceToObject.h>
-#include <boost/format.hpp>
 
+#include <Mod/Part/App/Geometry.h>
 #include <Mod/Sketcher/App/planegcs/GCS.h>
 
 #include "geometries/GeometryFactory.h"

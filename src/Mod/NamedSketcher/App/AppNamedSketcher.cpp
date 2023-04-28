@@ -52,7 +52,7 @@ PyMOD_INIT_FUNC(NamedSketcher)
     // Add Types to module
 //    Base::Interpreter().addType(&Sketcher::ConstraintPy   ::Type,namedSketcherModule,"Constraint");
 //    Base::Interpreter().addType(&Sketcher::GeometryPy     ::Type,namedSketcherModule,"Geometry");
-    Base::Interpreter().addType(&Sketcher::NamedSketchPy  ::Type,namedSketcherModule,"NamedSketch");
+    Base::Interpreter().addType(&NamedSketcher::NamedSketchPy  ::Type,namedSketcherModule,"NamedSketch");
 
 
     // NOTE: To finish the initialization of our own type objects we must
