@@ -21,6 +21,6 @@
 #*                                                                         *
 #***************************************************************************/
 
-# FreeCAD init script of the Sketcher module
+# FreeCAD init script of the NamedSketcher module
 
-#FreeCAD.__unit_test__ += [ "TestSketcherApp" ]
+#FreeCAD.__unit_test__ += [ "TestNamedSketcherApp" ]
