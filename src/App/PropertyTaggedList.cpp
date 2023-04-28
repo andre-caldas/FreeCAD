@@ -83,7 +83,7 @@ void PropertyTaggedListT<T>::Restore(Base::XMLReader &reader)
 template<typename T>
 std::weak_ptr<T> PropertyTaggedListT<T>::getElement(const ObjectIdentifier &path) const
 {
-    if(path.numSubComponents()!=2 || path.getPropertyComponent(0).getName()!=listName())
+    if(path.numSubComponents()!=2 || path.getPropertyComponent(0).getName()!=getListName())
     {
         FC_THROWM(Base::ValueError,"Invalid constraint path " << path.toString());
     }

@@ -33,6 +33,8 @@
 #include <App/Property.h>
 #include <Base/Exception.h>
 #include <Base/Persistence.h>
+#include <Base/Accessor/ReferenceToObject.h>
+
 #include <FCGlobal.h>
 
 namespace Py {
@@ -50,6 +52,8 @@ class AppExport PropertyTaggedList : public Property
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
 public:
+    PropertyTaggedList(std::string name) : listName(std::move(name)) {}
+
     const std::set<boost::uuids::uuid>& getTouchList() const {
         return _touchList;
     }
@@ -58,10 +62,13 @@ public:
         _touchList.clear();
     }
 
-    virtual std::string_view listName() const = 0;
+    std::string_view getListName() const {return listName;}
 
 protected:
     std::set<boost::uuids::uuid> _touchList;
+
+private:
+    std::string listName;
 };
 
 /** Helper class to implement PropertyTaggedLists */
@@ -75,9 +82,12 @@ public:
     using list_type = std::map<boost::uuids::uuid,ptr_handler>;
     using key_type = boost::uuids::uuid;
     using parent_type = PropertyTaggedList;
+    using item_reference = Base::Accessor::ReferenceTo<T>;
     using atomic_change = typename AtomicPropertyChangeInterface<PropertyTaggedListT<T>>::AtomicPropertyChange;
 
     friend atomic_change;
+
+    using PropertyTaggedList::PropertyTaggedList;
 
     boost::uuids::uuid addValue(ptr_handler&& value) {
         boost::uuids::uuid uuid = value->getUuid();
@@ -110,7 +120,7 @@ public:
      */
     unsigned int getMemSize() const override;
     void Save(Base::Writer& writer) const override;
-    void Restore(Base::XMLReader& reader);
+    void Restore(Base::XMLReader& reader) override;
 
     /*
      * Base getters and setters
