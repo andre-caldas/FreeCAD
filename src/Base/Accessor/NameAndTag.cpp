@@ -43,8 +43,7 @@ namespace Base::Accessor {
 Tag::Tag()
     : tag(boost::uuids::random_generator()()) {}
 
-NameAndTag::NameAndTag()
-    : name(to_string(tag)) {}
+NameAndTag::NameAndTag() {}
 
 NameAndTag::NameAndTag(std::string name_or_tag)
 {

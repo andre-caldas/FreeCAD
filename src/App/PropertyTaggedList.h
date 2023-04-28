@@ -90,7 +90,7 @@ public:
     using PropertyTaggedList::PropertyTaggedList;
 
     boost::uuids::uuid addValue(ptr_handler&& value) {
-        boost::uuids::uuid uuid = value->getUuid();
+        boost::uuids::uuid uuid = value->getTag();
         _lValueList.emplace(uuid, std::move(value));
         return uuid;
     }
