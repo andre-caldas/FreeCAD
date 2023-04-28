@@ -41,10 +41,12 @@ namespace NamedSketcher {
 std::unique_ptr<GeometryBase> GeometryFactory(std::unique_ptr<Part::Geometry> geo)
 {
     if(geo->getTypeId() == Part::GeomPoint::getClassTypeId()) {
-        return std::unique_ptr<GeometryBase>(new GeometryPoint(std::move(geo)));
+        auto g = static_cast<Part::GeomPoint*>(geo.release());
+        return std::unique_ptr<GeometryBase>(new GeometryPoint(std::unique_ptr(g)));
     }
     if(geo->getTypeId() == Part::GeomLineSegment::getClassTypeId()) {
-        return std::unique_ptr<GeometryBase>(new GeometryLineSegment(std::move(geo)));
+        auto g = static_cast<Part::GeomLineSegment*>(geo);
+        return std::unique_ptr<GeometryBase>(new GeometryLineSegment(std::unique_ptr(g)));
     }
 
     FC_THROWM(Base::NotImplementedError, "Type '" << geo->getTypeId().getName() << "' not supported by NamedSketcher, yet!");
