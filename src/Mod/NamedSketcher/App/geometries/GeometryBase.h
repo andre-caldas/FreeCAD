@@ -32,17 +32,18 @@
 
 #include <Base/Persistence.h>
 #include <Base/Accessor/NameAndTag.h>
+#include <Base/Accessor/ReferenceToObject.h>
 
 namespace Part {
 class Geometry;
 }
 
-namespace App::NamedSketcher
+namespace NamedSketcher
 {
 
 class NamedSketcherExport GeometryBase
         : public Base::Persistence
-        , public Base::NameAndTag
+        , public Base::Accessor::NameAndTag
 {
     TYPESYSTEM_HEADER();
 
@@ -80,7 +81,7 @@ protected:
 template<typename GeoClass>
 class NamedSketcherExport GeometryBaseT : public GeometryBase
 {
-    using reference_type = ;
+    using reference_type = Base::Accessor::ReferenceTo<GeometryBaseT<GeoClass>>;
 
 public:
     using GeometryBase::GeometryBase;

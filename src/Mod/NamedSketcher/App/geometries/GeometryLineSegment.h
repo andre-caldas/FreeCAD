@@ -38,7 +38,7 @@ namespace Part {
 class GeomLineSegment;
 }
 
-namespace App::NamedSketcher
+namespace NamedSketcher
 {
 
 /** Sketcher geometry structure that represents one point.

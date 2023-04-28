@@ -31,14 +31,14 @@
 #include <string>
 
 #include <Base/Persistence.h>
-#include <Base/NameAndTag.h>
+#include <Base/Accessor/NameAndTag.h>
 
-namespace App::NamedSketcher
+namespace NamedSketcher
 {
 
 class NamedSketcherExport ConstraintBase
         : public Base::Persistence
-        , public Base::NameAndTag
+        , public Base::Accessor::NameAndTag
 {
     TYPESYSTEM_HEADER();
 

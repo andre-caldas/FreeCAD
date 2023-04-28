@@ -35,7 +35,7 @@ namespace Part {
 class GeomPoint;
 }
 
-namespace App::NamedSketcher
+namespace NamedSketcher
 {
 
 /** Sketcher geometry structure that represents one point.
@@ -46,7 +46,7 @@ class NamedSketcherExport GeometryPoint
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
 public:
-    GeometryPoint(std::unique_ptr<Part::GeomPoint> geo);
+    GeometryPoint(std::unique_ptr<Part::GeomPoint>&& geo);
 
     void commitChanges() const override;
     void appendParameterList(std::vector<double*>& parameters) override;

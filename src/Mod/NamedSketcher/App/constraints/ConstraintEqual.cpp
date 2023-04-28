@@ -36,7 +36,7 @@
 #include "ConstraintEqual.h"
 
 
-namespace App::NamedSketcher
+namespace NamedSketcher
 {
 
 TYPESYSTEM_SOURCE(ConstraintEqual, Base::Persistence)
@@ -62,4 +62,4 @@ void ConstraintEqual::Restore(Base::XMLReader& /*reader*/)
     THROW(Base::NotImplementedError);
 }
 
-} // namespace App::NamedSketcher
+} // namespace NamedSketcher

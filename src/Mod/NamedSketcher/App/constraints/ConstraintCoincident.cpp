@@ -31,7 +31,7 @@
 #include "ConstraintCoincident.h"
 
 
-namespace App::NamedSketcher
+namespace NamedSketcher
 {
 
 TYPESYSTEM_SOURCE(ConstraintCoincident, Base::Persistence)
@@ -64,4 +64,4 @@ void ConstraintCoincident::Restore(Base::XMLReader& /*reader*/)
     THROW(Base::NotImplementedError);
 }
 
-} // namespace App::NamedSketcher
+} // namespace NamedSketcher

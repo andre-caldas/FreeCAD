@@ -27,12 +27,13 @@
 #include <string>
 #include <Base/Exception.h>
 #include <Base/Persistence.h>
+#include <Mod/Part/App/Geometry.h>
 #endif // _PreComp_
 
 #include "GeometryFactory.h"
 #include "GeometryBase.h"
 
-namespace App::NamedSketcher {
+namespace NamedSketcher {
 
 TYPESYSTEM_SOURCE_ABSTRACT(GeometryBase, Base::Persistence)
 
@@ -55,7 +56,7 @@ std::string GeometryBase::xmlAttributes() const
     return result;
 }
 
-static std::unique_ptr<GeometryBase> GeometryBase::factory(Base::XMLReader& reader)
+std::unique_ptr<GeometryBase> GeometryBase::factory(Base::XMLReader& reader)
 {
     return GeometryFactory(reader);
 }

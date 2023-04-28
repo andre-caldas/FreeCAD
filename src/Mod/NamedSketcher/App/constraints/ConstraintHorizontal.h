@@ -42,7 +42,7 @@ namespace App {
 class ReferenceTo<Base::Vector3d>;
 }
 
-namespace App::NamedSketcher
+namespace NamedSketcher
 {
 
 /** Deals with constraints of type Horizontal.
@@ -64,6 +64,6 @@ public:
     void Restore(Base::XMLReader& reader) override;
 };
 
-} // namespace App::NamedSketcher
+} // namespace NamedSketcher
 
 #endif // NAMEDSKETCHER_ConstraintHorizontal_H

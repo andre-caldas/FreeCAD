@@ -27,7 +27,7 @@
 using namespace App;
 TYPESYSTEM_SOURCE(NamedSketcher::PropertyConstraintList, Base::Property)
 
-namespace App::NamedSketcher
+namespace NamedSketcher
 {
 
 Property* PropertyConstraintList::Copy() const
@@ -55,4 +55,4 @@ void PropertyConstraintList::setPyObject(PyObject*)
     FC_THROWM(Base::NotImplementedError, "Who needs this!?");
 }
 
-} // namespace App::NamedSketcher
+} // namespace NamedSketcher

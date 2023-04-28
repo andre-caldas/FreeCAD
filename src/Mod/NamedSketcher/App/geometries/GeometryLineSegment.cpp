@@ -36,7 +36,7 @@
 
 #include "GeometryLineSegment.h"
 
-namespace App::NamedSketcher
+namespace NamedSketcher
 {
 
 TYPESYSTEM_SOURCE(GeometryLineSegment, GeometryBaseT<Part::GeomLineSegment>)
@@ -72,4 +72,4 @@ unsigned int GeometryPoint::getMemSize () const
     return geometry->getMemSize() + sizeof(*this);
 }
 
-} // namespace App::NamedSketcher
+} // namespace NamedSketcher

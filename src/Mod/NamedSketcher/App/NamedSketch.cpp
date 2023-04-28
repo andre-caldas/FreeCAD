@@ -43,13 +43,15 @@
 FC_LOG_LEVEL_INIT("NamedSketch",true,true)
 PROPERTY_SOURCE(NamedSketcher::NamedSketch, Part::Part2DObject)
 
-namespace App::NamedSketcher
+namespace NamedSketcher
 {
 
 NamedSketch::NamedSketch()
+    : geometryList("geometries")
+    , constraintList("constraints")
 {
-    ADD_PROPERTY_TYPE_NO_DEFAULT(geometryList, "NamedSketch", PropertyGeometryList, "List of geometries used in this sketch");
-    ADD_PROPERTY_TYPE_NO_DEFAULT(constraintList, "NamedSketch", PropertyConstraintList, "List of constraints used in this sketch");
+    ADD_PROPERTY_TYPE_NO_DEFAULT(geometryList, "NamedSketch", (App::PropertyType)(App::Prop_None), "List of geometries used in this sketch");
+    ADD_PROPERTY_TYPE_NO_DEFAULT(constraintList, "NamedSketch", (App::PropertyType)(App::Prop_None), "List of constraints used in this sketch");
 
     // Add standard geometric objects: axis and origin.
 
@@ -86,42 +88,11 @@ App::DocumentObjectExecReturn *NamedSketch::execute()
     return App::DocumentObject::StdReturn;
 }
 
-
-bool NamedSketch::isSupportedGeometry(const Part::Geometry& geo) const
-{
-    if (geo.getTypeId() == Part::GeomPoint::getClassTypeId() ||
-        geo->getTypeId() == Part::GeomLineSegment::getClassTypeId()) {
-        return true;
-    }
-/*
-    if (geo->getTypeId() == Part::GeomPoint::getClassTypeId() ||
-        geo->getTypeId() == Part::GeomCircle::getClassTypeId() ||
-        geo->getTypeId() == Part::GeomEllipse::getClassTypeId() ||
-        geo->getTypeId() == Part::GeomArcOfCircle::getClassTypeId() ||
-        geo->getTypeId() == Part::GeomArcOfEllipse::getClassTypeId() ||
-        geo->getTypeId() == Part::GeomArcOfHyperbola::getClassTypeId() ||
-        geo->getTypeId() == Part::GeomArcOfParabola::getClassTypeId() ||
-        geo->getTypeId() == Part::GeomBSplineCurve::getClassTypeId() ||
-        geo->getTypeId() == Part::GeomLineSegment::getClassTypeId()) {
-        return true;
-    }
-    if (geo->getTypeId() == Part::GeomTrimmedCurve::getClassTypeId()) {
-        Handle(Geom_TrimmedCurve) trim = Handle(Geom_TrimmedCurve)::DownCast(geo->handle());
-        Handle(Geom_Circle) circle = Handle(Geom_Circle)::DownCast(trim->BasisCurve());
-        Handle(Geom_Ellipse) ellipse = Handle(Geom_Ellipse)::DownCast(trim->BasisCurve());
-        if (!circle.IsNull() || !ellipse.IsNull()) {
-            return true;
-        }
-    }
-*/
-    return false;
-}
-
 // TODO: in the future, return an ObjectPath-like "reference".
-ReferenceToObjectT<GeometryBase> NamedSketch::addGeometry(std::unique_ptr<Part::Geometry> geo)
+PropertyGeometryList::item_reference NamedSketch::addGeometry(std::unique_ptr<Part::Geometry> geo)
 {
     auto uuid = geometryList.addValue(GeometryFactory(std::move(geo)));
-    return ReferenceToObjectT<GeometryBase>(this, "geometries", uuid);
+    return PropertyGeometryList::item_reference(this, "geometries", uuid);
 }
 
 void NamedSketch::delGeometry(boost::uuids::uuid tag)
@@ -130,10 +101,10 @@ void NamedSketch::delGeometry(boost::uuids::uuid tag)
     geometryList.removeValue(tag);
 }
 
-ReferenceToObjectT<ConstraintBase> NamedSketch::addConstraint(std::unique_ptr<ConstraintBase> constraint)
+PropertyConstraintList::item_reference NamedSketch::addConstraint(std::unique_ptr<ConstraintBase> constraint)
 {
     auto uuid = constraintList.addValue(std::move(constraint));
-    return ReferenceToObjectT<ConstraintBase>(this, "constraints", uuid);
+    return PropertyConstraintList::item_reference(this, "constraints", uuid);
 }
 
 void NamedSketch::delConstraint(boost::uuids::uuid tag)
@@ -153,4 +124,4 @@ void NamedSketch::solve() {
     GCSsys.initSolution(defaultSolverRedundant);
 }
 
-} // namespace App::NamedSketcher
+} // namespace NamedSketcher

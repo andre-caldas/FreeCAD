@@ -36,7 +36,7 @@
 #include "ConstraintHorizontal.h"
 
 
-namespace App::NamedSketcher
+namespace NamedSketcher
 {
 
 TYPESYSTEM_SOURCE(ConstraintHorizontal, Base::Persistence)
@@ -62,4 +62,4 @@ void ConstraintHorizontal::Restore(Base::XMLReader& /*reader*/)
     THROW(Base::NotImplementedError);
 }
 
-} // namespace App::NamedSketcher
+} // namespace NamedSketcher

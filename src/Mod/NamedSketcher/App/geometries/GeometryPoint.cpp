@@ -33,12 +33,12 @@
 
 #include "GeometryPoint.h"
 
-namespace App::NamedSketcher
+namespace NamedSketcher
 {
 
 TYPESYSTEM_SOURCE(GeometryPoint, GeometryBaseT<Part::GeomPoint>)
 
-GeometryPoint::GeometryPoint(std::unique_ptr<Part::GeomPoint> geo)
+GeometryPoint::GeometryPoint(std::unique_ptr<Part::GeomPoint>&& geo)
     : GeometryBaseT(std::move(geo))
     , point(geo->getPoint())
     , gcs_point(&point.x, &point.y)
@@ -73,4 +73,4 @@ void GeometryPoint::Save (Base::Writer& writer) const
     writer.Stream() << writer.ind() << "</" << xmlTagName() << ">" << std::endl;
 }
 
-} // namespace App::NamedSketcher
+} // namespace NamedSketcher

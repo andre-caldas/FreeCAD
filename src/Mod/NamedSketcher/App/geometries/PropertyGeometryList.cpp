@@ -27,7 +27,7 @@
 using namespace App;
 TYPESYSTEM_SOURCE(NamedSketcher::PropertyGeometryList, Base::Property)
 
-namespace App::NamedSketcher
+namespace NamedSketcher
 {
 
 Property* PropertyGeometryList::Copy() const
@@ -55,4 +55,4 @@ void PropertyGeometryList::setPyObject(PyObject*)
     FC_THROWM(Base::NotImplementedError, "Who needs this!?");
 }
 
-} // namespace App::NamedSketcher
+} // namespace NamedSketcher

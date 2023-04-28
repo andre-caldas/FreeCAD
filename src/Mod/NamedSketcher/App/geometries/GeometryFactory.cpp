@@ -36,15 +36,15 @@
 #include "GeometryLineSegment.h"
 
 
-namespace App::NamedSketcher {
+namespace NamedSketcher {
 
 std::unique_ptr<GeometryBase> GeometryFactory(std::unique_ptr<Part::Geometry> geo)
 {
     if(geo->getTypeId() == Part::GeomPoint::getClassTypeId()) {
-        return std::unique_ptr<GeometryBase>(new GeometryPoint(geo));
+        return std::unique_ptr<GeometryBase>(new GeometryPoint(std::move(geo)));
     }
     if(geo->getTypeId() == Part::GeomLineSegment::getClassTypeId()) {
-        return std::unique_ptr<GeometryBase>(new GeometryLineSegment(geo));
+        return std::unique_ptr<GeometryBase>(new GeometryLineSegment(std::move(geo)));
     }
 
     FC_THROWM(Base::NotImplementedError, "Type '" << geo->getTypeId().getName() << "' not supported by NamedSketcher, yet!");

@@ -31,11 +31,11 @@ namespace Base {
 class XMLReader;
 }
 
-namespace App::Part {
+namespace Part {
 class Geometry;
 }
 
-namespace App::NamedSketcher
+namespace NamedSketcher
 {
 class GeometryBase;
 

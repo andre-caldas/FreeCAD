@@ -31,7 +31,6 @@
 #include <memory>
 #include <boost/uuid/uuid.hpp>
 
-#include <App/PropertyContainer.h>
 #include <Mod/Part/App/Part2DObject.h>
 
 #include <Mod/Sketcher/App/planegcs/GCS.h>
@@ -39,12 +38,11 @@
 #include "geometries/PropertyGeometryList.h"
 #include "constraints/PropertyConstraintList.h"
 
-namespace App::NamedSketcher
+namespace NamedSketcher
 {
 
 class NamedSketcherExport NamedSketch
-        : public App::PropertyContainer
-        , public Part::Part2DObject
+        : public Part::Part2DObject
 {
     PROPERTY_HEADER_WITH_OVERRIDE(NamedSketcher::NamedSketch);
 
@@ -72,7 +70,7 @@ public:
      \param construction - true for construction lines
      \retval reference to the newly created GeometryBase.
      */
-    ReferenceToObjectT<GeometryBase> addGeometry(std::unique_ptr<Part::Geometry> geo);
+    PropertyGeometryList::item_reference addGeometry(std::unique_ptr<Part::Geometry> geo);
 
     /*!
      \brief Deletes indicated geometry (by tag).
@@ -85,7 +83,7 @@ public:
      \param constraint - std::unique_ptr to constraint to add
      \retval tag of the added constraint.
      */
-    ReferenceToObjectT<ConstraintBase> addConstraint(std::unique_ptr<ConstraintBase> constraint);
+    PropertyConstraintList::item_reference addConstraint(std::unique_ptr<ConstraintBase> constraint);
 
     /*!
      \brief Deletes indicated constraint.

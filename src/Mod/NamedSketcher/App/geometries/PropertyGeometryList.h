@@ -35,17 +35,17 @@ namespace Base {
 class Writer;
 }
 
-namespace App::NamedSketcher
+namespace NamedSketcher
 {
 
 class NamedSketcherExport PropertyGeometryList
-        : public Base::NameAndTag
+        : public Base::Accessor::NameAndTag
         , public App::PropertyTaggedListT<GeometryBase>
 {
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
 public:
-    PropertyGeometryList() = default;
+    using App::PropertyTaggedListT<GeometryBase>::PropertyTaggedListT;
 
     const char* getEditorName() const override {
         return "NamedSketcherGui::PropertyGeometryListItem";

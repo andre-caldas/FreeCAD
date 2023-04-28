@@ -35,17 +35,17 @@ namespace Base {
 class Writer;
 }
 
-namespace App::NamedSketcher
+namespace NamedSketcher
 {
 
 class NamedSketcherExport PropertyConstraintList
-        : public Base::NameAndTag
+        : public Base::Accessor::NameAndTag
         , public App::PropertyTaggedListT<ConstraintBase>
 {
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
 public:
-    PropertyConstraintList() = default;
+    using App::PropertyTaggedListT<ConstraintBase>::PropertyTaggedListT;
 
     const char* getEditorName() const override {
         return "NamedSketcherGui::PropertyConstraintListItem";
@@ -66,6 +66,5 @@ public:
 };
 
 } // namespace NamedSketcher
-
 
 #endif // APP_PropertyConstraintList_H

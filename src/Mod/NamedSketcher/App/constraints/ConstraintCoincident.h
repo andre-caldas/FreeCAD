@@ -41,7 +41,7 @@ namespace App {
 class ReferenceTo<Base::Vector3d>;
 }
 
-namespace App::NamedSketcher
+namespace NamedSketcher
 {
 
 /** Deals with constraints of type Coincident.
@@ -67,6 +67,6 @@ public:
     void Restore(Base::XMLReader& reader) override;
 };
 
-} // namespace App::NamedSketcher
+} // namespace NamedSketcher
 
 #endif // NAMEDSKETCHER_ConstraintCoincident_H
