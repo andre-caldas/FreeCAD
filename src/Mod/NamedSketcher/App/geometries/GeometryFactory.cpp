@@ -21,66 +21,57 @@
  *                                                                          *
  ***************************************************************************/
 
-#include "PreCompiled.h"
+#include <list>
 
-#ifndef _PreComp_
-#include <memory>
-#include <utility>
-#endif // _PreComp_
-
-#include <Base/Exception.h>
 #include <Mod/Part/App/Geometry.h>
 
 #include "GeometryBase.h"
 #include "GeometryPoint.h"
 #include "GeometryLineSegment.h"
 
+#include "GeometryFactory.h"
 
 namespace NamedSketcher {
 
-std::unique_ptr<GeometryBase> GeometryFactory(std::unique_ptr<Part::Geometry> geo)
+std::unique_ptr<GeometryBase> GeometryFactory(std::unique_ptr<Part::Geometry>&& geo)
 {
     if(geo->getTypeId() == Part::GeomPoint::getClassTypeId()) {
-        auto g = static_cast<Part::GeomPoint*>(geo.release());
-        return std::unique_ptr<GeometryBase>(new GeometryPoint(std::unique_ptr(g)));
+        auto g = std::unique_ptr<Part::GeomPoint>(static_cast<Part::GeomPoint*>(geo.release()));
+        return std::make_unique<GeometryPoint>(std::move(g));
     }
     if(geo->getTypeId() == Part::GeomLineSegment::getClassTypeId()) {
-        auto g = static_cast<Part::GeomLineSegment*>(geo);
-        return std::unique_ptr<GeometryBase>(new GeometryLineSegment(std::unique_ptr(g)));
+        auto g = std::unique_ptr<Part::GeomLineSegment>(static_cast<Part::GeomLineSegment*>(geo.release()));
+        return std::make_unique<GeometryLineSegment>(std::move(g));
     }
 
     FC_THROWM(Base::NotImplementedError, "Type '" << geo->getTypeId().getName() << "' not supported by NamedSketcher, yet!");
 }
 
-std::unique_ptr<GeometryBase> GeometryFactory(Base::XMLReader& reader)
+void GeometryFactory::getAttributes(Base::XMLReader& reader)
 {
-    std::unique_ptr<Part::Geometry> geo;
-    std::unique_ptr<GeometryBase> result;
+    isConstruction =  reader.getAttributeAsBoolean("construction", false);
+    isBlocked = reader.getAttributeAsBoolean("blocked", false);
+}
 
-    reader.pickElement();
-    bool isConstruction = reader.getAttributeAsBoolean("construction", false);
-    bool isBlocked = reader.getAttributeAsBoolean("blocked", false);
-
-    if(reader.testElement(GeometryPoint::xmlTagNameStatic()))
-    {
-        geo.reset(new Part::GeomPoint());
-        geo->Restore(reader);
-        result.reset(new GeometryPoint(std::move(geo)));
-    }
-    else if(reader.testElement(GeometryLineSegment::xmlTagNameStatic()))
-    {
-        geo.reset(new Part::GeomLineSegment());
-        geo->Restore(reader);
-        result.reset(new GeometryLineSegment(geo));
-    }
-    else
-    {
-        FC_THROWM(Base::NotImplementedError, "Type '" << reader.localName() << "' not supported by NamedSketcher, yet!");
-    }
-
-    result->isConstruction = isConstruction;
-    result->isBlocked = isBlocked;
-    return result;
+void GeometryFactory::setAttributes(GeometryBase* p)
+{
+    p->isConstruction = isConstruction;
+    p->isBlocked = isBlocked;
 }
 
 } // namespace NamedSketcher
+
+using namespace NamedSketcher;
+template<>
+GeometryFactory::map_type Base::ElementFactory<GeometryBase>::factoryMap = {
+    {
+//        GeometryPoint::xmlTagTypeStatic(),
+        "Point",
+        [](Base::XMLReader& reader){return GeometryPoint::staticRestore(reader);}
+    }
+    ,{
+//        GeometryLineSegment::xmlTagTypeStatic(),
+        "LineSegment",
+        [](Base::XMLReader& reader){return GeometryLineSegment::staticRestore(reader);}
+    }
+};

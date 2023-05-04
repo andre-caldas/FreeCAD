@@ -54,17 +54,17 @@ SOURCE_GROUP("Features" FILES ${Features_SRCS})
 
 SET(Python_SRCS
     NamedSketchPy.xml
-    NamedSketchPyImp.cpp
+#    NamedSketchPyImp.cpp
     geometries/GeometryBasePy.xml
-    geometries/GeometryBasePyImp.cpp
+#    geometries/GeometryBasePyImp.cpp
     geometries/GeometryPointPy.xml
-    geometries/GeometryPointPyImp.cpp
+#    geometries/GeometryPointPyImp.cpp
     geometries/GeometryLineSegmentPy.xml
-    geometries/GeometryLineSegmentPyImp.cpp
+#    geometries/GeometryLineSegmentPyImp.cpp
     constraints/ConstraintBasePy.xml
-    constraints/ConstraintBasePyImp.cpp
+#    constraints/ConstraintBasePyImp.cpp
     constraints/ConstraintCoincidentPy.xml
-    constraints/ConstraintCoincidentPyImp.cpp
+#    constraints/ConstraintCoincidentPyImp.cpp
 )
 SOURCE_GROUP("Python" FILES ${Python_SRCS})
 
@@ -83,6 +83,8 @@ SOURCE_GROUP("Geometries" FILES ${Geometries_SRCS})
 SET(Constraints_SRCS
     constraints/ConstraintBase.h
     constraints/ConstraintBase.cpp
+    constraints/ConstraintFactory.h
+    constraints/ConstraintFactory.cpp
     constraints/ConstraintCoincident.h
     constraints/ConstraintCoincident.cpp
     constraints/ConstraintEqual.h

@@ -29,16 +29,15 @@
 #include <set>
 #include <boost/uuid/uuid.hpp>
 
+#include <Base/Vector3D.h>
+
 #include "ConstraintBase.h"
 
 #include "NamedSketcherGlobal.h"
 
-namespace Base {
-class Vector3d;
-}
-
-namespace App {
-class ReferenceTo<Base::Vector3d>;
+namespace Base::Accessor {
+template<typename T>
+class ReferenceTo;
 }
 
 namespace NamedSketcher
@@ -50,21 +49,27 @@ class NamedSketcherExport ConstraintCoincident : public ConstraintBase
 {
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
-    using ref_type = App::ReferenceTo<Base::Vector3d>;
+    using ref_type = Base::Accessor::ReferenceTo<Base::Vector3d>;
 
 public:
     std::vector<ref_type> references;
 
     template<typename ref,
-             typename = std::enable_if_t<std::is_constructible<ref_type, ref>>>
+             std::enable_if_t<std::is_constructible_v<ref_type, ref>>* = nullptr>
     ConstraintCoincident& addPoint(ref&& reference);
     ConstraintCoincident& removePoint(boost::uuids::uuid tag);
 
 public:
+    std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
+    static constexpr const char* xmlTagTypeStatic() {return "Coincident";}
+
+    void appendParameterList(std::vector<double*>& parameters) override;
+
     // Base::Persistence
     unsigned int getMemSize () const override;
     void Save (Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
+    static std::unique_ptr<ConstraintCoincident> staticRestore(Base::XMLReader& reader);
 };
 
 } // namespace NamedSketcher

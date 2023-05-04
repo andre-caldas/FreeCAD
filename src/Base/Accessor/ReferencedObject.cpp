@@ -21,28 +21,67 @@
  *                                                                          *
  ***************************************************************************/
 
-#include <type_traits>
+#include "../PreCompiled.h"
 
-#include "Exception.h"
+#ifndef _PreComp_
+#include <string>
+#endif // _PreComp_
 
-#include "Types.h"
+#include <Base/Console.h>
+#include <Base/Exception.h>
+
+#include "NameAndTag.h"
 #include "ReferencedObject.h"
 
-namespace Base::Accessor
-{
+FC_LOG_LEVEL_INIT("NamedSketch",true,true)
 
-template<typename T>
-typename IExportPointer<T>::export_type
-IExportPointer<T>::resolve(token_iterator& /*start*/, token_iterator /*end*/)
+namespace Base::Accessor {
+
+void ReferencedObject::registerTag(const std::shared_ptr<ReferencedObject>& shared_ptr)
 {
-    return nullptr;
+    std::lock_guard lock(mutex);
+    auto tag = shared_ptr->getTag();
+    if(!map.count(tag))
+    {
+        FC_MSG("ReferencedObject already registered: '" << tag << "'.");
+        return;
+    }
+    map.insert({tag, shared_ptr});
 }
 
-template<typename T>
-typename IExportShared<T>::export_type
-IExportShared<T>::resolve(token_iterator& /*start*/, token_iterator /*end*/)
+Tag::tag_type ReferencedObject::registerTag(std::string deprecated)
 {
-    THROW(ExceptionCannotResolve);
+    if(deprecated != "I know it is deprecated")
+    {
+        FC_THROWM(Base::RuntimeError, "All registeredTags must reference a shared_ptr'd resource.");
+    }
+    std::lock_guard lock(mutex);
+    if(!deprecatedFakeSharePointers.count(this))
+    {
+        std::shared_ptr<ReferencedObject> shared_ptr(this, [](auto){}); // Fake shared_ptr.
+        map.insert({getTag(), shared_ptr});
+        deprecatedFakeSharePointers.insert({this, shared_ptr});
+        return name_and_tag;
+    }
+    return deprecatedFakeSharePointers.at(this)->name_and_tag;
 }
 
-} //namespace Base::Accessor
+std::weak_ptr<ReferencedObject>
+ReferencedObject::getWeakPtr(std::string_view tag)
+{
+    Tag t(std::string{tag});
+    return getWeakPtr(t);
+}
+
+std::weak_ptr<ReferencedObject>
+ReferencedObject::getWeakPtr(Tag::tag_type tag)
+{
+    std::lock_guard lock(mutex);
+    return map.at(tag);
+}
+
+std::map<Tag::tag_type, std::weak_ptr<ReferencedObject>> ReferencedObject::map;
+std::map<const ReferencedObject*, std::shared_ptr<ReferencedObject>> ReferencedObject::deprecatedFakeSharePointers;
+std::mutex ReferencedObject::mutex;
+
+} // namespace Base::Accessor

@@ -23,8 +23,6 @@
 #ifndef APP_DOCUMENT_H
 #define APP_DOCUMENT_H
 
-#include <Base/Accessor/ReferencedObject.h>
-
 #include "PropertyContainer.h"
 #include "PropertyLinks.h"
 #include "PropertyStandard.h"

@@ -121,7 +121,7 @@ void NamedSketch::solve() {
     GCS::System GCSsys;
     GCSsys.declareUnknowns(Parameters);
     GCSsys.declareDrivenParams(DrivenParameters);
-    GCSsys.initSolution(defaultSolverRedundant);
+//    GCSsys.initSolution(defaultSolverRedundant);
 }
 
 } // namespace NamedSketcher

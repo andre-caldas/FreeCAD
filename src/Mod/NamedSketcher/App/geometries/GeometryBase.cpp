@@ -26,6 +26,8 @@
 #ifndef _PreComp_
 #include <string>
 #include <Base/Exception.h>
+#include <Base/Reader.h>
+#include <Base/Writer.h>
 #include <Base/Persistence.h>
 #include <Mod/Part/App/Geometry.h>
 #endif // _PreComp_
@@ -36,11 +38,6 @@
 namespace NamedSketcher {
 
 TYPESYSTEM_SOURCE_ABSTRACT(GeometryBase, Base::Persistence)
-
-GeometryBase::GeometryBase(std::unique_ptr<Part::Geometry> geo)
-    : geometry(std::move(geo))
-{
-}
 
 std::string GeometryBase::xmlAttributes() const
 {
@@ -56,24 +53,53 @@ std::string GeometryBase::xmlAttributes() const
     return result;
 }
 
-std::unique_ptr<GeometryBase> GeometryBase::factory(Base::XMLReader& reader)
-{
-    return GeometryFactory(reader);
-}
-
 void GeometryBase::Restore(Base::XMLReader& /*reader*/)
 {
     FC_THROWM(Base::NotImplementedError, "Restore is provided by the GeometryBase::factory");
 }
 
-template<typename GeoClass>
-GeoClass& GeometryBaseT<GeoClass>::getGeometry(void)
+void GeometryBase::SaveHead(Base::Writer& writer) const
 {
-    if(!geometry)
-    {
-        FC_THROWM(Base::RuntimeError, "Geometry not initialized. GeometryBase::geometry is null.");
-    }
-    return static_cast<GeoClass&>(*geometry);
+    writer.Stream() << writer.ind() << "<" << xmlTagName()
+                    << " type=\"" << xmlTagType() << "\""
+                    << xmlAttributes() << ">" << std::endl;
+    writer.incInd();
+}
+
+void GeometryBase::SaveTail(Base::Writer& writer) const
+{
+    writer.decInd();
+    writer.Stream() << writer.ind() << "</" << xmlTagName() << ">" << std::endl;
+}
+
+template<typename MySelf, typename GeoClass>
+GeometryBaseT<MySelf, GeoClass>::GeometryBaseT()
+{
+    // FreeCAD objects are not RAII. :-(
+    FC_THROWM(Base::Exception, "NamedSketcher::GeometryBaseT should not be constructed without arguments.");
+}
+
+template<typename MySelf, typename GeoClass>
+GeometryBaseT<MySelf, GeoClass>::GeometryBaseT(std::unique_ptr<GeoClass> geo)
+    : geometry(std::move(geo))
+{
+}
+
+template<typename MySelf, typename GeoClass>
+void GeometryBaseT<MySelf, GeoClass>::Save(Base::Writer& writer) const
+{
+    SaveHead(writer);
+    geometry->Save(writer);
+    SaveTail(writer);
+}
+
+template<typename MySelf, typename GeoClass>
+std::unique_ptr<GeometryBase>
+GeometryBaseT<MySelf, GeoClass>::staticRestore(Base::XMLReader& reader)
+{
+    auto geo = std::make_unique<GeoClass>(reader);
+    geo->Restore(reader);
+    return std::make_unique<MySelf>(geo);
 }
 
 } // namespace NamedSketcher

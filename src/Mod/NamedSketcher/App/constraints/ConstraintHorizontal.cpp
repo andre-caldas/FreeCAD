@@ -39,12 +39,22 @@
 namespace NamedSketcher
 {
 
-TYPESYSTEM_SOURCE(ConstraintHorizontal, Base::Persistence)
+TYPESYSTEM_SOURCE(ConstraintHorizontal, ConstraintEqual)
 
-template<typename ref, typename>
-ConstraintHorizontal& ConstraintHorizontal::ConstraintHorizontal(ref&& start, ref&& end)
+ConstraintHorizontal::ConstraintHorizontal()
+{
+    // FreeCAD objects are not RAII. :-(
+    FC_THROWM(Base::RuntimeError, "NamedSketcher::ConstraintHorizontal should not be constructed without arguments.");
+}
+
+ConstraintHorizontal::ConstraintHorizontal(const ref_type& start, const ref_type& end)
     : ConstraintEqual(start.goFurther<double>("y"), end.goFurther<double>("y"))
 {
+}
+
+void ConstraintHorizontal::appendParameterList(std::vector<double*>& parameters)
+{
+    THROW(Base::NotImplementedError);
 }
 
 void ConstraintHorizontal::Save (Base::Writer& writer) const

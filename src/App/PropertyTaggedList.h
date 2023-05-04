@@ -34,6 +34,7 @@
 #include <Base/Exception.h>
 #include <Base/Persistence.h>
 #include <Base/Accessor/ReferenceToObject.h>
+#include <Base/Accessor/ReferencedObject.h>
 
 #include <FCGlobal.h>
 
@@ -65,6 +66,7 @@ public:
     std::string_view getListName() const {return listName;}
 
 protected:
+    PropertyTaggedList() : PropertyTaggedList("unamed property list") {}
     std::set<boost::uuids::uuid> _touchList;
 
 private:
@@ -88,9 +90,11 @@ public:
     friend atomic_change;
 
     using PropertyTaggedList::PropertyTaggedList;
+    using ReferencedObject = Base::Accessor::ReferencedObject;
 
     boost::uuids::uuid addValue(ptr_handler&& value) {
         boost::uuids::uuid uuid = value->getTag();
+        ReferencedObject::registerTag(std::dynamic_pointer_cast<ReferencedObject>(value));
         _lValueList.emplace(uuid, std::move(value));
         return uuid;
     }
@@ -102,13 +106,6 @@ public:
     // Much nicer if it is an iterator!
     const list_type &getValues() const {return _lValueList;}
     std::weak_ptr<T> getElement(const ObjectIdentifier &path) const;
-
-    bool isSame(const Property& other) const override {
-        if (dynamic_cast<void*>(&other) == dynamic_cast<void*>(this))
-            return true;
-        return this->getTypeId() == other.getTypeId()
-            && this->getValue() == static_cast<decltype(this)>(&other)->getValue();
-    }
 
 protected:
     list_type _lValueList;

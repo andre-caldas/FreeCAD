@@ -39,18 +39,30 @@
 namespace NamedSketcher
 {
 
-TYPESYSTEM_SOURCE(ConstraintEqual, Base::Persistence)
+TYPESYSTEM_SOURCE(ConstraintEqual, ConstraintBase)
 
-template<typename ref, typename>
-ConstraintEqual& ConstraintEqual::ConstraintEqual(ref&& a, ref&& b)
+ConstraintEqual::ConstraintEqual()
+{
+    // FreeCAD objects are not RAII. :-(
+    FC_THROWM(Base::RuntimeError, "NamedSketcher::ConstraintEqual should not be constructed without arguments.");
+}
+
+template<typename ref,
+         std::enable_if_t<std::is_constructible_v<ConstraintEqual::ref_type, ref>>*>
+ConstraintEqual::ConstraintEqual(ref&& a, ref&& b)
     : a(std::forward(a))
     , b(std::forward(b))
 {
 }
 
+void ConstraintEqual::appendParameterList(std::vector<double*>& parameters)
+{
+    THROW(Base::NotImplementedError);
+}
+
 unsigned int ConstraintEqual::getMemSize () const
 {
-    return sizeof(ConstraintEqual) + start.memSize() + end.memSize();
+    return sizeof(ConstraintEqual) + 50/*a.memSize() + b.memSize()*/;
 }
 
 void ConstraintEqual::Save (Base::Writer& writer) const

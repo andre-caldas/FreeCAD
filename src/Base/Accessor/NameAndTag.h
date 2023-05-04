@@ -35,14 +35,22 @@ namespace Base::Accessor
 class Tag
 {
 public:
+    using tag_type = boost::uuids::uuid;
+
     Tag();
     Tag(const Tag&) = default;
-    Tag(boost::uuids::uuid tag) : tag(tag) {}
+    Tag(tag_type tag) : tag(tag) {}
+    Tag(const std::string& tag);
+    Tag(std::string_view tag) : Tag(std::string(tag)){}
 
-    boost::uuids::uuid getTag () const {return tag;}
+    tag_type getTag () const {return tag;}
+    void setTag(const std::string& tag);
+    std::string toString () const {return to_string(tag);}
+    operator std::string() const {return toString();}
+    operator tag_type() const {return getTag();}
 
 protected:
-    boost::uuids::uuid tag;
+    tag_type tag;
 };
 
 class NameAndTag : public Tag
@@ -50,7 +58,9 @@ class NameAndTag : public Tag
 public:
     NameAndTag();
     NameAndTag(std::string name_or_tag);
-    NameAndTag(boost::uuids::uuid tag) : Tag(tag) {}
+    NameAndTag(const char* name_or_tag) : NameAndTag(std::string(name_or_tag)) {}
+    NameAndTag(tag_type tag) : Tag(tag) {}
+    NameAndTag(Tag tag) : Tag(tag) {}
 
     std::string getText() const {return name.empty() ? to_string(tag) : name;}
     void setText(std::string name_or_tag, bool overwrite_tag = true);
@@ -59,7 +69,7 @@ public:
     bool operator == (std::string_view x) const {return (getText() == x);}
     bool pointsToMe(NameAndTag& other) const;
     bool pointsToMe(std::string_view other) const;
-    bool pointsToMe(boost::uuids::uuid other) const;
+    bool pointsToMe(tag_type other) const;
 
     bool hasName() const {return !name.empty();}
     const std::string& onlyName() const {return name;}

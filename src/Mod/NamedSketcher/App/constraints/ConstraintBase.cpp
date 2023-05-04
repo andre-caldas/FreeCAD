@@ -21,9 +21,32 @@
  *                                                                          *
  ***************************************************************************/
 
+#include <Base/Writer.h>
+
+#include "ConstraintFactory.h"
 #include "ConstraintBase.h"
 
+namespace NamedSketcher {
 
-using namespace App;
+TYPESYSTEM_SOURCE_ABSTRACT(ConstraintBase, Base::Persistence)
 
-TYPESYSTEM_SOURCE_ABSTRACT(NamedSketcher::ConstraintBase, Base::Persistence)
+void ConstraintBase::Restore(Base::XMLReader& /*reader*/)
+{
+    FC_THROWM(Base::NotImplementedError, "Restore is provided by the ConstraintBase::factory");
+}
+
+void ConstraintBase::SaveHead(Base::Writer& writer) const
+{
+    writer.Stream() << writer.ind() << "<" << xmlTagName()
+                    << " type=\"" << xmlTagType() << "\""
+                    << xmlAttributes() << ">" << std::endl;
+    writer.incInd();
+}
+
+void ConstraintBase::SaveTail(Base::Writer& writer) const
+{
+    writer.decInd();
+    writer.Stream() << writer.ind() << "</" << xmlTagName() << ">" << std::endl;
+}
+
+} // namespace NamedSketcher

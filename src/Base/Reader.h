@@ -141,13 +141,18 @@ public:
     void readElement   (const char* ElementName=nullptr);
 
     /// Tests if next element is StartElement of name \a ElementName,
+    /// and optionally consumes it only if it is.
+    bool testElement(const char* ElementName, bool ConsumeElement = false);
+    /// Tests if next element is StartElement of name \a ElementName,
     /// and consumes it only if it is.
-    bool testElement(const char* ElementName);
+    bool testElementConsume(const char* ElementName) {return testElement(ElementName, true);}
     /// Reads the element without consuming it.
     void pickElement() {test();}
     /// Tests if next element is EndElement of name \a ElementName,
     /// and consumes it only if it is.
     bool testEndElement(const char* ElementName);
+    /// String view for the Characters of the currently processed tag.
+    std::string_view getCharacters() const;
 
     /** read until an end element is found
      *

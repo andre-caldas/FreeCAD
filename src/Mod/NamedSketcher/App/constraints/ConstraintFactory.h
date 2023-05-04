@@ -22,56 +22,33 @@
  ***************************************************************************/
 
 
-#ifndef NAMEDSKETCHER_ConstraintXDistance_H
-#define NAMEDSKETCHER_ConstraintXDistance_H
+#ifndef SKETCHER_GeometryFactory_H
+#define SKETCHER_GeometryFactory_H
 
-#include <type_traits>
-#include <vector>
-#include <set>
-#include <boost/uuid/uuid.hpp>
+#include <memory>
 
-#include <Base/Vector3D.h>
-#include <Base/Accessor/ReferenceToObject.h>
+#include <Base/ElementFactory.h>
 
-#include "ConstraintBase.h"
-
-#include "NamedSketcherGlobal.h"
+namespace Base {
+class XMLReader;
+}
 
 namespace NamedSketcher
 {
 
-/** Deals with constraints of type XDistance.
- */
-class NamedSketcherExport ConstraintXDistance : public ConstraintBase
+class ConstraintBase;
+
+class ConstraintFactory : public Base::ElementFactory<ConstraintBase>
 {
-    TYPESYSTEM_HEADER_WITH_OVERRIDE();
-
-    using ref_type = Base::Accessor::ReferenceTo<Base::Vector3d>;
-
-public:
-    ref_type start;
-    ref_type end;
-
-    template<typename ref,
-             std::enable_if_t<std::is_constructible_v<ref_type, ref>>* = nullptr>
-    ConstraintXDistance(ref&& start, ref&& end);
-
-public:
-    std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
-    static constexpr const char* xmlTagTypeStatic() {return "XDistance";}
-
-    void appendParameterList(std::vector<double*>& parameters) override;
-
-    // Base::Persistence
-    unsigned int getMemSize () const override;
-    void Save (Base::Writer& writer) const override;
-    void Restore(Base::XMLReader& reader) override;
-    static std::unique_ptr<ConstraintXDistance> staticRestore(Base::XMLReader& reader);
+protected:
+    void getAttributes(Base::XMLReader& reader) override;
+    void setAttributes(ConstraintBase* p) override;
 
 private:
-    ConstraintXDistance();
+    bool isDriving;
+    bool isDriven;
 };
 
 } // namespace NamedSketcher
 
-#endif // NAMEDSKETCHER_ConstraintXDistance_H
+#endif // SKETCHER_GeometryFactory_H

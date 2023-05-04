@@ -63,6 +63,12 @@ public:
      */
     Property *Copy() const override;
     void Paste(const App::Property &from) override;
+
+    /*
+     * Python.
+     */
+    PyObject* getPyObject() override;
+    void setPyObject(PyObject*) override;
 };
 
 } // namespace NamedSketcher

@@ -42,7 +42,7 @@ void PropertyConstraintList::Paste(const Property &from)
 
 PyObject* PropertyConstraintList::getPyObject()
 {
-    // If you really needs this implemented,
+    // If you really need this implemented,
     // take a look at Sketcher::PropertyConstraintList.
     FC_THROWM(Base::NotImplementedError, "Who needs this!?");
     return nullptr;
@@ -50,7 +50,7 @@ PyObject* PropertyConstraintList::getPyObject()
 
 void PropertyConstraintList::setPyObject(PyObject*)
 {
-    // If you really needs this implemented,
+    // If you really need this implemented,
     // take a look at Sketcher::PropertyConstraintList.
     FC_THROWM(Base::NotImplementedError, "Who needs this!?");
 }

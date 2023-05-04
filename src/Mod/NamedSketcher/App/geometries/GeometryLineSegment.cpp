@@ -41,8 +41,14 @@ namespace NamedSketcher
 
 TYPESYSTEM_SOURCE(GeometryLineSegment, GeometryBaseT<Part::GeomLineSegment>)
 
-GeometryLineSegment::GeometryLineSegment(std::shared_ptr<Part::GeomLineSegment> &geo)
-    : GeometryBaseT(geo)
+GeometryLineSegment::GeometryLineSegment()
+{
+    // FreeCAD objects are not RAII. :-(
+    FC_THROWM(Base::RuntimeError, "NamedSketcher::GeometryLineSegment should not be constructed without arguments.");
+}
+
+GeometryLineSegment::GeometryLineSegment(std::unique_ptr<Part::GeomLineSegment>&& geo)
+    : GeometryBaseT(std::move(geo))
     , start(geo->getStartPoint())
     , end(geo->getEndPoint())
     , gcs_start(&start.x, &start.y)
@@ -54,20 +60,19 @@ GeometryLineSegment::GeometryLineSegment(std::shared_ptr<Part::GeomLineSegment> 
 
 void GeometryLineSegment::commitChanges() const
 {
-    getGeometry().setPoints(start, end);
+    geometry->setPoints(start, end);
 }
 
 void GeometryLineSegment::appendParameterList(std::vector<double*>& parameters)
 {
-    auto& line = getGeometry();
-    parameters.push_back(line.getStartPoint().x);
-    parameters.push_back(line.getStartPoint().y);
-    parameters.push_back(line.getEndPoint().x);
-    parameters.push_back(line.getEndPoint().y);
+    parameters.push_back(&start.x);
+    parameters.push_back(&start.y);
+    parameters.push_back(&end.x);
+    parameters.push_back(&end.y);
 }
 
 
-unsigned int GeometryPoint::getMemSize () const
+unsigned int GeometryLineSegment::getMemSize () const
 {
     return geometry->getMemSize() + sizeof(*this);
 }

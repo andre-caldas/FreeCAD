@@ -288,6 +288,7 @@ SET(FreeCADBase_HPP_SRCS
     DualNumber.h
     DualQuaternion.h
     Exception.h
+    ElementFactory.h
     ExceptionFactory.h
     Factory.h
     FileInfo.h
@@ -336,6 +337,7 @@ SET(FreeCADBase_Accessor_SRCS
     Accessor/NameAndTag.cpp
     Accessor/ReferencedObject.h
     Accessor/ReferencedObject.inl
+    Accessor/ReferencedObject.cpp
     Accessor/ReferenceToObject.h
     Accessor/ReferenceToObject.inl
     Accessor/ReferenceToObject.cpp

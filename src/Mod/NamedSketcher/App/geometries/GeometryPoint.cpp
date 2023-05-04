@@ -38,6 +38,12 @@ namespace NamedSketcher
 
 TYPESYSTEM_SOURCE(GeometryPoint, GeometryBaseT<Part::GeomPoint>)
 
+GeometryPoint::GeometryPoint()
+{
+    // FreeCAD objects are not RAII. :-(
+    FC_THROWM(Base::RuntimeError, "NamedSketcher::GeometryPoint should not be constructed without arguments.");
+}
+
 GeometryPoint::GeometryPoint(std::unique_ptr<Part::GeomPoint>&& geo)
     : GeometryBaseT(std::move(geo))
     , point(geo->getPoint())
@@ -47,30 +53,19 @@ GeometryPoint::GeometryPoint(std::unique_ptr<Part::GeomPoint>&& geo)
 
 void GeometryPoint::commitChanges() const
 {
-    getGeometry().setPoint(point);
+    geometry->setPoint(point);
 }
 
 void GeometryPoint::appendParameterList(std::vector<double*>& parameters)
 {
-    auto& point = getGeometry().getPoint();
     parameters.push_back(&point.x);
     parameters.push_back(&point.y);
 }
 
 
-unsigned int GeometryPoint::getMemSize () const
+unsigned int GeometryPoint::getMemSize() const
 {
     return geometry->getMemSize() + sizeof(*this);
-}
-
-void GeometryPoint::Save (Base::Writer& writer) const
-{
-    writer.Stream() << writer.ind() << "<" << xmlTagName()
-                    << xmlAttributes() << ">" << std::endl;
-    writer.incInd();
-    geometry->Save();
-    writer.decInd();
-    writer.Stream() << writer.ind() << "</" << xmlTagName() << ">" << std::endl;
 }
 
 } // namespace NamedSketcher

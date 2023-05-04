@@ -34,6 +34,10 @@
 
 #include "NamedSketcherGlobal.h"
 
+namespace Base {
+class Reader;
+class Writer;
+}
 namespace Part {
 class GeomLineSegment;
 }
@@ -44,21 +48,20 @@ namespace NamedSketcher
 /** Sketcher geometry structure that represents one point.
  */
 class NamedSketcherExport GeometryLineSegment
-        : public GeometryBaseT<Part::GeomLineSegment>
+        : public GeometryBaseT<GeometryLineSegment, Part::GeomLineSegment>
 {
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
 public:
-    GeometryLineSegment(std::unique_ptr<Part::GeomLineSegment>& geo);
+    GeometryLineSegment(std::unique_ptr<Part::GeomLineSegment>&& geo);
 
     void commitChanges() const override;
     void appendParameterList(std::vector<double*>& parameters) override;
 
     // Base::Persistence
     unsigned int getMemSize () const override;
-
-    const char* xmlTagName() const override {return xmlTagNameStatic();}
-    static const char* xmlTagNameStatic() {return "GeometryLineSegment";}
+    std::string_view xmlTagType(void) const override {return xmlTagTypeStatic();}
+    static std::string_view xmlTagTypeStatic(void) {return "LineSegment";}
 
 private:
     Base::Vector3d start;
@@ -66,6 +69,8 @@ private:
     GCS::Point gcs_start;
     GCS::Point gcs_end;
     GCS::Line gcs_line;
+
+    GeometryLineSegment();
 };
 
 } // namespace NamedSketcher

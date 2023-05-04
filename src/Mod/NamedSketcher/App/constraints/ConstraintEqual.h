@@ -25,22 +25,10 @@
 #ifndef NAMEDSKETCHER_ConstraintEqual_H
 #define NAMEDSKETCHER_ConstraintEqual_H
 
-#include <type_traits>
-#include <vector>
-#include <set>
-#include <boost/uuid/uuid.hpp>
+#include <Base/Accessor/ReferenceToObject.h>
 
 #include "ConstraintBase.h"
-
 #include "NamedSketcherGlobal.h"
-
-namespace Base {
-class Vector3d;
-}
-
-namespace App {
-class ReferenceTo<Base::Vector3d>;
-}
 
 namespace NamedSketcher
 {
@@ -51,21 +39,30 @@ class NamedSketcherExport ConstraintEqual : public ConstraintBase
 {
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
-    using ref_type = App::ReferenceTo<double>;
+    using ref_type = Base::Accessor::ReferenceTo<double>;
 
 public:
     ref_type a;
     ref_type b;
 
     template<typename ref,
-             typename = std::enable_if_t<std::is_constructible<ref_type, ref>>>
+             std::enable_if_t<std::is_constructible_v<ref_type, ref>>* = nullptr>
     ConstraintEqual(ref&& a, ref&& b);
 
 public:
+    std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
+    static constexpr const char* xmlTagTypeStatic() {return "Equal";}
+
+    void appendParameterList(std::vector<double*>& parameters) override;
+
     // Base::Persistence
     unsigned int getMemSize () const override;
     void Save (Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
+    static std::unique_ptr<ConstraintEqual> staticRestore(Base::XMLReader& reader);
+
+protected:
+    ConstraintEqual();
 };
 
 } // namespace NamedSketcher

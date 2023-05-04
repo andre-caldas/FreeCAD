@@ -27,6 +27,8 @@
 #include <string>
 #endif // _PreComp_
 
+#include <Base/Reader.h>
+#include <Base/Writer.h>
 #include <Base/Exception.h>
 
 #include "Exception.h"
@@ -37,7 +39,7 @@ namespace Base::Accessor {
 
 std::string ReferenceToObject::pathString() const
 {
-    return pathString(object_path.cbegin(), object_path.cend());
+    return pathString(objectPath.cbegin(), objectPath.cend());
 }
 
 std::string ReferenceToObject::pathString(token_iterator start, const token_iterator end)
@@ -54,15 +56,15 @@ ReferenceToObject::lock_type ReferenceToObject::getLock() const
 {
     // TODO: Implement different "cache expire" policies.
     lock_type lock;
-    lock.pointers.reserve(object_path.size());
-    lock.pointers.emplace_back(root.lock());
+    lock.pointers.reserve(objectPath.size());
+    lock.pointers.emplace_back(ReferencedObject::getWeakPtr(rootTag).lock());
     if(!lock.pointers.front())
     {
         FC_THROWM(ExceptionCannotResolve, "Root object is not available. Path: '" << pathString() << "'.");
     }
 
-    lock.remaining_tokens_start = object_path.cbegin();
-    lock.remaining_tokens_end = object_path.cend();
+    lock.remaining_tokens_start = objectPath.cbegin();
+    lock.remaining_tokens_end = objectPath.cend();
     while(lock.remaining_tokens_start != lock.remaining_tokens_end)
     {
         auto previous_it = lock.remaining_tokens_start;
@@ -72,7 +74,7 @@ ReferenceToObject::lock_type ReferenceToObject::getLock() const
             // Current object is not chainable.
             break;
         }
-        ref_obj->resolve(lock.remaining_tokens_start, object_path.cend());
+        ref_obj->resolve(lock.remaining_tokens_start, objectPath.cend());
 
         if(lock.remaining_tokens_start == previous_it)
         {
@@ -81,6 +83,22 @@ ReferenceToObject::lock_type ReferenceToObject::getLock() const
     }
 
     return lock;
+}
+
+void ReferenceToObject::serialize(Base::Writer& writer) const
+{
+    writer.Stream() << writer.ind() << "<ReferenceTo>" << std::endl;
+    writer.incInd();
+    writer.Stream() << writer.ind() << "<RootTag>";
+    writer.Stream() << rootTag.toString() << "</RootTag>" << std::endl;
+    for(auto token: objectPath)
+    {
+        // TODO: escape token.getText().
+        writer.Stream() << writer.ind() << "<NameOrTag>";
+        writer.Stream() << token.getText() << "</NameOrTag>" << std::endl;
+    }
+    writer.decInd();
+    writer.Stream() << writer.ind() << "</ReferenceTo>" << std::endl;
 }
 
 } // namespace Base::Accessor

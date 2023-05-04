@@ -22,56 +22,62 @@
  ***************************************************************************/
 
 
-#ifndef NAMEDSKETCHER_ConstraintXDistance_H
-#define NAMEDSKETCHER_ConstraintXDistance_H
+#ifndef BASE_ElementFactory_H
+#define BASE_ElementFactory_H
 
-#include <type_traits>
-#include <vector>
-#include <set>
-#include <boost/uuid/uuid.hpp>
+#include <functional>
+#include <memory>
+#include <list>
+#include <map>
+#include <string>
 
-#include <Base/Vector3D.h>
-#include <Base/Accessor/ReferenceToObject.h>
+#include <Base/Exception.h>
+#include <Base/Reader.h>
 
-#include "ConstraintBase.h"
-
-#include "NamedSketcherGlobal.h"
-
-namespace NamedSketcher
+namespace Base
 {
 
-/** Deals with constraints of type XDistance.
- */
-class NamedSketcherExport ConstraintXDistance : public ConstraintBase
+template<typename BaseClass>
+class ElementFactory
 {
-    TYPESYSTEM_HEADER_WITH_OVERRIDE();
-
-    using ref_type = Base::Accessor::ReferenceTo<Base::Vector3d>;
-
-public:
-    ref_type start;
-    ref_type end;
-
-    template<typename ref,
-             std::enable_if_t<std::is_constructible_v<ref_type, ref>>* = nullptr>
-    ConstraintXDistance(ref&& start, ref&& end);
+    using pointer_type = std::unique_ptr<BaseClass>;
+    using map_type = std::map<std::string, std::function<pointer_type(Base::XMLReader&)>>;
 
 public:
-    std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
-    static constexpr const char* xmlTagTypeStatic() {return "XDistance";}
+    pointer_type xmlFactory(Base::XMLReader& reader);
 
-    void appendParameterList(std::vector<double*>& parameters) override;
-
-    // Base::Persistence
-    unsigned int getMemSize () const override;
-    void Save (Base::Writer& writer) const override;
-    void Restore(Base::XMLReader& reader) override;
-    static std::unique_ptr<ConstraintXDistance> staticRestore(Base::XMLReader& reader);
+protected:
+    virtual void getAttributes(Base::XMLReader& reader) = 0;
+    virtual void setAttributes(BaseClass* p) = 0;
 
 private:
-    ConstraintXDistance();
+    static map_type factoryMap;
 };
 
-} // namespace NamedSketcher
+template<typename BaseClass>
+typename ElementFactory<BaseClass>::pointer_type
+ElementFactory<BaseClass>::xmlFactory(Base::XMLReader& reader)
+{
+    if(!reader.testElementConsume(BaseClass::xmlTagNameStatic()))
+    {
+        FC_THROWM(Base::RuntimeError, "Wrong tag name '" << reader.localName() << "'. Expected: '" << BaseClass::xmlTagNameStatic() << "'.");
+    }
 
-#endif // NAMEDSKETCHER_ConstraintXDistance_H
+    std::string_view type = reader.getAttribute("type");
+    getAttributes(reader);
+
+    // TODO: C++20 use "contains".
+    if(!factoryMap.count(type))
+    {
+        FC_THROWM(Base::NotImplementedError, "Type '" << type << "' not supported by NamedSketcher, yet!");
+    }
+
+    auto producer = factoryMap.at(type);
+    std::unique_ptr<BaseClass> result(producer(reader));
+    setAttributes(result.get());
+    return result;
+}
+
+} // namespace Base
+
+#endif // BASE_ElementFactory_H

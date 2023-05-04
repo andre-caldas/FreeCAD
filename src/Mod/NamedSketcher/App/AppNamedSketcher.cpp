@@ -61,7 +61,7 @@ PyMOD_INIT_FUNC(NamedSketcher)
 
 //    Sketcher::Constraint   ::init();
 //    Sketcher::Geometry     ::init();
-    Sketcher::NamedSketch  ::init();
+//    Sketcher::NamedSketch  ::init();
 
     Base::Console().Log("Loading NamedSketcher module... done\n");
 

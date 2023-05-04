@@ -27,9 +27,7 @@
 
 #include <memory>
 
-namespace Base {
-class XMLReader;
-}
+#include <Base/ElementFactory.h>
 
 namespace Part {
 class Geometry;
@@ -37,10 +35,21 @@ class Geometry;
 
 namespace NamedSketcher
 {
+
 class GeometryBase;
 
 std::unique_ptr<GeometryBase> GeometryFactory(std::unique_ptr<Part::Geometry> geo);
-std::unique_ptr<GeometryBase> GeometryFactory(Base::XMLReader& reader);
+
+class GeometryFactory : public Base::ElementFactory<GeometryBase>
+{
+protected:
+    void getAttributes(Base::XMLReader& reader) override;
+    void setAttributes(GeometryBase* p) override;
+
+private:
+    bool isConstruction;
+    bool isBlocked;
+};
 
 } // namespace NamedSketcher
 

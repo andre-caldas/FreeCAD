@@ -33,31 +33,43 @@
 #include <Base/Writer.h>
 #include <Base/Exception.h>
 
-#include "ConstraintHorizontal.h"
+#include "ConstraintXDistance.h"
 
 
 namespace NamedSketcher
 {
 
-TYPESYSTEM_SOURCE(ConstraintHorizontal, Base::Persistence)
+TYPESYSTEM_SOURCE(ConstraintXDistance, ConstraintBase)
 
-template<typename ref, typename>
-ConstraintHorizontal& ConstraintHorizontal::ConstraintHorizontal(ref&& start, ref&& end)
+ConstraintXDistance::ConstraintXDistance()
+{
+    // FreeCAD objects are not RAII. :-(
+    FC_THROWM(Base::RuntimeError, "NamedSketcher::ConstraintXDistance should not be constructed without arguments.");
+}
+
+template<typename ref,
+         std::enable_if_t<std::is_constructible_v<ConstraintXDistance::ref_type, ref>>*>
+ConstraintXDistance::ConstraintXDistance(ref&& start, ref&& end)
     : start(std::forward(start))
     , end(std::forward(end))
 {
 }
 
-unsigned int ConstraintHorizontal::getMemSize () const
-{
-    return sizeof(ConstraintHorizontal) + start.memSize() + end.memSize();
-}
-
-void ConstraintHorizontal::Save (Base::Writer& writer) const
+void ConstraintXDistance::appendParameterList(std::vector<double*>& parameters)
 {
     THROW(Base::NotImplementedError);
 }
-void ConstraintHorizontal::Restore(Base::XMLReader& /*reader*/)
+
+unsigned int ConstraintXDistance::getMemSize () const
+{
+    return sizeof(ConstraintXDistance) + 100/*start.memSize() + end.memSize()*/;
+}
+
+void ConstraintXDistance::Save (Base::Writer& writer) const
+{
+    THROW(Base::NotImplementedError);
+}
+void ConstraintXDistance::Restore(Base::XMLReader& /*reader*/)
 {
     THROW(Base::NotImplementedError);
 }

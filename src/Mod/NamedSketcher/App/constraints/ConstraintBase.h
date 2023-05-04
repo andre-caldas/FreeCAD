@@ -33,6 +33,8 @@
 #include <Base/Persistence.h>
 #include <Base/Accessor/NameAndTag.h>
 
+#include "ConstraintFactory.h"
+
 namespace NamedSketcher
 {
 
@@ -43,7 +45,7 @@ class NamedSketcherExport ConstraintBase
     TYPESYSTEM_HEADER();
 
 public:
-    static std::unique_ptr<ConstraintBase> factory(Base::XMLReader& reader);
+    using factory = class ConstraintFactory;
     bool isDriving = true;
     bool isDriven = false;
 
@@ -53,6 +55,19 @@ public:
      * all parameters of this Constraint (e.g.: radius).
      */
     virtual void appendParameterList(std::vector<double*>& parameters) = 0;
+
+    /*!
+     * \brief Methods derived from \class GeometryBase shall not implement
+     * Persistence::Restore. Restore is done by factory().
+     * \param reader
+     */
+    void Restore(Base::XMLReader& reader) override;
+    void SaveHead(Base::Writer& writer) const;
+    void SaveTail(Base::Writer& writer) const;
+    virtual std::string xmlAttributes() const;
+    virtual std::string_view xmlTagType() const = 0;
+    std::string_view xmlTagName() const {return xmlTagNameStatic();}
+    static constexpr const char* xmlTagNameStatic() {return "Constraint";}
 };
 
 } // namespace NamedSketcher

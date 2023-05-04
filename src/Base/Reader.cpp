@@ -269,13 +269,16 @@ bool Base::XMLReader::test()
     lastTestReturnValue = read();
 }
 
-bool Base::XMLReader::testElement(const char* ElementName)
+bool Base::XMLReader::testElement(const char* ElementName, bool ConsumeElement)
 {
     test();
     if ((ReadType == StartElement || ReadType == StartEndElement) &&
             (ElementName && LocalName == ElementName))
     {
-        read();
+        if(ConsumeElement)
+        {
+            read();
+        }
         return true;
     }
     return false;
@@ -300,6 +303,12 @@ void Base::XMLReader::readElement(const char* ElementName)
     } while ((ReadType != StartElement && ReadType != StartEndElement) ||
              (ElementName && LocalName != ElementName));
 }
+
+std::string_view Base::XMLReader::getCharacters() const
+{
+    return std::string_view(Characters);
+}
+
 
 int Base::XMLReader::level() const {
     return Level;

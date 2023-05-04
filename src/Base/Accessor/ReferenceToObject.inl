@@ -28,35 +28,37 @@
 
 #include "Exception.h"
 
-#include "ReferencedObject.h"
+#include <App/Document.h>
+
 #include "ReferenceToObject.h"
 
 namespace Base::Accessor {
 
+class ReferencedObject;
+
 template<typename... NameOrTag,
          std::enable_if_t<std::conjunction_v<
-                 std::is_constructible<Base::Accessor::NameAndTag, NameOrTag>...
+                 std::is_convertible<NameOrTag, NameAndTag>...
              >>*>
-ReferenceToObject::ReferenceToObject(std::weak_ptr<ReferencedObject> root, NameOrTag&&... obj_path)
-    : object_path(std::initializer_list<std::string>{std::forward<NameOrTag>(obj_path)...})
-    , root(root)
+ReferenceToObject::ReferenceToObject(std::shared_ptr<ReferencedObject> root, NameOrTag&&... obj_path)
+    : rootTag(root->getTag())
+    , objectPath(std::initializer_list<NameAndTag>{std::forward(obj_path)...})
 {
 }
 
 template<typename... NameOrTag,
          std::enable_if_t<std::conjunction_v<
-                 std::is_constructible<Base::Accessor::NameAndTag, NameOrTag>...
+                 std::is_convertible<NameOrTag, NameAndTag>...
              >>*>
 ReferenceToObject::ReferenceToObject(ReferencedObject* root, NameOrTag&&... obj_path)
-    : object_path(std::initializer_list<std::string>{std::forward<NameOrTag>(obj_path)...})
-    , _root(root, [](auto /*p*/){}) // fake shared_ptr.
-    , root(_root)
+    : rootTag(root->registerTag("I know it is deprecated"))
+    , objectPath({NameAndTag(std::forward<NameOrTag>(obj_path))...})
 {
 }
 
 template<typename... NameOrTag,
          std::enable_if_t<std::conjunction_v<
-                 std::is_constructible<Base::Accessor::NameAndTag, NameOrTag>...
+                 std::is_convertible<NameOrTag, NameAndTag>...
              >>*>
 ReferenceToObject::ReferenceToObject(NameOrTag&&... obj_path)
     : ReferenceToObject(App::GetApplication().getActiveDocument(), std::forward<NameOrTag>(obj_path)...)
@@ -95,6 +97,38 @@ typename ReferenceTo<X>::result ReferenceTo<X>::getResult () const
     }
 
     return result{std::move(lock), ref};
+}
+
+template<typename X>
+ReferenceTo<X>
+ReferenceTo<X>::unserialize(Base::XMLReader& reader)
+{
+    reader.readElement("ReferenceTo");
+    reader.readElement("RootTag");
+    auto locked_root = ReferencedObject::getWeakPtr(reader.getCharacters()).lock();
+    if(!locked_root)
+    {
+        FC_THROWM(ReferenceError, "Root element does not exist when unserializing RferenceTo: '" << reader.getCharacters() << "'");
+    }
+    ReferenceTo<X> result(locked_root);
+    while(!reader.testEndElement("ReferenceTo"))
+    {
+        reader.readElement("NameOrTag");
+        result.objectPath.push_back(NameAndTag(reader.getCharacters()));
+    }
+    return result;
+}
+
+template<typename T>
+template<typename X, typename... NameOrTag,
+         std::enable_if_t<std::conjunction_v<
+                 std::is_convertible<NameOrTag, NameAndTag>...
+             >>*>
+ReferenceTo<X> ReferenceTo<T>::goFurther(NameOrTag&& ...furtherPath) const
+{
+    auto new_path = objectPath;
+    new_path.insert(new_path.end(), {NameAndTag(std::forward<NameOrTag>(furtherPath))...});
+    return ReferenceTo<X>{rootTag, new_path};
 }
 
 } // namespace Base::Accessor

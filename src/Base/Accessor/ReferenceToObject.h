@@ -35,14 +35,28 @@
 #include "NameAndTag.h"
 #include "Types.h"
 
+namespace Base {
+class XMLReader;
+class Writer;
+}
+
 namespace Base::Accessor
 {
 
+/**
+ * @brief A reference to an object is more precisely,
+ * a reference to a member of some object.
+ * It is composed of:
+ * 1. A \class Tag that identifies a root shared \class ReferencedObject.
+ * 2. A sequence of \class NameAndTag that identifies the path
+ * to the referenced entity.
+ *
+ * Instances of the \class ReferenceToObject are not aware of the type
+ * of variable they point to.
+ */
 class BaseExport ReferenceToObject
 {
 public:
-    ReferenceToObject() = delete;
-
     /*
      * Variadic constructors! :-)
      * Thanks to @Artyer:
@@ -55,15 +69,15 @@ public:
      * and every @class ReferencedObject in the path
      * shall be managed through a shared_ptr.
      *
-     * @param root - shared resource (weak_ptr) where the path begins.
+     * @param root - shared resource (shared_ptr) where the path begins.
      * @param obj_path - list of token items that identify
      * the path from @root to the referenced resource.
      */
     template<typename... NameOrTag,
              std::enable_if_t<std::conjunction_v<
-                     std::is_constructible<Base::Accessor::NameAndTag, NameOrTag>...
+                     std::is_convertible<NameOrTag, NameAndTag>...
                  >>* = nullptr>
-    ReferenceToObject(std::weak_ptr<ReferencedObject> root, NameOrTag&&... obj_path);
+    ReferenceToObject(std::shared_ptr<ReferencedObject> root, NameOrTag&&... obj_path);
 
     /**
      * @brief (DEPRECATED) References an object using a root
@@ -75,7 +89,7 @@ public:
      */
     template<typename... NameOrTag,
              std::enable_if_t<std::conjunction_v<
-                     std::is_constructible<Base::Accessor::NameAndTag, NameOrTag>...
+                     std::is_convertible<NameOrTag, NameAndTag>...
                  >>* = nullptr>
     ReferenceToObject(ReferencedObject* root, NameOrTag&&... obj_path);
 
@@ -88,17 +102,28 @@ public:
      */
     template<typename... NameOrTag,
              std::enable_if_t<std::conjunction_v<
-                     std::is_constructible<Base::Accessor::NameAndTag, NameOrTag>...
+                     std::is_convertible<NameOrTag, NameAndTag>...
                  >>* = nullptr>
     ReferenceToObject(NameOrTag&&... obj_path);
+
+    ReferenceToObject(const Tag& tag, const token_list& path)
+        : rootTag(tag)
+        , objectPath(path) {}
 
     std::string pathString() const;
     static std::string pathString(token_iterator first, const token_iterator end);
 
     virtual ~ReferenceToObject() {}
 
-    template<typename T>
-    T& getObject ();
+    /**
+     * @brief References are *NOT* serialized with knowledge
+     * of what is is the most derived class.
+     * When unserializing, the application needs to know what specific
+     * subclass must be instantiated.
+     * Then, serialization is implemented as a static method of the derived class.
+     * @param writer - stream to write to.
+     */
+    void serialize(Base::Writer& writer) const;
 
 protected:
     struct lock_type
@@ -110,12 +135,21 @@ protected:
     };
     lock_type getLock() const;
 
-private:
-    token_list object_path;
-    std::shared_ptr<ReferencedObject> _root; // This has to come before "root".
-    std::weak_ptr<ReferencedObject> root;
+protected:
+    Tag rootTag;
+    token_list objectPath;
 };
 
+/**
+ * @brief Instances of the \class ReferenceToObject are not aware of the type
+ * of variable they point to. Through the means of the templated
+ * \class ReferenceTo<variable_type>, objects can "export" the correct
+ * \class ReferenceTo<variable_type> (\see \class IExport<>).
+ * Also, classes and methods that expect a specific type of reference
+ * shall declare the correct \class ReferenceTo<variable_type>.
+ *
+ * @example ReferenceTo<double> ref(root, "start point", "x");
+ */
 template<typename T>
 class BaseExport ReferenceTo : public ReferenceToObject
 {
@@ -128,6 +162,14 @@ public:
         T* reference;
     };
     result getResult () const;
+
+    static ReferenceTo<T> unserialize(Base::XMLReader& reader);
+
+    template<typename X, typename... NameOrTag,
+             std::enable_if_t<std::conjunction_v<
+                     std::is_convertible<NameOrTag, NameAndTag>...
+                 >>* = nullptr>
+    ReferenceTo<X> goFurther(NameOrTag&& ...furtherPath) const;
 };
 
 } //namespace Base::Accessor

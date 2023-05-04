@@ -34,10 +34,6 @@
 #include <Base/Accessor/NameAndTag.h>
 #include <Base/Accessor/ReferenceToObject.h>
 
-namespace Part {
-class Geometry;
-}
-
 namespace NamedSketcher
 {
 
@@ -48,9 +44,7 @@ class NamedSketcherExport GeometryBase
     TYPESYSTEM_HEADER();
 
 public:
-    GeometryBase(std::unique_ptr<Part::Geometry> geo);
-
-    static std::unique_ptr<GeometryBase> factory(Base::XMLReader& reader);
+    using factory = class GeometryFactory;
 
     bool isConstruction = false;
     bool isBlocked = false;
@@ -70,23 +64,33 @@ public:
      * \param reader
      */
     void Restore(Base::XMLReader& reader) override;
-    void Save (Base::Writer& writer) const override;
-    std::string xmlAttributes() const;
-    virtual const char* xmlTagName() const = 0;
-
-protected:
-    std::shared_ptr<Part::Geometry> geometry;
+    void SaveHead(Base::Writer& writer) const;
+    void SaveTail(Base::Writer& writer) const;
+    virtual std::string xmlAttributes() const;
+    virtual std::string_view xmlTagType() const = 0;
+    std::string_view xmlTagName() const {return xmlTagNameStatic();}
+    static constexpr const char* xmlTagNameStatic() {return "Geometry";}
 };
 
-template<typename GeoClass>
+/**
+ * @brief Convenience template for GeometryBase subclasses.
+ */
+template<typename MySelf, typename GeoClass>
 class NamedSketcherExport GeometryBaseT : public GeometryBase
 {
-    using reference_type = Base::Accessor::ReferenceTo<GeometryBaseT<GeoClass>>;
+    using reference_type = Base::Accessor::ReferenceTo<MySelf>;
 
 public:
-    using GeometryBase::GeometryBase;
-    GeoClass& getGeometry(void);
+    GeometryBaseT(std::unique_ptr<GeoClass> geo);
     reference_type getReference() const;
+
+    void Save(Base::Writer& writer) const override;
+    static std::unique_ptr<GeometryBase> staticRestore(Base::XMLReader& reader);
+
+protected:
+    std::shared_ptr<GeoClass> geometry;
+
+    GeometryBaseT();
 };
 
 } // namespace NamedSketcher

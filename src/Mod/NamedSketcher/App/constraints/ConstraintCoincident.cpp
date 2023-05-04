@@ -27,6 +27,8 @@
 #include <Base/Reader.h>
 #include <Base/Writer.h>
 #include <Base/Exception.h>
+#include <Base/Vector3D.h>
+#include <Base/Accessor/ReferenceToObject.h>
 
 #include "ConstraintCoincident.h"
 
@@ -34,9 +36,10 @@
 namespace NamedSketcher
 {
 
-TYPESYSTEM_SOURCE(ConstraintCoincident, Base::Persistence)
+TYPESYSTEM_SOURCE_ABSTRACT(ConstraintCoincident, ConstraintBase)
 
-template<typename ref, typename>
+template<typename ref,
+         std::enable_if_t<std::is_constructible_v<ConstraintCoincident::ref_type, ref>>*>
 ConstraintCoincident& ConstraintCoincident::addPoint(ref&& reference)
 {
     references.emplace_back(reference);
@@ -49,19 +52,49 @@ ConstraintCoincident& ConstraintCoincident::removePoint(boost::uuids::uuid tag)
     return *this;
 }
 
+void ConstraintCoincident::appendParameterList(std::vector<double*>& parameters)
+{
+    THROW(Base::NotImplementedError);
+}
 
 unsigned int ConstraintCoincident::getMemSize () const
 {
-    return std::accumulate(references.cbegin(), references.cend(), 0, [](auto i){return i->memSize();});
+#if 0
+    unsigned int size = 0;
+    for(auto it = references.cbegin(); it != references.cend(); ++it)
+    {
+        size += it->memSize();
+    }
+    return size;
+#endif
+    return 15*references.size();
 }
 
-void ConstraintCoincident::Save (Base::Writer& writer) const
-{
-    THROW(Base::NotImplementedError);
-}
 void ConstraintCoincident::Restore(Base::XMLReader& /*reader*/)
 {
     THROW(Base::NotImplementedError);
+}
+
+void ConstraintCoincident::Save(Base::Writer& writer) const
+{
+    ConstraintBase::SaveHead(writer);
+    for(auto& reference: references)
+    {
+        reference.serialize(writer);
+    }
+    ConstraintBase::SaveTail(writer);
+}
+
+std::unique_ptr<ConstraintCoincident>
+ConstraintCoincident::staticRestore(Base::XMLReader& reader)
+{
+    auto result = std::make_unique<ConstraintCoincident>();
+    while(reader.testEndElement(xmlTagNameStatic()))
+    {
+        ref_type reference = ref_type::unserialize(reader);
+        result->addPoint(std::move(reference));
+    }
+    return result;
 }
 
 } // namespace NamedSketcher

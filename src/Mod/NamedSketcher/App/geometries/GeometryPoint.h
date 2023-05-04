@@ -31,6 +31,10 @@
 
 #include "GeometryBase.h"
 
+namespace Base {
+class XMLReader;
+class Writer;
+}
 namespace Part {
 class GeomPoint;
 }
@@ -41,7 +45,7 @@ namespace NamedSketcher
 /** Sketcher geometry structure that represents one point.
  */
 class NamedSketcherExport GeometryPoint
-        : public GeometryBaseT<Part::GeomPoint>
+        : public GeometryBaseT<GeometryPoint, Part::GeomPoint>
 {
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
@@ -53,13 +57,14 @@ public:
 
     // Base::Persistence
     unsigned int getMemSize () const override;
-
-    const char* xmlTagName() const override {return xmlTagNameStatic();}
-    static const char* xmlTagNameStatic() {return "GeometryPoint";}
+    std::string_view xmlTagType(void) const override {return xmlTagTypeStatic();}
+    static std::string_view xmlTagTypeStatic(void) {return "Point";}
 
 private:
     Base::Vector3d point;
     GCS::Point gcs_point;
+
+    GeometryPoint();
 };
 
 } // namespace NamedSketcher

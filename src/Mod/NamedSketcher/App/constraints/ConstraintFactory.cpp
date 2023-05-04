@@ -21,57 +21,56 @@
  *                                                                          *
  ***************************************************************************/
 
-
-#ifndef NAMEDSKETCHER_ConstraintXDistance_H
-#define NAMEDSKETCHER_ConstraintXDistance_H
-
-#include <type_traits>
-#include <vector>
-#include <set>
-#include <boost/uuid/uuid.hpp>
+#include <list>
 
 #include <Base/Vector3D.h>
 #include <Base/Accessor/ReferenceToObject.h>
 
 #include "ConstraintBase.h"
+#include "ConstraintCoincident.h"
+#include "ConstraintEqual.h"
+#include "ConstraintHorizontal.h"
+#include "ConstraintXDistance.h"
 
-#include "NamedSketcherGlobal.h"
+#include "ConstraintFactory.h"
 
-namespace NamedSketcher
+namespace NamedSketcher {
+
+void ConstraintFactory::getAttributes(Base::XMLReader& reader)
 {
+    isDriving = reader.getAttributeAsBoolean("driving", true);
+    isDriven =  reader.getAttributeAsBoolean("driven", false);
+}
 
-/** Deals with constraints of type XDistance.
- */
-class NamedSketcherExport ConstraintXDistance : public ConstraintBase
+void ConstraintFactory::setAttributes(ConstraintBase* p)
 {
-    TYPESYSTEM_HEADER_WITH_OVERRIDE();
-
-    using ref_type = Base::Accessor::ReferenceTo<Base::Vector3d>;
-
-public:
-    ref_type start;
-    ref_type end;
-
-    template<typename ref,
-             std::enable_if_t<std::is_constructible_v<ref_type, ref>>* = nullptr>
-    ConstraintXDistance(ref&& start, ref&& end);
-
-public:
-    std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
-    static constexpr const char* xmlTagTypeStatic() {return "XDistance";}
-
-    void appendParameterList(std::vector<double*>& parameters) override;
-
-    // Base::Persistence
-    unsigned int getMemSize () const override;
-    void Save (Base::Writer& writer) const override;
-    void Restore(Base::XMLReader& reader) override;
-    static std::unique_ptr<ConstraintXDistance> staticRestore(Base::XMLReader& reader);
-
-private:
-    ConstraintXDistance();
-};
+    p->isDriving = isDriving;
+    p->isDriven = isDriven;
+}
 
 } // namespace NamedSketcher
 
-#endif // NAMEDSKETCHER_ConstraintXDistance_H
+using namespace NamedSketcher;
+template<>
+ConstraintFactory::map_type Base::ElementFactory<ConstraintBase>::factoryMap = {
+    {
+        ConstraintCoincident::xmlTagTypeStatic(),
+//        "Coincident",
+        [](Base::XMLReader& reader){return ConstraintCoincident::staticRestore(reader);}
+    }
+    ,{
+//        ConstraintEqual::xmlTagTypeStatic(),
+        "Equal",
+        [](Base::XMLReader& reader){return ConstraintEqual::staticRestore(reader);}
+    }
+    ,{
+//        ConstraintHorizontal::xmlTagTypeStatic(),
+        "Horizontal",
+        [](Base::XMLReader& reader){return ConstraintHorizontal::staticRestore(reader);}
+    }
+    ,{
+//        ConstraintXDistance::xmlTagTypeStatic(),
+        "XDistance",
+        [](Base::XMLReader& reader){return ConstraintXDistance::staticRestore(reader);}
+    }
+};

@@ -41,7 +41,18 @@
 namespace Base::Accessor {
 
 Tag::Tag()
-    : tag(boost::uuids::random_generator()()) {}
+    : tag(boost::uuids::random_generator()())
+{}
+
+Tag::Tag(const std::string& tag)
+    : tag(boost::uuids::string_generator()(tag))
+{}
+
+void Tag::setTag(const std::string& t)
+{
+    tag = boost::uuids::string_generator()(t);
+}
+
 
 NameAndTag::NameAndTag() {}
 
@@ -90,7 +101,7 @@ bool NameAndTag::pointsToMe(std::string_view other) const
     return false;
 }
 
-bool NameAndTag::pointsToMe(boost::uuids::uuid other) const
+bool NameAndTag::pointsToMe(Tag::tag_type other) const
 {
      return (tag == other);
 }

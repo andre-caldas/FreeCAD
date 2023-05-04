@@ -30,17 +30,12 @@
 #include <set>
 #include <boost/uuid/uuid.hpp>
 
+#include <Base/Vector3D.h>
+#include <Base/Accessor/ReferenceToObject.h>
+
 #include "ConstraintEqual.h"
 
 #include "NamedSketcherGlobal.h"
-
-namespace Base {
-class Vector3d;
-}
-
-namespace App {
-class ReferenceTo<Base::Vector3d>;
-}
 
 namespace NamedSketcher
 {
@@ -51,17 +46,24 @@ class NamedSketcherExport ConstraintHorizontal : public ConstraintEqual
 {
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
-    using ref_type = App::ReferenceTo<chainable_point>;
+    using ref_type = Base::Accessor::ReferenceTo<Base::Vector3d>;
 
 public:
-    template<typename ref,
-             typename = std::enable_if_t<std::is_constructible<ref_type, ref>>>
-    ConstraintHorizontal(ref&& start, ref&& end);
+    ConstraintHorizontal(const ref_type& start, const ref_type& end);
 
 public:
+    std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
+    static constexpr const char* xmlTagTypeStatic() {return "Horizontal";}
+
+    void appendParameterList(std::vector<double*>& parameters) override;
+
     // Base::Persistence
     void Save (Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
+    static std::unique_ptr<ConstraintHorizontal> staticRestore(Base::XMLReader& reader);
+
+private:
+    ConstraintHorizontal();
 };
 
 } // namespace NamedSketcher
