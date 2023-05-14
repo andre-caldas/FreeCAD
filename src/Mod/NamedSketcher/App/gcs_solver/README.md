@@ -19,9 +19,9 @@ Constraints are made from equations like:
 ```math
 \left\{
 \begin{aligned}
-  x_1 {}&-{} x_2 {}&\phantom{+}&{} &= 5
+  x_1 {}&-&{} x_2 {}&&{} &= 5
   \\
-  {}&\phantom{+}{}x_2^2 {}&+&{} x_3^2 &= 64.
+  {}&&{}x_2^2 {}&+&{} x_3^2 &= 64.
 \end{aligned}
 \right.
 ```
@@ -29,9 +29,9 @@ Let's make them all equal to zero...
 ```math
 \left\{
 \begin{aligned}
-  x_1 {}&-{} x_2 {}&\phantom{+}{} {}&-{} 5 &= 0
+  x_1 {}&-&{} x_2 {}&+&{} {}&-&{} 5 &= 0
   \\
-  {}&\phantom{+}{}x_2^2 {}&+{} x_3^2 {}&-{} 64 &= 0.
+  {}&&{}x_2^2 {}&+&{} x_3^2 {}&-&{} 64 &= 0.
 \end{aligned}
 \right.
 ```
@@ -39,9 +39,9 @@ So, we are actually dealing with a system of equations:
 ```math
 \left\{
 \begin{aligned}
-  f_1(x_1, x_2, \phantom{x_3}) &= 0
+  f_1(x_1, x_2, \cross) &= 0
   \\
-  f_2(\phantom{x_1}, x_2, x_3) &= 0.
+  f_2(\cross, x_2, x_3) &= 0.
 \end{aligned}
 \right.
 ```
