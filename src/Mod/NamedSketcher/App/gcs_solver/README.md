@@ -76,11 +76,11 @@ That is,
 ```math
 DF(x) =
 \begin{bmatrix}
-  \rule & \nabla f_1 & \rule
+  \rule[.5ex]{2.5ex}{0.5pt} & \nabla f_1 & \rule[.5ex]{2.5ex}{0.5pt}
   \\
   &\vdots&
   \\
-  \rule & \nabla f_n & \rule
+  \rule[.5ex]{2.5ex}{0.5pt} & \nabla f_n & \rule[.5ex]{2.5ex}{0.5pt}
 \end{bmatrix}
 ```
 
