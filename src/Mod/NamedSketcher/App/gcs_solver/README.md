@@ -76,11 +76,11 @@ That is,
 ```math
 DF(x) =
 \begin{bmatrix}
-  \hrule & \nabla f_1 & \hrule
+  \rule & \nabla f_1 & \rule
   \\
   &\vdots&
   \\
-  \hrule & \nabla f_n & \hrule
+  \rule & \nabla f_n & \rule
 \end{bmatrix}
 ```
 
@@ -229,7 +229,7 @@ it is very easy to add a new vector $\vec{v}_{n+1}$ (constraint) to the list.
 All we need to do is calculate
 $$\tilde{q}_{n+1} = \vec{v}_{n+1} - \sum_{j=1}^m (\vec{v}_{n+1} \cdot \vec{q}_j) \vec{q}_j,$$
 and then normalize it:
-$$\vec{q}_{n+1} = \frac{1}{\lVert \tilde{q}_{n+1}} \tilde{q}_{n+1}.$$
+$$\vec{q}_{n+1} = \frac{1}{\lVert \tilde{q}_{n+1} \rVert} \tilde{q}_{n+1}.$$
 Later we discuss how to add a constraint in the middle of the list.
 
 Adding a new dimension (geometry) is even easier.
@@ -257,9 +257,9 @@ Make
   \\
   \tilde{p}_{j+1} &= \vec{q}_j - (\vec{v}_{j+1} \cdot \vec{q}_j) \vec{q}_{j+1}
   \\
-  \vec{q}_{j} &= \frac{1}{\lVert \tilde{p}_{j}} \tilde{q}_{j}
+  \vec{q}_{j} &= \frac{1}{\lVert \tilde{p}_{j} \rVert} \tilde{q}_{j}
   \quad\text{and}\quad
-  \vec{q}_{j+1} = \frac{1}{\lVert \tilde{p}_{j+1}} \tilde{q}_{j+1}.
+  \vec{q}_{j+1} = \frac{1}{\lVert \tilde{p}_{j+1} \rVert} \tilde{q}_{j+1}.
 \end{aligned}
 ```
 
