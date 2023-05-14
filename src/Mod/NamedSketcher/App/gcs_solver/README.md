@@ -39,9 +39,9 @@ So, we are actually dealing with a system of equations:
 ```math
 \left\{
 \begin{aligned}
-  f_1(x_1, x_2, \cross) &= 0
+  f_1(x_1, x_2, \times) &= 0
   \\
-  f_2(\cross, x_2, x_3) &= 0.
+  f_2(\times, x_2, x_3) &= 0.
 \end{aligned}
 \right.
 ```
