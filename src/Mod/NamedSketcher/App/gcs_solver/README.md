@@ -16,7 +16,7 @@ All the higher level geometrical stuff must be kept outside the GCS.
 ## Constraints
 
 Constraints are made from equations like:
-$$
+```math
 \left\{
 \begin{aligned}
   x_1 {}&-{} x_2 {}&\phantom{+}&{} &= 5
@@ -24,9 +24,9 @@ $$
   {}&\phantom{+}{}x_2^2 {}&+&{} x_3^2 &= 64.
 \end{aligned}
 \right.
-$$
+```
 Let's make them all equal to zero...
-$$
+```math
 \left\{
 \begin{aligned}
   x_1 {}&-{} x_2 {}&\phantom{+}{} {}&-{} 5 &= 0
@@ -34,9 +34,9 @@ $$
   {}&\phantom{+}{}x_2^2 {}&+{} x_3^2 {}&-{} 64 &= 0.
 \end{aligned}
 \right.
-$$
+```
 So, we are actually dealing with a system of equations:
-$$
+```math
 \left\{
 \begin{aligned}
   f_1(x_1, x_2, \phantom{x_3}) &= 0
@@ -44,16 +44,16 @@ $$
   f_2(\phantom{x_1}, x_2, x_3) &= 0.
 \end{aligned}
 \right.
-$$
+```
 Usually, each row depends on just a few parameters.
 And of course, we are talking about much more than 3 parameters and 2 equations! :-)
-$$
+```math
   F: \mathbb{R}^p \rightarrow \mathbb{R}^q.
-$$
+```
 We want to find a solution for
-$$
+```math
   F(x_1, \dotsc, x_p) = (0, \dotsc, 0).
-$$
+```
 Or, $F(x) = 0$, for short.
 
 
@@ -73,7 +73,7 @@ It is a linear transform.
 It can be thought as a matrix where the $j$-th *row* is the *gradient*
 of the corresponding $f_j$ at $x$.
 That is,
-$$
+```math
 DF(x) =
 \begin{bmatrix}
   \hrule & \nabla f_1 & \hrule
@@ -82,7 +82,7 @@ DF(x) =
   \\
   \hrule & \nabla f_n & \hrule
 \end{bmatrix}
-$$
+```
 
 
 ## Fully constrained
@@ -148,7 +148,7 @@ allow us to "gradually build up" from
 linearly independent $\vec{v}_1, \dotsc, \vec{v}_n$,
 a sequence of orthonormal vectors
 $\vec{q}_1, \dots, \vec{q}_n$ such that
-$$
+```math
 \begin{aligned}
   \vec{v}_1 &= \alpha_{11} \vec{q}_1
   \\
@@ -158,9 +158,9 @@ $$
   \\
   \vec{v}_n &= \alpha_{n1} \vec{q}_1 + \dotsb + \alpha_{nn} \vec{q}_n.
 \end{aligned}
-$$
+```
 In matrix notation
-$$
+```math
 \begin{bmatrix}
   \vert & & \vert
   \\
@@ -184,7 +184,7 @@ $$
   \\
               &             &        & \alpha_{nn}
 \end{bmatrix}
-$$
+```
 For short,
 $$V = QR.$$
 
@@ -251,7 +251,7 @@ Then we remove it.
 Swapping to consecutive constraints $\vec{v}_j$ and $\vec{v}_{j+1}$
 only affects $\vec{q}_j$ and $\vec{q}_{j+1}$.
 Make
-$$
+```math
 \begin{aligned}
   \tilde{p}_j &= \vec{q}_{j+1} + (\vec{v}_{j+1} \cdot \vec{q}_j) \vec{q}_j
   \\
@@ -261,7 +261,7 @@ $$
   \quad\text{and}\quad
   \vec{q}_{j+1} = \frac{1}{\lVert \tilde{p}_{j+1}} \tilde{q}_{j+1}.
 \end{aligned}
-$$
+```
 
 ### Disturbing a vector
 
@@ -291,9 +291,9 @@ $\vec{v}_{j+1}, \dotsc, \vec{w}_n$.
 We can simply add it to the end of the first list, as we usually do.
 Call it $\vec{q}$, by now.
 Then, for $k = 1, 2, \dotsc$ make
-$$
+```math
   \tilde{q}_{j+1+k} = \vec{q}_{j+1+k} - (\vec{q}_{j+1+k} \cdot) \vec{q}) \vec{q}.
-$$
+```
 and normalize to obtain $\vec{q}_{j+1+k}$.
 And finally, make $\vec{q}_j = \vec{q}$.
 
@@ -315,22 +315,22 @@ We want to find a point $X$ such that $F(X) = 0$.
 We search for such a point using linear approximations.
 Starting at a point $x$, we want to go a step further, aiming at $F = 0$.
 We calculate $F(x)$ and look for a *"step"* $\Delta x$ such that
-$$
+```math
   DF(x)\Delta x = -F(x).
-$$
+```
 Heuristically,
-$$
+```math
   F(x + \Delta x) - F(x) \approx DF(x)\Delta x = -F(x)
   \Rightarrow
   F(x + \Delta x) \approx 0.
-$$
+```
 
 ### Step vector
 
 In order to solve the equation
-$$
+```math
   DF(x)\Delta x = -F(x),
-$$
+```
 we use a [least squares solver](https://docs.w3cub.com/eigen3/group__leastsquares).
 [Eigen3](https://eigen.tuxfamily.org/)
 is the library FreeCAD uses for solving this kind of problem.
