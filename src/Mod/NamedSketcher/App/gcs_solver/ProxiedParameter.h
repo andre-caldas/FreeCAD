@@ -22,57 +22,44 @@
  ***************************************************************************/
 
 
-#include "PreCompiled.h"
+#ifndef NAMEDSKETCHER_GCS_ProxiedParameter_H
+#define NAMEDSKETCHER_GCS_ProxiedParameter_H
 
-#ifndef _PreComp_
-#include <utility>
-#endif // _PreComp_
+#include "NamedSketcherGlobal.h"
 
-#include <Base/Persistence.h>
-#include <Base/Reader.h>
-#include <Base/Writer.h>
-#include <Base/Exception.h>
-
-#include "ConstraintEqual.h"
-
-
-namespace NamedSketcher
+namespace NamedSketcher::GCS
 {
 
-TYPESYSTEM_SOURCE(ConstraintEqual, ConstraintBase)
-
-ConstraintEqual::ConstraintEqual()
+/**
+ * @brief The ProxiedParameter class allow us to treat, outside the solver,
+ * parameters that are constrained to be equal.
+ *
+ * The geometric object's parameters are supposed to be \class ProxiedParameter.
+ * When a geometry joins a \class ConstraintEqual, its proxy is redirected (\a setProxy)
+ * to a value internal to \class ConstraintEqual.
+ */
+class NamedSketcherExport ProxiedParameter
 {
-    // FreeCAD objects are not RAII. :-(
-    FC_THROWM(Base::RuntimeError, "NamedSketcher::ConstraintEqual should not be constructed without arguments.");
-}
+public:
+    ProxiedParameter() = default;
 
-template<typename ref,
-         std::enable_if_t<std::is_constructible_v<ConstraintEqual::ref_type, ref>>*>
-ConstraintEqual::ConstraintEqual(GCS::ParameterProxyManager& proxy_manager, ref&& a, ref&& b)
-    : a(std::forward(a))
-    , b(std::forward(b))
-    , parameterGroup(proxy_manager)
-{
-}
+    double getValue() const {return *proxy;}
+    void setProxy(double* parameter_address) : proxy(parameter_address) {}
+    void resetProxy(bool shallUpdate = true);
+    void update() {if(proxy != &value) value = *proxy;}
 
-void ConstraintEqual::appendParameterList(std::vector<double*>& parameters)
-{
-    THROW(Base::NotImplementedError);
-}
+private:
+    double value;
+    double* proxy = &value;
+};
 
-unsigned int ConstraintEqual::getMemSize () const
+class NamedSketcherExport ProxiedPoint
 {
-    return sizeof(ConstraintEqual) + 50/*a.memSize() + b.memSize()*/;
-}
+public:
+    ProxiedParameter x;
+    ProxiedParameter y;
+};
 
-void ConstraintEqual::Save (Base::Writer& writer) const
-{
-    THROW(Base::NotImplementedError);
-}
-void ConstraintEqual::Restore(Base::XMLReader& /*reader*/)
-{
-    THROW(Base::NotImplementedError);
-}
+} // namespace NamedSketcher::GCS
 
-} // namespace NamedSketcher
+#endif // NAMEDSKETCHER_GCS_ProxiedParameter_H

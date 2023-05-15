@@ -29,6 +29,8 @@
 #include <Base/Vector3D.h>
 #include <Mod/Sketcher/App/planegcs/Geo.h>
 
+#include "gcs_solver/ProxiedParameter.h"
+
 #include "GeometryBase.h"
 
 namespace Base {
@@ -61,8 +63,7 @@ public:
     static std::string_view xmlTagTypeStatic(void) {return "Point";}
 
 private:
-    Base::Vector3d point;
-    GCS::Point gcs_point;
+    GCS::ProxiedPoint point;
 
     GeometryPoint();
 };

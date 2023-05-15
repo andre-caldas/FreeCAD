@@ -49,9 +49,10 @@ ConstraintXDistance::ConstraintXDistance()
 
 template<typename ref,
          std::enable_if_t<std::is_constructible_v<ConstraintXDistance::ref_type, ref>>*>
-ConstraintXDistance::ConstraintXDistance(ref&& start, ref&& end)
+ConstraintXDistance::ConstraintXDistance(GCS::ParameterProxyManager& proxy_manager, ref&& start, ref&& end)
     : start(std::forward(start))
     , end(std::forward(end))
+    , parameterGroup(proxy_manager)
 {
 }
 

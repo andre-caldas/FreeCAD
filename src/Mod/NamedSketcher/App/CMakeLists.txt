@@ -23,7 +23,6 @@ link_directories(${OCC_LIBRARY_DIR})
 set(NamedSketcher_LIBS
     Part
     FreeCADApp
-    Sketcher
 )
 
 generate_from_xml(NamedSketchPy)
@@ -96,6 +95,23 @@ SET(Constraints_SRCS
 )
 SOURCE_GROUP("Constraints" FILES ${Constraints_SRCS})
 
+SET(gcs_solver_SRCS
+    gcs_solver/System.h
+    gcs_solver/System.cpp
+    gcs_solver/ProxiedParameter.h
+    gcs_solver/ProxiedParameter.cpp
+    gcs_solver/ParameterGroup.h
+    gcs_solver/ParameterProxyManager.h
+    gcs_solver/ParameterProxyManager.cpp
+#
+    gcs_solver/equations/Equation.h
+    gcs_solver/equations/Equation.cpp
+    gcs_solver/equations/Equal.h
+    gcs_solver/equations/Difference.h
+    gcs_solver/equations/Colinear.h
+)
+SOURCE_GROUP("GCS Solver" FILES ${gcs_solver_SRCS})
+
 SET(PreCompiled_SRCS
     PreCompiled.h
     PreCompiled.cpp
@@ -116,6 +132,7 @@ SET(NamedSketcher_SRCS
     ${SketchModule_SRCS}
     ${Geometries_SRCS}
     ${Constraints_SRCS}
+    ${gcs_solver_SRCS}
     ${Python_SRCS}
     ${Properties_SRCS}
 #     ${Datatypes_SRCS}

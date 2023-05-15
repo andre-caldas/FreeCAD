@@ -47,8 +47,8 @@ ConstraintHorizontal::ConstraintHorizontal()
     FC_THROWM(Base::RuntimeError, "NamedSketcher::ConstraintHorizontal should not be constructed without arguments.");
 }
 
-ConstraintHorizontal::ConstraintHorizontal(const ref_type& start, const ref_type& end)
-    : ConstraintEqual(start.goFurther<double>("y"), end.goFurther<double>("y"))
+ConstraintHorizontal::ConstraintHorizontal(GCS::ParameterProxyManager& proxy_manager, const ref_type& start, const ref_type& end)
+    : ConstraintEqual(proxy_manager, start.goFurther<double>("y"), end.goFurther<double>("y"))
 {
 }
 

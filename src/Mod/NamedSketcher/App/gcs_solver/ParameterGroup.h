@@ -22,57 +22,36 @@
  ***************************************************************************/
 
 
-#include "PreCompiled.h"
+#ifndef NAMEDSKETCHER_GCS_ParameterGroup_H
+#define NAMEDSKETCHER_GCS_ParameterGroup_H
 
-#ifndef _PreComp_
-#include <utility>
-#endif // _PreComp_
+#include <set>
 
-#include <Base/Persistence.h>
-#include <Base/Reader.h>
-#include <Base/Writer.h>
-#include <Base/Exception.h>
+#include "NamedSketcherGlobal.h"
 
-#include "ConstraintEqual.h"
-
-
-namespace NamedSketcher
+namespace NamedSketcher::GCS
 {
 
-TYPESYSTEM_SOURCE(ConstraintEqual, ConstraintBase)
+class ProxiedParameter;
+class ParameterProxyManager;
 
-ConstraintEqual::ConstraintEqual()
+class NamedSketcherExport ParameterGroup
 {
-    // FreeCAD objects are not RAII. :-(
-    FC_THROWM(Base::RuntimeError, "NamedSketcher::ConstraintEqual should not be constructed without arguments.");
-}
+    using set_t = std::set<ProxiedParameter*>;
 
-template<typename ref,
-         std::enable_if_t<std::is_constructible_v<ConstraintEqual::ref_type, ref>>*>
-ConstraintEqual::ConstraintEqual(GCS::ParameterProxyManager& proxy_manager, ref&& a, ref&& b)
-    : a(std::forward(a))
-    , b(std::forward(b))
-    , parameterGroup(proxy_manager)
-{
-}
+public:
+    ParameterGroup(ParameterProxyManager& manager) : proxyManager(manager) {}
 
-void ConstraintEqual::appendParameterList(std::vector<double*>& parameters)
-{
-    THROW(Base::NotImplementedError);
-}
+    bool hasParameter(ProxiedParameter* parameter) const {return parameters.count(parameter);}
+    set_t::iterator begin() {return parameters.begin();}
+    set_t::iterator end() {return parameters.end();}
+    set_t::size_type size() const {return parameters.size();}
 
-unsigned int ConstraintEqual::getMemSize () const
-{
-    return sizeof(ConstraintEqual) + 50/*a.memSize() + b.memSize()*/;
-}
+private:
+    ParameterProxyManager& proxyManager;
+    set_t parameters;
+};
 
-void ConstraintEqual::Save (Base::Writer& writer) const
-{
-    THROW(Base::NotImplementedError);
-}
-void ConstraintEqual::Restore(Base::XMLReader& /*reader*/)
-{
-    THROW(Base::NotImplementedError);
-}
+} // namespace NamedSketcher::GCS
 
-} // namespace NamedSketcher
+#endif // NAMEDSKETCHER_GCS_ParameterGroup_H

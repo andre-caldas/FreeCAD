@@ -22,57 +22,57 @@
  ***************************************************************************/
 
 
-#include "PreCompiled.h"
+#include "equations/Equation.h"
+#include "System.h"
 
-#ifndef _PreComp_
-#include <utility>
-#endif // _PreComp_
-
-#include <Base/Persistence.h>
-#include <Base/Reader.h>
-#include <Base/Writer.h>
-#include <Base/Exception.h>
-
-#include "ConstraintEqual.h"
-
-
-namespace NamedSketcher
+namespace NamedSketcher::GCS
 {
 
-TYPESYSTEM_SOURCE(ConstraintEqual, ConstraintBase)
-
-ConstraintEqual::ConstraintEqual()
+void System::addEssentialEquation(Equation* equation)
 {
-    // FreeCAD objects are not RAII. :-(
-    FC_THROWM(Base::RuntimeError, "NamedSketcher::ConstraintEqual should not be constructed without arguments.");
+    // lock_mutex
+    essentialEquations.push_back(equation);
+    int i = essentialEquations.size() - 1;
+    parameters = equation->differential(); // (ProxiedParameter*, double)
+    for(auto& parameter: parameters)
+    {
+        gradientsT.setFromTriplets()
+    }
 }
 
-template<typename ref,
-         std::enable_if_t<std::is_constructible_v<ConstraintEqual::ref_type, ref>>*>
-ConstraintEqual::ConstraintEqual(GCS::ParameterProxyManager& proxy_manager, ref&& a, ref&& b)
-    : a(std::forward(a))
-    , b(std::forward(b))
-    , parameterGroup(proxy_manager)
+void System::addRedundantEquation(Equation* equation)
 {
 }
 
-void ConstraintEqual::appendParameterList(std::vector<double*>& parameters)
+void System::addAssertEquation(Equation* equation)
 {
-    THROW(Base::NotImplementedError);
 }
 
-unsigned int ConstraintEqual::getMemSize () const
-{
-    return sizeof(ConstraintEqual) + 50/*a.memSize() + b.memSize()*/;
-}
+    void removeEssentialEquation(Equation* equation);
+    void removeRedundantEquation(Equation* equation);
+    void removeAssertEquation(Equation* equation);
 
-void ConstraintEqual::Save (Base::Writer& writer) const
-{
-    THROW(Base::NotImplementedError);
-}
-void ConstraintEqual::Restore(Base::XMLReader& /*reader*/)
-{
-    THROW(Base::NotImplementedError);
-}
+private:
+    /**
+     * @brief Each equation generates a gradient.
+     * Each column of this matrix is the gradient of an equation (function)
+     * at a certain "good point". It is the transposed of the differential.
+     */
+    Eigen::SparseMatrix gradientsT;
+    /**
+     * @brief The gradientsT can be orthonormalized.
+     * The columns of gradientsTQ are the orthonormalized gradients.
+     */
+    Eigen::SparseMatrix gradientsTQ;
+    /**
+     * @brief The gradientsT can be orthonormalized.
+     * The columns of gradientsTR are the scalars used to write each
+     * gradient as a linear combination of the orthonormalized vectors.
+     */
+    Eigen::SparseMatrix gradientsTR;
 
-} // namespace NamedSketcher
+    std::vector<Equation*> essentialEquations;
+    std::vector<Equation*> extraRedundantEquations;
+    std::vector<Equation*> assertEquations;
+
+} // namespace NamedSketcher::GCS

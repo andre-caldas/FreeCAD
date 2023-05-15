@@ -22,57 +22,32 @@
  ***************************************************************************/
 
 
-#include "PreCompiled.h"
+#ifndef NAMEDSKETCHER_GCS_Colinear_H
+#define NAMEDSKETCHER_GCS_Colinear_H
 
-#ifndef _PreComp_
-#include <utility>
-#endif // _PreComp_
+#include <set>
 
-#include <Base/Persistence.h>
-#include <Base/Reader.h>
-#include <Base/Writer.h>
-#include <Base/Exception.h>
+#include "../ProxiedParameter.h""
+#include "Equation.h"
 
-#include "ConstraintEqual.h"
-
-
-namespace NamedSketcher
+namespace NamedSketcher::GCS
 {
 
-TYPESYSTEM_SOURCE(ConstraintEqual, ConstraintBase)
-
-ConstraintEqual::ConstraintEqual()
+class NamedSketcherExport Colinear : public Equation
 {
-    // FreeCAD objects are not RAII. :-(
-    FC_THROWM(Base::RuntimeError, "NamedSketcher::ConstraintEqual should not be constructed without arguments.");
-}
+public:
+    Colinear(ProxiedPoint& a, ProxiedPoint& b, ProxiedPoint& c) : a(a), b(b), c(c) {}
 
-template<typename ref,
-         std::enable_if_t<std::is_constructible_v<ConstraintEqual::ref_type, ref>>*>
-ConstraintEqual::ConstraintEqual(GCS::ParameterProxyManager& proxy_manager, ref&& a, ref&& b)
-    : a(std::forward(a))
-    , b(std::forward(b))
-    , parameterGroup(proxy_manager)
-{
-}
+    sparce_vector error() const override;
+    sparse_matrix differential() const override;
+    sparse_matrix differentialVariation(from) const override;
 
-void ConstraintEqual::appendParameterList(std::vector<double*>& parameters)
-{
-    THROW(Base::NotImplementedError);
-}
+private:
+    ProxiedPoint& a;
+    ProxiedPoint& b;
+    ProxiedPoint& c;
+};
 
-unsigned int ConstraintEqual::getMemSize () const
-{
-    return sizeof(ConstraintEqual) + 50/*a.memSize() + b.memSize()*/;
-}
+} // namespace NamedSketcher::GCS
 
-void ConstraintEqual::Save (Base::Writer& writer) const
-{
-    THROW(Base::NotImplementedError);
-}
-void ConstraintEqual::Restore(Base::XMLReader& /*reader*/)
-{
-    THROW(Base::NotImplementedError);
-}
-
-} // namespace NamedSketcher
+#endif // NAMEDSKETCHER_GCS_Colinear_H

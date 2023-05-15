@@ -33,8 +33,8 @@
 #include <Base/Accessor/ReferenceToObject.h>
 
 #include <Mod/Part/App/Geometry.h>
-#include <Mod/Sketcher/App/planegcs/GCS.h>
 
+#include "gcs_solver/"
 #include "geometries/GeometryFactory.h"
 
 #include "NamedSketch.h"
@@ -91,6 +91,7 @@ App::DocumentObjectExecReturn *NamedSketch::execute()
 // TODO: in the future, return an ObjectPath-like "reference".
 PropertyGeometryList::item_reference NamedSketch::addGeometry(std::unique_ptr<Part::Geometry> geo)
 {
+    // TODO: addParameter to GCS.
     auto uuid = geometryList.addValue(GeometryFactory(std::move(geo)));
     return PropertyGeometryList::item_reference(this, "geometries", uuid);
 }
@@ -98,27 +99,28 @@ PropertyGeometryList::item_reference NamedSketch::addGeometry(std::unique_ptr<Pa
 void NamedSketch::delGeometry(boost::uuids::uuid tag)
 {
     // TODO: look for constraints.
+    // TODO: removeParameter from GCS.
     geometryList.removeValue(tag);
+    constraintList.
 }
 
 PropertyConstraintList::item_reference NamedSketch::addConstraint(std::unique_ptr<ConstraintBase> constraint)
 {
+    // TODO: addParameter to GCS.
     auto uuid = constraintList.addValue(std::move(constraint));
     return PropertyConstraintList::item_reference(this, "constraints", uuid);
 }
 
 void NamedSketch::delConstraint(boost::uuids::uuid tag)
 {
+    // TODO: removeParameter from GCS.
     constraintList.removeValue(tag);
 }
 
 void NamedSketch::solve() {
-    std::vector<double*> Parameters;    // with memory allocation
-    std::vector<double*> DrivenParameters;    // with memory allocation
     std::vector<double*> FixParameters; // with memory allocation
     std::vector<double> MoveParameters, InitParameters;
 
-    GCS::System GCSsys;
     GCSsys.declareUnknowns(Parameters);
     GCSsys.declareDrivenParams(DrivenParameters);
 //    GCSsys.initSolution(defaultSolverRedundant);

@@ -30,9 +30,9 @@
 #include <Base/Vector3D.h>
 #include <Mod/Sketcher/App/planegcs/Geo.h>
 
-#include "GeometryBase.h"
+#include "gcs_solver/ProxiedParameter.h"
 
-#include "NamedSketcherGlobal.h"
+#include "GeometryBase.h"
 
 namespace Base {
 class Reader;
@@ -64,11 +64,8 @@ public:
     static std::string_view xmlTagTypeStatic(void) {return "LineSegment";}
 
 private:
-    Base::Vector3d start;
-    Base::Vector3d end;
-    GCS::Point gcs_start;
-    GCS::Point gcs_end;
-    GCS::Line gcs_line;
+    GCS::ProxiedPoint start;
+    GCS::ProxiedPoint end;
 
     GeometryLineSegment();
 };

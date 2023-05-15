@@ -31,9 +31,9 @@
 
 #include <Base/Vector3D.h>
 
-#include "ConstraintBase.h"
+#include "gcs_solver/ParameterGroup.h"
 
-#include "NamedSketcherGlobal.h"
+#include "ConstraintBase.h"
 
 namespace Base::Accessor {
 template<typename T>
@@ -52,6 +52,8 @@ class NamedSketcherExport ConstraintCoincident : public ConstraintBase
     using ref_type = Base::Accessor::ReferenceTo<Base::Vector3d>;
 
 public:
+    ConstraintCoincident(GCS::ParameterProxyManager& proxy_manager) : parameterGroup(proxy_manager) {}
+
     std::vector<ref_type> references;
 
     template<typename ref,
@@ -63,13 +65,17 @@ public:
     std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
     static constexpr const char* xmlTagTypeStatic() {return "Coincident";}
 
-    void appendParameterList(std::vector<double*>& parameters) override;
+    void appendParameterList(std::vector<ProxiedParameter*>& parameters) override;
 
     // Base::Persistence
     unsigned int getMemSize () const override;
     void Save (Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
     static std::unique_ptr<ConstraintCoincident> staticRestore(Base::XMLReader& reader);
+
+private:
+    GCS::ParameterGroup parameterGroup;
+    ConstraintCoincident();
 };
 
 } // namespace NamedSketcher

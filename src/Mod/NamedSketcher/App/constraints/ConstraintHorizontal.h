@@ -33,9 +33,9 @@
 #include <Base/Vector3D.h>
 #include <Base/Accessor/ReferenceToObject.h>
 
-#include "ConstraintEqual.h"
+#include "gcs_solver/ParameterGroup.h"
 
-#include "NamedSketcherGlobal.h"
+#include "ConstraintEqual.h"
 
 namespace NamedSketcher
 {
@@ -49,7 +49,7 @@ class NamedSketcherExport ConstraintHorizontal : public ConstraintEqual
     using ref_type = Base::Accessor::ReferenceTo<Base::Vector3d>;
 
 public:
-    ConstraintHorizontal(const ref_type& start, const ref_type& end);
+    ConstraintHorizontal(GCS::ParameterProxyManager& proxy_manager, const ref_type& start, const ref_type& end);
 
 public:
     std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
@@ -61,6 +61,9 @@ public:
     void Save (Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
     static std::unique_ptr<ConstraintHorizontal> staticRestore(Base::XMLReader& reader);
+
+private:
+    GCS::ParameterGroup parameterGroup;
 
 private:
     ConstraintHorizontal();

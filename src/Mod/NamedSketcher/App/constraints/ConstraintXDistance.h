@@ -33,9 +33,9 @@
 #include <Base/Vector3D.h>
 #include <Base/Accessor/ReferenceToObject.h>
 
-#include "ConstraintBase.h"
+#include "gcs_solver/ParameterGroup.h"
 
-#include "NamedSketcherGlobal.h"
+#include "ConstraintBase.h"
 
 namespace NamedSketcher
 {
@@ -54,7 +54,7 @@ public:
 
     template<typename ref,
              std::enable_if_t<std::is_constructible_v<ref_type, ref>>* = nullptr>
-    ConstraintXDistance(ref&& start, ref&& end);
+    ConstraintXDistance(GCS::ParameterProxyManager& proxy_manager, ref&& start, ref&& end);
 
 public:
     std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
@@ -67,6 +67,9 @@ public:
     void Save (Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
     static std::unique_ptr<ConstraintXDistance> staticRestore(Base::XMLReader& reader);
+
+private:
+    GCS::ParameterGroup parameterGroup;
 
 private:
     ConstraintXDistance();

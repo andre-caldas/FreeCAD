@@ -21,58 +21,22 @@
  *                                                                          *
  ***************************************************************************/
 
-
-#include "PreCompiled.h"
-
-#ifndef _PreComp_
-#include <utility>
-#endif // _PreComp_
-
-#include <Base/Persistence.h>
-#include <Base/Reader.h>
-#include <Base/Writer.h>
 #include <Base/Exception.h>
 
-#include "ConstraintEqual.h"
+#include "ProxiedParameter.h"
 
-
-namespace NamedSketcher
+namespace NamedSketcher::GCS
 {
 
-TYPESYSTEM_SOURCE(ConstraintEqual, ConstraintBase)
-
-ConstraintEqual::ConstraintEqual()
+void resetProxy(bool shallUpdate)
 {
-    // FreeCAD objects are not RAII. :-(
-    FC_THROWM(Base::RuntimeError, "NamedSketcher::ConstraintEqual should not be constructed without arguments.");
+    if(shallUpdate)
+    {
+        update();
+    }
+    proxy = &value;
 }
 
-template<typename ref,
-         std::enable_if_t<std::is_constructible_v<ConstraintEqual::ref_type, ref>>*>
-ConstraintEqual::ConstraintEqual(GCS::ParameterProxyManager& proxy_manager, ref&& a, ref&& b)
-    : a(std::forward(a))
-    , b(std::forward(b))
-    , parameterGroup(proxy_manager)
-{
-}
+} // namespace NamedSketcher::GCS
 
-void ConstraintEqual::appendParameterList(std::vector<double*>& parameters)
-{
-    THROW(Base::NotImplementedError);
-}
-
-unsigned int ConstraintEqual::getMemSize () const
-{
-    return sizeof(ConstraintEqual) + 50/*a.memSize() + b.memSize()*/;
-}
-
-void ConstraintEqual::Save (Base::Writer& writer) const
-{
-    THROW(Base::NotImplementedError);
-}
-void ConstraintEqual::Restore(Base::XMLReader& /*reader*/)
-{
-    THROW(Base::NotImplementedError);
-}
-
-} // namespace NamedSketcher
+#endif // NAMEDSKETCHER_GCS_ProxiedParameter_H

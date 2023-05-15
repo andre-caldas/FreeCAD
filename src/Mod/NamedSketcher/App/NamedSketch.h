@@ -33,8 +33,7 @@
 
 #include <Mod/Part/App/Part2DObject.h>
 
-#include <Mod/Sketcher/App/planegcs/GCS.h>
-
+#include "gcs_solver/"
 #include "geometries/PropertyGeometryList.h"
 #include "constraints/PropertyConstraintList.h"
 
@@ -99,6 +98,8 @@ public:
 
 private:
     GCS::System gcsSystem;
+//    std::vector<double*> Parameters;
+//    std::vector<double*> DrivenParameters;
 };
 
 using NamedSketchPython = App::FeaturePythonT<NamedSketch>;
