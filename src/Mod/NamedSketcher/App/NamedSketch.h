@@ -33,7 +33,7 @@
 
 #include <Mod/Part/App/Part2DObject.h>
 
-#include "gcs_solver/"
+#include "gcs_solver/System.h"
 #include "geometries/PropertyGeometryList.h"
 #include "constraints/PropertyConstraintList.h"
 
@@ -82,7 +82,8 @@ public:
      \param constraint - std::unique_ptr to constraint to add
      \retval tag of the added constraint.
      */
-    PropertyConstraintList::item_reference addConstraint(std::unique_ptr<ConstraintBase> constraint);
+    PropertyConstraintList::item_reference
+    addConstraint(std::unique_ptr<ConstraintBase> constraint);
 
     /*!
      \brief Deletes indicated constraint.
@@ -97,9 +98,7 @@ public:
     void Restore(Base::XMLReader &/*reader*/) override;
 
 private:
-    GCS::System gcsSystem;
-//    std::vector<double*> Parameters;
-//    std::vector<double*> DrivenParameters;
+    GCS::System gcs;
 };
 
 using NamedSketchPython = App::FeaturePythonT<NamedSketch>;

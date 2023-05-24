@@ -56,9 +56,8 @@ ReferenceToObject::lock_type ReferenceToObject::getLock() const
 {
     // TODO: Implement different "cache expire" policies.
     lock_type lock;
-    lock.pointers.reserve(objectPath.size());
-    lock.pointers.emplace_back(ReferencedObject::getWeakPtr(rootTag).lock());
-    if(!lock.pointers.front())
+    lock.last_object = ReferencedObject::getWeakPtr(rootTag).lock();
+    if(!lock.last_object)
     {
         FC_THROWM(ExceptionCannotResolve, "Root object is not available. Path: '" << pathString() << "'.");
     }
@@ -68,7 +67,7 @@ ReferenceToObject::lock_type ReferenceToObject::getLock() const
     while(lock.remaining_tokens_start != lock.remaining_tokens_end)
     {
         auto previous_it = lock.remaining_tokens_start;
-        auto ref_obj = dynamic_cast<Chainable*>(lock.pointers.back().get());
+        auto ref_obj = dynamic_cast<Chainable*>(lock.last_object.get());
         if(!ref_obj)
         {
             // Current object is not chainable.
@@ -82,6 +81,14 @@ ReferenceToObject::lock_type ReferenceToObject::getLock() const
         }
     }
 
+    if(lock.remaining_tokens_start == lock.remaining_tokens_end)
+    {
+        auto ref_obj = dynamic_cast<X*>(lock.last_object.get());
+    }
+    else
+    {
+        xxx
+    }
     return lock;
 }
 

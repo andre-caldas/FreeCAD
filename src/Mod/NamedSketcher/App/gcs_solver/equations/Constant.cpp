@@ -21,25 +21,28 @@
  *                                                                          *
  ***************************************************************************/
 
-#include <Base/Exception.h>
-
-#include "ProxiedParameter.h"
+#include "Constant.h"
 
 namespace NamedSketcher::GCS
 {
 
-void ProxiedParameter::resetProxy(bool shallUpdate)
+double Constant::error() const
 {
-    if(shallUpdate)
-    {
-        update();
-    }
-    proxy = &value;
+    return a->getValue() - k->getValue();
 }
 
-ProxiedPoint::operator Base::Vector3d (void) const
+std::vector<GradientDuplet> Constant::differentialNonOptimized(Shaker& /*shake*/) const
 {
-    return Base::Vector3d(x.getValue(), y.getValue());
+    std::vector<GradientDuplet> result;
+    result.reserve(1);
+    // TODO: remove comments when we start using C++20.
+    result.emplace_back({/*.parameter =*/ a, /*.value =*/ 1});
+    return result;
+}
+
+std::vector<GradientDuplet> Constant::differentialOptimized(Shaker& shake) const
+{
+    return differentialNonOptimized(shake);
 }
 
 } // namespace NamedSketcher::GCS

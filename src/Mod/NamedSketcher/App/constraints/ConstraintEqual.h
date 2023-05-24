@@ -34,13 +34,15 @@
 namespace NamedSketcher
 {
 
+class ProxiedParameter;
+
 /** Deals with constraints of type Equal.
  */
 class NamedSketcherExport ConstraintEqual : public ConstraintBase
 {
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
-    using ref_type = Base::Accessor::ReferenceTo<double>;
+    using ref_type = Base::Accessor::ReferenceTo<ProxiedParameter>;
 
 public:
     ref_type a;
@@ -54,7 +56,7 @@ public:
     std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
     static constexpr const char* xmlTagTypeStatic() {return "Equal";}
 
-    void appendParameterList(std::vector<double*>& parameters) override;
+    std::vector<equation_ptr> getBasicEquations() const override;
 
     // Base::Persistence
     unsigned int getMemSize () const override;
@@ -65,7 +67,7 @@ public:
 private:
     GCS::ParameterGroup parameterGroup;
 
-protected:
+public: // :-(
     ConstraintEqual();
 };
 

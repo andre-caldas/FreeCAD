@@ -52,7 +52,7 @@ ConstraintHorizontal::ConstraintHorizontal(GCS::ParameterProxyManager& proxy_man
 {
 }
 
-void ConstraintHorizontal::appendParameterList(std::vector<double*>& parameters)
+void ConstraintHorizontal::appendParameterList(std::vector<GCS::ProxiedParameter*>& parameters)
 {
     THROW(Base::NotImplementedError);
 }

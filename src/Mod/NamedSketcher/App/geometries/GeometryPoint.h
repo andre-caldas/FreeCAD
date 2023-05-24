@@ -55,7 +55,6 @@ public:
     GeometryPoint(std::unique_ptr<Part::GeomPoint>&& geo);
 
     void commitChanges() const override;
-    void appendParameterList(std::vector<double*>& parameters) override;
 
     // Base::Persistence
     unsigned int getMemSize () const override;
@@ -65,6 +64,7 @@ public:
 private:
     GCS::ProxiedPoint point;
 
+protected:
     GeometryPoint();
 };
 

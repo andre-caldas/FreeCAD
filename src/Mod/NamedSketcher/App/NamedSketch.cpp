@@ -34,7 +34,6 @@
 
 #include <Mod/Part/App/Geometry.h>
 
-#include "gcs_solver/"
 #include "geometries/GeometryFactory.h"
 
 #include "NamedSketch.h"
@@ -52,6 +51,7 @@ NamedSketch::NamedSketch()
 {
     ADD_PROPERTY_TYPE_NO_DEFAULT(geometryList, "NamedSketch", (App::PropertyType)(App::Prop_None), "List of geometries used in this sketch");
     ADD_PROPERTY_TYPE_NO_DEFAULT(constraintList, "NamedSketch", (App::PropertyType)(App::Prop_None), "List of constraints used in this sketch");
+    constraintList.setProxyManager(&manager);
 
     // Add standard geometric objects: axis and origin.
 
@@ -89,9 +89,9 @@ App::DocumentObjectExecReturn *NamedSketch::execute()
 }
 
 // TODO: in the future, return an ObjectPath-like "reference".
-PropertyGeometryList::item_reference NamedSketch::addGeometry(std::unique_ptr<Part::Geometry> geo)
+PropertyGeometryList::item_reference
+NamedSketch::addGeometry(std::unique_ptr<Part::Geometry> geo)
 {
-    // TODO: addParameter to GCS.
     auto uuid = geometryList.addValue(GeometryFactory(std::move(geo)));
     return PropertyGeometryList::item_reference(this, "geometries", uuid);
 }
@@ -99,12 +99,12 @@ PropertyGeometryList::item_reference NamedSketch::addGeometry(std::unique_ptr<Pa
 void NamedSketch::delGeometry(boost::uuids::uuid tag)
 {
     // TODO: look for constraints.
-    // TODO: removeParameter from GCS.
     geometryList.removeValue(tag);
     constraintList.
 }
 
-PropertyConstraintList::item_reference NamedSketch::addConstraint(std::unique_ptr<ConstraintBase> constraint)
+PropertyConstraintList::item_reference
+NamedSketch::addConstraint(std::unique_ptr<ConstraintBase> constraint)
 {
     // TODO: addParameter to GCS.
     auto uuid = constraintList.addValue(std::move(constraint));

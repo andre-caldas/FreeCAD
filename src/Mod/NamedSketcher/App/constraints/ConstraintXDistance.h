@@ -60,7 +60,7 @@ public:
     std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
     static constexpr const char* xmlTagTypeStatic() {return "XDistance";}
 
-    void appendParameterList(std::vector<double*>& parameters) override;
+    void appendParameterList(std::vector<GCS::ProxiedParameter*>& parameters) override;
 
     // Base::Persistence
     unsigned int getMemSize () const override;
@@ -71,7 +71,7 @@ public:
 private:
     GCS::ParameterGroup parameterGroup;
 
-private:
+public: // :-(
     ConstraintXDistance();
 };
 

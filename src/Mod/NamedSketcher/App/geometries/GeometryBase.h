@@ -52,13 +52,6 @@ public:
     virtual void commitChanges() const = 0;
 
     /*!
-     * \brief vector of parameters, as used by the GCS solver.
-     * \return a vector representing all points and
-     * all parameters of this geometry (e.g.: radius).
-     */
-    virtual void appendParameterList(std::vector<double*>& parameters) = 0;
-
-    /*!
      * \brief Methods derived from \class GeometryBase shall not implement
      * Persistence::Restore. Restore is done by factory().
      * \param reader

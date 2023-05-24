@@ -58,7 +58,7 @@ ConstraintCoincident& ConstraintCoincident::removePoint(boost::uuids::uuid tag)
     return *this;
 }
 
-void ConstraintCoincident::appendParameterList(std::vector<double*>& parameters)
+void ConstraintCoincident::appendParameterList(std::vector<GCS::ProxiedParameter*>&)
 {
     THROW(Base::NotImplementedError);
 }

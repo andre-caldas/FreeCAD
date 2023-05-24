@@ -25,50 +25,59 @@
 #ifndef NAMEDSKETCHER_GCS_System_H
 #define NAMEDSKETCHER_GCS_System_H
 
+#include <memory>
 #include <vector>
 
-#include <Eigen/SparseCore>
-
-#include "NamedSketcherGlobal.h"
+#include "Types.h"
+#include "Shaker.h"
+#include "Orthonormalization.h"
+#include "ParameterProxyManager.h"
 
 namespace NamedSketcher::GCS
 {
 
 class Equation;
+class Equal;
+class Constant;
 
 class NamedSketcherExport System
 {
 public:
-    void addEssentialEquation(Equation* equation);
-    void addRedundantEquation(Equation* equation);
-    void addAssertEquation(Equation* equation);
+    void addEquation(Equation* equation);
+    void removeEquation(Equation* equation);
 
-    void removeEssentialEquation(Equation* equation);
-    void removeRedundantEquation(Equation* equation);
-    void removeAssertEquation(Equation* equation);
+    void addUserRedundantEquation(Equation* equation);
+    void optimize();
 
 private:
+    ParameterProxyManager manager;
+
     /**
      * @brief Each equation generates a gradient.
-     * Each column of this matrix is the gradient of an equation (function)
-     * at a certain "good point". It is the transposed of the differential.
+     * Each row of this matrix is the gradient of an equation (function)
+     * at a certain "good point".
      */
-    Eigen::SparseMatrix gradientsT;
-    /**
-     * @brief The gradientsT can be orthonormalized.
-     * The columns of gradientsTQ are the orthonormalized gradients.
-     */
-    Eigen::SparseMatrix gradientsTQ;
-    /**
-     * @brief The gradientsT can be orthonormalized.
-     * The columns of gradientsTR are the scalars used to write each
-     * gradient as a linear combination of the orthonormalized vectors.
-     */
-    Eigen::SparseMatrix gradientsTR;
+    Orthonormalization gradients;
 
-    std::vector<Equation*> essentialEquations;
+    /**
+     * @brief userRedundantEquations: constraints added by the user just for checking.
+     * Not used for solving the sytem. Just for checking and alerting the user.
+     */
+    std::vector<Equation*> userRedundantEquations;
+
+    /**
+     * @brief extraRedundantEquations: redundant equations that are automatically generated.
+     * For example, A = B = C could be decomposed into two non-redundant equations:
+     * A = B and B = C, and a third redundant equation: A = C.
+     * Those are used for making the solver more stable.
+     * They are added to the system being solved.
+     */
     std::vector<Equation*> extraRedundantEquations;
-    std::vector<Equation*> assertEquations;
+
+    /**
+     * @brief Noise generator.
+     */
+    Shaker shaker;
 };
 
 } // namespace NamedSketcher::GCS

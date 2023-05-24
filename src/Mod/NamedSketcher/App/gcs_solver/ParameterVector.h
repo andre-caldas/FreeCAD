@@ -21,25 +21,40 @@
  *                                                                          *
  ***************************************************************************/
 
-#include <Base/Exception.h>
 
-#include "ProxiedParameter.h"
+#ifndef NAMEDSKETCHER_GCS_ParameterVector_H
+#define NAMEDSKETCHER_GCS_ParameterVector_H
+
+#include <unordered_map>
 
 namespace NamedSketcher::GCS
 {
 
-void ProxiedParameter::resetProxy(bool shallUpdate)
+template<typename ParameterType>
+class ParameterVector
 {
-    if(shallUpdate)
-    {
-        update();
-    }
-    proxy = &value;
-}
+    using vector_t = ParameterVector<ParameterType>;
 
-ProxiedPoint::operator Base::Vector3d (void) const
-{
-    return Base::Vector3d(x.getValue(), y.getValue());
-}
+public:
+    std::unordered_map<ParameterType, double> values;
+
+    double operator[](ParameterType parameter) const;
+    void set(ParameterType parameter, double value);
+
+    vector_t& operator+=(double val);
+    vector_t& operator*=(const ParameterVector<ParameterType>& other);
+    vector_t& plusKVec(const ParameterVector<ParameterType>& other);
+    void prune();
+    bool isZero() const;
+    double dot(vector_t& other) const;
+    double norm2() const;
+    double norm() const;
+    vector_t& normalize();
+    vector_t& setAsLinearCombination(double a, const vector_t& v, double b, const vector_t& w);
+
+    friend vector_t operator*(double a, const vector_t& vector);
+};
 
 } // namespace NamedSketcher::GCS
+
+#endif // NAMEDSKETCHER_GCS_ParameterVector_H

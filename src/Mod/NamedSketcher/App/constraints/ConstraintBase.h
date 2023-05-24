@@ -38,29 +38,30 @@
 namespace NamedSketcher
 {
 
+namespace GCS
+{
+class Equation;
+}
+
 class NamedSketcherExport ConstraintBase
         : public Base::Persistence
         , public Base::Accessor::NameAndTag
 {
     TYPESYSTEM_HEADER();
-
 public:
     using factory = class ConstraintFactory;
+    using equation_ptr = std::unique_ptr<GCS::Equation>;
+
     bool isDriving = true;
     bool isDriven = false;
 
     /**
-     * \brief vector of parameters, as used by the GCS solver.
-     * \return a vector representing all points and
-     * all parameters of this Constraint (e.g.: radius).
+     * @brief Vector of @class Equation, as used by the GCS solver
+     * for under / over constraining evaluation.
+     * @return A vector representing the minimum set of @class Equation
+     * that constraints the geometric objects parameters when non-proxied.
      */
-    virtual void appendParameterList(std::vector<double*>& parameters) = 0;
-
-    /**
-     * \brief The \class NamedSketch broadcasts to every constraint
-     * when some geometry is removed.
-     */
-    virtual void broadcastGeometryRemoval(Tag::tag_type removed_tag) = 0;
+    virtual std::vector<equation_ptr> getBasicEquations() const = 0;
 
     /**
      * \brief Methods derived from \class GeometryBase shall not implement

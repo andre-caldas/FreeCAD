@@ -46,20 +46,13 @@ GeometryPoint::GeometryPoint()
 
 GeometryPoint::GeometryPoint(std::unique_ptr<Part::GeomPoint>&& geo)
     : GeometryBaseT(std::move(geo))
-    , point(geo->getPoint())
-    , gcs_point(&point.x, &point.y)
+    , point(geo->getPoint().x, geo->getPoint().y)
 {
 }
 
 void GeometryPoint::commitChanges() const
 {
     geometry->setPoint(point);
-}
-
-void GeometryPoint::appendParameterList(std::vector<double*>& parameters)
-{
-    parameters.push_back(&point.x);
-    parameters.push_back(&point.y);
 }
 
 

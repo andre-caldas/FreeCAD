@@ -21,25 +21,42 @@
  *                                                                          *
  ***************************************************************************/
 
-#include <Base/Exception.h>
 
-#include "ProxiedParameter.h"
+#ifndef NAMEDSKETCHER_GCS_Distance_H
+#define NAMEDSKETCHER_GCS_Distance_H
+
+#include <set>
+
+#include "../ProxiedParameter.h""
+#include "../Types.h"
+#include "Equation.h"
 
 namespace NamedSketcher::GCS
 {
 
-void ProxiedParameter::resetProxy(bool shallUpdate)
+class NamedSketcherExport Distance : public Equation
 {
-    if(shallUpdate)
-    {
-        update();
-    }
-    proxy = &value;
-}
+public:
+    Distance(ProxiedPoint* a, ProxiedPoint* b, ProxiedParameter* distance)
+        : a(a)
+        , b(b)
+        , distance(distance)
+    {assert(a != b);}
 
-ProxiedPoint::operator Base::Vector3d (void) const
-{
-    return Base::Vector3d(x.getValue(), y.getValue());
-}
+    double error() const override;
+    std::vector<GradientDuplet> differentialNonOptimized(Shaker& shake) const override;
+    std::vector<GradientDuplet> differentialOptimized(Shaker& shake) const override;
+
+private:
+    ProxiedPoint* a;
+    ProxiedPoint* b;
+    ProxiedParameter* distance;
+
+    bool isConicident() const;
+    bool isHorizontal() const;
+    bool isVertical() const;
+};
 
 } // namespace NamedSketcher::GCS
+
+#endif // NAMEDSKETCHER_GCS_Distance_H

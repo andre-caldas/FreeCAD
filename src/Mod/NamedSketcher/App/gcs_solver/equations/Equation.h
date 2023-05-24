@@ -25,19 +25,30 @@
 #ifndef NAMEDSKETCHER_GCS_Equation_H
 #define NAMEDSKETCHER_GCS_Equation_H
 
+#include <vector>
+#include <Eigen/SparseCore>
+
+#include "../Types.h"
 #include "NamedSketcherGlobal.h"
 
 namespace NamedSketcher::GCS
 {
 
+class Shaker;
+class ParameterProxyManager;
+
 class NamedSketcherExport Equation
 {
 public:
-    Equation(bool hasConstantDifferential) : hasConstantDifferential(hasConstantDifferential) {}
+    Equation(bool hasConstantDifferential)
+        : hasConstantDifferential(hasConstantDifferential) {}
 
-    virtual sparce_vector error() const = 0;
-    virtual sparse_matrix differential() const = 0;
-    virtual sparse_matrix differentialVariation(from) const = 0;
+    virtual double error() const = 0;
+    virtual std::vector<GradientDuplet> differentialNonOptimized() const = 0;
+    virtual std::vector<GradientDuplet> differentialOptimized() const = 0;
+    bool isLinear() const {return hasConstantDifferential;}
+
+    virtual bool setProxies(ParameterProxyManager* manager) const = 0;
 
 private:
     /**

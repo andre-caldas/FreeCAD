@@ -96,8 +96,16 @@ SET(Constraints_SRCS
 SOURCE_GROUP("Constraints" FILES ${Constraints_SRCS})
 
 SET(gcs_solver_SRCS
+    gcs_solver/Types.h
+    gcs_solver/Shaker.h
     gcs_solver/System.h
     gcs_solver/System.cpp
+    gcs_solver/ParameterVector.h
+    gcs_solver/ParameterVector.cpp
+    gcs_solver/LinearTransform.h
+    gcs_solver/LinearTransform.cpp
+    gcs_solver/Orthonormalization.h
+    gcs_solver/Orthonormalization.cpp
     gcs_solver/ProxiedParameter.h
     gcs_solver/ProxiedParameter.cpp
     gcs_solver/ParameterGroup.h
@@ -106,9 +114,16 @@ SET(gcs_solver_SRCS
 #
     gcs_solver/equations/Equation.h
     gcs_solver/equations/Equation.cpp
+    gcs_solver/equations/Constant.h
+    gcs_solver/equations/Constant.cpp
     gcs_solver/equations/Equal.h
+    gcs_solver/equations/Equal.cpp
     gcs_solver/equations/Difference.h
+    gcs_solver/equations/Difference.cpp
+    gcs_solver/equations/Distance.h
+    gcs_solver/equations/Distance.cpp
     gcs_solver/equations/Colinear.h
+    gcs_solver/equations/Colinear.cpp
 )
 SOURCE_GROUP("GCS Solver" FILES ${gcs_solver_SRCS})
 

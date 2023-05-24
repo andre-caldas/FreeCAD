@@ -25,11 +25,12 @@
 #ifndef NAMEDSKETCHER_GCS_Equal_H
 #define NAMEDSKETCHER_GCS_Equal_H
 
-#include "../ProxiedParameter.h""
 #include "Equation.h"
 
 namespace NamedSketcher::GCS
 {
+
+class ProxiedParameter;
 
 class NamedSketcherExport Equal : public Equation
 {
@@ -38,11 +39,13 @@ public:
         : Equation(true)
         , a(a)
         , b(b)
-    {}
+    {assert(a != b);}
 
-    sparce_vector error() const override;
-    sparse_matrix differential() const override;
-    sparse_matrix differentialVariation(from) const override;
+    double error() const override;
+    std::vector<GradientDuplet> differentialNonOptimized() const override;
+    std::vector<GradientDuplet> differentialOptimized() const override;
+
+    bool setProxies(ParameterProxyManager* manager) const override;
 
 private:
     ProxiedParameter* a;

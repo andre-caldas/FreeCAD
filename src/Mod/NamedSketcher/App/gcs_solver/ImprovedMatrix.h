@@ -21,25 +21,53 @@
  *                                                                          *
  ***************************************************************************/
 
-#include <Base/Exception.h>
 
-#include "ProxiedParameter.h"
+#ifndef NAMEDSKETCHER_GCS_ImprovedMatrix_H
+#define NAMEDSKETCHER_GCS_ImprovedMatrix_H
+
+#include <Eigen/SparseCore>
 
 namespace NamedSketcher::GCS
 {
 
-void ProxiedParameter::resetProxy(bool shallUpdate)
+template<typename M>
+class ImprovedMatrix
+        : public Eigen::SparseMatrix<double,M>
 {
-    if(shallUpdate)
+    void removeVector(Index i)
     {
-        update();
-    }
-    proxy = &value;
-}
+        // TODO: use memcpy... I don't really know.
+        for(Index j=i+1; j < outerSize(); ++j)
+        {
+            m_outerIndex[j-1] = m_outerIndex[j];
+        }
 
-ProxiedPoint::operator Base::Vector3d (void) const
-{
-    return Base::Vector3d(x.getValue(), y.getValue());
-}
+        if(IsRowMajor)
+        {
+            conservativeResize(rows()-1, cols());
+        } else {
+            conservativeResize(rows(), cols()-1);
+        }
+    }
+
+    void addVector(Index i)
+    {
+        if(IsRowMajor)
+        {
+            conservativeResize(rows()+1, cols());
+        } else {
+            conservativeResize(rows(), cols()+1);
+        }
+
+        // TODO: use memcpy... I don't really know.
+        for(Index j=i+1; j < outerSize(); ++j)
+        {
+            m_outerIndex[j] = m_outerIndex[j-1];
+        }
+        m_innerNonZeros[i] = 0;
+    }
+};
 
 } // namespace NamedSketcher::GCS
+
+#endif // NAMEDSKETCHER_GCS_ImprovedMatrix_H

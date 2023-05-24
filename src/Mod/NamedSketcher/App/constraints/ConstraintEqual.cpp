@@ -33,6 +33,7 @@
 #include <Base/Writer.h>
 #include <Base/Exception.h>
 
+#include "../gcs_solver/equations/Equal.h"
 #include "ConstraintEqual.h"
 
 
@@ -56,9 +57,10 @@ ConstraintEqual::ConstraintEqual(GCS::ParameterProxyManager& proxy_manager, ref&
 {
 }
 
-void ConstraintEqual::appendParameterList(std::vector<double*>& parameters)
+std::vector<GCS::Equation*> ConstraintEqual::getBasicEquations() const
 {
-    THROW(Base::NotImplementedError);
+    auto a_result = a.getResult();
+    auto b_result = a.getResult();
 }
 
 unsigned int ConstraintEqual::getMemSize () const

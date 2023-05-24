@@ -55,7 +55,7 @@ public:
     std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
     static constexpr const char* xmlTagTypeStatic() {return "Horizontal";}
 
-    void appendParameterList(std::vector<double*>& parameters) override;
+    void appendParameterList(std::vector<GCS::ProxiedParameter*>& parameters) override;
 
     // Base::Persistence
     void Save (Base::Writer& writer) const override;
@@ -65,7 +65,7 @@ public:
 private:
     GCS::ParameterGroup parameterGroup;
 
-private:
+public: // :-(
     ConstraintHorizontal();
 };
 

@@ -21,25 +21,33 @@
  *                                                                          *
  ***************************************************************************/
 
-#include <Base/Exception.h>
 
-#include "ProxiedParameter.h"
+#ifndef NAMEDSKETCHER_GCS_Types_H
+#define NAMEDSKETCHER_GCS_Types_H
+
+#include <vector>
+
+#include "LinearTransform.h"
+#include "ParameterVector.h"
 
 namespace NamedSketcher::GCS
 {
 
-void ProxiedParameter::resetProxy(bool shallUpdate)
-{
-    if(shallUpdate)
-    {
-        update();
-    }
-    proxy = &value;
-}
+class ProxiedParameter;
+class Equation;
 
-ProxiedPoint::operator Base::Vector3d (void) const
+using Vector = ParameterVector<ProxiedParameter*>;
+using OptimizedVector = ParameterVector<double*>;
+using Matrix = LinearTransform<Equation*, ProxiedParameter*>;
+
+struct GradientDuplet
 {
-    return Base::Vector3d(x.getValue(), y.getValue());
-}
+    ProxiedParameter* parameter;
+    double value;
+};
+
+class Equation;
 
 } // namespace NamedSketcher::GCS
+
+#endif // NAMEDSKETCHER_GCS_Types_H

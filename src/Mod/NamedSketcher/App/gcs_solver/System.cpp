@@ -21,58 +21,78 @@
  *                                                                          *
  ***************************************************************************/
 
-
 #include "equations/Equation.h"
+#include "equations/Equal.h"
+#include "equations/Constant.h"
 #include "System.h"
 
 namespace NamedSketcher::GCS
 {
 
-void System::addEssentialEquation(Equation* equation)
+void System::addEquation(Equation* equation)
 {
-    // lock_mutex
-    essentialEquations.push_back(equation);
-    int i = essentialEquations.size() - 1;
-    parameters = equation->differential(); // (ProxiedParameter*, double)
-    for(auto& parameter: parameters)
+    equations.push_back(equation);
+    gradients.pushBack(equation, equation->differentialNonOptimized(shaker));
+}
+
+void System::addUserRedundantEquation(Equation* equation)
+{
+    userRedundantEquations.push_back(equation);
+}
+
+void System::removeEquation(Equation* equation)
+{
+    gradients.remove(equation);
+}
+
+void System::optimize()
+{
+    int next_equal = 0;
+    int next_constant = 0;
+    int next_linear = 0;
+
+    for(int j=0; j < gradients.size(); ++j)
     {
-        gradientsT.setFromTriplets()
+        if(dynamic_cast<Equal*>(gradients[j]))
+        {
+            if(j != next_equal)
+            {
+                for(int k=j; k != next_equal; --k)
+                {
+                    gradients.moveForward(k);
+                }
+            }
+            ++next_equal;
+            ++next_constant;
+            ++next_linear;
+            continue;
+        }
+        if(dynamic_cast<Constant*>(gradients[j]))
+        {
+            if(j != next_constant)
+            {
+                for(int k=j; k != next_constant; --k)
+                {
+                    gradients.moveForward(k);
+                }
+            }
+            ++next_constant;
+            ++next_linear;
+            continue;
+        }
+        if(gradients[j]->isLinear())
+        {
+            if(j != next_linear)
+            {
+                for(int k=j; k != next_linear; --k)
+                {
+                    gradients.moveForward(k);
+                }
+            }
+            ++next_linear;
+            continue;
+        }
     }
 }
-
-void System::addRedundantEquation(Equation* equation)
-{
-}
-
-void System::addAssertEquation(Equation* equation)
-{
-}
-
-    void removeEssentialEquation(Equation* equation);
-    void removeRedundantEquation(Equation* equation);
-    void removeAssertEquation(Equation* equation);
-
-private:
-    /**
-     * @brief Each equation generates a gradient.
-     * Each column of this matrix is the gradient of an equation (function)
-     * at a certain "good point". It is the transposed of the differential.
-     */
-    Eigen::SparseMatrix gradientsT;
-    /**
-     * @brief The gradientsT can be orthonormalized.
-     * The columns of gradientsTQ are the orthonormalized gradients.
-     */
-    Eigen::SparseMatrix gradientsTQ;
-    /**
-     * @brief The gradientsT can be orthonormalized.
-     * The columns of gradientsTR are the scalars used to write each
-     * gradient as a linear combination of the orthonormalized vectors.
-     */
-    Eigen::SparseMatrix gradientsTR;
-
-    std::vector<Equation*> essentialEquations;
-    std::vector<Equation*> extraRedundantEquations;
-    std::vector<Equation*> assertEquations;
 
 } // namespace NamedSketcher::GCS

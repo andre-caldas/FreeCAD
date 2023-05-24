@@ -28,6 +28,7 @@
 #include <set>
 
 #include "../ProxiedParameter.h""
+#include "../Types.h"
 #include "Equation.h"
 
 namespace NamedSketcher::GCS
@@ -36,16 +37,24 @@ namespace NamedSketcher::GCS
 class NamedSketcherExport Colinear : public Equation
 {
 public:
-    Colinear(ProxiedPoint& a, ProxiedPoint& b, ProxiedPoint& c) : a(a), b(b), c(c) {}
+    Colinear(ProxiedPoint* a, ProxiedPoint* b, ProxiedPoint* c)
+        : a(a)
+        , b(b)
+        , c(c)
+    {assert(a != b); assert(a != c); assert(b != c);}
 
-    sparce_vector error() const override;
-    sparse_matrix differential() const override;
-    sparse_matrix differentialVariation(from) const override;
+    double error() const override;
+    std::vector<GradientDuplet> differentialNonOptimized() const override;
+    std::vector<GradientDuplet> differentialOptimized() const override;
 
 private:
-    ProxiedPoint& a;
-    ProxiedPoint& b;
-    ProxiedPoint& c;
+    ProxiedPoint* a;
+    ProxiedPoint* b;
+    ProxiedPoint* c;
+
+    bool isAlreadyColinear() const;
+    bool isHorizontal() const;
+    bool isVertical() const;
 };
 
 } // namespace NamedSketcher::GCS

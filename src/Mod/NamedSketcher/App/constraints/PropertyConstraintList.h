@@ -38,6 +38,11 @@ class Writer;
 namespace NamedSketcher
 {
 
+namespace GCS
+{
+class ParameterProxyManager;
+}
+
 class NamedSketcherExport PropertyConstraintList
         : public Base::Accessor::NameAndTag
         , public App::PropertyTaggedListT<ConstraintBase>
@@ -69,6 +74,11 @@ public:
      */
     PyObject* getPyObject() override;
     void setPyObject(PyObject*) override;
+
+    void setProxyManager(ParameterProxyManager* manager);
+
+private:
+    GCS::ParameterProxyManager* manager = nullptr;
 };
 
 } // namespace NamedSketcher

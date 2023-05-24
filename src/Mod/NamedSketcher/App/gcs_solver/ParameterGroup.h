@@ -27,28 +27,26 @@
 
 #include <set>
 
-#include "NamedSketcherGlobal.h"
+#include <Base/Exception.h> // For default constructor. :-(
+
+#include "ProxiedParameter.h"
 
 namespace NamedSketcher::GCS
 {
-
-class ProxiedParameter;
-class ParameterProxyManager;
 
 class NamedSketcherExport ParameterGroup
 {
     using set_t = std::set<ProxiedParameter*>;
 
 public:
-    ParameterGroup(ParameterProxyManager& manager) : proxyManager(manager) {}
-
     bool hasParameter(ProxiedParameter* parameter) const {return parameters.count(parameter);}
+    void setPointer(double* val_ptr) const {for(ProxiedParameter* p: parameters){p->setProxy(val_ptr);}}
+
     set_t::iterator begin() {return parameters.begin();}
     set_t::iterator end() {return parameters.end();}
     set_t::size_type size() const {return parameters.size();}
 
 private:
-    ParameterProxyManager& proxyManager;
     set_t parameters;
 };
 

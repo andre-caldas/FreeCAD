@@ -71,7 +71,12 @@ typename ReferenceTo<X>::result ReferenceTo<X>::getResult () const
     lock_type lock = getLock();
     if(lock.remaining_tokens_start == lock.remaining_tokens_end)
     {
-        return result{std::move(lock), lock.pointers.back()};
+        T* ptr = dynamic_cast<X*>(lock.pointers.back().get());
+        if(!ptr)
+        {
+            FC_THROWM(ExceptionCannotResolve, "Last object is not a reference the requested type.");
+        }
+        return result{std::move(lock), ptr};
     }
 
     IExportPointer<X>* ref_obj;

@@ -49,26 +49,14 @@ GeometryLineSegment::GeometryLineSegment()
 
 GeometryLineSegment::GeometryLineSegment(std::unique_ptr<Part::GeomLineSegment>&& geo)
     : GeometryBaseT(std::move(geo))
-    , start(geo->getStartPoint())
-    , end(geo->getEndPoint())
-    , gcs_start(&start.x, &start.y)
-    , gcs_end(&end.x, &end.y)
+    , start(geo->getStartPoint().x, geo->getStartPoint().y)
+    , end(geo->getEndPoint().x, geo->getEndPoint().y)
 {
-    gcs_line.p1 = gcs_start;
-    gcs_line.p2 = gcs_end;
 }
 
 void GeometryLineSegment::commitChanges() const
 {
     geometry->setPoints(start, end);
-}
-
-void GeometryLineSegment::appendParameterList(std::vector<double*>& parameters)
-{
-    parameters.push_back(&start.x);
-    parameters.push_back(&start.y);
-    parameters.push_back(&end.x);
-    parameters.push_back(&end.y);
 }
 
 

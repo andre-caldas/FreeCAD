@@ -56,7 +56,6 @@ public:
     GeometryLineSegment(std::unique_ptr<Part::GeomLineSegment>&& geo);
 
     void commitChanges() const override;
-    void appendParameterList(std::vector<double*>& parameters) override;
 
     // Base::Persistence
     unsigned int getMemSize () const override;

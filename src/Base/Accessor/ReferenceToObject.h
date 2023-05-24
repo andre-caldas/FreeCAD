@@ -53,6 +53,9 @@ namespace Base::Accessor
  *
  * Instances of the \class ReferenceToObject are not aware of the type
  * of variable they point to.
+ *
+ * @attention This is a base class to @class ReferenceTo<T>.
+ * Use @class ReferenceTo<T>, instead.
  */
 class BaseExport ReferenceToObject
 {
@@ -126,13 +129,29 @@ public:
     void serialize(Base::Writer& writer) const;
 
 protected:
+    /**
+     * @brief The resolution mechanism resolves the token chain
+     * up to the end of the chain, or up to the first non-chainable object.
+     * The last found object is kept (using a shared_ptr) at "last_object".
+     *
+     * In the context of @class ReferenceTo<X>,
+     * this last found object has to be of type:
+     * * @class X, when there are no remaining tokens.
+     * * @class IExportPointer<X>, where there are tokens to be resolved.
+     */
     struct lock_type
     {
-        pointer_list pointers;
+        object_pointer_type last_object;
         // TODO: Use ranges when in C++20.
         token_list::const_iterator remaining_tokens_start;
         token_list::const_iterator remaining_tokens_end;
     };
+    /**
+     * @brief Resolves the reference until it finds a non @class Chainable object,
+     * or until the chain is fully consumed.
+     * @return A lock to the shared resource and a "list" of the remaining tokens.
+     * That is, a @class lock_type.
+     */
     lock_type getLock() const;
 
 protected:
@@ -156,11 +175,29 @@ class BaseExport ReferenceTo : public ReferenceToObject
 public:
     using ReferenceToObject::ReferenceToObject;
 
+    /**
+     * @brief Locks the last object and gets a raw pointer to \class T.
+     * We assume lock.last_object owns the referenced \class T.
+     *
+     * The base class @class ReferenceToObject is not aware of the
+     * type of object being referenced. It resolves the token chain
+     * up to the last object and "locks" it through a shared_ptr.
+     * This lock also contains an iterator to the remaining tokens.
+     *
+     * To complete the resolution process, we expect that
+     * this last found lock.last_object is of type:
+     * * @class T, when there are no remaining tokens.
+     * * @class IExportPointer<T>, where there are tokens to be resolved.
+     */
     struct result
     {
         lock_type lock;
         T* reference;
     };
+    /**
+     * @brief Fully resolves the chain up to the last token.
+     * @return A @class result holding a lock and a pointer.
+     */
     result getResult () const;
 
     static ReferenceTo<T> unserialize(Base::XMLReader& reader);

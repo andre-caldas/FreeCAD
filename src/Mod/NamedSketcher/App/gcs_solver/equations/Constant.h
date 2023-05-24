@@ -21,25 +21,33 @@
  *                                                                          *
  ***************************************************************************/
 
-#include <Base/Exception.h>
 
-#include "ProxiedParameter.h"
+#ifndef NAMEDSKETCHER_GCS_Constant_H
+#define NAMEDSKETCHER_GCS_Constant_H
+
+#include "Equation.h"
 
 namespace NamedSketcher::GCS
 {
 
-void ProxiedParameter::resetProxy(bool shallUpdate)
+class NamedSketcherExport Constant : public Equation
 {
-    if(shallUpdate)
-    {
-        update();
-    }
-    proxy = &value;
-}
+public:
+    Constant(ProxiedParameter* a, ProxiedParameter* k)
+        : Equation(true)
+        , a(a)
+        , k(k)
+    {assert(a != k);}
 
-ProxiedPoint::operator Base::Vector3d (void) const
-{
-    return Base::Vector3d(x.getValue(), y.getValue());
-}
+    double error() const override;
+    std::vector<GradientDuplet> differentialNonOptimized(Shaker& shake) const override;
+    std::vector<GradientDuplet> differentialOptimized(Shaker& shake) const override;
+
+private:
+    ProxiedParameter* a;
+    ProxiedParameter* k;
+};
 
 } // namespace NamedSketcher::GCS
+
+#endif // NAMEDSKETCHER_GCS_Constant_H

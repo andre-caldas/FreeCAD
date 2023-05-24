@@ -21,25 +21,37 @@
  *                                                                          *
  ***************************************************************************/
 
-#include <Base/Exception.h>
 
-#include "ProxiedParameter.h"
+#ifndef NAMEDSKETCHER_GCS_Shaker_H
+#define NAMEDSKETCHER_GCS_Shaker_H
+
+#include <random>
+
+#include "../NamedSketcherGlobal.h"
 
 namespace NamedSketcher::GCS
 {
 
-void ProxiedParameter::resetProxy(bool shallUpdate)
+class NamedSketcherExport Shaker
 {
-    if(shallUpdate)
-    {
-        update();
-    }
-    proxy = &value;
-}
+public:
+    Shaker(double epsilon)
+        : random_generator(std::random_device()())
+        , epsilon(epsilon)
+        , distribution(random_generator)
+    {}
 
-ProxiedPoint::operator Base::Vector3d (void) const
-{
-    return Base::Vector3d(x.getValue(), y.getValue());
-}
+    double operator()(double value) {return value + (max?distribution(max):0.);}
+    void reset() {max = 0.;}
+    void operator++() {max += (max?max:epsilon);}
+
+private:
+    double max = 0.;
+    double epsilon;
+    std::mt19937 random_generator;
+    std::uniform_real_distribution distribution;
+};
 
 } // namespace NamedSketcher::GCS
+
+#endif // NAMEDSKETCHER_GCS_Shaker_H

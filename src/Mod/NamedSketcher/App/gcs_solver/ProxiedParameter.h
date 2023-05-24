@@ -25,6 +25,8 @@
 #ifndef NAMEDSKETCHER_GCS_ProxiedParameter_H
 #define NAMEDSKETCHER_GCS_ProxiedParameter_H
 
+#include <Base/Vector3D.h>
+
 #include "NamedSketcherGlobal.h"
 
 namespace NamedSketcher::GCS
@@ -41,23 +43,34 @@ namespace NamedSketcher::GCS
 class NamedSketcherExport ProxiedParameter
 {
 public:
-    ProxiedParameter() = default;
+    ProxiedParameter(double value) : value(value) {}
 
     double getValue() const {return *proxy;}
-    void setProxy(double* parameter_address) : proxy(parameter_address) {}
+    bool samePointer(ProxiedParameter* other) const {return proxy == other->proxy;}
+    bool samePointer(ProxiedParameter& other) const {return proxy == other.proxy;}
+    void setProxy(double* parameter_address) {proxy = parameter_address;}
     void resetProxy(bool shallUpdate = true);
     void update() {if(proxy != &value) value = *proxy;}
 
 private:
     double value;
     double* proxy = &value;
+
+public: // :-(
+    ProxiedParameter() = default;
 };
 
 class NamedSketcherExport ProxiedPoint
 {
 public:
+    ProxiedPoint(double x, double y) : x(x), y(y) {}
     ProxiedParameter x;
     ProxiedParameter y;
+
+    operator Base::Vector3d (void) const;
+
+public: // :-(
+    ProxiedPoint() = default;
 };
 
 } // namespace NamedSketcher::GCS

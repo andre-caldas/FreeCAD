@@ -21,25 +21,40 @@
  *                                                                          *
  ***************************************************************************/
 
-#include <Base/Exception.h>
-
-#include "ProxiedParameter.h"
+#include "ParameterVector.h"
+#include "LinearTransform.h"
 
 namespace NamedSketcher::GCS
 {
 
-void ProxiedParameter::resetProxy(bool shallUpdate)
+template<typename OutType, typename InType>
+void LinearTransform<OutType, InType>::addDual(OutType key, dual_t&& dual)
 {
-    if(shallUpdate)
-    {
-        update();
-    }
-    proxy = &value;
+    duals.emplace(key, dual);
 }
 
-ProxiedPoint::operator Base::Vector3d (void) const
+template<typename OutType, typename InType>
+ParameterVector<OutType>
+LinearTransform<OutType, InType>::apply(const dual_t& vector) const
 {
-    return Base::Vector3d(x.getValue(), y.getValue());
+    ParameterVector<OutType> result;
+    for(auto& [k,f]: duals)
+    {
+        result.values.try_emplace(k, f.dot(vector));
+    }
+    return result;
+}
+
+template<typename OutType, typename InType>
+ParameterVector<InType>
+LinearTransform<OutType, InType>::project(const dual_t& vector) const
+{
+    ParameterVector<InType> result;
+    for(auto& [k,f]: duals)
+    {
+        result += f.dot(vector) * f;
+    }
+    return result;
 }
 
 } // namespace NamedSketcher::GCS

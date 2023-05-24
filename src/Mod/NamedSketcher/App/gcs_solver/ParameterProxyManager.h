@@ -26,7 +26,8 @@
 #define NAMEDSKETCHER_GCS_ParameterProxyManager_H
 
 #include <unordered_set>
-#include <set>
+#include <map>
+#include <memory>
 
 #include "NamedSketcherGlobal.h"
 
@@ -49,13 +50,16 @@ private:
 
     struct EquivalentGroups
     {
-        EquivalentGroups(ParameterGroup* group);
+        EquivalentGroups(ParameterGroup* group, double value);
 
         double value;
         std::unordered_set<ParameterGroup*> groups;
 
         EquivalentGroups& operator<<(ParameterGroup* addedGroup);
-        EquivalentGroups& operator<<(EquivalentGroups addedGroups);
+        EquivalentGroups& operator<<(EquivalentGroups&& addedGroups);
+
+        auto begin() const {return groups.cbegin();}
+        auto end() const {return groups.cend();}
 
         /**
          * @brief Comparison for using std::set<EquivalentGroups>.
@@ -76,7 +80,10 @@ private:
      * @brief This is redundant information.
      * Each gathers ParameterGroups that have common elements.
      */
-    std::set<EquivalentGroups> partition;
+    std::map<double*, std::unique_ptr<EquivalentGroups>> partition;
+
+    void processUnion(EquivalentGroups& equivalents, ProxiedParameter* parameter);
+    void splitDisjoints(EquivalentGroups& equivalents);
 };
 
 } // namespace NamedSketcher::GCS

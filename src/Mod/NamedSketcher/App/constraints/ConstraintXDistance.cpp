@@ -56,7 +56,7 @@ ConstraintXDistance::ConstraintXDistance(GCS::ParameterProxyManager& proxy_manag
 {
 }
 
-void ConstraintXDistance::appendParameterList(std::vector<double*>& parameters)
+void ConstraintXDistance::appendParameterList(std::vector<GCS::ProxiedParameter*>& parameters)
 {
     THROW(Base::NotImplementedError);
 }

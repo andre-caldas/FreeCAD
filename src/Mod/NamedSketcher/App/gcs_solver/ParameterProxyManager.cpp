@@ -33,24 +33,23 @@ namespace NamedSketcher::GCS
 void ParameterProxyManager::addGroup(ParameterGroup* group, double value)
 {
     parameterGroups.insert(group);
-    auto e = partition.emplace(group);
-    assert(e.second); // Emplace succeeds.
-    auto equivalents = e.first; // Emplaced EquivalentGroups.
-    equivalents->value = value;
+    auto equivalents_ptr = std::make_unique<EquivalentGroups>(group, value);
+    EquivalentGroups& equivalents = *equivalents_ptr;
+    partition.try_emplace(&equivalents.value, std::move(equivalents_ptr));
 
     for(auto parameter: *group)
     {
-        processUnion(*equivalents, parameter);
+        processUnion(equivalents, parameter);
     }
 }
 
 void ParameterProxyManager::informParameterAdditionToGroup(ParameterGroup* group, ProxiedParameter* parameter)
 {
-    for(auto& equivalents: partition)
+    for(auto& [key, equivalents]: partition)
     {
-        if(equivalents.groups.count(group))
+        if(equivalents->groups.count(group))
         {
-            processUnion(equivalents, parameter);
+            processUnion(*equivalents, parameter);
             return;
         }
     }
@@ -63,7 +62,7 @@ void ParameterProxyManager::processUnion(EquivalentGroups& equivalents, ProxiedP
     {
         // This is what a for range loop should do!
         // Increment just after assignment, so extraction does not invalidate it.
-        EquivalentGroups& other_equivalent_groups = *it;
+        EquivalentGroups& other_equivalent_groups = *(it->second);
         ++it;
 
         if(&equivalents == &other_equivalent_groups)
@@ -71,12 +70,12 @@ void ParameterProxyManager::processUnion(EquivalentGroups& equivalents, ProxiedP
             continue;
         }
 
-        for(ParameterGroup& grp: other_equivalent_groups)
+        for(ParameterGroup* grp: other_equivalent_groups)
         {
-            if(grp.hasParameter(parameter))
+            if(grp->hasParameter(parameter))
             {
-                auto extracted = partition.extract(other_equivalent_groups);
-                equivalents << extracted.value();
+                auto extracted = partition.extract(&other_equivalent_groups.value);
+                equivalents << std::move(*(extracted.mapped()));
                 break;
             }
         }
@@ -85,12 +84,12 @@ void ParameterProxyManager::processUnion(EquivalentGroups& equivalents, ProxiedP
 
 void ParameterProxyManager::removeGroup(ParameterGroup* group)
 {
-    for(auto& equivalents: partition)
+    for(auto& [key, equivalents]: partition)
     {
-        if(equivalents.groups.count(group))
+        if(equivalents->groups.count(group))
         {
-            equivalents.groups.erase(group);
-            splitDisjoints(equivalents);
+            equivalents->groups.erase(group);
+            splitDisjoints(*equivalents);
             parameterGroups.erase(group);
             return;
         }
@@ -98,13 +97,13 @@ void ParameterProxyManager::removeGroup(ParameterGroup* group)
     assert(false);
 }
 
-void informParameterRemovalFromGroup(ParameterGroup* group)
+void ParameterProxyManager::informParameterRemovalFromGroup(ParameterGroup* group)
 {
-    for(auto& equivalents: partition)
+    for(auto& [key, equivalents]: partition)
     {
-        if(equivalents.groups.count(group))
+        if(equivalents->groups.count(group))
         {
-            splitDisjoints(equivalents);
+            splitDisjoints(*equivalents);
             return;
         }
     }
@@ -114,7 +113,7 @@ void informParameterRemovalFromGroup(ParameterGroup* group)
 void ParameterProxyManager::splitDisjoints(EquivalentGroups& equivalents)
 {
     [[maybe_unused]] // We don't want equivalents to be destroyed!
-    auto removed = partition.extract(equivalents);
+    auto removed = partition.extract(&equivalents.value);
     for(auto group: equivalents)
     {
         // Not very efficient, because we compare with all other sets,
@@ -123,10 +122,10 @@ void ParameterProxyManager::splitDisjoints(EquivalentGroups& equivalents)
     }
 }
 
-ParameterProxyManager::EquivalentGroups::EquivalentGroups(ParameterGroup* group)
-    : value(0)
+ParameterProxyManager::EquivalentGroups::EquivalentGroups(ParameterGroup* group, double val)
+    : value(val)
 {
-    for(ProxiedParameter* parameter: group)
+    for(ProxiedParameter* parameter: *group)
     {
         value += parameter->getValue() / group->size();
     }
@@ -142,16 +141,14 @@ ParameterProxyManager::EquivalentGroups::operator<<(ParameterGroup* addedGroup)
 }
 
 ParameterProxyManager::EquivalentGroups&
-ParameterProxyManager::EquivalentGroups::operator<<(EquivalentGroups& addedGroups)
+ParameterProxyManager::EquivalentGroups::operator<<(EquivalentGroups&& addedGroups)
 {
     for(ParameterGroup* group: addedGroups.groups)
     {
         *this << group;
     }
-    addedGroups.clear();
+    addedGroups.groups.clear();
     return *this;
 }
 
 } // namespace NamedSketcher::GCS
-
-#endif // NAMEDSKETCHER_GCS_ParameterProxyManager_H

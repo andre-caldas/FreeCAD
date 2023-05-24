@@ -29,10 +29,7 @@
 #include <set>
 #include <boost/uuid/uuid.hpp>
 
-#include <Base/Vector3D.h>
-
-#include "gcs_solver/ParameterGroup.h"
-
+#include "../gcs_solver/ParameterGroup.h"
 #include "ConstraintBase.h"
 
 namespace Base::Accessor {
@@ -43,13 +40,15 @@ class ReferenceTo;
 namespace NamedSketcher
 {
 
+class GeometryBase;
+
 /** Deals with constraints of type Coincident.
  */
 class NamedSketcherExport ConstraintCoincident : public ConstraintBase
 {
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
-    using ref_type = Base::Accessor::ReferenceTo<Base::Vector3d>;
+    using ref_type = Base::Accessor::ReferenceTo<GeometryBase>;
 
 public:
     ConstraintCoincident(GCS::ParameterProxyManager& proxy_manager) : parameterGroup(proxy_manager) {}
@@ -65,7 +64,7 @@ public:
     std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
     static constexpr const char* xmlTagTypeStatic() {return "Coincident";}
 
-    void appendParameterList(std::vector<ProxiedParameter*>& parameters) override;
+    void appendParameterList(std::vector<GCS::ProxiedParameter*>& parameters) override;
 
     // Base::Persistence
     unsigned int getMemSize () const override;
@@ -75,6 +74,8 @@ public:
 
 private:
     GCS::ParameterGroup parameterGroup;
+
+public: // :-(
     ConstraintCoincident();
 };
 
