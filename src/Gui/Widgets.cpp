@@ -804,6 +804,7 @@ void ColorButton::showModeless()
         if (DialogOptions::dontUseNativeColorDialog())
             dlg->setOptions(QColorDialog::DontUseNativeDialog);
         dlg->setOption(QColorDialog::ColorDialogOption::ShowAlphaChannel, d->allowTransparency);
+        dlg->setCurrentColor(d->old);
         connect(dlg, &QColorDialog::rejected, this, &ColorButton::onRejected);
         connect(dlg, &QColorDialog::currentColorChanged, this, &ColorButton::onColorChosen);
         d->cd = dlg;
@@ -1596,7 +1597,7 @@ void ExpLineEdit::setExpression(std::shared_ptr<Expression> expr)
         QPalette p(palette());
         p.setColor(QPalette::Active, QPalette::Text, Qt::red);
         setPalette(p);
-        iconLabel->setToolTip(QString::fromLatin1(e.what()));
+        iconLabel->setToolTip(tr("An error occurred -- see Report View for information"));
     }
 }
 
@@ -1663,7 +1664,7 @@ void ExpLineEdit::resizeEvent(QResizeEvent * event)
         QPalette p(palette());
         p.setColor(QPalette::Active, QPalette::Text, Qt::red);
         setPalette(p);
-        iconLabel->setToolTip(QString::fromLatin1(e.what()));
+        iconLabel->setToolTip(tr("An error occurred -- see Report View for information"));
     }
 }
 

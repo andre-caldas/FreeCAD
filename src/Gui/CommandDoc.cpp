@@ -411,8 +411,8 @@ void StdCmdExport::activated(int iMsg)
     auto selection = Gui::Selection().getObjectsOfType(App::DocumentObject::getClassTypeId());
     if (selection.empty()) {
         QMessageBox::warning(Gui::getMainWindow(),
-            QString::fromUtf8(QT_TR_NOOP("No selection")),
-            QString::fromUtf8(QT_TR_NOOP("Select the objects to export before choosing Export.")));
+            QCoreApplication::translate("StdCmdExport", "No selection"),
+            QCoreApplication::translate("StdCmdExport", "Select the objects to export before choosing Export."));
         return;
     }
 
@@ -1688,9 +1688,9 @@ public:
     {
         sGroup        = "Edit";
         sMenuText     = QT_TR_NOOP("Expression actions");
-        sToolTipText  = QT_TR_NOOP("Expression actions");
+        sToolTipText  = QT_TR_NOOP("Actions that apply to expressions");
         sWhatsThis    = "Std_Expressions";
-        sStatusTip    = QT_TR_NOOP("Expression actions");
+        sStatusTip    = QT_TR_NOOP("Actions that apply to expressions");
         eType         = ForEdit;
     }
 

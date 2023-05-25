@@ -212,8 +212,6 @@ void wbListItem::onWbToggled(bool checked)
     loadLabel->setEnabled(checked);
     loadButton->setEnabled(checked);
     autoloadCheckBox->setEnabled(checked);
-    if (!checked) //disabling wb disable auto-load.
-        autoloadCheckBox->setChecked(false);
 
     // Reset the start combo items.
     Q_EMIT wbToggled(objectName(), checked);
@@ -256,9 +254,12 @@ void DlgSettingsWorkbenchesImp::saveSettings()
     std::ostringstream orderedStr, disabledStr, autoloadStr;
 
     auto addStrToOss = [](std::string wbName, std::ostringstream& oss) {
-        if (!oss.str().empty())
-            oss << ",";
-        oss << wbName;
+        if (oss.str().find(wbName) == std::string::npos) {
+            if (!oss.str().empty()) {
+                oss << ",";
+            }
+            oss << wbName;
+        }
     };
 
     for (int i = 0; i < ui->wbList->count(); i++) {

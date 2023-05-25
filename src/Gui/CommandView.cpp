@@ -72,7 +72,6 @@
 #include "SelectionObject.h"
 #include "SoAxisCrossKit.h"
 #include "SoFCOffscreenRenderer.h"
-#include "SoFCUnifiedSelection.h"
 #include "TextureMapping.h"
 #include "Tools.h"
 #include "Tree.h"
@@ -1850,7 +1849,7 @@ void StdViewScreenShot::activated(int iMsg)
         FileOptionsDialog fd(getMainWindow(), Qt::WindowFlags());
         fd.setFileMode(QFileDialog::AnyFile);
         fd.setAcceptMode(QFileDialog::AcceptSave);
-        fd.setWindowTitle(QObject::tr("Save picture"));
+        fd.setWindowTitle(QObject::tr("Save image"));
         fd.setNameFilters(filter);
         if (!selFilter.isEmpty())
             fd.selectNameFilter(selFilter);
@@ -1981,9 +1980,9 @@ StdViewLoadImage::StdViewLoadImage()
 {
     sGroup      = "Standard-View";
     sMenuText   = QT_TR_NOOP("Load image...");
-    sToolTipText= QT_TR_NOOP("Loads a image");
+    sToolTipText= QT_TR_NOOP("Loads an image");
     sWhatsThis  = "Std_ViewLoadImage";
-    sStatusTip  = QT_TR_NOOP("Loads a image");
+    sStatusTip  = QT_TR_NOOP("Loads an image");
     sPixmap     = "image-open";
     eType       = 0;
 }
@@ -2105,8 +2104,8 @@ StdCmdAxisCross::StdCmdAxisCross()
 {
         sGroup        = "Standard-View";
         sMenuText     = QT_TR_NOOP("Toggle axis cross");
-        sToolTipText  = QT_TR_NOOP("Toggle axis cross");
-        sStatusTip    = QT_TR_NOOP("Toggle axis cross");
+        sToolTipText  = QT_TR_NOOP("Turns on or off the axis cross at the origin");
+        sStatusTip    = QT_TR_NOOP("Turns on or off the axis cross at the origin");
         sWhatsThis    = "Std_AxisCross";
         sPixmap       = "Std_AxisCross";
         sAccel        = "A,C";
@@ -2428,9 +2427,9 @@ StdViewZoomIn::StdViewZoomIn()
 {
     sGroup        = "Standard-View";
     sMenuText     = QT_TR_NOOP("Zoom In");
-    sToolTipText  = QT_TR_NOOP("Zoom In");
+    sToolTipText  = QT_TR_NOOP("Increase the zoom factor by a fixed amount");
     sWhatsThis    = "Std_ViewZoomIn";
-    sStatusTip    = QT_TR_NOOP("Zoom In");
+    sStatusTip    = QT_TR_NOOP("Increase the zoom factor by a fixed amount");
     sPixmap       = "zoom-in";
     sAccel        = keySequenceToAccel(QKeySequence::ZoomIn);
     eType         = Alter3DView;
@@ -2457,9 +2456,9 @@ StdViewZoomOut::StdViewZoomOut()
 {
     sGroup        = "Standard-View";
     sMenuText     = QT_TR_NOOP("Zoom Out");
-    sToolTipText  = QT_TR_NOOP("Zoom Out");
+    sToolTipText  = QT_TR_NOOP("Decrease the zoom factor by a fixed amount");
     sWhatsThis    = "Std_ViewZoomOut";
-    sStatusTip    = QT_TR_NOOP("Zoom Out");
+    sStatusTip    = QT_TR_NOOP("Decrease the zoom factor by a fixed amount");
     sPixmap       = "zoom-out";
     sAccel        = keySequenceToAccel(QKeySequence::ZoomOut);
     eType         = Alter3DView;
@@ -2623,9 +2622,9 @@ StdViewBoxZoom::StdViewBoxZoom()
 {
     sGroup        = "Standard-View";
     sMenuText     = QT_TR_NOOP("Box zoom");
-    sToolTipText  = QT_TR_NOOP("Box zoom");
+    sToolTipText  = QT_TR_NOOP("Activate the box zoom tool");
     sWhatsThis    = "Std_ViewBoxZoom";
-    sStatusTip    = QT_TR_NOOP("Box zoom");
+    sStatusTip    = QT_TR_NOOP("Activate the box zoom tool");
     sPixmap       = "zoom-border";
     sAccel        = "Ctrl+B";
     eType         = Alter3DView;
@@ -2693,9 +2692,9 @@ StdBoxSelection::StdBoxSelection()
 {
     sGroup        = "Standard-View";
     sMenuText     = QT_TR_NOOP("Box selection");
-    sToolTipText  = QT_TR_NOOP("Box selection");
+    sToolTipText  = QT_TR_NOOP("Activate the box selection tool");
     sWhatsThis    = "Std_BoxSelection";
-    sStatusTip    = QT_TR_NOOP("Box selection");
+    sStatusTip    = QT_TR_NOOP("Activate the box selection tool");
     sPixmap       = "edit-select-box";
     sAccel        = "Shift+B";
     eType         = AlterSelection;
@@ -2831,8 +2830,7 @@ static void doSelect(void* ud, SoEventCallback * cb)
     bool selectElement = ud ? true : false;
     auto viewer = static_cast<Gui::View3DInventorViewer*>(cb->getUserData());
 
-    SoNode* root = viewer->getSceneGraph();
-    static_cast<Gui::SoFCUnifiedSelection*>(root)->selectionRole.setValue(true);
+    viewer->setSelectionEnabled(true);
 
     SelectionMode selectionMode = CENTER;
 
@@ -2897,9 +2895,9 @@ void StdBoxSelection::activated(int iMsg)
                 SoKeyboardEvent ev;
                 viewer->navigationStyle()->processEvent(&ev);
             }
+
             SelectionCallbackHandler::Create(viewer, View3DInventorViewer::Rubberband, QCursor(QPixmap(cursor_box_select), 7, 7), doSelect, nullptr);
-            SoNode* root = viewer->getSceneGraph();
-            static_cast<Gui::SoFCUnifiedSelection*>(root)->selectionRole.setValue(false);
+            viewer->setSelectionEnabled(false);
         }
     }
 }
@@ -2978,9 +2976,9 @@ void StdBoxElementSelection::activated(int iMsg)
                 SoKeyboardEvent ev;
                 viewer->navigationStyle()->processEvent(&ev);
             }
+
             SelectionCallbackHandler::Create(viewer, View3DInventorViewer::Rubberband, QCursor(QPixmap(cursor_box_element_select), 7, 7), doSelect, this);
-            SoNode* root = viewer->getSceneGraph();
-            static_cast<Gui::SoFCUnifiedSelection*>(root)->selectionRole.setValue(false);
+            viewer->setSelectionEnabled(false);
         }
     }
 }
@@ -3123,9 +3121,9 @@ StdCmdMeasureDistance::StdCmdMeasureDistance()
 {
     sGroup        = "View";
     sMenuText     = QT_TR_NOOP("Measure distance");
-    sToolTipText  = QT_TR_NOOP("Measure distance");
+    sToolTipText  = QT_TR_NOOP("Activate the distance measurement tool");
     sWhatsThis    = "Std_MeasureDistance";
-    sStatusTip    = QT_TR_NOOP("Measure distance");
+    sStatusTip    = QT_TR_NOOP("Activate the distance measurement tool");
     sPixmap       = "view-measurement";
     eType         = Alter3DView;
 }
@@ -3302,7 +3300,7 @@ CmdViewMeasureClearAll::CmdViewMeasureClearAll()
 {
     sGroup        = "Measure";
     sMenuText     = QT_TR_NOOP("Clear measurement");
-    sToolTipText  = QT_TR_NOOP("Clear measurement");
+    sToolTipText  = QT_TR_NOOP("Clear all visible measurements");
     sWhatsThis    = "View_Measure_Clear_All";
     sStatusTip    = sToolTipText;
     sPixmap       = "Part_Measure_Clear_All";
@@ -3332,7 +3330,7 @@ CmdViewMeasureToggleAll::CmdViewMeasureToggleAll()
 {
     sGroup        = "Measure";
     sMenuText     = QT_TR_NOOP("Toggle measurement");
-    sToolTipText  = QT_TR_NOOP("Toggle measurement");
+    sToolTipText  = QT_TR_NOOP("Turn on or off the display of all measurements");
     sWhatsThis    = "View_Measure_Toggle_All";
     sStatusTip    = sToolTipText;
     sPixmap       = "Part_Measure_Toggle_All";

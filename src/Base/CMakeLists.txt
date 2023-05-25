@@ -243,6 +243,7 @@ SET(FreeCADBase_CPP_SRCS
     ProgressIndicatorPy.cpp
     PyExport.cpp
     PyObjectBase.cpp
+    PythonTypeExt.cpp
     QtTools.cpp
     Reader.cpp
     Rotation.cpp
@@ -309,6 +310,7 @@ SET(FreeCADBase_HPP_SRCS
     ProgressIndicatorPy.h
     PyExport.h
     PyObjectBase.h
+    PythonTypeExt.h
     QtTools.h
     Reader.h
     Rotation.h

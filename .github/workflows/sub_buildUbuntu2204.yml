@@ -138,17 +138,6 @@ jobs:
                             swig                                        \
                             ccache                                      \
                             xvfb
-      - name: Install Pivy version compatible with Python 3.10
-        run: |
-          sudo apt-get purge python3-pivy
-          cd /tmp/
-          git clone --depth 1 --branch 0.6.8 https://github.com/coin3d/pivy.git
-          cd pivy
-          mkdir build
-          cd build
-          cmake ..
-          make -j$(nproc)
-          sudo make install
       - name: Make needed directories, files and initializations
         id: Init
         run: |
@@ -211,13 +200,13 @@ jobs:
           testCommand: xvfb-run ${{ env.builddir }}/bin/FreeCAD -t 0
           logFile: ${{ env.logdir }}TestGUIBuild.log
           reportFile: ${{env.reportdir}}${{ env.reportfilename }}
-      - name: C++ unit tests
+      - name: C++ tests
         timeout-minutes: 1
-        uses: ./.github/workflows/actions/runCPPTests
+        uses: ./.github/workflows/actions/runCPPTests/runAllTests
         with:
-          testCommand: ${{ env.builddir }}/tests/Tests_run --gtest_output=json:${{env.reportdir}}gtest_results.json
-          testLogFile: ${{env.reportdir}}gtest_test_log.txt
-          reportFile: ${{env.reportdir}}${{ env.reportfilename }}
+          reportdir: ${{ env.reportdir }}
+          builddir: ${{ env.builddir }}
+          reportFile: ${{ env.reportdir }}${{ env.reportfilename }}
       - name: CMake Install
         uses: ./.github/workflows/actions/linux/install
         with:

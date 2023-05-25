@@ -33,6 +33,8 @@
 #include <xercesc/sax2/Attributes.hpp>
 #include <xercesc/sax2/DefaultHandler.hpp>
 
+#include <boost/iostreams/concepts.hpp>
+
 #include "FileInfo.h"
 
 
@@ -127,6 +129,13 @@ public:
     XMLReader(const char* FileName, std::istream&);
     ~XMLReader() override;
 
+    /** @name boost iostream device interface */
+    //@{
+    using category = boost::iostreams::source_tag;
+    using char_type = char;
+    std::streamsize read(char_type* s, std::streamsize n);
+    //@}
+
     bool isValid() const { return _valid; }
     bool isVerbose() const { return _verbose; }
     void setVerbose(bool on) { _verbose = on; }
@@ -171,6 +180,20 @@ public:
     void readEndElement(const char* ElementName=nullptr, int level=-1);
     /// read until characters are found
     void readCharacters();
+
+    /** Obtain an input stream for reading characters
+     *
+     *  @return Return a input stream for reading characters. The stream will be
+     *  auto destroyed when you call with readElement() or readEndElement(), or
+     *  you can end it explicitly with endCharStream().
+     */
+    std::istream &beginCharStream();
+    /// Manually end the current character stream
+    void endCharStream();
+    /// Obtain the current character stream
+    std::istream &charStream();
+    //@}
+
     /// read binary file
     void readBinFile(const char*);
     //@}
@@ -281,6 +304,7 @@ protected:
     std::string LocalName;
     std::string Characters;
     unsigned int CharacterCount;
+    std::streamsize CharacterOffset{-1};
 
     std::map<std::string,std::string> AttrMap;
     using AttrMapType = std::map<std::string,std::string>;
@@ -307,6 +331,8 @@ protected:
     std::vector<std::string> FileNames;
 
     std::bitset<32> StatusBits;
+
+    std::unique_ptr<std::istream> CharStream;
 };
 
 class BaseExport Reader : public std::istream

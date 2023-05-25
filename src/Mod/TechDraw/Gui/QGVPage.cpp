@@ -126,13 +126,8 @@ public:
         page->m_invertZoom = hGrp->GetBool("InvertZoom", 0l);
         page->m_zoomIncrement = hGrp->GetFloat("ZoomStep", 0.02);
 
-        auto hTDPref = App::GetApplication()
-                           .GetUserParameter()
-                           .GetGroup("BaseApp")
-                           ->GetGroup("Preferences")
-                           ->GetGroup("Mod/TechDraw/General");
-        page->m_reversePan = hTDPref->GetInt("KbPan", 1);
-        page->m_reverseScroll = hTDPref->GetInt("KbScroll", 1);
+        page->m_reversePan = Preferences::getPreferenceGroup("General")->GetInt("KbPan", 1);
+        page->m_reverseScroll = Preferences::getPreferenceGroup("General")->GetInt("KbScroll", 1);
     }
     /// Observer message from the ParameterGrp
     void OnChange(ParameterGrp::SubjectType& rCaller, ParameterGrp::MessageType Reason) override
@@ -504,13 +499,8 @@ TechDraw::DrawPage* QGVPage::getDrawPage() { return m_vpPage->getDrawPage(); }
 
 QColor QGVPage::getBackgroundColor()
 {
-    Base::Reference<ParameterGrp> hGrp = App::GetApplication()
-                                             .GetUserParameter()
-                                             .GetGroup("BaseApp")
-                                             ->GetGroup("Preferences")
-                                             ->GetGroup("Mod/TechDraw/Colors");
     App::Color fcColor;
-    fcColor.setPackedValue(hGrp->GetUnsigned("Background", 0x70707000));
+    fcColor.setPackedValue(Preferences::getPreferenceGroup("Colors")->GetUnsigned("Background", 0x70707000));
     return fcColor.asValue<QColor>();
 }
 
@@ -532,7 +522,7 @@ QPixmap QGVPage::prepareCursorPixmap(const char* iconName, QPoint& hotspot)
     double pixelRatio = getDevicePixelRatio();
 
     // Due to impossibility to query cursor size via Qt API, we stick to (32x32)*device_pixel_ratio
-    // as FreeCAD Wiki suggests - see https://wiki.freecadweb.org/HiDPI_support#Custom_cursor_size
+    // as FreeCAD Wiki suggests - see https://wiki.freecad.org/HiDPI_support#Custom_cursor_size
     double cursorSize = 32.0 * pixelRatio;
 
     QPixmap pixmap = Gui::BitmapFactory().pixmapFromSvg(iconName, QSizeF(cursorSize, cursorSize));

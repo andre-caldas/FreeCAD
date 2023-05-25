@@ -51,13 +51,11 @@ FC_LOG_LEVEL_INIT("PartDesign",true,true)
 using namespace PartDesignGui;
 using namespace Gui;
 
-const QString TaskDressUpParameters::btnPreviewStr = tr("Preview");
-const QString TaskDressUpParameters::btnSelectStr = tr("Select");
 
 /* TRANSLATOR PartDesignGui::TaskDressUpParameters */
 
 TaskDressUpParameters::TaskDressUpParameters(ViewProviderDressUp *DressUpView, bool selectEdges, bool selectFaces, QWidget *parent)
-    : TaskBox(Gui::BitmapFactory().pixmap((std::string("PartDesign_") + DressUpView->featureName()).c_str()),
+    : TaskBox(Gui::BitmapFactory().pixmap(DressUpView->featureIcon().c_str()),
               DressUpView->menuName,
               true,
               parent)
@@ -79,6 +77,18 @@ TaskDressUpParameters::~TaskDressUpParameters()
 {
     // make sure to remove selection gate in all cases
     Gui::Selection().rmvSelectionGate();
+}
+
+const QString TaskDressUpParameters::btnPreviewStr()
+{
+    const QString text{ tr("Preview") };
+    return text;
+}
+
+const QString TaskDressUpParameters::btnSelectStr()
+{
+    const QString text{ tr("Select") };
+    return text;
 }
 
 void TaskDressUpParameters::setupTransaction()

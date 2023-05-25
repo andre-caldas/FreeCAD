@@ -460,7 +460,7 @@ class ObjectDressup(object):
             "App::PropertyFloat",
             "Custom",
             "Dressup",
-            QT_TRANSLATE_NOOP("App::Property", "Dressup length if Incision == custom"),
+            QT_TRANSLATE_NOOP("App::Property", "Dressup length if incision is set to 'custom'"),
         )
         obj.Custom = 0.0
         obj.Proxy = self
@@ -910,7 +910,7 @@ class ObjectDressup(object):
         self.length = 0
         # boneIserted = False
 
-        for (i, thisCommand) in enumerate(obj.Base.Path.Commands):
+        for (i, thisCommand) in enumerate(PathUtils.getPathWithPlacement(obj.Base).Commands):
             # if i > 14:
             #    if lastCommand:
             #        commands.append(lastCommand)
