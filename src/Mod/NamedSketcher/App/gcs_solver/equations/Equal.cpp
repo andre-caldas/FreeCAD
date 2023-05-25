@@ -21,34 +21,44 @@
  *                                                                          *
  ***************************************************************************/
 
+#include <Base/Exception.h>
+
 #include "../ProxiedParameter.h""
 #include "Equal.h"
 
 namespace NamedSketcher::GCS
 {
 
+Equal::set(ProxiedParameter* x, ProxiedParameter* y)
+{
+    if(x == y)
+    {
+        FC_THROWM(Base::ReferenceError, "Different parameters must be passed.")
+    }
+    a = x;
+    b = y;
+}
+
 double Equal::error() const
 {
     return b->getValue() - a->getValue();
 }
 
-std::vector<GradientDuplet> Equal::differentialNonOptimized() const
+Vector Equal::differentialNonOptimized() const
 {
-    std::vector<GradientDuplet> result;
-    result.reserve(2);
-    // TODO: remove comments when we start using C++20.
-    result.emplace_back({/*.parameter =*/ a, /*.value =*/ -1});
-    result.emplace_back({/*.parameter =*/ b, /*.value =*/ 1});
+    Vector result;
+    result.set(a, -1);
+    result.set(b, 1);
     return result;
 }
 
-std::vector<GradientDuplet> Equal::differentialOptimized() const
+OptimizedVector Equal::differentialOptimized() const
 {
     if(!a->samePointer(b))
     {
-        return differentialNonOptimized();
+        return optimizeVector(differentialNonOptimized());
     }
-    return std::vector<GradientDuplet>();
+    return OptimizedVector();
 }
 
 bool Equal::setProxies(ParameterProxyManager* manager) const

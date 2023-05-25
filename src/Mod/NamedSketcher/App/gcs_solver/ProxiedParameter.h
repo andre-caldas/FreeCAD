@@ -46,8 +46,10 @@ public:
     ProxiedParameter(double value) : value(value) {}
 
     double getValue() const {return *proxy;}
+    double getPointer() const {return proxy;}
     bool samePointer(ProxiedParameter* other) const {return proxy == other->proxy;}
     bool samePointer(ProxiedParameter& other) const {return proxy == other.proxy;}
+    bool hasProxy() const {return proxy != &value;}
     void setProxy(double* parameter_address) {proxy = parameter_address;}
     void resetProxy(bool shallUpdate = true);
     void update() {if(proxy != &value) value = *proxy;}

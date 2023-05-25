@@ -34,18 +34,15 @@
 namespace NamedSketcher::GCS
 {
 
-class NamedSketcherExport Distance : public Equation
+class NamedSketcherExport Distance : public NonLinearEquation
 {
 public:
-    Distance(ProxiedPoint* a, ProxiedPoint* b, ProxiedParameter* distance)
-        : a(a)
-        , b(b)
-        , distance(distance)
-    {assert(a != b);}
+    Distance() = default;
+    void set (ProxiedPoint* a, ProxiedPoint* b, ProxiedParameter* distance);
 
     double error() const override;
-    std::vector<GradientDuplet> differentialNonOptimized(Shaker& shake) const override;
-    std::vector<GradientDuplet> differentialOptimized(Shaker& shake) const override;
+    Vector differentialNonOptimized() const override;
+    OptimizedVector differentialOptimized() const override;
 
 private:
     ProxiedPoint* a;

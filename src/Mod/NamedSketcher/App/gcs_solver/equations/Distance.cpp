@@ -28,12 +28,24 @@
 namespace NamedSketcher::GCS
 {
 
+Distance::set(ProxiedPoint* x, ProxiedPoint* y, ProxiedParameter* d)
+{
+    if(x == y)
+    {
+        FC_THROWM(Base::ReferenceError, "Different parameters must be passed.")
+    }
+    a = x;
+    b = y;
+    distance = d;
+}
+
 // |a-b|^2 - distance^2 = 0
 double Distance::error() const
 {
     if(isCoincident())
     {
-        return distance->getValue();
+        // -distance = 0
+        return -distance->getValue();
     }
 
     if(isHorizontal())
@@ -56,98 +68,47 @@ double Distance::error() const
     return (a1-b1)*(a1-b1) + (a2-b2)*(a2-b2) - d*d;
 }
 
-std::vector<GradientDuplet> Distance::differentialNonOptimized(Shaker& shake) const
+Vector Distance::differentialNonOptimized() const
 {
-    std::uniform_real_distribution rand(0.0, 0.1 * shake);
+    double a1 = a->x.getValue();
+    double a2 = a->y.getValue();
+    double b1 = b->x.getValue();
+    double b2 = b->y.getValue();
 
-    double a1 = shake(a->x.getValue());
-    double a2 = shake(a->y.getValue());
-    double b1 = shake(b->x.getValue());
-    double b2 = shake(b->y.getValue());
-
-    std::vector<GradientDuplet> result;
-    result.reserve(4);
-    // TODO: remove comments when we start using C++20.
-    result.emplace_back({/*.parameter =*/ &a->x, /*.value =*/ 2*(a1-b1)});
-    result.emplace_back({/*.parameter =*/ &a->y, /*.value =*/ 2*(a2-b2)});
-    result.emplace_back({/*.parameter =*/ &b->x, /*.value =*/ 2*(b1-a1)});
-    result.emplace_back({/*.parameter =*/ &b->y, /*.value =*/ 2*(b2-a2)});
+    Vector result;
+    result.set(&a->x, 2*(a1-b1));
+    result.set(&a->y, 2*(a2-b2));
+    result.set(&b->x, 2*(b1-a1));
+    result.set(&b->y, 2*(b2-a2));
     return result;
 }
 
-std::vector<GradientDuplet> Distance::differentialOptimized(Shaker& shake) const
+OptimizedVector Distance::differentialOptimized() const
 {
     if(isCoincident())
     {
-        return std::vector<GradientDuplet>();
+        return OptimizedVector();
     }
 
     if(isHorizontal())
     {
         // ax - bx - distance = 0.
-        double a1 = shake(a->x.getValue());
-        double a2 = shake(a->y.getValue());
-        double b1 = shake(b->x.getValue());
-        double b2 = shake(b->y.getValue());
-
-        std::vector<GradientDuplet> result;
-        result.reserve(4);
-        // TODO: remove comments when we start using C++20.
-        result.emplace_back({/*.parameter =*/ &a->x, /*.value =*/ 2*(a1-b1)});
-        result.emplace_back({/*.parameter =*/ &a->y, /*.value =*/ 2*(a2-b2)});
-        result.emplace_back({/*.parameter =*/ &b->x, /*.value =*/ 2*(b1-a1)});
-        result.emplace_back({/*.parameter =*/ &b->y, /*.value =*/ 2*(b2-a2)});
+        OptimizedVector result;
+        result.set(a->x.getPointer(), 1);
+        result.set(b->x.getPointer(), -1);
         return result;
     }
 
     if(isVertical())
     {
         // ay - by - distance = 0.
-        return a->y.getValue() - b->y.getValue() - distance->getValue();
-    }
-
-    double a1 = shake(a->x.getValue());
-    double a2 = shake(a->y.getValue());
-    double b1 = shake(b->x.getValue());
-    double b2 = shake(b->y.getValue());
-    double d = distance->getValue();
-    return (a1-b1)*(a1-b1) + (a2-b2)*(a2-b2) - d*d;
-
-    if(isHorizontal())
-    {
-        std::vector<GradientDuplet> result;
-        result.reserve(2);
-        if(a->y.samePointer(b->y))
-        {
-            // a2 - c2 = 0.
-            result.emplace_back({/*.parameter =*/ &a->y, /*.value =*/ 1});
-            result.emplace_back({/*.parameter =*/ &c->y, /*.value =*/ -1});
-        } else {
-            // a2 - b2 = 0.
-            result.emplace_back({/*.parameter =*/ &a->y, /*.value =*/ 1});
-            result.emplace_back({/*.parameter =*/ &b->y, /*.value =*/ -1});
-        }
+        OptimizedVector result;
+        result.set(a->y.getPointer(), 1);
+        result.set(b->y.getPointer(), -1);
         return result;
     }
 
-    if(isVertical())
-    {
-        std::vector<GradientDuplet> result;
-        result.reserve(2);
-        if(a->x.samePointer(b->x))
-        {
-            // a1 - c1 = 0.
-            result.emplace_back({/*.parameter =*/ &a->x, /*.value =*/ 1});
-            result.emplace_back({/*.parameter =*/ &c->x, /*.value =*/ -1});
-        } else {
-            // a1 - b1 = 0.
-            result.emplace_back({/*.parameter =*/ &a->x, /*.value =*/ 1});
-            result.emplace_back({/*.parameter =*/ &b->x, /*.value =*/ -1});
-        }
-        return result;
-    }
-
-    return differentialNonOptimized(shake);
+    return optimizeVector(differentialNonOptimized());
 }
 
 bool Distance::isCoincident() const

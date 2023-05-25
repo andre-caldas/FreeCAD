@@ -23,10 +23,23 @@
 
 #include <random>
 
+#include <Base/Exception.h>
+
 #include "Colinear.h"
 
 namespace NamedSketcher::GCS
 {
+
+void Colinear::set(ProxiedParameter* x, ProxiedParameter* y, ProxiedParameter* z)
+{
+    if(x == y || x == z || y == z)
+    {
+        FC_THROWM(Base::ReferenceError, "Different parameters must be passed.")
+    }
+    a = x;
+    b = y;
+    c = z;
+}
 
 // det((a1, a2, 1),
 //     (b1, b2, 1),
@@ -79,7 +92,7 @@ double Colinear::error() const
     return (b1*c2 - b2*c1) + (a2*c1 - a1*c2) + (a1*b2 - a2*b1);
 }
 
-std::vector<GradientDuplet> Colinear::differentialNonOptimized() const
+Vector Colinear::differentialNonOptimized() const
 {
     double a1 = a->x.getValue();
     double a2 = a->y.getValue();
@@ -88,60 +101,56 @@ std::vector<GradientDuplet> Colinear::differentialNonOptimized() const
     double c1 = c->x.getValue();
     double c2 = c->y.getValue();
 
-    std::vector<GradientDuplet> result;
-    result.reserve(6);
-    // TODO: remove comments when we start using C++20.
-    result.emplace_back({/*.parameter =*/ &a->x, /*.value =*/ b2 - c2});
-    result.emplace_back({/*.parameter =*/ &a->y, /*.value =*/ c1 - b1});
-    result.emplace_back({/*.parameter =*/ &b->x, /*.value =*/ c2 - a2});
-    result.emplace_back({/*.parameter =*/ &b->y, /*.value =*/ a1 - c1});
-    result.emplace_back({/*.parameter =*/ &c->x, /*.value =*/ a2 - b2});
-    result.emplace_back({/*.parameter =*/ &c->y, /*.value =*/ b1 - a1});
+    Vector result;
+    result.set(&a->x, b2-c2);
+    result.set(&a->y, c1-b1);
+    result.set(&b->x, c2-a2);
+    result.set(&b->y, a1-c1);
+    result.set(&c->x, a2-b2);
+    result.set(&c->y, b1-a1);
     return result;
 }
 
-std::vector<GradientDuplet> Colinear::differentialOptimized() const
+OptimizedVector Colinear::differentialOptimized() const
 {
     if(isAlreadyColinear())
     {
-        return std::vector<GradientDuplet>();
+        return OptimizedVector();
     }
 
     if(isHorizontal())
     {
-        std::vector<GradientDuplet> result;
-        result.reserve(2);
+        OptimizedVector result;
         if(a->y.samePointer(b->y))
         {
             // a2 - c2 = 0.
-            result.emplace_back({/*.parameter =*/ &a->y, /*.value =*/ 1});
-            result.emplace_back({/*.parameter =*/ &c->y, /*.value =*/ -1});
+            result.set(a->y.getPointer(), 1);
+            result.set(c->y.getPointer(), -1);
         } else {
             // a2 - b2 = 0.
-            result.emplace_back({/*.parameter =*/ &a->y, /*.value =*/ 1});
-            result.emplace_back({/*.parameter =*/ &b->y, /*.value =*/ -1});
+            result.set(a->y.getPointer(), 1);
+            result.set(b->y.getPointer(), -1);
         }
         return result;
     }
 
     if(isVertical())
     {
-        std::vector<GradientDuplet> result;
-        result.reserve(2);
+        OptimizedVector result;
         if(a->x.samePointer(b->x))
         {
             // a1 - c1 = 0.
-            result.emplace_back({/*.parameter =*/ &a->x, /*.value =*/ 1});
-            result.emplace_back({/*.parameter =*/ &c->x, /*.value =*/ -1});
+            result.set(a->x.getPointer(), 1);
+            result.set(c->x.getPointer(), -1);
         } else {
             // a1 - b1 = 0.
-            result.emplace_back({/*.parameter =*/ &a->x, /*.value =*/ 1});
-            result.emplace_back({/*.parameter =*/ &b->x, /*.value =*/ -1});
+            result.set(a->x.getPointer(), 1);
+            result.set(b->x.getPointer(), -1);
         }
         return result;
     }
 
-    return differentialNonOptimized();
+    return optimizeVector(differentialNonOptimized());
 }
 
 bool Colinear::isAlreadyColinear() const
@@ -167,6 +176,21 @@ bool Colinear::isHorizontal() const
 bool Colinear::isVertical() const
 {
     return (a->x.samePointer(b->x) || a->x.samePointer(c->x) || b->x.samePointer(c->x));
+}
+
+bool Colinear::setProxies(ParameterProxyManager* manager) const
+{
+    if(isHorizontal())
+    {
+        manager->setEqual(a->y, b->y);
+        manager->setEqual(a->y, c->y);
+    }
+
+    if(isVertical())
+    {
+        manager->setEqual(a->x, b->x);
+        manager->setEqual(a->x, c->x);
+    }
 }
 
 } // namespace NamedSketcher::GCS

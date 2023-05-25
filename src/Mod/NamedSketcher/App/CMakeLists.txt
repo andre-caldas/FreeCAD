@@ -109,6 +109,7 @@ SET(gcs_solver_SRCS
     gcs_solver/ProxiedParameter.h
     gcs_solver/ProxiedParameter.cpp
     gcs_solver/ParameterGroup.h
+    gcs_solver/ParameterGroup.cpp
     gcs_solver/ParameterProxyManager.h
     gcs_solver/ParameterProxyManager.cpp
 #

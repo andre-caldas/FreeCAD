@@ -24,6 +24,7 @@
 #include "equations/Equation.h"
 #include "equations/Equal.h"
 #include "equations/Constant.h"
+#include "ParameterProxyManager.h"
 #include "System.h"
 
 namespace NamedSketcher::GCS
@@ -32,7 +33,7 @@ namespace NamedSketcher::GCS
 void System::addEquation(Equation* equation)
 {
     equations.push_back(equation);
-    gradients.pushBack(equation, equation->differentialNonOptimized(shaker));
+    gradients.pushBack(equation, equation->differentialNonOptimized());
 }
 
 void System::addUserRedundantEquation(Equation* equation)
@@ -92,6 +93,24 @@ void System::optimize()
             ++next_linear;
             continue;
         }
+    }
+}
+
+bool System::solve()
+{
+    ParameterProxyManager manager;
+    Matrix gcs;
+    OptimizedMatrix optimized_gcs;
+
+    // First we set proxies.
+    for(auto it = gradients.beginNonRedundants(); it != gradients.endNonRedundants(); ++it)
+    {
+        (*it)->setProxies(manager);
+    }
+    // Then we get the optimized vectors.
+    for(auto it = gradients.beginNonRedundants(); it != gradients.endNonRedundants(); ++it)
+    {
+        xxx
     }
 }
 

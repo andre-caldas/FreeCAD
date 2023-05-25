@@ -31,7 +31,6 @@
 #include "Types.h"
 #include "Shaker.h"
 #include "Orthonormalization.h"
-#include "ParameterProxyManager.h"
 
 namespace NamedSketcher::GCS
 {
@@ -48,10 +47,9 @@ public:
 
     void addUserRedundantEquation(Equation* equation);
     void optimize();
+    bool solve();
 
 private:
-    ParameterProxyManager manager;
-
     /**
      * @brief Each equation generates a gradient.
      * Each row of this matrix is the gradient of an equation (function)

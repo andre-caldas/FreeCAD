@@ -25,22 +25,16 @@
 #ifndef NAMEDSKETCHER_ConstraintCoincident_H
 #define NAMEDSKETCHER_ConstraintCoincident_H
 
+#include <type_traits>
+#include <memory>
 #include <vector>
-#include <set>
 #include <boost/uuid/uuid.hpp>
 
-#include "../gcs_solver/ParameterGroup.h"
+#include "../gcs_solver/equations/Equal.h"
 #include "ConstraintBase.h"
-
-namespace Base::Accessor {
-template<typename T>
-class ReferenceTo;
-}
 
 namespace NamedSketcher
 {
-
-class GeometryBase;
 
 /** Deals with constraints of type Coincident.
  */
@@ -48,23 +42,21 @@ class NamedSketcherExport ConstraintCoincident : public ConstraintBase
 {
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
-    using ref_type = Base::Accessor::ReferenceTo<GeometryBase>;
-
 public:
     ConstraintCoincident(GCS::ParameterProxyManager& proxy_manager) : parameterGroup(proxy_manager) {}
 
-    std::vector<ref_type> references;
+    std::vector<ref_point> references;
 
     template<typename ref,
-             std::enable_if_t<std::is_constructible_v<ref_type, ref>>* = nullptr>
+             std::enable_if_t<std::is_constructible_v<ref_point, ref>>* = nullptr>
     ConstraintCoincident& addPoint(ref&& reference);
     ConstraintCoincident& removePoint(boost::uuids::uuid tag);
 
 public:
+    std::vector<GCS::Equation*> getEquations() const override;
+
     std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
     static constexpr const char* xmlTagTypeStatic() {return "Coincident";}
-
-    void appendParameterList(std::vector<GCS::ProxiedParameter*>& parameters) override;
 
     // Base::Persistence
     unsigned int getMemSize () const override;
@@ -73,7 +65,7 @@ public:
     static std::unique_ptr<ConstraintCoincident> staticRestore(Base::XMLReader& reader);
 
 private:
-    GCS::ParameterGroup parameterGroup;
+    std::vector<std::unique_ptr<GCS::Equal>> equations;
 
 public: // :-(
     ConstraintCoincident();

@@ -69,7 +69,8 @@ public:
      \param construction - true for construction lines
      \retval reference to the newly created GeometryBase.
      */
-    PropertyGeometryList::item_reference addGeometry(std::unique_ptr<Part::Geometry> geo);
+    PropertyGeometryList::item_reference
+    addGeometry(std::unique_ptr<Part::Geometry> geo);
 
     /*!
      \brief Deletes indicated geometry (by tag).

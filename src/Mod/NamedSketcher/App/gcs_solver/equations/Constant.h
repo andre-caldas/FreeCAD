@@ -30,18 +30,15 @@
 namespace NamedSketcher::GCS
 {
 
-class NamedSketcherExport Constant : public Equation
+class NamedSketcherExport Constant : public LinearEquation
 {
 public:
-    Constant(ProxiedParameter* a, ProxiedParameter* k)
-        : Equation(true)
-        , a(a)
-        , k(k)
-    {assert(a != k);}
+    Constant() = default;
+    void set (ProxiedParameter* a, ProxiedParameter* k);
 
     double error() const override;
-    std::vector<GradientDuplet> differentialNonOptimized(Shaker& shake) const override;
-    std::vector<GradientDuplet> differentialOptimized(Shaker& shake) const override;
+    Vector differentialNonOptimized() const override;
+    OptimizedVector differentialOptimized() const override;
 
 private:
     ProxiedParameter* a;

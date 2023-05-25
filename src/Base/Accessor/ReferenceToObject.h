@@ -146,6 +146,7 @@ protected:
         token_list::const_iterator remaining_tokens_start;
         token_list::const_iterator remaining_tokens_end;
     };
+
     /**
      * @brief Resolves the reference until it finds a non @class Chainable object,
      * or until the chain is fully consumed.
@@ -194,11 +195,32 @@ public:
         lock_type lock;
         T* reference;
     };
+
     /**
      * @brief Fully resolves the chain up to the last token.
      * @return A @class result holding a lock and a pointer.
      */
-    result getResult () const;
+    result getResult() const;
+
+    /**
+     * @brief We keep an internal @class result.
+     * This function resoleves the token path (again) and
+     * stores the result internally (lockedResult).
+     * @return True if lookup is successful.
+     */
+    bool refreshLock();
+
+    /**
+     * @brief Releases the internal @class result.
+     */
+    void releaseLock();
+
+    /**
+     * @brief Gets a pointer to the locked resource.
+     * It throws an exception if the internal @class result is not locked.
+     * @return A pointer to the referenced resource.
+     */
+    T* get() const;
 
     static ReferenceTo<T> unserialize(Base::XMLReader& reader);
 
@@ -207,6 +229,9 @@ public:
                      std::is_convertible<NameOrTag, NameAndTag>...
                  >>* = nullptr>
     ReferenceTo<X> goFurther(NameOrTag&& ...furtherPath) const;
+
+private:
+    result lockedResult;
 };
 
 } //namespace Base::Accessor

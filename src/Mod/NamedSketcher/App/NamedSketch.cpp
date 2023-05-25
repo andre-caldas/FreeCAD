@@ -106,24 +106,27 @@ void NamedSketch::delGeometry(boost::uuids::uuid tag)
 PropertyConstraintList::item_reference
 NamedSketch::addConstraint(std::unique_ptr<ConstraintBase> constraint)
 {
-    // TODO: addParameter to GCS.
+    auto equations = constraint->getBasicEquations();
+    for(auto equation: equations)
+    {
+        gcs.addEquation(equation);
+    }
     auto uuid = constraintList.addValue(std::move(constraint));
     return PropertyConstraintList::item_reference(this, "constraints", uuid);
 }
 
 void NamedSketch::delConstraint(boost::uuids::uuid tag)
 {
-    // TODO: removeParameter from GCS.
+    auto equations = constraint->getBasicEquations();
+    for(auto equation: equations)
+    {
+        gcs.removeEquation(equation);
+    }
     constraintList.removeValue(tag);
 }
 
 void NamedSketch::solve() {
-    std::vector<double*> FixParameters; // with memory allocation
-    std::vector<double> MoveParameters, InitParameters;
-
-    GCSsys.declareUnknowns(Parameters);
-    GCSsys.declareDrivenParams(DrivenParameters);
-//    GCSsys.initSolution(defaultSolverRedundant);
+    gcs.solve();
 }
 
 } // namespace NamedSketcher

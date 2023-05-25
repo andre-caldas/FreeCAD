@@ -35,12 +35,21 @@
 
 #include "ConstraintFactory.h"
 
+namespace Base::Accessor {
+template<typename T>
+class ReferenceTo;
+}
+
 namespace NamedSketcher
 {
+
+class GeometryPoint;
+class GeometryLineSegment;
 
 namespace GCS
 {
 class Equation;
+class ProxiedParameter;
 }
 
 class NamedSketcherExport ConstraintBase
@@ -49,8 +58,11 @@ class NamedSketcherExport ConstraintBase
 {
     TYPESYSTEM_HEADER();
 public:
+    using ref_parameter = Base::Accessor::ReferenceTo<GCS::ProxiedParameter>;
+    using ref_point = Base::Accessor::ReferenceTo<GeometryPoint>;
+    using ref_line_segment = Base::Accessor::ReferenceTo<GeometryLineSegment>;
+
     using factory = class ConstraintFactory;
-    using equation_ptr = std::unique_ptr<GCS::Equation>;
 
     bool isDriving = true;
     bool isDriven = false;
@@ -61,7 +73,7 @@ public:
      * @return A vector representing the minimum set of @class Equation
      * that constraints the geometric objects parameters when non-proxied.
      */
-    virtual std::vector<equation_ptr> getBasicEquations() const = 0;
+    virtual std::vector<GCS::Equation*> getEquations() const = 0;
 
     /**
      * \brief Methods derived from \class GeometryBase shall not implement

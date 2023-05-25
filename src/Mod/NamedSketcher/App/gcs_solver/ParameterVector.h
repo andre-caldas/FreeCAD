@@ -40,6 +40,7 @@ public:
 
     double operator[](ParameterType parameter) const;
     void set(ParameterType parameter, double value);
+    bool hasKey(ParameterType parameter) const {return values.count(parameter);}
 
     vector_t& operator+=(double val);
     vector_t& operator*=(const ParameterVector<ParameterType>& other);

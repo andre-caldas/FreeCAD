@@ -21,37 +21,50 @@
  *                                                                          *
  ***************************************************************************/
 
-#include "Constant.h"
+#include <Base/Exception.h>
+
+#include "ProxiedParameter.h"
+#include "ParameterGroup.h"
 
 namespace NamedSketcher::GCS
 {
 
-void Constant::set(ProxiedParameter* x, ProxiedParameter* v)
+ParameterGroup::ParameterGroup(ProxiedParameter* a, ProxiedParameter* b)
 {
-    if(x == v)
+    append(a);
+    append(b);
+}
+
+ParameterGroup::~ParameterGroup()
+{
+    for(auto p: parameters) p->resetProxy();
+}
+
+bool ParameterGroup::hasParameter(ProxiedParameter* parameter) const
+{
+    return parameters.count(parameter);
+}
+
+void ParameterGroup::append(ProxiedParameter* p)
+{
+    if(p->hasProxy())
     {
-        FC_THROWM(Base::ReferenceError, "Different parameters must be passed.")
+        FC_THROWM(Base::RuntimeError, "Cannot set proxy for parameter that already has a proxy.")
     }
-    a = x;
-    k = v;
+    p->setProxy(&value);
+    parameters.insert(p);
 }
 
-double Constant::error() const
+ParameterGroup& operator<<(ParameterGroup&& other)
 {
-    return a->getValue() - k->getValue();
-}
-
-Vector Constant::differentialNonOptimized(Shaker& /*shake*/) const
-{
-    Vector result;
-    // TODO: remove comments when we start using C++20.
-    result.set(a, 1);
-    return result;
-}
-
-OptimizedVector Constant::differentialOptimized() const
-{
-    return optimizeVector(differentialNonOptimized());
+    for(auto p: other.parameters)
+    {
+        p->resetProxy();
+        append(p);
+    }
+    other.parameters.clear();
 }
 
 } // namespace NamedSketcher::GCS
+
+#endif // NAMEDSKETCHER_GCS_ParameterGroup_H

@@ -22,16 +22,16 @@
  ***************************************************************************/
 
 #include <numeric>
+#include <memory>
 
 #include <Base/Persistence.h>
 #include <Base/Reader.h>
 #include <Base/Writer.h>
 #include <Base/Exception.h>
-#include <Base/Vector3D.h>
 #include <Base/Accessor/ReferenceToObject.h>
 
+#include "../gcs_solver/equations/Equal.h"
 #include "ConstraintCoincident.h"
-
 
 namespace NamedSketcher
 {
@@ -45,7 +45,7 @@ ConstraintCoincident::ConstraintCoincident()
 }
 
 template<typename ref,
-         std::enable_if_t<std::is_constructible_v<ConstraintCoincident::ref_type, ref>>*>
+         std::enable_if_t<std::is_constructible_v<ConstraintCoincident::ref_point, ref>>*>
 ConstraintCoincident& ConstraintCoincident::addPoint(ref&& reference)
 {
     references.emplace_back(reference);
@@ -58,9 +58,38 @@ ConstraintCoincident& ConstraintCoincident::removePoint(boost::uuids::uuid tag)
     return *this;
 }
 
-void ConstraintCoincident::appendParameterList(std::vector<GCS::ProxiedParameter*>&)
+std::vector<GCS::Equation*> ConstraintCoincident::getEquations() const
 {
-    THROW(Base::NotImplementedError);
+    if(references.empty())
+    {
+        return std::vector<GCS::Equation*>();
+    }
+
+    auto& first = references.at(0);
+    std::vector<GCS::Equation*> result;
+    assert(2*references.size() == equations.size()+2);
+    for(int i=0; i < references.size(); ++i)
+    {
+        auto& point_ref = *(references.at(i));
+        if(point_ref.isLocked())
+        {
+            point_ref.refreshLock();
+        }
+
+        if(!point_ref.isLocked())
+        {
+            FC_THROWM(Base::NameError, "Could not resolve name (" << point_ref.pathString() << ").");
+        }
+        if(i > 0)
+        {
+            equations.at(2*i - 2)->set(first.get()->x, point_ref.get()->x);
+            equations.at(2*i - 1)->set(first.get()->y, point_ref.get()->y);
+            result.emplace_back(equations.at(2*1 - 2).get());
+            result.emplace_back(equations.at(2*1 - 1).get());
+        }
+    }
+
+    return result;
 }
 
 unsigned int ConstraintCoincident::getMemSize () const
@@ -97,7 +126,7 @@ ConstraintCoincident::staticRestore(Base::XMLReader& reader)
     auto result = std::make_unique<ConstraintCoincident>();
     while(reader.testEndElement(xmlTagNameStatic()))
     {
-        ref_type reference = ref_type::unserialize(reader);
+        ref_point reference = ref_point::unserialize(reader);
         result->addPoint(std::move(reference));
     }
     return result;

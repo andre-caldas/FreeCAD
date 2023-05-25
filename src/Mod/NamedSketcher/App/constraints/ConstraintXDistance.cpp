@@ -47,18 +47,37 @@ ConstraintXDistance::ConstraintXDistance()
     FC_THROWM(Base::RuntimeError, "NamedSketcher::ConstraintXDistance should not be constructed without arguments.");
 }
 
-template<typename ref,
-         std::enable_if_t<std::is_constructible_v<ConstraintXDistance::ref_type, ref>>*>
-ConstraintXDistance::ConstraintXDistance(GCS::ParameterProxyManager& proxy_manager, ref&& start, ref&& end)
+template<typename ref_pt, ref_par,
+         std::enable_if_t<std::is_constructible_v<ConstraintXDistance::ref_point, ref_pt>>*,
+std::enable_if_t<std::is_constructible_v<ConstraintXDistance::ref_parameter, ref_par>>*>
+ConstraintXDistance::ConstraintXDistance(ref_pt&& start, ref_pt&& end, ref_par&& distance)
     : start(std::forward(start))
     , end(std::forward(end))
-    , parameterGroup(proxy_manager)
+    , distance(std::forward(distance))
 {
 }
 
-void ConstraintXDistance::appendParameterList(std::vector<GCS::ProxiedParameter*>& parameters)
+std::vector<GCS::Equation*> ConstraintCoincident::getEquations() const
 {
-    THROW(Base::NotImplementedError);
+    if(!a.isLocked())
+    {
+        a.refreshLock();
+    }
+    if(!b.isLocked())
+    {
+        b.refreshLock();
+    }
+    if(!a.isLocked())
+    {
+        FC_THROWM(Base::NameError, "Could not resolve name (" << a.pathString() << ").");
+    }
+    if(!b.isLocked())
+    {
+        FC_THROWM(Base::NameError, "Could not resolve name (" << b.pathString() << ").");
+    }
+
+    equation.set(a.get(), b.get());
+    return std::vector<GCS::Equation*>({equation});
 }
 
 unsigned int ConstraintXDistance::getMemSize () const

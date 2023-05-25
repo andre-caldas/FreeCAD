@@ -25,22 +25,25 @@
 #ifndef NAMEDSKETCHER_GCS_ParameterGroup_H
 #define NAMEDSKETCHER_GCS_ParameterGroup_H
 
-#include <set>
+#include <unordered_set>
 
-#include <Base/Exception.h> // For default constructor. :-(
-
-#include "ProxiedParameter.h"
+#include "../NamedSketcherGlobal.h"
 
 namespace NamedSketcher::GCS
 {
 
+class ProxiedParameter;
+
 class NamedSketcherExport ParameterGroup
 {
-    using set_t = std::set<ProxiedParameter*>;
+    using set_t = std::unordered_set<ProxiedParameter*>;
 
 public:
-    bool hasParameter(ProxiedParameter* parameter) const {return parameters.count(parameter);}
-    void setPointer(double* val_ptr) const {for(ProxiedParameter* p: parameters){p->setProxy(val_ptr);}}
+    ParameterGroup(ProxiedParameter* a, ProxiedParameter* b);
+    ~ParameterGroup();
+    bool hasParameter(ProxiedParameter* parameter) const;
+    void append(ProxiedParameter* p);
+    ParameterGroup& operator<<(ParameterGroup&& other);
 
     set_t::iterator begin() {return parameters.begin();}
     set_t::iterator end() {return parameters.end();}
@@ -48,6 +51,7 @@ public:
 
 private:
     set_t parameters;
+    double value;
 };
 
 } // namespace NamedSketcher::GCS

@@ -39,14 +39,7 @@ class Equation;
 using Vector = ParameterVector<ProxiedParameter*>;
 using OptimizedVector = ParameterVector<double*>;
 using Matrix = LinearTransform<Equation*, ProxiedParameter*>;
-
-struct GradientDuplet
-{
-    ProxiedParameter* parameter;
-    double value;
-};
-
-class Equation;
+using OptimizedMatrix = LinearTransform<Equation*, double*>;
 
 } // namespace NamedSketcher::GCS
 

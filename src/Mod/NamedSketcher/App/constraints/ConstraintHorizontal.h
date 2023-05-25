@@ -25,20 +25,21 @@
 #ifndef NAMEDSKETCHER_ConstraintHorizontal_H
 #define NAMEDSKETCHER_ConstraintHorizontal_H
 
-#include <type_traits>
+#include <memory>
 #include <vector>
-#include <set>
-#include <boost/uuid/uuid.hpp>
 
-#include <Base/Vector3D.h>
-#include <Base/Accessor/ReferenceToObject.h>
-
-#include "gcs_solver/ParameterGroup.h"
-
+#include "../gcs_solver/equations/Equal.h"
 #include "ConstraintEqual.h"
+
+namespace Base::Accessor {
+template<typename T>
+class ReferenceTo;
+}
 
 namespace NamedSketcher
 {
+
+class GeometryBase;
 
 /** Deals with constraints of type Horizontal.
  */
@@ -46,24 +47,20 @@ class NamedSketcherExport ConstraintHorizontal : public ConstraintEqual
 {
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
-    using ref_type = Base::Accessor::ReferenceTo<Base::Vector3d>;
-
 public:
-    ConstraintHorizontal(GCS::ParameterProxyManager& proxy_manager, const ref_type& start, const ref_type& end);
+    ref_point start;
+    ref_point end;
+
+    ConstraintHorizontal(const ref_point& start, const ref_point& end);
 
 public:
     std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
     static constexpr const char* xmlTagTypeStatic() {return "Horizontal";}
 
-    void appendParameterList(std::vector<GCS::ProxiedParameter*>& parameters) override;
-
     // Base::Persistence
     void Save (Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
     static std::unique_ptr<ConstraintHorizontal> staticRestore(Base::XMLReader& reader);
-
-private:
-    GCS::ParameterGroup parameterGroup;
 
 public: // :-(
     ConstraintHorizontal();

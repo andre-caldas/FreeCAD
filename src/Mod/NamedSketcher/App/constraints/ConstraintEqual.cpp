@@ -49,18 +49,34 @@ ConstraintEqual::ConstraintEqual()
 }
 
 template<typename ref,
-         std::enable_if_t<std::is_constructible_v<ConstraintEqual::ref_type, ref>>*>
-ConstraintEqual::ConstraintEqual(GCS::ParameterProxyManager& proxy_manager, ref&& a, ref&& b)
+         std::enable_if_t<std::is_constructible_v<ConstraintEqual::ref_parameter, ref>>*>
+ConstraintEqual::ConstraintEqual(ref&& a, ref&& b)
     : a(std::forward(a))
     , b(std::forward(b))
-    , parameterGroup(proxy_manager)
 {
 }
 
-std::vector<GCS::Equation*> ConstraintEqual::getBasicEquations() const
+std::vector<GCS::Equation*> ConstraintEqual::getEquations() const
 {
-    auto a_result = a.getResult();
-    auto b_result = a.getResult();
+    if(!a.isLocked())
+    {
+        a.refreshLock();
+    }
+    if(!b.isLocked())
+    {
+        b.refreshLock();
+    }
+    if(!a.isLocked())
+    {
+        FC_THROWM(Base::NameError, "Could not resolve name (" << a.pathString() << ").");
+    }
+    if(!b.isLocked())
+    {
+        FC_THROWM(Base::NameError, "Could not resolve name (" << b.pathString() << ").");
+    }
+
+    equation.set(a.get(), b.get());
+    return std::vector<GCS::Equation*>({equation});
 }
 
 unsigned int ConstraintEqual::getMemSize () const

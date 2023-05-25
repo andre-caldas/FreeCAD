@@ -32,24 +32,21 @@ namespace NamedSketcher::GCS
 
 class ProxiedParameter;
 
-class NamedSketcherExport Equal : public Equation
+class NamedSketcherExport Equal : public LinearEquation
 {
 public:
-    Equal(ProxiedParameter* a, ProxiedParameter* b)
-        : Equation(true)
-        , a(a)
-        , b(b)
-    {assert(a != b);}
+    Equal() = default;
+    void set(ProxiedParameter* x, ProxiedParameter* y);
 
     double error() const override;
-    std::vector<GradientDuplet> differentialNonOptimized() const override;
-    std::vector<GradientDuplet> differentialOptimized() const override;
+    Vector differentialNonOptimized() const override;
+    OptimizedVector differentialOptimized() const override;
 
     bool setProxies(ParameterProxyManager* manager) const override;
 
 private:
-    ProxiedParameter* a;
-    ProxiedParameter* b;
+    ProxiedParameter* a = nullptr;
+    ProxiedParameter* b = nullptr;
 };
 
 } // namespace NamedSketcher::GCS

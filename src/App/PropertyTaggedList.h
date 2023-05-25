@@ -25,6 +25,7 @@
 #ifndef APP_PropertyTaggedList_H
 #define APP_PropertyTaggedList_H
 
+#include <type_traits>
 #include <utility>
 #include <memory>
 #include <string>
@@ -106,6 +107,17 @@ public:
     // Much nicer if it is an iterator!
     const list_type &getValues() const {return _lValueList;}
     std::weak_ptr<T> getElement(const ObjectIdentifier &path) const;
+
+    using list_iterator = class list_type::iterator;
+    class iterator : public list_iterator
+    {
+    public:
+        iterator(list_iterator&& it) : list_iterator(it) {}
+        using reference = typename list_type::value_type&;
+        reference operator*() const {return list_iterator::operator*().second;}
+    };
+    iterator begin() const {return _lValueList.begin();}
+    iterator end() const {return _lValueList.end();}
 
 protected:
     list_type _lValueList;

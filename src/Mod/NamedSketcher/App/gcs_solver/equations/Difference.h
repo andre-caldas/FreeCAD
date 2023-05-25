@@ -31,19 +31,15 @@
 namespace NamedSketcher::GCS
 {
 
-class NamedSketcherExport Difference : public Equation
+class NamedSketcherExport Difference : public LinearEquation
 {
 public:
-    Difference(ProxiedParameter* a, ProxiedParameter* b, ProxiedParameter* difference)
-        : Equation(true)
-        , a(a)
-        , b(b)
-        , difference(difference)
-    {assert(a != b);}
+    Difference() = default;
+    void set(ProxiedParameter* a, ProxiedParameter* b, ProxiedParameter* difference);
 
     double error() const override;
-    std::vector<GradientDuplet> differentialNonOptimized(Shaker& shake) const override;
-    std::vector<GradientDuplet> differentialOptimized(Shaker& shake) const override;
+    Vector differentialNonOptimized() const override;
+    OptimizedVector differentialOptimized() const override;
 
 private:
     ProxiedParameter* a;

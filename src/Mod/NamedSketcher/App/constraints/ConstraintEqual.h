@@ -25,16 +25,13 @@
 #ifndef NAMEDSKETCHER_ConstraintEqual_H
 #define NAMEDSKETCHER_ConstraintEqual_H
 
-#include <Base/Accessor/ReferenceToObject.h>
+#include <memory>
 
-#include "gcs_solver/ParameterGroup.h"
-
+#include "../gcs_solver/equations/Equal.h"
 #include "ConstraintBase.h"
 
 namespace NamedSketcher
 {
-
-class ProxiedParameter;
 
 /** Deals with constraints of type Equal.
  */
@@ -42,21 +39,21 @@ class NamedSketcherExport ConstraintEqual : public ConstraintBase
 {
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
-    using ref_type = Base::Accessor::ReferenceTo<ProxiedParameter>;
+    using ref_parameter = Base::Accessor::ReferenceTo<ProxiedParameter>;
 
 public:
-    ref_type a;
-    ref_type b;
+    ref_parameter a;
+    ref_parameter b;
 
     template<typename ref,
-             std::enable_if_t<std::is_constructible_v<ref_type, ref>>* = nullptr>
-    ConstraintEqual(GCS::ParameterProxyManager& proxy_manager, ref&& a, ref&& b);
+             std::enable_if_t<std::is_constructible_v<ref_parameter, ref>>* = nullptr>
+    ConstraintEqual(ref&& a, ref&& b);
 
 public:
+    std::vector<GCS::Equation*> getEquations() const override;
+
     std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
     static constexpr const char* xmlTagTypeStatic() {return "Equal";}
-
-    std::vector<equation_ptr> getBasicEquations() const override;
 
     // Base::Persistence
     unsigned int getMemSize () const override;
@@ -65,7 +62,9 @@ public:
     static std::unique_ptr<ConstraintEqual> staticRestore(Base::XMLReader& reader);
 
 private:
-    GCS::ParameterGroup parameterGroup;
+    // This could simply be an Equation, not a pointer.
+    // But FreeCAD would make us have a default constructor.
+    GCS::Equal equation;
 
 public: // :-(
     ConstraintEqual();

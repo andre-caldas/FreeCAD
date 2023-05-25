@@ -34,7 +34,6 @@
 namespace NamedSketcher::GCS
 {
 
-class Shaker;
 class ParameterProxyManager;
 
 class NamedSketcherExport Equation
@@ -44,17 +43,29 @@ public:
         : hasConstantDifferential(hasConstantDifferential) {}
 
     virtual double error() const = 0;
-    virtual std::vector<GradientDuplet> differentialNonOptimized() const = 0;
-    virtual std::vector<GradientDuplet> differentialOptimized() const = 0;
-    bool isLinear() const {return hasConstantDifferential;}
+    virtual Vector differentialNonOptimized() const = 0;
+    virtual OptimizedVector differentialOptimized() const = 0;
+    virtual bool isLinear() const = 0;
 
     virtual bool setProxies(ParameterProxyManager* manager) const = 0;
+
+    static OptimizedVector optimizeVector(const Vector& v);
 
 private:
     /**
      * @brief When true, differentialVariation() is zero.
      */
     bool hasConstantDifferential;
+};
+
+class NamedSketcherExport LinearEquation : public Equation
+{
+    bool isLinear() const override {return true;}
+};
+
+class NamedSketcherExport NonLinearEquation : public Equation
+{
+    bool isLinear() const override {return false;}
 };
 
 } // namespace NamedSketcher::GCS

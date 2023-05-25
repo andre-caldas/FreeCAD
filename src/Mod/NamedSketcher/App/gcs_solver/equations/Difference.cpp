@@ -26,23 +26,36 @@
 namespace NamedSketcher::GCS
 {
 
+void Difference::set(ProxiedParameter* x, ProxiedParameter* y, ProxiedParameter* d)
+{
+    if(x == y || x == d || y == d)
+    {
+        FC_THROWM(Base::ReferenceError, "Different parameters must be passed.")
+    }
+    a = x;
+    b = y;
+    difference = d;
+}
+
 double Difference::error() const
 {
     return b->getValue() - a->getValue() - difference->getValue();
 }
 
-std::vector<GradientDuplet> Difference::differentialNonOptimized(Shaker& /*shake*/) const
+Vector Difference::differentialNonOptimized() const
 {
-    std::vector<GradientDuplet> result;
-    result.reserve(2);
-    // TODO: remove comments when we start using C++20.
-    result.emplace_back({/*.parameter =*/ a, /*.value =*/ -1});
-    result.emplace_back({/*.parameter =*/ b, /*.value =*/ 1});
+    Vector result;
+    result.set(a, -1);
+    result.set(b, 1);
 }
 
-std::vector<GradientDuplet> Difference::differentialOptimized(Shaker& shake) const
+OptimizedVector Difference::differentialOptimized(Shaker& shake) const
 {
-    return differentialNonOptimized(shake);
+    if(!a->samePointer(b))
+    {
+        return optimizeVector(differentialNonOptimized());
+    }
+    return OptimizedVector();
 }
 
 } // namespace NamedSketcher::GCS

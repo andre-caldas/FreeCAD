@@ -40,50 +40,11 @@ class ParameterGroup;
 class NamedSketcherExport ParameterProxyManager
 {
 public:
-    void addGroup(ParameterGroup* group, double value);
-    void removeGroup(ParameterGroup* group);
-    void informParameterAdditionToGroup(ParameterGroup*, ProxiedParameter*);
-    void informParameterRemovalFromGroup(ParameterGroup*);
+    void setEqual(ProxiedParameter* a, ProxiedParameter* b);
+    void reset() {parameterGroups.clear();}
 
 private:
-    std::unordered_set<ParameterGroup*> parameterGroups;
-
-    struct EquivalentGroups
-    {
-        EquivalentGroups(ParameterGroup* group, double value);
-
-        double value;
-        std::unordered_set<ParameterGroup*> groups;
-
-        EquivalentGroups& operator<<(ParameterGroup* addedGroup);
-        EquivalentGroups& operator<<(EquivalentGroups&& addedGroups);
-
-        auto begin() const {return groups.cbegin();}
-        auto end() const {return groups.cend();}
-
-        /**
-         * @brief Comparison for using std::set<EquivalentGroups>.
-         */
-        bool operator<(const EquivalentGroups& other) const {return &value < &other.value;}
-        /**
-         * @brief Comparison for using std::set<EquivalentGroups>.
-         */
-        bool operator==(const EquivalentGroups& other) const {return &value == &other.value;}
-
-        EquivalentGroups(const EquivalentGroups&) = delete;
-        EquivalentGroups& operator=(const EquivalentGroups&) = delete;
-        EquivalentGroups(EquivalentGroups&&) = delete;
-        EquivalentGroups& operator=(EquivalentGroups&&) = delete;
-    };
-
-    /**
-     * @brief This is redundant information.
-     * Each gathers ParameterGroups that have common elements.
-     */
-    std::map<double*, std::unique_ptr<EquivalentGroups>> partition;
-
-    void processUnion(EquivalentGroups& equivalents, ProxiedParameter* parameter);
-    void splitDisjoints(EquivalentGroups& equivalents);
+    std::unordered_set<std::unique_ptr<ParameterGroup>> parameterGroups;
 };
 
 } // namespace NamedSketcher::GCS

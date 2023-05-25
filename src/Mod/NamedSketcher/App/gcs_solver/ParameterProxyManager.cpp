@@ -30,125 +30,45 @@
 namespace NamedSketcher::GCS
 {
 
-void ParameterProxyManager::addGroup(ParameterGroup* group, double value)
+void ParameterProxyManager::setEqual(ProxiedParameter* a, ProxiedParameter* b)
 {
-    parameterGroups.insert(group);
-    auto equivalents_ptr = std::make_unique<EquivalentGroups>(group, value);
-    EquivalentGroups& equivalents = *equivalents_ptr;
-    partition.try_emplace(&equivalents.value, std::move(equivalents_ptr));
-
-    for(auto parameter: *group)
+    auto has_a = parameterGroups.end();
+    auto has_b = parameterGroups.end();
+    for(auto group = parameterGroups.begin(); group != parameterGroups.end(); ++group)
     {
-        processUnion(equivalents, parameter);
-    }
-}
-
-void ParameterProxyManager::informParameterAdditionToGroup(ParameterGroup* group, ProxiedParameter* parameter)
-{
-    for(auto& [key, equivalents]: partition)
-    {
-        if(equivalents->groups.count(group))
+        if((*group)->hasParameter(a))
         {
-            processUnion(*equivalents, parameter);
-            return;
+            has_a = group;
+        }
+        if((*group)->hasParameter(b))
+        {
+            has_b = group;
+        }
+        if(has_a && has_b)
+        {
+            break;
         }
     }
-    assert(false);
-}
 
-void ParameterProxyManager::processUnion(EquivalentGroups& equivalents, ProxiedParameter* parameter)
-{
-    for(auto it = partition.begin(); it != partition.end();)
+    if(!has_a && has_b)
     {
-        // This is what a for range loop should do!
-        // Increment just after assignment, so extraction does not invalidate it.
-        EquivalentGroups& other_equivalent_groups = *(it->second);
-        ++it;
-
-        if(&equivalents == &other_equivalent_groups)
-        {
-            continue;
-        }
-
-        for(ParameterGroup* grp: other_equivalent_groups)
-        {
-            if(grp->hasParameter(parameter))
-            {
-                auto extracted = partition.extract(&other_equivalent_groups.value);
-                equivalents << std::move(*(extracted.mapped()));
-                break;
-            }
-        }
+        (*has_b)->append(a);
+        return
     }
-}
-
-void ParameterProxyManager::removeGroup(ParameterGroup* group)
-{
-    for(auto& [key, equivalents]: partition)
+    if(has_a && !has_b)
     {
-        if(equivalents->groups.count(group))
-        {
-            equivalents->groups.erase(group);
-            splitDisjoints(*equivalents);
-            parameterGroups.erase(group);
-            return;
-        }
+        (*has_a)->append(b);
+        return
     }
-    assert(false);
-}
-
-void ParameterProxyManager::informParameterRemovalFromGroup(ParameterGroup* group)
-{
-    for(auto& [key, equivalents]: partition)
+    if(!has_a && !has_b)
     {
-        if(equivalents->groups.count(group))
-        {
-            splitDisjoints(*equivalents);
-            return;
-        }
+        parameterGroups.emplace(std::make_unique<ParameterGroup>(a, b));
+        return
     }
-    assert(false);
-}
 
-void ParameterProxyManager::splitDisjoints(EquivalentGroups& equivalents)
-{
-    [[maybe_unused]] // We don't want equivalents to be destroyed!
-    auto removed = partition.extract(&equivalents.value);
-    for(auto group: equivalents)
-    {
-        // Not very efficient, because we compare with all other sets,
-        // which we know to be disjoint.
-        addGroup(group, equivalents.value);
-    }
-}
-
-ParameterProxyManager::EquivalentGroups::EquivalentGroups(ParameterGroup* group, double val)
-    : value(val)
-{
-    for(ProxiedParameter* parameter: *group)
-    {
-        value += parameter->getValue() / group->size();
-    }
-    *this << group;
-}
-
-ParameterProxyManager::EquivalentGroups&
-ParameterProxyManager::EquivalentGroups::operator<<(ParameterGroup* addedGroup)
-{
-    groups.emplace(addedGroup);
-    addedGroup->setPointer(&value);
-    return *this;
-}
-
-ParameterProxyManager::EquivalentGroups&
-ParameterProxyManager::EquivalentGroups::operator<<(EquivalentGroups&& addedGroups)
-{
-    for(ParameterGroup* group: addedGroups.groups)
-    {
-        *this << group;
-    }
-    addedGroups.groups.clear();
-    return *this;
+    assert(has_a && has_b);
+    **has_a << std::move(**has_b);
+    parameterGroups.extract(has_b);
 }
 
 } // namespace NamedSketcher::GCS

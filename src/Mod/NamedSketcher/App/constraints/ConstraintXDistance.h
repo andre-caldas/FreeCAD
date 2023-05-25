@@ -26,16 +26,16 @@
 #define NAMEDSKETCHER_ConstraintXDistance_H
 
 #include <type_traits>
+#include <memory>
 #include <vector>
-#include <set>
-#include <boost/uuid/uuid.hpp>
 
-#include <Base/Vector3D.h>
-#include <Base/Accessor/ReferenceToObject.h>
-
-#include "gcs_solver/ParameterGroup.h"
-
+#include "../gcs_solver/equations/Difference.h"
 #include "ConstraintBase.h"
+
+namespace Base::Accessor {
+template<typename T>
+class ReferenceTo;
+}
 
 namespace NamedSketcher
 {
@@ -46,21 +46,21 @@ class NamedSketcherExport ConstraintXDistance : public ConstraintBase
 {
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
-    using ref_type = Base::Accessor::ReferenceTo<Base::Vector3d>;
+public:
+    ref_point start;
+    ref_point end;
+    ref_parameter distance;
+
+    template<typename ref_pt, typename ref_par,
+             std::enable_if_t<std::is_constructible_v<ref_point, ref_pt>>* = nullptr,
+             std::enable_if_t<std::is_constructible_v<ref_parameter, ref_par>>* = nullptr>
+    ConstraintXDistance(ref_pt&& start, ref_pt&& end, ref_par&& distance);
 
 public:
-    ref_type start;
-    ref_type end;
+    std::vector<GCS::Equation*> getEquations() const override;
 
-    template<typename ref,
-             std::enable_if_t<std::is_constructible_v<ref_type, ref>>* = nullptr>
-    ConstraintXDistance(GCS::ParameterProxyManager& proxy_manager, ref&& start, ref&& end);
-
-public:
     std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
     static constexpr const char* xmlTagTypeStatic() {return "XDistance";}
-
-    void appendParameterList(std::vector<GCS::ProxiedParameter*>& parameters) override;
 
     // Base::Persistence
     unsigned int getMemSize () const override;
@@ -69,7 +69,7 @@ public:
     static std::unique_ptr<ConstraintXDistance> staticRestore(Base::XMLReader& reader);
 
 private:
-    GCS::ParameterGroup parameterGroup;
+    GCS::Difference equation;
 
 public: // :-(
     ConstraintXDistance();

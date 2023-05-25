@@ -34,18 +34,17 @@
 namespace NamedSketcher::GCS
 {
 
-class NamedSketcherExport Colinear : public Equation
+class NamedSketcherExport Colinear : public NonLinearEquation
 {
 public:
-    Colinear(ProxiedPoint* a, ProxiedPoint* b, ProxiedPoint* c)
-        : a(a)
-        , b(b)
-        , c(c)
-    {assert(a != b); assert(a != c); assert(b != c);}
+    Colinear() = default;
+    void set(ProxiedPoint* a, ProxiedPoint* b, ProxiedPoint* c);
 
     double error() const override;
-    std::vector<GradientDuplet> differentialNonOptimized() const override;
-    std::vector<GradientDuplet> differentialOptimized() const override;
+    Vector differentialNonOptimized() const override;
+    OptimizedVector differentialOptimized() const override;
+
+    bool setProxies(ParameterProxyManager* manager) const override;
 
 private:
     ProxiedPoint* a;

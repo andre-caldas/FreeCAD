@@ -21,6 +21,25 @@
  *                                                                          *
  ***************************************************************************/
 
-namespace NamedSketcher {
+#include <Base/Exception.h>
+
+#include "../ProxiedParameter.h"
+#include "../ParameterVector.h"
+#include "../Types.h"
+
+namespace NamedSketcher::GCS {
+
+static OptimizedVector Equation::optimizeVector(const Vector& v)
+{
+    OptimizedVector result;
+    for(auto [parameter, value]: v.values)
+    {
+        if(result.hasKey(parameter->getPointer()))
+        {
+            FC_THROWM(Base::RuntimeError, "Cannot optimize vector.");
+        }
+        result.set(parameter->getPointer(), value);
+    }
+}
 
 } // namespace NamedSketcher
