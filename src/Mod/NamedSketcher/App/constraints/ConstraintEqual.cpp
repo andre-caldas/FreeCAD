@@ -56,7 +56,7 @@ ConstraintEqual::ConstraintEqual(ref&& a, ref&& b)
 {
 }
 
-std::vector<GCS::Equation*> ConstraintEqual::getEquations() const
+std::vector<GCS::Equation*> ConstraintEqual::getEquations()
 {
     if(!a.isLocked())
     {

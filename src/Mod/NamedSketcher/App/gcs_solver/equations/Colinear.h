@@ -38,18 +38,19 @@ class NamedSketcherExport Colinear : public NonLinearEquation
 {
 public:
     Colinear() = default;
-    void set(ProxiedPoint* a, ProxiedPoint* b, ProxiedPoint* c);
+    void set(Point* a, Point* b, Point* c);
 
     double error() const override;
     Vector differentialNonOptimized() const override;
-    OptimizedVector differentialOptimized() const override;
+    OptimizedVector differentialOptimized(ParameterProxyManager& manager) const override;
 
-    bool setProxies(ParameterProxyManager* manager) const override;
+    void setProxies(ParameterProxyManager& manager) const override;
+    bool optimizeProxies(ParameterProxyManager& manager) const override;
 
 private:
-    ProxiedPoint* a;
-    ProxiedPoint* b;
-    ProxiedPoint* c;
+    Point* a;
+    Point* b;
+    Point* c;
 
     bool isAlreadyColinear() const;
     bool isHorizontal() const;

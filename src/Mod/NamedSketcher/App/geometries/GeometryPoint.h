@@ -62,7 +62,7 @@ public:
     static std::string_view xmlTagTypeStatic(void) {return "Point";}
 
 private:
-    GCS::ProxiedPoint point;
+    GCS::Point point;
 
 protected:
     GeometryPoint();

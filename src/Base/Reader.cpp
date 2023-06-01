@@ -269,6 +269,7 @@ bool Base::XMLReader::test()
     }
     isBuffered = true;
     lastTestReturnValue = read();
+    return lastTestReturnValue;
 }
 
 bool Base::XMLReader::testElement(const char* ElementName, bool ConsumeElement)

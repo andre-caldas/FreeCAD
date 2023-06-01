@@ -21,41 +21,11 @@
  *                                                                          *
  ***************************************************************************/
 
+#include <Base/Exception.h>
 
-#ifndef NAMEDSKETCHER_GCS_ParameterVector_H
-#define NAMEDSKETCHER_GCS_ParameterVector_H
-
-#include <unordered_map>
+#include "ParameterProxy.h"
 
 namespace NamedSketcher::GCS
 {
 
-template<typename ParameterType>
-class ParameterVector
-{
-    using vector_t = ParameterVector<ParameterType>;
-
-public:
-    std::unordered_map<ParameterType, double> values;
-
-    double operator[](ParameterType parameter) const;
-    void set(ParameterType parameter, double value);
-    bool hasKey(ParameterType parameter) const {return values.count(parameter);}
-
-    vector_t& operator+=(double val);
-    vector_t& operator*=(const ParameterVector<ParameterType>& other);
-    vector_t& plusKVec(const ParameterVector<ParameterType>& other);
-    void prune();
-    bool isZero() const;
-    double dot(vector_t& other) const;
-    double norm2() const;
-    double norm() const;
-    vector_t& normalize();
-    vector_t& setAsLinearCombination(double a, const vector_t& v, double b, const vector_t& w);
-
-    friend vector_t operator*(double a, const vector_t& vector);
-};
-
 } // namespace NamedSketcher::GCS
-
-#endif // NAMEDSKETCHER_GCS_ParameterVector_H

@@ -21,54 +21,42 @@
  *                                                                          *
  ***************************************************************************/
 
-#include <unordered_set>
 
-#include "ProxiedParameter.h"
-#include "ParameterGroup.h"
-#include "ParameterProxyManager.h"
+#ifndef NAMEDSKETCHER_GCS_Vector_H
+#define NAMEDSKETCHER_GCS_Vector_H
+
+#include <unordered_map>
 
 namespace NamedSketcher::GCS
 {
 
-void ParameterProxyManager::setEqual(ProxiedParameter* a, ProxiedParameter* b)
+template<typename Index>
+class Vector
 {
-    auto has_a = parameterGroups.end();
-    auto has_b = parameterGroups.end();
-    for(auto group = parameterGroups.begin(); group != parameterGroups.end(); ++group)
-    {
-        if((*group)->hasParameter(a))
-        {
-            has_a = group;
-        }
-        if((*group)->hasParameter(b))
-        {
-            has_b = group;
-        }
-        if(has_a && has_b)
-        {
-            break;
-        }
-    }
+    using vector_t = Vector<Index>;
 
-    if(!has_a && has_b)
-    {
-        (*has_b)->append(a);
-        return
-    }
-    if(has_a && !has_b)
-    {
-        (*has_a)->append(b);
-        return
-    }
-    if(!has_a && !has_b)
-    {
-        parameterGroups.emplace(std::make_unique<ParameterGroup>(a, b));
-        return
-    }
+public:
+    std::unordered_map<Index, double> values;
 
-    assert(has_a && has_b);
-    **has_a << std::move(**has_b);
-    parameterGroups.extract(has_b);
-}
+    double operator[](Index parameter) const;
+    void set(Index parameter, double value);
+    bool hasKey(Index parameter) const {return values.count(parameter);}
+
+    vector_t& operator+=(const Vector<Index>& other);
+    vector_t& operator*=(double val);
+    vector_t& plusKVec(double a, const Vector<Index>& other);
+    void prune();
+    bool isZero() const;
+    bool isEmpty() const;
+    double dot(vector_t& other) const;
+    double norm2() const;
+    double norm() const;
+    vector_t& normalize();
+    vector_t& setAsLinearCombination(double a, const vector_t& v, double b, const vector_t& w);
+
+    friend vector_t operator*(double a, const vector_t& vector);
+};
 
 } // namespace NamedSketcher::GCS
+
+#endif // NAMEDSKETCHER_GCS_Vector_H

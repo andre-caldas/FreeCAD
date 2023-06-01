@@ -30,7 +30,7 @@
 namespace NamedSketcher::GCS
 {
 
-void Orthonormalization::pushBack(Functional* functional, Vector&& vector)
+void Orthonormalization::pushBack(Functional* functional, ParameterVector&& vector)
 {
     functionals.push_back(functional);
     duals.addDual(functional, vector);
@@ -133,7 +133,7 @@ void Orthonormalization::moveBack(const int index)
     a /= c;
     b /= c;
 
-    Vector movingQ = dualsQ[eq1];
+    ParameterVector movingQ = dualsQ[eq1];
     dualsQ[eq1].setAsLinearCombination(b, movingQ, -a, dualsQ[eq2]);
     dualsQ[eq2].setAsLinearCombination(a, movingQ, +b, dualsQ[eq2]);
 
@@ -141,52 +141,26 @@ void Orthonormalization::moveBack(const int index)
     functionals[index+1] = eq1;
 }
 
-
-Orthonormalization::RedundantIterator::RedundantIterator(functional_iterator it, functional_iterator end)
-    : Iterator(begin, end)
+Orthonormalization::functionals_t
+Orthonormalization::getRedundants() const
 {
-    if(!dualsQ[*it].isZero())
-    {
-        ++*this;
-    }
+    functionals_t result;
+    std::copy_if(functionals.cbegin(),
+                 functionals.cend(),
+                 std::back_insert_iterator(result),
+                 [](Functional* f){return f->isZero();});
+    return result;
 }
 
-Orthonormalization::RedundantIterator&
-Orthonormalization::RedundantIterator::operator++(void)
+Orthonormalization::functionals_t
+Orthonormalization::getNonRedundants() const
 {
-    while(it != end)
-    {
-        ++it;
-        if(!dualsQ[*it].isZero())
-        {
-            break;
-        }
-    }
-    return *this;
-}
-
-
-Orthonormalization::NonRedundantIterator::NonRedundantIterator(functional_iterator it, functional_iterator end)
-    : Iterator(begin, end)
-{
-    if(dualsQ[*it].isZero())
-    {
-        ++*this;
-    }
-}
-
-Orthonormalization::RedundantIterator&
-Orthonormalization::RedundantIterator::operator++(void)
-{
-    while(it != end)
-    {
-        ++it;
-        if(dualsQ[*it].isZero())
-        {
-            break;
-        }
-    }
-    return *this;
+    functionals_t result;
+    std::copy_if(functionals.cbegin(),
+                 functionals.cend(),
+                 std::back_insert_iterator(result),
+                 [](Functional* f){return !f->isZero();});
+    return result;
 }
 
 } // namespace NamedSketcher::GCS

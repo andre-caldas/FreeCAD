@@ -39,7 +39,7 @@ class NamedSketcherExport ConstraintEqual : public ConstraintBase
 {
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
-    using ref_parameter = Base::Accessor::ReferenceTo<ProxiedParameter>;
+    using ref_parameter = Base::Accessor::ReferenceTo<double>;
 
 public:
     ref_parameter a;
@@ -50,7 +50,7 @@ public:
     ConstraintEqual(ref&& a, ref&& b);
 
 public:
-    std::vector<GCS::Equation*> getEquations() const override;
+    std::vector<GCS::Equation*> getEquations() override;
 
     std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
     static constexpr const char* xmlTagTypeStatic() {return "Equal";}

@@ -25,7 +25,6 @@
 #ifndef NAMEDSKETCHER_GCS_Difference_H
 #define NAMEDSKETCHER_GCS_Difference_H
 
-#include "../ProxiedParameter.h""
 #include "Equation.h"
 
 namespace NamedSketcher::GCS
@@ -35,16 +34,18 @@ class NamedSketcherExport Difference : public LinearEquation
 {
 public:
     Difference() = default;
-    void set(ProxiedParameter* a, ProxiedParameter* b, ProxiedParameter* difference);
+    void set(Parameter* a, Parameter* b, Parameter* difference);
 
     double error() const override;
     Vector differentialNonOptimized() const override;
-    OptimizedVector differentialOptimized() const override;
+    OptimizedVector differentialOptimized(ParameterProxyManager& manager) const override;
+
+    void setProxies(ParameterProxyManager& manager) const override;
 
 private:
-    ProxiedParameter* a;
-    ProxiedParameter* b;
-    ProxiedParameter* difference;
+    Parameter* a;
+    Parameter* b;
+    Parameter* difference;
 };
 
 } // namespace NamedSketcher::GCS

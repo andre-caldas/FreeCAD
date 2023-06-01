@@ -23,6 +23,7 @@
 
 #include <random>
 
+#include "../ParameterProxyManager.h"
 #include "Distance.h"
 
 namespace NamedSketcher::GCS
@@ -70,45 +71,53 @@ double Distance::error() const
 
 Vector Distance::differentialNonOptimized() const
 {
-    double a1 = a->x.getValue();
-    double a2 = a->y.getValue();
-    double b1 = b->x.getValue();
-    double b2 = b->y.getValue();
+    double a1 = *a->x;
+    double a2 = *a->y;
+    double b1 = *b->x;
+    double b2 = *b->y;
 
     Vector result;
-    result.set(&a->x, 2*(a1-b1));
-    result.set(&a->y, 2*(a2-b2));
-    result.set(&b->x, 2*(b1-a1));
-    result.set(&b->y, 2*(b2-a2));
+    result.set(a->x, 2*(a1-b1));
+    result.set(a->y, 2*(a2-b2));
+    result.set(b->x, 2*(b1-a1));
+    result.set(b->y, 2*(b2-a2));
     return result;
 }
 
-OptimizedVector Distance::differentialOptimized() const
+OptimizedVector Distance::differentialOptimized(ParameterProxyManager& manager) const
 {
-    if(isCoincident())
+    if(isCoincident(manager))
     {
         return OptimizedVector();
     }
 
-    if(isHorizontal())
+    if(isHorizontal(manager))
     {
         // ax - bx - distance = 0.
         OptimizedVector result;
-        result.set(a->x.getPointer(), 1);
-        result.set(b->x.getPointer(), -1);
+        result.set(manager.getPointer(a->x), 1);
+        result.set(manager.getPointer(b->x), -1);
         return result;
     }
 
-    if(isVertical())
+    if(isVertical(manager))
     {
         // ay - by - distance = 0.
         OptimizedVector result;
-        result.set(a->y.getPointer(), 1);
-        result.set(b->y.getPointer(), -1);
+        result.set(manager.getPointer(a->y), 1);
+        result.set(manager.getPointer(b->y), -1);
         return result;
     }
 
     return optimizeVector(differentialNonOptimized());
+}
+
+void Distance::setProxies(ParameterProxyManager& manager) const
+{
+    manager.add(&a->x);
+    manager.add(&a->y);
+    manager.add(&b->x);
+    manager.add(&b->y);
 }
 
 bool Distance::isCoincident() const

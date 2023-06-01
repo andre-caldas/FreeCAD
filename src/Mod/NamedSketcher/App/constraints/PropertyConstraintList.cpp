@@ -55,10 +55,4 @@ void PropertyConstraintList::setPyObject(PyObject*)
     FC_THROWM(Base::NotImplementedError, "Who needs this!?");
 }
 
-void setProxyManager(ParameterProxyManager* m)
-{
-    assert(manager == nullptr);
-    manager = m;
-}
-
 } // namespace NamedSketcher

@@ -21,32 +21,50 @@
  *                                                                          *
  ***************************************************************************/
 
+#include <Base/Exception.h>
 
-#ifndef NAMEDSKETCHER_GCS_ParameterProxyManager_H
-#define NAMEDSKETCHER_GCS_ParameterProxyManager_H
-
-#include <unordered_set>
-#include <map>
-#include <memory>
-
-#include "NamedSketcherGlobal.h"
+#include "ParameterProxy.h"
+#include "ParameterGroup.h"
 
 namespace NamedSketcher::GCS
 {
 
-class ProxiedParameter;
-class ParameterGroup;
-
-class NamedSketcherExport ParameterProxyManager
+ParameterGroup::ParameterGroup(ParameterProxy* a, ParameterProxy* b)
 {
-public:
-    void setEqual(ProxiedParameter* a, ProxiedParameter* b);
-    void reset() {parameterGroups.clear();}
+    append(a);
+    append(b);
+}
 
-private:
-    std::unordered_set<std::unique_ptr<ParameterGroup>> parameterGroups;
-};
+ParameterGroup::~ParameterGroup()
+{
+    for(auto p: parameters) p->resetProxy();
+}
+
+bool ParameterGroup::hasParameter(ParameterProxy* parameter) const
+{
+    return parameters.count(parameter);
+}
+
+void ParameterGroup::append(ParameterProxy* p)
+{
+    if(p->hasProxy())
+    {
+        FC_THROWM(Base::RuntimeError, "Cannot set proxy for parameter that already has a proxy.")
+    }
+    p->setProxy(&value);
+    parameters.insert(p);
+}
+
+ParameterGroup& operator<<(ParameterGroup&& other)
+{
+    for(auto p: other.parameters)
+    {
+        p->resetProxy();
+        append(p);
+    }
+    other.parameters.clear();
+}
 
 } // namespace NamedSketcher::GCS
 
-#endif // NAMEDSKETCHER_GCS_ParameterProxyManager_H
+#endif // NAMEDSKETCHER_GCS_ParameterGroup_H

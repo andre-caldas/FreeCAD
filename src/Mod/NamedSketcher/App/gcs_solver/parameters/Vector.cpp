@@ -26,15 +26,15 @@
 #include <numeric>
 #include <cmath>
 
-#include "ParameterVector.h"
+#include "Vector.h"
 
 #define EPSILON (1. / (1024*1024))
 
 namespace NamedSketcher::GCS
 {
 
-template<typename ParameterType>
-double ParameterVector<ParameterType>::operator[](ParameterType parameter) const
+template<typename Index>
+double Vector<Index>::operator[](Index parameter) const
 {
     if(values.count(parameter))
     {
@@ -43,52 +43,58 @@ double ParameterVector<ParameterType>::operator[](ParameterType parameter) const
     return 0.0;
 }
 
-template<typename ParameterType>
-void ParameterVector<ParameterType>::set(ParameterType parameter, double value)
+template<typename Index>
+void Vector<Index>::set(Index parameter, double value)
 {
     values[parameter] = value;
 }
 
-template<typename ParameterType>
-ParameterVector<ParameterType>::vector_t&
-ParameterVector<ParameterType>::operator*=(double val)
+template<typename Index>
+Vector<Index>::vector_t&
+Vector<Index>::operator*=(double val)
 {
     std::for_each(values.begin(), values.end(), [val](auto& [k,v]){v *= val;});
     retunr *this;
 }
 
-template<typename ParameterType>
-ParameterVector<ParameterType>::vector_t&
-ParameterVector<ParameterType>::operator+=(const ParameterVector<ParameterType>& other)
+template<typename Index>
+Vector<Index>::vector_t&
+Vector<Index>::operator+=(const Vector<Index>& other)
 {
     std::for_each(other.values.begin(), other.values.end(), [](auto& [k,v]){values[k] += v;});
     retunr *this;
 }
 
-template<typename ParameterType>
-ParameterVector<ParameterType>::vector_t&
-ParameterVector<ParameterType>::plusKVec(double a, const ParameterVector<ParameterType>& other)
+template<typename Index>
+Vector<Index>::vector_t&
+Vector<Index>::plusKVec(double a, const Vector<Index>& other)
 {
     std::for_each(other.values.begin(), other.values.end(), [](auto& [k,v]){values[k] += a*v;});
     retunr *this;
 }
 
-template<typename ParameterType>
-void ParameterVector<ParameterType>::prune()
+template<typename Index>
+void Vector<Index>::prune()
 {
     values.erase(std::remove_if(values.begin(), values.end(),
                                 [](double x){return (std::abs(x) < EPSILON);}));
 }
 
-template<typename ParameterType>
-bool ParameterVector<ParameterType>::isZero() const
+template<typename Index>
+bool Vector<Index>::isZero() const
 {
     return !(std::any_of(values.begin(), values.end(),
                 [](double x){return (std::abs(x) >= EPSILON);}));
 }
 
-template<typename ParameterType>
-double ParameterVector<ParameterType>::dot(vector_t& other) const
+template<typename Index>
+bool Vector<Index>::isEmpty() const
+{
+    return values.empty();
+}
+
+template<typename Index>
+double Vector<Index>::dot(vector_t& other) const
 {
     if(values.size() > other.size())
     {
@@ -100,20 +106,20 @@ double ParameterVector<ParameterType>::dot(vector_t& other) const
     return result;
 }
 
-template<typename ParameterType>
-double ParameterVector<ParameterType>::norm2() const
+template<typename Index>
+double Vector<Index>::norm2() const
 {
     return std::reduce(values.begin(), values.end(), 0., [](auto& [k,v]){return v*v;});
 }
 
-template<typename ParameterType>
-double ParameterVector<ParameterType>::norm() const
+template<typename Index>
+double Vector<Index>::norm() const
 {
     return std::sqrt(norm2());
 }
 
-template<typename ParameterType>
-vector_t& ParameterVector<ParameterType>::normalize()
+template<typename Index>
+vector_t& Vector<Index>::normalize()
 {
     prune();
     if(!values.empty())
@@ -123,9 +129,9 @@ vector_t& ParameterVector<ParameterType>::normalize()
     return *this;
 }
 
-template<typename ParameterType>
-ParameterVector<ParameterType>::vector_t&
-ParameterVector<ParameterType>::setAsLinearCombination(double a, const vector_t& v, double b, const vector_t& w)
+template<typename Index>
+Vector<Index>::vector_t&
+Vector<Index>::setAsLinearCombination(double a, const vector_t& v, double b, const vector_t& w)
 {
     values.clear();
     values.reserve(v.values.size() + w.values.size());
@@ -140,11 +146,11 @@ ParameterVector<ParameterType>::setAsLinearCombination(double a, const vector_t&
     return *this;
 }
 
-template<typename ParameterType>
-ParameterVector<ParameterType>::vector_t
-operator*(double a, const ParameterVector<ParameterType>::vector_t& vector)
+template<typename Index>
+Vector<Index>::vector_t
+operator*(double a, const Vector<Index>::vector_t& vector)
 {
-    ParameterVector<ParameterType>::vector_t result;
+    Vector<Index>::vector_t result;
     result.values.reserve(vector.values.size());
     for(auto& [k,v]: vector.values)
     {
@@ -155,4 +161,4 @@ operator*(double a, const ParameterVector<ParameterType>::vector_t& vector)
 
 } // namespace NamedSketcher::GCS
 
-#endif // NAMEDSKETCHER_GCS_ParameterVector_H
+#endif // NAMEDSKETCHER_GCS_Vector_H

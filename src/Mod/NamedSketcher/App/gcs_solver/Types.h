@@ -28,18 +28,20 @@
 #include <vector>
 
 #include "LinearTransform.h"
-#include "ParameterVector.h"
+#include "parameters/Parameter.h"
+#include "parameters/Vector.h"
 
 namespace NamedSketcher::GCS
 {
 
-class ProxiedParameter;
 class Equation;
+class ParameterGroup;
 
-using Vector = ParameterVector<ProxiedParameter*>;
-using OptimizedVector = ParameterVector<double*>;
-using Matrix = LinearTransform<Equation*, ProxiedParameter*>;
-using OptimizedMatrix = LinearTransform<Equation*, double*>;
+using ParameterVector = ParameterVector<Parameter*>;
+using OptimizedVector = ParameterVector<OptimizedParameter*>;
+using OutputVector = ParameterVector<Equation*>;
+using ParameterMatrix = LinearTransform<Equation*, Parameter*>;
+using OptimizedMatrix = LinearTransform<Equation*, OptimizedParameter*>;
 
 } // namespace NamedSketcher::GCS
 

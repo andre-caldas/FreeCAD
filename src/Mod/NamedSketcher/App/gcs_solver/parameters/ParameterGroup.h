@@ -27,22 +27,26 @@
 
 #include <unordered_set>
 
+#include "Parameter.h"
 #include "../NamedSketcherGlobal.h"
 
 namespace NamedSketcher::GCS
 {
 
-class ProxiedParameter;
+class ParameterProxy;
 
 class NamedSketcherExport ParameterGroup
 {
-    using set_t = std::unordered_set<ProxiedParameter*>;
+    using set_t = std::unordered_set<ParameterProxy*>;
 
 public:
-    ParameterGroup(ProxiedParameter* a, ProxiedParameter* b);
+    OptimizedParameter value;
+
+    ParameterGroup(ParameterProxy* a, ParameterProxy* b);
     ~ParameterGroup();
-    bool hasParameter(ProxiedParameter* parameter) const;
-    void append(ProxiedParameter* p);
+
+    bool hasParameter(ParameterProxy* parameter) const;
+    void append(ParameterProxy* p);
     ParameterGroup& operator<<(ParameterGroup&& other);
 
     set_t::iterator begin() {return parameters.begin();}
@@ -51,7 +55,6 @@ public:
 
 private:
     set_t parameters;
-    double value;
 };
 
 } // namespace NamedSketcher::GCS

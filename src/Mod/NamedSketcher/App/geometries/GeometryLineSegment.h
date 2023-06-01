@@ -63,8 +63,8 @@ public:
     static std::string_view xmlTagTypeStatic(void) {return "LineSegment";}
 
 private:
-    GCS::ProxiedPoint start;
-    GCS::ProxiedPoint end;
+    GCS::Point start;
+    GCS::Point end;
 
     GeometryLineSegment();
 };

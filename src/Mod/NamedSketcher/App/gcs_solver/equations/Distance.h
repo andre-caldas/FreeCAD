@@ -27,8 +27,6 @@
 
 #include <set>
 
-#include "../ProxiedParameter.h""
-#include "../Types.h"
 #include "Equation.h"
 
 namespace NamedSketcher::GCS
@@ -38,16 +36,18 @@ class NamedSketcherExport Distance : public NonLinearEquation
 {
 public:
     Distance() = default;
-    void set (ProxiedPoint* a, ProxiedPoint* b, ProxiedParameter* distance);
+    void set (Point* a, Point* b, Parameter* distance);
 
     double error() const override;
     Vector differentialNonOptimized() const override;
-    OptimizedVector differentialOptimized() const override;
+    OptimizedVector differentialOptimized(ParameterProxyManager& manager) const override;
+
+    void setProxies(ParameterProxyManager& manager) const override;
 
 private:
-    ProxiedPoint* a;
-    ProxiedPoint* b;
-    ProxiedParameter* distance;
+    Point* a;
+    Point* b;
+    Parameter* distance;
 
     bool isConicident() const;
     bool isHorizontal() const;

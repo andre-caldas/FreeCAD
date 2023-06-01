@@ -51,7 +51,6 @@ NamedSketch::NamedSketch()
 {
     ADD_PROPERTY_TYPE_NO_DEFAULT(geometryList, "NamedSketch", (App::PropertyType)(App::Prop_None), "List of geometries used in this sketch");
     ADD_PROPERTY_TYPE_NO_DEFAULT(constraintList, "NamedSketch", (App::PropertyType)(App::Prop_None), "List of constraints used in this sketch");
-    constraintList.setProxyManager(&manager);
 
     // Add standard geometric objects: axis and origin.
 

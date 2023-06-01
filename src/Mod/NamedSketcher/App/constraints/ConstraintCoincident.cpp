@@ -58,7 +58,7 @@ ConstraintCoincident& ConstraintCoincident::removePoint(boost::uuids::uuid tag)
     return *this;
 }
 
-std::vector<GCS::Equation*> ConstraintCoincident::getEquations() const
+std::vector<GCS::Equation*> ConstraintCoincident::getEquations()
 {
     if(references.empty())
     {
@@ -70,7 +70,7 @@ std::vector<GCS::Equation*> ConstraintCoincident::getEquations() const
     assert(2*references.size() == equations.size()+2);
     for(int i=0; i < references.size(); ++i)
     {
-        auto& point_ref = *(references.at(i));
+        auto& point_ref = references.at(i);
         if(point_ref.isLocked())
         {
             point_ref.refreshLock();

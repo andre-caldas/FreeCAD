@@ -41,10 +41,9 @@ double Constant::error() const
     return a->getValue() - k->getValue();
 }
 
-Vector Constant::differentialNonOptimized(Shaker& /*shake*/) const
+Vector Constant::differentialNonOptimized() const
 {
     Vector result;
-    // TODO: remove comments when we start using C++20.
     result.set(a, 1);
     return result;
 }
@@ -52,6 +51,11 @@ Vector Constant::differentialNonOptimized(Shaker& /*shake*/) const
 OptimizedVector Constant::differentialOptimized() const
 {
     return optimizeVector(differentialNonOptimized());
+}
+
+void Constant::setProxies(ParameterProxyManager& manager) const
+{
+    manager.add(a);
 }
 
 } // namespace NamedSketcher::GCS

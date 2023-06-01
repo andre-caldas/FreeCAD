@@ -215,6 +215,8 @@ public:
      */
     void releaseLock();
 
+    bool isLocked() const;
+
     /**
      * @brief Gets a pointer to the locked resource.
      * It throws an exception if the internal @class result is not locked.

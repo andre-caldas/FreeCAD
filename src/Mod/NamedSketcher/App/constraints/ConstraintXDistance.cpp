@@ -47,9 +47,9 @@ ConstraintXDistance::ConstraintXDistance()
     FC_THROWM(Base::RuntimeError, "NamedSketcher::ConstraintXDistance should not be constructed without arguments.");
 }
 
-template<typename ref_pt, ref_par,
+template<typename ref_pt, typename ref_par,
          std::enable_if_t<std::is_constructible_v<ConstraintXDistance::ref_point, ref_pt>>*,
-std::enable_if_t<std::is_constructible_v<ConstraintXDistance::ref_parameter, ref_par>>*>
+         std::enable_if_t<std::is_constructible_v<ConstraintXDistance::ref_parameter, ref_par>>*>
 ConstraintXDistance::ConstraintXDistance(ref_pt&& start, ref_pt&& end, ref_par&& distance)
     : start(std::forward(start))
     , end(std::forward(end))
@@ -57,7 +57,7 @@ ConstraintXDistance::ConstraintXDistance(ref_pt&& start, ref_pt&& end, ref_par&&
 {
 }
 
-std::vector<GCS::Equation*> ConstraintCoincident::getEquations() const
+std::vector<GCS::Equation*> ConstraintCoincident::getEquations()
 {
     if(!a.isLocked())
     {

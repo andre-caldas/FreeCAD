@@ -46,7 +46,7 @@ GeometryPoint::GeometryPoint()
 
 GeometryPoint::GeometryPoint(std::unique_ptr<Part::GeomPoint>&& geo)
     : GeometryBaseT(std::move(geo))
-    , point(geo->getPoint().x, geo->getPoint().y)
+    , point(geometry->getPoint().x, geometry->getPoint().y)
 {
 }
 

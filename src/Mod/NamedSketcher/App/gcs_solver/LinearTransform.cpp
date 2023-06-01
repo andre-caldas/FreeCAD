@@ -21,6 +21,8 @@
  *                                                                          *
  ***************************************************************************/
 
+#include <algorithm>
+
 #include "ParameterVector.h"
 #include "LinearTransform.h"
 
@@ -31,7 +33,16 @@ template<typename OutType, typename InType>
 void LinearTransform<OutType, InType>::addDual(OutType key, dual_t&& dual)
 {
     duals.emplace(key, dual);
+    dualKeys.emplace_back(key);
 }
+
+template<typename OutType, typename InType>
+void LinearTransform<OutType, InType>::removeDual(OutType key)
+{
+    duals.erase(key);
+    dualKeys.erase(std::remove_if(dualKeys.begin(), dualKeys.end(), key));
+}
+
 
 template<typename OutType, typename InType>
 ParameterVector<OutType>

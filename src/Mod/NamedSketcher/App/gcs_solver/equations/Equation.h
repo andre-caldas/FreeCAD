@@ -34,28 +34,30 @@
 namespace NamedSketcher::GCS
 {
 
+using Parameter = double;
+class Point;
 class ParameterProxyManager;
 
 class NamedSketcherExport Equation
 {
 public:
-    Equation(bool hasConstantDifferential)
-        : hasConstantDifferential(hasConstantDifferential) {}
-
     virtual double error() const = 0;
     virtual Vector differentialNonOptimized() const = 0;
-    virtual OptimizedVector differentialOptimized() const = 0;
+    virtual OptimizedVector differentialOptimized(ParameterProxyManager& manager) const = 0;
     virtual bool isLinear() const = 0;
 
-    virtual bool setProxies(ParameterProxyManager* manager) const = 0;
-
-    static OptimizedVector optimizeVector(const Vector& v);
-
-private:
     /**
-     * @brief When true, differentialVariation() is zero.
+     * @brief Informs the @a manager which proxied parameters are used by the system.
+     * @param manager: object that manages the group of proxied parameters.
      */
-    bool hasConstantDifferential;
+    virtual void setProxies(ParameterProxyManager& manager) const = 0;
+
+    /**
+     * @brief Informs the @a manager which proxies to optimize (set equal or fixed value).
+     * @param manager: object that manages the group of proxied parameters.
+     * @return Returns true when some new proxy was optimized and false otherwise.
+     */
+    virtual bool optimizeProxies(ParameterProxyManager& /*manager*/) const {return false;}
 };
 
 class NamedSketcherExport LinearEquation : public Equation

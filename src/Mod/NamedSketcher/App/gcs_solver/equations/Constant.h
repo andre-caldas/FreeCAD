@@ -34,15 +34,19 @@ class NamedSketcherExport Constant : public LinearEquation
 {
 public:
     Constant() = default;
-    void set (ProxiedParameter* a, ProxiedParameter* k);
+    void set (Parameter* a, Parameter* k);
 
     double error() const override;
     Vector differentialNonOptimized() const override;
-    OptimizedVector differentialOptimized() const override;
+    OptimizedVector differentialOptimized(ParameterProxyManager& manager) const override;
+
+    void setProxies(ParameterProxyManager& manager) const override;
+// TODO: make ParameterProxyManager manage constant values as well.
+//    bool optimizeProxies(ParameterProxyManager& manager) const override;
 
 private:
-    ProxiedParameter* a;
-    ProxiedParameter* k;
+    Parameter* a;
+    Parameter* k;
 };
 
 } // namespace NamedSketcher::GCS

@@ -21,25 +21,44 @@
  *                                                                          *
  ***************************************************************************/
 
-#include <Base/Exception.h>
 
-#include "ProxiedParameter.h"
+#ifndef NAMEDSKETCHER_GCS_Parameter_H
+#define NAMEDSKETCHER_GCS_Parameter_H
 
 namespace NamedSketcher::GCS
 {
 
-void ProxiedParameter::resetProxy(bool shallUpdate)
+/*
+ * Unfortunately, C++ does not allow us to derive from "double". :-(
+ */
+class ParameterBase
 {
-    if(shallUpdate)
-    {
-        update();
-    }
-    proxy = &value;
-}
+public:
+    explicit ParameterBase(double v) : value(value) {}
+    explicit ParameterBase& operator= (double v) {value = v; return *this;}
 
-ProxiedPoint::operator Base::Vector3d (void) const
+    operator double&() {return value;}
+    ParameterBase& operator+= (double v) {value += v; return *this;}
+    ParameterBase& operator-= (double v) {value -= v; return *this;}
+    ParameterBase& operator*= (double v) {value *= v; return *this;}
+
+private:
+    double value;
+};
+
+class Parameter : public ParameterBase {};
+class OptimizedParameter : public ParameterBase {};
+
+class Point
 {
-    return Base::Vector3d(x.getValue(), y.getValue());
-}
+public:
+    Point() = default;
+    Point(double x, double y) : x(x), y(y) {}
+    Parameter x = 0.0;
+    Parameter y = 0.0;
+};
+
 
 } // namespace NamedSketcher::GCS
+
+#endif // NAMEDSKETCHER_GCS_Parameter_H

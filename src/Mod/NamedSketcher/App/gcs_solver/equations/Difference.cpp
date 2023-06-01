@@ -49,13 +49,19 @@ Vector Difference::differentialNonOptimized() const
     result.set(b, 1);
 }
 
-OptimizedVector Difference::differentialOptimized(Shaker& shake) const
+OptimizedVector Difference::differentialOptimized() const
 {
     if(!a->samePointer(b))
     {
         return optimizeVector(differentialNonOptimized());
     }
     return OptimizedVector();
+}
+
+void Difference::setProxies(ParameterProxyManager& manager) const
+{
+    manager.add(a);
+    manager.add(b);
 }
 
 } // namespace NamedSketcher::GCS

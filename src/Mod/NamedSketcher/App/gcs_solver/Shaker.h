@@ -38,7 +38,6 @@ public:
     Shaker(double epsilon)
         : random_generator(std::random_device()())
         , epsilon(epsilon)
-        , distribution(random_generator)
     {}
 
     double operator()(double value) {return value + (max?distribution(max):0.);}
@@ -49,7 +48,7 @@ private:
     double max = 0.;
     double epsilon;
     std::mt19937 random_generator;
-    std::uniform_real_distribution distribution;
+    std::uniform_real_distribution<> distribution;
 };
 
 } // namespace NamedSketcher::GCS

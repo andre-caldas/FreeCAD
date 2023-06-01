@@ -54,11 +54,6 @@ ConstraintHorizontal::ConstraintHorizontal(const ref_point& start, const ref_poi
 {
 }
 
-void ConstraintHorizontal::appendParameterList(std::vector<GCS::ProxiedParameter*>& parameters)
-{
-    THROW(Base::NotImplementedError);
-}
-
 void ConstraintHorizontal::Save (Base::Writer& writer) const
 {
     THROW(Base::NotImplementedError);

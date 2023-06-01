@@ -52,18 +52,18 @@ Vector Equal::differentialNonOptimized() const
     return result;
 }
 
-OptimizedVector Equal::differentialOptimized() const
+OptimizedVector Equal::differentialOptimized(ParameterProxyManager& manager) const
 {
-    if(!a->samePointer(b))
+    if(!manager.isSame(a,b))
     {
         return optimizeVector(differentialNonOptimized());
     }
     return OptimizedVector();
 }
 
-bool Equal::setProxies(ParameterProxyManager* manager) const
+bool Equal::optimizeProxies(ParameterProxyManager& manager) const
 {
-    manager->setEqual(a, b);
+    return manager.setEqual(a, b);
 }
 
 } // namespace NamedSketcher::GCS

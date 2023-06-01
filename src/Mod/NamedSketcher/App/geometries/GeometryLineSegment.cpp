@@ -49,8 +49,8 @@ GeometryLineSegment::GeometryLineSegment()
 
 GeometryLineSegment::GeometryLineSegment(std::unique_ptr<Part::GeomLineSegment>&& geo)
     : GeometryBaseT(std::move(geo))
-    , start(geo->getStartPoint().x, geo->getStartPoint().y)
-    , end(geo->getEndPoint().x, geo->getEndPoint().y)
+    , start(geometry->getStartPoint().x, geometry->getStartPoint().y)
+    , end(geometry->getEndPoint().x, geometry->getEndPoint().y)
 {
 }
 

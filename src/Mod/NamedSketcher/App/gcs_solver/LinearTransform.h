@@ -26,6 +26,7 @@
 #define NAMEDSKETCHER_GCS_LinearTransform_H
 
 #include <unordered_map>
+#include <vector>
 
 namespace NamedSketcher::GCS
 {
@@ -40,11 +41,15 @@ public:
     using dual_t = ParameterVector<InType>;
 
     void addDual(OutType key, dual_t&& dual);
-    void removeDual(OutType key) {duals.erase(key);}
+    void removeDual(OutType key);
 
     dual_t& operator[](OutType functional) {return duals.at(functional);}
     const dual_t& operator[](OutType functional) const {return duals.at(functional);}
-    int size() const {return duals.size();}
+    dual_t& operator[](int index) {return duals.at(dualKeys.at(index));}
+    const dual_t& operator[](int index) const {return duals.at(dualKeys.at(index));}
+    const OutType& getKey(int index) {return dualKeys.at(index);}
+
+    int size() const {return dualKeys.size();}
     ParameterVector<OutType> apply(const dual_t& vector) const;
 
     /**
@@ -57,6 +62,7 @@ public:
     dual_t project(const dual_t& dual) const;
 
 private:
+    std::vector<OutType> dualKeys;
     std::unordered_map<OutType, dual_t> duals;
 };
 

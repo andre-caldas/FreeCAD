@@ -38,6 +38,7 @@ class NamedSketcherExport Orthonormalization
 {
 public:
     using Functional = Equation;
+    using functionals_t = std::vector<Functional*>;
 
     Orthonormalization() = default;
 
@@ -45,93 +46,49 @@ public:
     using iterator = functional_list::iterator;
     using const_iterator = functional_list::const_iterator;
 
-    void pushBack(Functional* functional, Vector&& vector);
+    void pushBack(Functional* functional, ParameterVector&& vector);
     void popBack(Functional* functional);
     void remove(Functional* functional);
 
     void moveForward(Functional* functional);
     void moveBackward(Functional* functional);
 
-    Vector projection(const Matrix& vectors);
-    Vector orthogonalComponent(const Matrix& vectors);
-    Vector normalizedOrthogonalComponent(const Matrix& vectors);
+    ParameterVector projection(const Matrix& vectors);
+    ParameterVector orthogonalComponent(const Matrix& vectors);
+    ParameterVector normalizedOrthogonalComponent(const Matrix& vectors);
 
     int size() const {return duals.size();}
 
-    class Iterator;
-    class RedundantIterator;
-    class NonRedundantIterator;
-
-    RedundantIterator begin() const {return Iterator(functionals.begin(), functionals.end());}
-    RedundantIterator end() const {return Iterator(functionals.end(), functionals.end());}
-    RedundantIterator beginRedundants() const {return RedundantIterator(functionals.begin(), functionals.end());}
-    RedundantIterator endRedundants() const {return RedundantIterator(functionals.end(), functionals.end());}
-    RedundantIterator beginNonRedundants() const {return NonRedundantIterator(functionals.begin(), functionals.end());}
-    RedundantIterator endNonRedundants() const {return NonRedundantIterator(functionals.end(), functionals.end());}
+    functionals_t::const_iterator begin() const {return functionals.cbegin();}
+    functionals_t::const_iterator end() const {return functionals.cend();}
+    functionals_t getRedundants() const;
+    functionals_t getNonRedundants() const;
 
     Functional* operator[](int j) const {return functionals.at(j);}
+
+    int getIndex(Functional* functional) const;
+    void remove(int index);
+    void moveForward(int index);
+    void moveBackward(int index);
 
 private:
     /**
      * @brief Each vector of the matrix is a dual vector
      * representing the gradient for the corresponding @class Functional.
      */
-    Matrix duals;
+    ParameterMatrix duals;
 
     /**
      * @brief The gradients can be orthonormalized.
      * The rows of gradientsQ are the orthonormalized gradients.
      */
-    Matrix dualsQ;
+    ParameterMatrix dualsQ;
 
     /**
      * @brief Ordering for the functionals.
      * The order is needed by the Gram-Schmidt process.
      */
     std::vector<Functional*> functionals;
-
-    int getIndex(Functional* functional) const;
-    void remove(int index);
-    void moveForward(int index);
-    void moveBackward(int index);
-};
-
-class NamedSketcherExport Orthonormalization::Iterator
-{
-public:
-    using functional_iterator = std::vector<Functional*>::iterator;
-
-    Iterator(functional_iterator it, functional_iterator end)
-        : it(it)
-        , end(end)
-    {}
-
-    Functional* get() const {return *it;}
-    bool operator==(const RedundantIterator& other) const {return it == other.it;}
-    bool operator!=(const RedundantIterator& other) const {return it != other.it;}
-    Iterator& operator++(void) {++it; return *this;}
-    Functional& operator*(void) const {return *get();}
-    Functional* operator->(void) const {return get();}
-
-private:
-    functional_iterator it;
-    functional_iterator end;
-};
-
-class NamedSketcherExport Orthonormalization::RedundantIterator
-        : public Orthonormalization::Iterator
-{
-public:
-    RedundantIterator(functional_iterator it, functional_iterator end);
-    RedundantIterator& operator++(void);
-};
-
-class NamedSketcherExport Orthonormalization::NonRedundantIterator
-        : public Orthonormalization::Iterator
-{
-public:
-    NonRedundantIterator(functional_iterator it, functional_iterator end);
-    NonRedundantIterator& operator++(void);
 };
 
 } // namespace NamedSketcher::GCS

@@ -43,8 +43,6 @@ class NamedSketcherExport ConstraintCoincident : public ConstraintBase
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
 public:
-    ConstraintCoincident(GCS::ParameterProxyManager& proxy_manager) : parameterGroup(proxy_manager) {}
-
     std::vector<ref_point> references;
 
     template<typename ref,
@@ -53,7 +51,7 @@ public:
     ConstraintCoincident& removePoint(boost::uuids::uuid tag);
 
 public:
-    std::vector<GCS::Equation*> getEquations() const override;
+    std::vector<GCS::Equation*> getEquations() override;
 
     std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
     static constexpr const char* xmlTagTypeStatic() {return "Coincident";}

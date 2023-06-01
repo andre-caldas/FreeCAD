@@ -57,7 +57,7 @@ public:
     ConstraintXDistance(ref_pt&& start, ref_pt&& end, ref_par&& distance);
 
 public:
-    std::vector<GCS::Equation*> getEquations() const override;
+    std::vector<GCS::Equation*> getEquations() override;
 
     std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
     static constexpr const char* xmlTagTypeStatic() {return "XDistance";}

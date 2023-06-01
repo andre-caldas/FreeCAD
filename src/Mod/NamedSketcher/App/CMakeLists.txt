@@ -100,18 +100,20 @@ SET(gcs_solver_SRCS
     gcs_solver/Shaker.h
     gcs_solver/System.h
     gcs_solver/System.cpp
-    gcs_solver/ParameterVector.h
-    gcs_solver/ParameterVector.cpp
     gcs_solver/LinearTransform.h
     gcs_solver/LinearTransform.cpp
     gcs_solver/Orthonormalization.h
     gcs_solver/Orthonormalization.cpp
-    gcs_solver/ProxiedParameter.h
-    gcs_solver/ProxiedParameter.cpp
-    gcs_solver/ParameterGroup.h
-    gcs_solver/ParameterGroup.cpp
-    gcs_solver/ParameterProxyManager.h
-    gcs_solver/ParameterProxyManager.cpp
+#
+    gcs_solver/parameters/Parameter.h
+    gcs_solver/parameters/Vector.h
+    gcs_solver/parameters/Vector.cpp
+    gcs_solver/parameters/ParameterProxy.h
+    gcs_solver/parameters/ParameterProxy.cpp
+    gcs_solver/parameters/ParameterGroup.h
+    gcs_solver/parameters/ParameterGroup.cpp
+    gcs_solver/parameters/ParameterProxyManager.h
+    gcs_solver/parameters/ParameterProxyManager.cpp
 #
     gcs_solver/equations/Equation.h
     gcs_solver/equations/Equation.cpp

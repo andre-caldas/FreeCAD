@@ -178,19 +178,31 @@ bool Colinear::isVertical() const
     return (a->x.samePointer(b->x) || a->x.samePointer(c->x) || b->x.samePointer(c->x));
 }
 
-bool Colinear::setProxies(ParameterProxyManager* manager) const
+void Difference::setProxies(ParameterProxyManager& manager) const
 {
+    manager.add(&a->x);
+    manager.add(&a->y);
+    manager.add(&b->x);
+    manager.add(&b->y);
+    manager.add(&c->x);
+    manager.add(&c->y);
+}
+
+bool Colinear::optimizeProxies(ParameterProxyManager& manager) const
+{
+    bool result = false;
     if(isHorizontal())
     {
-        manager->setEqual(a->y, b->y);
-        manager->setEqual(a->y, c->y);
+        result = manager.setEqual(a->y, b->y) || result;
+        result = manager.setEqual(a->y, c->y) || result;
     }
 
     if(isVertical())
     {
-        manager->setEqual(a->x, b->x);
-        manager->setEqual(a->x, c->x);
+        result = manager.setEqual(a->x, b->x) || result;
+        result = manager.setEqual(a->x, c->x) || result;
     }
+    return result;
 }
 
 } // namespace NamedSketcher::GCS
