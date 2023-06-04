@@ -41,7 +41,7 @@ double Constant::error() const
     return a->getValue() - k->getValue();
 }
 
-Vector Constant::differentialNonOptimized() const
+ParameterVector Constant::differentialNonOptimized() const
 {
     Vector result;
     result.set(a, 1);

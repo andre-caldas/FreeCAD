@@ -92,7 +92,7 @@ double Colinear::error() const
     return (b1*c2 - b2*c1) + (a2*c1 - a1*c2) + (a1*b2 - a2*b1);
 }
 
-Vector Colinear::differentialNonOptimized() const
+ParameterVector Colinear::differentialNonOptimized() const
 {
     double a1 = a->x.getValue();
     double a2 = a->y.getValue();
@@ -111,17 +111,17 @@ Vector Colinear::differentialNonOptimized() const
     return result;
 }
 
-OptimizedVector Colinear::differentialOptimized() const
+OptimizedVector Colinear::differentialOptimized(ParameterProxyManager& manager) const
 {
-    if(isAlreadyColinear())
+    if(isAlreadyColinear(manager))
     {
         return OptimizedVector();
     }
 
-    if(isHorizontal())
+    if(isHorizontal(manager))
     {
         OptimizedVector result;
-        if(a->y.samePointer(b->y))
+        if(manager. a->y.samePointer(b->y))
         {
             // a2 - c2 = 0.
             result.set(a->y.getPointer(), 1);
@@ -153,7 +153,7 @@ OptimizedVector Colinear::differentialOptimized() const
     return optimizeVector(differentialNonOptimized());
 }
 
-bool Colinear::isAlreadyColinear() const
+bool Colinear::isAlreadyColinear(const ParameterProxyManager& manager) const
 {
     if(a->x.samePointer(b->x) && a->x.samePointer(c->x))
     {
@@ -168,12 +168,12 @@ bool Colinear::isAlreadyColinear() const
     return false;
 }
 
-bool Colinear::isHorizontal() const
+bool Colinear::isHorizontal(const ParameterProxyManager& manager) const
 {
     return (a->y.samePointer(b->y) || a->y.samePointer(c->y) || b->y.samePointer(c->y));
 }
 
-bool Colinear::isVertical() const
+bool Colinear::isVertical(const ParameterProxyManager& manager) const
 {
     return (a->x.samePointer(b->x) || a->x.samePointer(c->x) || b->x.samePointer(c->x));
 }

@@ -44,7 +44,7 @@ double Equal::error() const
     return b->getValue() - a->getValue();
 }
 
-Vector Equal::differentialNonOptimized() const
+ParameterVector Equal::differentialNonOptimized() const
 {
     Vector result;
     result.set(a, -1);

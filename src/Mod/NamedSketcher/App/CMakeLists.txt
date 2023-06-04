@@ -106,6 +106,7 @@ SET(gcs_solver_SRCS
     gcs_solver/Orthonormalization.cpp
 #
     gcs_solver/parameters/Parameter.h
+    gcs_solver/parameters/Parameter.cpp
     gcs_solver/parameters/Vector.h
     gcs_solver/parameters/Vector.cpp
     gcs_solver/parameters/ParameterProxy.h
@@ -127,6 +128,12 @@ SET(gcs_solver_SRCS
     gcs_solver/equations/Distance.cpp
     gcs_solver/equations/Colinear.h
     gcs_solver/equations/Colinear.cpp
+#
+    gcs_solver/linear_solvers/SolverBase.h
+    gcs_solver/linear_solvers/SolverBase.cpp
+    gcs_solver/linear_solvers/Ldlt.h
+    gcs_solver/linear_solvers/Ldlt.cpp
+#    gcs_solver/linear_solvers/BiCGStab.h
 )
 SOURCE_GROUP("GCS Solver" FILES ${gcs_solver_SRCS})
 

@@ -32,13 +32,15 @@ namespace NamedSketcher::GCS
 {
 
 template<typename T>
-class ParameterVector;
+class Vector;
 
 template<typename OutType, typename InType>
 class LinearTransform
 {
 public:
-    using dual_t = ParameterVector<InType>;
+    using dual_t = Vector<InType>;
+
+    std::vector<OutType> dualKeys;
 
     void addDual(OutType key, dual_t&& dual);
     void removeDual(OutType key);
@@ -50,7 +52,7 @@ public:
     const OutType& getKey(int index) {return dualKeys.at(index);}
 
     int size() const {return dualKeys.size();}
-    ParameterVector<OutType> apply(const dual_t& vector) const;
+    Vector<OutType> apply(const dual_t& vector) const;
 
     /**
      * @brief Gets the orthogonal projection of @a duals into the space
@@ -62,7 +64,6 @@ public:
     dual_t project(const dual_t& dual) const;
 
 private:
-    std::vector<OutType> dualKeys;
     std::unordered_map<OutType, dual_t> duals;
 };
 

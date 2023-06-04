@@ -53,9 +53,9 @@ public:
     void moveForward(Functional* functional);
     void moveBackward(Functional* functional);
 
-    ParameterVector projection(const Matrix& vectors);
-    ParameterVector orthogonalComponent(const Matrix& vectors);
-    ParameterVector normalizedOrthogonalComponent(const Matrix& vectors);
+    ParameterVector projection(const ParameterVector& vector);
+    ParameterVector orthogonalComponent(const ParameterVector& vector);
+    ParameterVector normalizedOrthogonalComponent(const ParameterVector& vector);
 
     int size() const {return duals.size();}
 
@@ -73,7 +73,7 @@ public:
 
 private:
     /**
-     * @brief Each vector of the matrix is a dual vector
+     * @brief Each vector in "duals" is a dual vector
      * representing the gradient for the corresponding @class Functional.
      */
     ParameterMatrix duals;

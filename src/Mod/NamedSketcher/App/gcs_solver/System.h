@@ -86,41 +86,13 @@ private:
     std::vector<Equation*> extraRedundantEquations;
 
     /**
-     * @brief Noise generator.
-     */
-    Shaker shaker;
-
-    /**
-     * @brief Calculates the gradients for the non-linear part,
-     * and correct the differential matrix.
-     * Notice that linear equations have constant gradient.
-     * @param manager: @class ParameterProxyManager to translate coordinates.
-     * @param non_linear_equations: List of equations that are not linear.
-     * @param differential: The differential matrix used by the Eigen solver.
-     */
-    void correctNonLinearGradients(
-            const ParameterProxyManager& manager,
-            const std::vector<Equation*>& non_linear_equations,
-            differential_t& differential) const;
-
-    /**
-     * @brief Solves the linear system and determines the approximate target.
-     * @param manager: @class ParameterProxyManager to translate coordinates.
-     * @param differential: The differential matrix used by the Eigen solver.
-     * @return The approximate next point of evaluation.
-     */
-    OptimizedVector getStepDirection(
-            const ParameterProxyManager& manager,
-            const Eigen::SparseMatrix<double, Eigen::RowMajor>& differential) const;
-
-    /**
      * @brief Searches for the "best point" between current point
      * and the approximate next step point determined by getStepTarget.
      * @param manager: @class ParameterProxyManager to translate coordinates.
      * @param target: where to aim.
      */
-    void stepInTargetDirection(
-            const ParameterProxyManager& manager,
+    void stepIntoTargetDirection(
+            ParameterProxyManager& manager,
             const OptimizedVector& target) const;
 };
 

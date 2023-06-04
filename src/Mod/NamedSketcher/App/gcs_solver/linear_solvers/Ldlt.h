@@ -22,52 +22,28 @@
  ***************************************************************************/
 
 
-#ifndef NAMEDSKETCHER_GCS_ImprovedMatrix_H
-#define NAMEDSKETCHER_GCS_ImprovedMatrix_H
+#ifndef NAMEDSKETCHER_GCS_LinearSolvers_Ldlt_H
+#define NAMEDSKETCHER_GCS_LinearSolvers_Ldlt_H
 
-#include <Eigen/SparseCore>
+#include <Eigen/SparseCholesky>
 
-namespace NamedSketcher::GCS
+#include "SolverBase.h"
+
+namespace NamedSketcher::GCS::LinearSolvers
 {
 
-template<typename M>
-class ImprovedMatrix
-        : public Eigen::SparseMatrix<double,M>
+class Ldlt : public SolverBase
 {
-    void removeVector(Index i)
-    {
-        // TODO: use memcpy... I don't really know.
-        for(Index j=i+1; j < outerSize(); ++j)
-        {
-            m_outerIndex[j-1] = m_outerIndex[j];
-        }
+public:
+    using solver_t = Eigen::SimplicialLDLT<matrix_t>;
+    Ldlt(ParameterProxyManager& manager, const OptimizedMatrix& gradients);
+    void refactor() override;
+    vector_t _solve(const vector_t& out) override;
 
-        if(IsRowMajor)
-        {
-            conservativeResize(rows()-1, cols());
-        } else {
-            conservativeResize(rows(), cols()-1);
-        }
-    }
-
-    void addVector(Index i)
-    {
-        if(IsRowMajor)
-        {
-            conservativeResize(rows()+1, cols());
-        } else {
-            conservativeResize(rows(), cols()+1);
-        }
-
-        // TODO: use memcpy... I don't really know.
-        for(Index j=i+1; j < outerSize(); ++j)
-        {
-            m_outerIndex[j] = m_outerIndex[j-1];
-        }
-        m_innerNonZeros[i] = 0;
-    }
+private:
+    solver_t solver;
 };
 
-} // namespace NamedSketcher::GCS
+} // namespace NamedSketcher::GCS::LinearSolvers
 
-#endif // NAMEDSKETCHER_GCS_ImprovedMatrix_H
+#endif // NAMEDSKETCHER_GCS_LinearSolver_Ldlt_H

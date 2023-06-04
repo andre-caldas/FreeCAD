@@ -21,42 +21,66 @@
  *                                                                          *
  ***************************************************************************/
 
+#include <Eigen/Core>
 
-#ifndef NAMEDSKETCHER_GCS_Colinear_H
-#define NAMEDSKETCHER_GCS_Colinear_H
+#include "../equations/Equation.h"
 
-#include <set>
-
-#include "../ProxiedParameter.h""
+#include "../parameters/ParameterProxyManager.h"
+#include "../parameters/Vector.h"
+#include "../LinearTransform.h"
 #include "../Types.h"
-#include "Equation.h"
 
-namespace NamedSketcher::GCS
+#include "SolverBase.h"
+
+namespace NamedSketcher::GCS::LinearSolvers
 {
 
-class NamedSketcherExport Colinear : public NonLinearEquation
+SolverBase::SolverBase(ParameterProxyManager& manager, const OptimizedMatrix& _gradients)
+    : manager(manager)
 {
-public:
-    Colinear() = default;
-    void set(Point* a, Point* b, Point* c);
+    int rows = _gradients.size();
+    // Reserve 10 parameters per dual vector. Magic number. :-(
+    gradients.reserve(10*rows);
+    for(int row=0; row < rows; ++row)
+    {
+        for(auto [k,v]: _gradients[row].values)
+        {
+            int col = manager.getOptimizedParameterIndex(k);
+            gradients.insert(row, col) = v;
+        }
+    }
+    gradients.makeCompressed();
+}
 
-    double error() const override;
-    ParameterVector differentialNonOptimized() const override;
-    OptimizedVector differentialOptimized(ParameterProxyManager& manager) const override;
+void SolverBase::updateGradient(Equation* equation)
+{
+    OptimizedVector gradient = equation->differentialOptimized(manager);
+    for(auto [k,v]: gradient.values)
+    {
+        gradients.coeffRef(eq_index, manager.getOptimizedParameterIndex(k)) = v;
+    }
+    need_refactor = true;
+}
 
-    void setProxies(ParameterProxyManager& manager) const override;
-    bool optimizeProxies(ParameterProxyManager& manager) const override;
+OptimizedVector SolverBase::solve()
+{
+    vector_t eigen_target(manager.outputSize());
+    for(int i=0; i < manager.outputSize(); ++i)
+    {
+        Equation* eq = manager.getEquation(i);
+        eigen_target.insert(i) = -eq->error();
+    }
 
-private:
-    Point* a;
-    Point* b;
-    Point* c;
+    vector_t solution = _solve(eigen_target);
+    assert(solution.rows() == manager.outputSize());
 
-    bool isAlreadyColinear(const ParameterProxyManager& manager) const;
-    bool isHorizontal(const ParameterProxyManager& manager) const;
-    bool isVertical(const ParameterProxyManager& manager) const;
-};
+    OptimizedVector result;
+    for(int index = 0; index < solution.rows(); ++index)
+    {
+        double& curval = manager.getGroup(it.index())->value;
+        result.set(&curval,it.value());
+    }
+    return result;
+}
 
-} // namespace NamedSketcher::GCS
-
-#endif // NAMEDSKETCHER_GCS_Colinear_H
+} // namespace NamedSketcher::GCS::LinearSolvers

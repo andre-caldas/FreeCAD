@@ -37,17 +37,15 @@ class ParameterProxy;
 
 class NamedSketcherExport ParameterGroup
 {
-    using set_t = std::unordered_set<ParameterProxy*>;
+    using set_t = std::unordered_set<Parameter*>;
 
 public:
     OptimizedParameter value;
 
-    ParameterGroup(ParameterProxy* a, ParameterProxy* b);
-    ~ParameterGroup();
+    ParameterGroup(Parameter* a, Parameter* b);
 
-    bool hasParameter(ParameterProxy* parameter) const;
-    void append(ParameterProxy* p);
-    ParameterGroup& operator<<(ParameterGroup&& other);
+    bool hasParameter(Parameter* parameter) const;
+    void append(Parameter* p);
 
     set_t::iterator begin() {return parameters.begin();}
     set_t::iterator end() {return parameters.end();}

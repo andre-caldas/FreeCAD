@@ -27,6 +27,8 @@
 #include "equations/Equal.h"
 #include "equations/Constant.h"
 #include "parameters/ParameterProxyManager.h"
+#include "linear_solvers/Ldlt.h"
+
 #include "System.h"
 
 FC_LOG_LEVEL_INIT("NamedSketch",true,true)
@@ -122,8 +124,6 @@ void System::optimize()
 }
 
 
-#include <Eigen/Core>
-
 bool System::solve() const
 {
     ParameterProxyManager manager;
@@ -131,7 +131,7 @@ bool System::solve() const
 
     const std::vector<Equation*> non_redundant_equations = gradients.getNonRedundants();
     // TODO: (C++20: use range filter, instead)
-    const std::vector<Equation*> non_linear_equations;
+    std::vector<Equation*> non_linear_equations;
     std::copy_if(non_redundant_equations.begin(),
                  non_redundant_equations.end(),
                  std::back_inserter(non_linear_equations),
@@ -145,7 +145,7 @@ bool System::solve() const
 
     // Then, we optimize proxies.
     bool shall_set_proxy = true;
-    for(int i=0; shall_set_proxy && i < 100; ++i)
+    for(int i=0; shall_set_proxy && i < 1000; ++i)
     {
         shall_set_proxy = false;
         for(Equation* eq: non_redundant_equations)
@@ -170,18 +170,7 @@ bool System::solve() const
 
     // TODO: Add extra redundants.
 
-    int rows = optimized_gcs.size();
-    Eigen::SparseMatrix<double, Eigen::RowMajor> differential;
-    // Reserve 10 parameters per dual vector.
-    differential.reserve(Eigen::VectorXi::Constant(rows, 10));
-    for(int row=0; row < rows; ++row)
-    {
-        for(auto [k,v]: optimized_gcs[row].values)
-        {
-            int col = manager.getParameterIndex(k);
-            differential.insert(row, col) = v;
-        }
-    }
+    LinearSolvers::Ldlt linear_solver(manager, optimized_gcs);
 
     // TODO: give up criteria.
     // TODO: use the shaker!
@@ -193,43 +182,21 @@ bool System::solve() const
             manager.commitValues();
             return true;
         }
-        correctNonLinearGradients(manager, non_linear_equations, differential);
-        auto target = getStepTarget(manager, differential);
-        stepInTargetDirection(manager, target);
+
+        for(Equation* eq: non_linear_equations)
+        {
+            linear_solver.updateGradient(eq);
+        }
+
+        OptimizedVector target = linear_solver.solve();
+        stepIntoTargetDirection(manager, target);
     }
 
     return false;
 }
 
-void System::correctNonLinearGradients(
-        const ParameterProxyManager& manager,
-        const std::vector<Equation*>& non_linear_equations,
-        differential_t& differential) const
-{
-    for(Equation* eq: non_linear_equations)
-    {
-        OptimizedVector row = eq->differentialOptimized(manager);
-        differential.row(manager.getEquationIndex(eq)) = row;
-    }
-}
-
-OptimizedVector System::getStepDirection(
-        const ParameterProxyManager& manager,
-        const Eigen::SparseMatrix<double, Eigen::RowMajor>& differential) const
-{
-    const auto& D = differential;
-    Eigen::SparseVector solution = (D.transpose() * D).ldlt().solve(D.transpose() * minus_error(manager)).eval();
-    OptimizedVector result;
-    for(Eigen::SparseVector::InnerIterator it(solution); it; ++it)
-    {
-        double& curval = manager.getGroup(it.index())->value;
-        result.set(&curval,it.value());
-    }
-    return result;
-}
-
-void System::stepInTargetDirection(
-        const ParameterProxyManager& manager,
+void System::stepIntoTargetDirection(
+        ParameterProxyManager& manager,
         const OptimizedVector& direction
         ) const
 {
@@ -244,7 +211,7 @@ void System::stepInTargetDirection(
     int best_n = N / 2;
     double best_error2 = 1000000000;
 
-    OptimizedVector current_position = manager.getOptimizedParameterVector();
+    OptimizedVector current_position = manager.getOptimizedParameterValues();
 
     for(int count=0; count < DEPTH; ++count)
     {
@@ -252,7 +219,7 @@ void System::stepInTargetDirection(
         {
             OptimizedVector temp;
             temp.setAsLinearCombination(1.0, current_position, (a*n + b*(N-n))/N, direction);
-            manager.setParameters(std::move(temp));
+            manager.setOptimizedParameterValues(std::move(temp));
             double error2 = minus_error(manager).squaredNorm();
             if(error2 < best_error2)
             {
@@ -266,7 +233,7 @@ void System::stepInTargetDirection(
     }
     OptimizedVector new_pos;
     new_pos.setAsLinearCombination(1.0, current_position, (a+b)/2, direction);
-    manager.setParameters(std::move(new_pos));
+    manager.setOptimizedParameterValues(std::move(new_pos));
 }
 
 } // namespace NamedSketcher::GCS

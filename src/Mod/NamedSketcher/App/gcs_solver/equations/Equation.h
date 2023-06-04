@@ -34,7 +34,6 @@
 namespace NamedSketcher::GCS
 {
 
-using Parameter = double;
 class Point;
 class ParameterProxyManager;
 
@@ -42,7 +41,7 @@ class NamedSketcherExport Equation
 {
 public:
     virtual double error() const = 0;
-    virtual Vector differentialNonOptimized() const = 0;
+    virtual ParameterVector differentialNonOptimized() const = 0;
     virtual OptimizedVector differentialOptimized(ParameterProxyManager& manager) const = 0;
     virtual bool isLinear() const = 0;
 

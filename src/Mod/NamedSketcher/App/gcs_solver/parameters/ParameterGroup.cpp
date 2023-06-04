@@ -23,46 +23,26 @@
 
 #include <Base/Exception.h>
 
-#include "ParameterProxy.h"
+#include "Parameter.h"
 #include "ParameterGroup.h"
 
 namespace NamedSketcher::GCS
 {
 
-ParameterGroup::ParameterGroup(ParameterProxy* a, ParameterProxy* b)
+ParameterGroup::ParameterGroup(Parameter* a, Parameter* b)
 {
     append(a);
     append(b);
 }
 
-ParameterGroup::~ParameterGroup()
-{
-    for(auto p: parameters) p->resetProxy();
-}
-
-bool ParameterGroup::hasParameter(ParameterProxy* parameter) const
+bool ParameterGroup::hasParameter(Parameter* parameter) const
 {
     return parameters.count(parameter);
 }
 
-void ParameterGroup::append(ParameterProxy* p)
+void ParameterGroup::append(Parameter* p)
 {
-    if(p->hasProxy())
-    {
-        FC_THROWM(Base::RuntimeError, "Cannot set proxy for parameter that already has a proxy.")
-    }
-    p->setProxy(&value);
     parameters.insert(p);
-}
-
-ParameterGroup& operator<<(ParameterGroup&& other)
-{
-    for(auto p: other.parameters)
-    {
-        p->resetProxy();
-        append(p);
-    }
-    other.parameters.clear();
 }
 
 } // namespace NamedSketcher::GCS

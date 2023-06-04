@@ -69,7 +69,7 @@ double Distance::error() const
     return (a1-b1)*(a1-b1) + (a2-b2)*(a2-b2) - d*d;
 }
 
-Vector Distance::differentialNonOptimized() const
+ParameterVector Distance::differentialNonOptimized() const
 {
     double a1 = *a->x;
     double a2 = *a->y;

@@ -21,42 +21,14 @@
  *                                                                          *
  ***************************************************************************/
 
-
-#ifndef NAMEDSKETCHER_GCS_Colinear_H
-#define NAMEDSKETCHER_GCS_Colinear_H
-
-#include <set>
-
-#include "../ProxiedParameter.h""
-#include "../Types.h"
-#include "Equation.h"
+#include "Parameter.h"
 
 namespace NamedSketcher::GCS
 {
 
-class NamedSketcherExport Colinear : public NonLinearEquation
+Point::operator Base::Vector3d() const
 {
-public:
-    Colinear() = default;
-    void set(Point* a, Point* b, Point* c);
-
-    double error() const override;
-    ParameterVector differentialNonOptimized() const override;
-    OptimizedVector differentialOptimized(ParameterProxyManager& manager) const override;
-
-    void setProxies(ParameterProxyManager& manager) const override;
-    bool optimizeProxies(ParameterProxyManager& manager) const override;
-
-private:
-    Point* a;
-    Point* b;
-    Point* c;
-
-    bool isAlreadyColinear(const ParameterProxyManager& manager) const;
-    bool isHorizontal(const ParameterProxyManager& manager) const;
-    bool isVertical(const ParameterProxyManager& manager) const;
-};
+    return Base::Vector3d(x, y);
+}
 
 } // namespace NamedSketcher::GCS
-
-#endif // NAMEDSKETCHER_GCS_Colinear_H

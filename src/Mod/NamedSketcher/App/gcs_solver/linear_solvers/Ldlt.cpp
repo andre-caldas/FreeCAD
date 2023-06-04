@@ -22,41 +22,36 @@
  ***************************************************************************/
 
 
-#ifndef NAMEDSKETCHER_GCS_Colinear_H
-#define NAMEDSKETCHER_GCS_Colinear_H
+#include <Eigen/SparseCholesky>
 
-#include <set>
+#include "Ldlt.h"
 
-#include "../ProxiedParameter.h""
-#include "../Types.h"
-#include "Equation.h"
-
-namespace NamedSketcher::GCS
+namespace NamedSketcher::GCS::LinearSolvers
 {
 
-class NamedSketcherExport Colinear : public NonLinearEquation
+Ldlt::Ldlt(ParameterProxyManager& manager, const OptimizedMatrix& _gradients)
+    : SolverBase(manager, _gradients)
 {
-public:
-    Colinear() = default;
-    void set(Point* a, Point* b, Point* c);
+    const auto& D = differential;
+    solver.analyzePattern(D.transpose() * D);
+}
 
-    double error() const override;
-    ParameterVector differentialNonOptimized() const override;
-    OptimizedVector differentialOptimized(ParameterProxyManager& manager) const override;
+void Ldlt::refactor()
+{
+    if(need_refactor)
+    {
+        solver.factorize(gradients);
+        need_refactor = false;
+    }
+}
 
-    void setProxies(ParameterProxyManager& manager) const override;
-    bool optimizeProxies(ParameterProxyManager& manager) const override;
+vector_t Ldlt::_solve(const vector_t& out)
+{
+    refactor();
+    const auto& D = differential;
+    return solver.solve(D.transpose() * out).eval();
+}
 
-private:
-    Point* a;
-    Point* b;
-    Point* c;
+} // namespace NamedSketcher::GCS::LinearSolvers
 
-    bool isAlreadyColinear(const ParameterProxyManager& manager) const;
-    bool isHorizontal(const ParameterProxyManager& manager) const;
-    bool isVertical(const ParameterProxyManager& manager) const;
-};
-
-} // namespace NamedSketcher::GCS
-
-#endif // NAMEDSKETCHER_GCS_Colinear_H
+#endif // NAMEDSKETCHER_GCS_LinearSolver_Ldlt_H

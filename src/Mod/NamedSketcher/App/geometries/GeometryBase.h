@@ -71,9 +71,9 @@ public:
 template<typename MySelf, typename GeoClass>
 class NamedSketcherExport GeometryBaseT : public GeometryBase
 {
+public:
     using reference_type = Base::Accessor::ReferenceTo<MySelf>;
 
-public:
     GeometryBaseT(std::unique_ptr<GeoClass> geo);
     reference_type getReference() const;
 

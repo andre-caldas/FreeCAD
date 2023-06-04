@@ -39,8 +39,6 @@ class NamedSketcherExport ConstraintEqual : public ConstraintBase
 {
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
-    using ref_parameter = Base::Accessor::ReferenceTo<double>;
-
 public:
     ref_parameter a;
     ref_parameter b;

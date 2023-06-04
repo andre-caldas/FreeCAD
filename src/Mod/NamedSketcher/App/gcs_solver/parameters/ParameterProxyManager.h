@@ -39,15 +39,13 @@ namespace NamedSketcher::GCS
 class NamedSketcherExport ParameterProxyManager
 {
 public:
-    ~ParameterProxyManager();
-
     /**
      * @brief Adds a parameter to the system.
-     * @param a: The @class ProxiedParameter to add to the system.
+     * @param a: The @class Parameter to add to the system.
      * @attention Idempotent: this can be called twice for the same argument.
      * The second time, it does nothing.
      */
-    void addParameter(ProxiedParameter* a);
+    void addParameter(Parameter* a);
 
     /**
      * @brief Adds an equation to the system.
@@ -56,37 +54,49 @@ public:
     void addEquation(Equation* eq);
 
     /**
-     * @brief Makes both proxies represent the same parameter.
-     * @param a: first @class ProxiedParameter.
-     * @param b: second @class ProxiedParameter.
+     * @brief Proxy two @class Parameter to mean the same @class OptimizedParameter.
+     * @param a: first @class Parameter.
+     * @param b: second @class Parameter.
      * @return Returns false if they are already equal.
      * Otherwise, returns true.
      */
-    bool setParameterEqual(ProxiedParameter* a, ProxiedParameter* b);
+    bool setParameterEqual(Parameter* a, Parameter* b);
+
+    /**
+     * @brief Verify if two @class Parameter where optimized
+     * to being the same @class OptimizedParameter.
+     * @param a: first @class Parameter to compare.
+     * @param b: second @class Parameter to compare.
+     * @return True if both @class Parameter are proxied to the same @class OptimizedParameter.
+     */
+    bool areParametersEqual(Parameter* a, Parameter* b) const;
 
     /**
      * @brief Finished the optimization step,
      * this function needs to be called
      * to give an index number to each @class ParameterGroup.
      */
-    void setParameterIndexes() const;
-    int getParameterIndex(double* valuePointer) const;
-    int getParamterIndex(ParameterGroup* group) const;
+    void setOptimizedParameterIndexes() const;
+    int getOptimizedParameterIndex(OptimizedParameter* parameter) const;
+    int getGroupIndex(ParameterGroup* group) const;
     ParameterGroup* getGroup(int index) const;
 
     int getEquationIndex(Equation* eq) const;
     int getEquation(int index) const;
-    OptimizedVector getOptimizedParameterVector() const;
-    OptimizedVector optimizeVector(const Vector& v);
+    OptimizedParameter* getOptimizedParameter(Parameter* parameter) const;
+    OptimizedVector getOptimizedParameterValues() const;
+    OptimizedVector setOptimizedParameterValues(const OptimizedVector& vals);
+    OptimizedVector optimizeVector(const ParameterVector& v);
 
-    int size() const;
+    int inputSize() const;
+    int outputSize() const;
     void commitValues() const;
 
 private:
     std::unordered_set<std::unique_ptr<ParameterGroup>> parameterGroups;
     std::vector<ParameterGroup*> indexedParameterGroups;
-    std::map<Parameter*, int> parameterIndexes;
-    std::vector<ProxiedParameter*> originalParameters;
+    std::map<OptimizedParameter*, int> optimizedParameterIndexes;
+    std::vector<Parameter*> originalParameters;
 
     std::vector<Equation*> equations;
     std::map<Equation*, int> equationIndexes;

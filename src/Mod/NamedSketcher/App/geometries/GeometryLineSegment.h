@@ -28,10 +28,8 @@
 #include <memory>
 
 #include <Base/Vector3D.h>
-#include <Mod/Sketcher/App/planegcs/Geo.h>
 
-#include "gcs_solver/ProxiedParameter.h"
-
+#include "gcs_solver/parameters/Parameter.h"
 #include "GeometryBase.h"
 
 namespace Base {
@@ -45,7 +43,8 @@ class GeomLineSegment;
 namespace NamedSketcher
 {
 
-/** Sketcher geometry structure that represents one point.
+/**
+ * @brief Sketcher geometry structure that represents one point.
  */
 class NamedSketcherExport GeometryLineSegment
         : public GeometryBaseT<GeometryLineSegment, Part::GeomLineSegment>

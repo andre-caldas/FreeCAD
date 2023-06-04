@@ -27,10 +27,8 @@
 #include <memory>
 
 #include <Base/Vector3D.h>
-#include <Mod/Sketcher/App/planegcs/Geo.h>
 
-#include "gcs_solver/ProxiedParameter.h"
-
+#include "gcs_solver/parameters/Parameter.h"
 #include "GeometryBase.h"
 
 namespace Base {
@@ -54,15 +52,14 @@ class NamedSketcherExport GeometryPoint
 public:
     GeometryPoint(std::unique_ptr<Part::GeomPoint>&& geo);
 
+    GCS::Point point;
+
     void commitChanges() const override;
 
     // Base::Persistence
     unsigned int getMemSize () const override;
     std::string_view xmlTagType(void) const override {return xmlTagTypeStatic();}
     static std::string_view xmlTagTypeStatic(void) {return "Point";}
-
-private:
-    GCS::Point point;
 
 protected:
     GeometryPoint();

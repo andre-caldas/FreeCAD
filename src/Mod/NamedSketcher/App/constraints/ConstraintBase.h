@@ -34,6 +34,7 @@
 #include <Base/Accessor/NameAndTag.h>
 #include <Base/Accessor/ReferenceToObject.h>
 
+#include "../gcs_solver/parameters/Parameter.h"
 #include "ConstraintFactory.h"
 
 namespace NamedSketcher
@@ -53,7 +54,7 @@ class NamedSketcherExport ConstraintBase
 {
     TYPESYSTEM_HEADER();
 public:
-    using ref_parameter = Base::Accessor::ReferenceTo<double>;
+    using ref_parameter = Base::Accessor::ReferenceTo<GCS::Parameter>;
     using ref_point = Base::Accessor::ReferenceTo<GeometryPoint>;
     using ref_line_segment = Base::Accessor::ReferenceTo<GeometryLineSegment>;
 

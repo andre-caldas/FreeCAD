@@ -154,7 +154,7 @@ void ReferenceTo<X>::releaseLock()
 template<typename X>
 bool ReferenceTo<X>::isLocked() const
 {
-    return lockedResult.lock.last_object;
+    return (bool)lockedResult.lock.last_object;
 }
 
 template<typename X>

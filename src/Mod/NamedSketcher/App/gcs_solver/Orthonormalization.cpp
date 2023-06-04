@@ -21,9 +21,11 @@
  *                                                                          *
  ***************************************************************************/
 
+#include <cassert>
 #include <cmath>
+#include <algorithm>
 
-#include "ImprovedMatrix.h"
+#include <Base/Exception.h>
 
 #include "Orthonormalization.h"
 
@@ -33,8 +35,8 @@ namespace NamedSketcher::GCS
 void Orthonormalization::pushBack(Functional* functional, ParameterVector&& vector)
 {
     functionals.push_back(functional);
-    duals.addDual(functional, vector);
     auto q = orthogonalComponent(vector);
+    duals.addDual(functional, std::move(vector));
     q.normalize();
     dualsQ.addDual(functional, std::move(q));
 }
@@ -61,26 +63,35 @@ void Orthonormalization::moveBackward(Functional* functional)
 }
 
 
-Matrix Orthonormalization::projection(const Matrix& vecs)
+ParameterVector Orthonormalization::projection(const ParameterVector& vec)
 {
-    return dualsQ * dualsQ.transpose() * vecs;
+    return dualsQ.project(vec);
 }
 
-Matrix Orthonormalization::orthogonalComponent(const Matrix& vecs)
+ParameterVector Orthonormalization::orthogonalComponent(const ParameterVector& vec)
 {
-    return vecs - projection(vecs);
+    return ParameterVector().setAsLinearCombination(1, vec, -1, projection(vec));
 }
 
-Matrix Orthonormalization::normalizedOrthogonalComponent(const Matrix& vecs)
+ParameterVector Orthonormalization::normalizedOrthogonalComponent(const ParameterVector& vecs)
 {
     auto result = orthogonalComponent(vecs);
-    normalizeduals(result);
+    double norm = result.norm();
+    if(norm)
+    {
+        result *= 1/norm;
+    }
     return result;
 }
 
 int Orthonormalization::getIndex(Functional* functional) const
 {
-    return functionals.find(functional);
+    auto pos = std::find(functionals.begin(), functionals.end(), functional);
+    if(pos == functionals.end())
+    {
+        FC_THROWM(Base::IndexError, "No index for provided Functional '" << functional << "'.");
+    }
+    return pos;
 }
 
 void Orthonormalization::remove(int index)

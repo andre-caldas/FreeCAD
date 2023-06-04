@@ -39,7 +39,7 @@ public:
     void set (Point* a, Point* b, Parameter* distance);
 
     double error() const override;
-    Vector differentialNonOptimized() const override;
+    ParameterVector differentialNonOptimized() const override;
     OptimizedVector differentialOptimized(ParameterProxyManager& manager) const override;
 
     void setProxies(ParameterProxyManager& manager) const override;

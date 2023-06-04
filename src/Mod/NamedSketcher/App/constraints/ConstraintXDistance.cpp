@@ -57,7 +57,7 @@ ConstraintXDistance::ConstraintXDistance(ref_pt&& start, ref_pt&& end, ref_par&&
 {
 }
 
-std::vector<GCS::Equation*> ConstraintCoincident::getEquations()
+std::vector<GCS::Equation*> ConstraintXDistance::getEquations()
 {
     if(!a.isLocked())
     {

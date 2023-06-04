@@ -22,6 +22,7 @@
  ***************************************************************************/
 
 
+#if 0
 #ifndef NAMEDSKETCHER_GCS_Shaker_H
 #define NAMEDSKETCHER_GCS_Shaker_H
 
@@ -54,3 +55,4 @@ private:
 } // namespace NamedSketcher::GCS
 
 #endif // NAMEDSKETCHER_GCS_Shaker_H
+#endif // 0

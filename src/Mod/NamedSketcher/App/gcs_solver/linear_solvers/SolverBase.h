@@ -22,41 +22,41 @@
  ***************************************************************************/
 
 
-#ifndef NAMEDSKETCHER_GCS_Colinear_H
-#define NAMEDSKETCHER_GCS_Colinear_H
+#ifndef NAMEDSKETCHER_GCS_LinearSolvers_SolverBase_H
+#define NAMEDSKETCHER_GCS_LinearSolvers_SolverBase_H
 
-#include <set>
+#include <Eigen/SparseCore>
+#include <Eigen/Sparse>
 
-#include "../ProxiedParameter.h""
 #include "../Types.h"
-#include "Equation.h"
 
-namespace NamedSketcher::GCS
+namespace NamedSketcher::GCS {
+class ParameterProxyManager;
+}
+
+namespace NamedSketcher::GCS::LinearSolvers
 {
 
-class NamedSketcherExport Colinear : public NonLinearEquation
+class SolverBase
 {
 public:
-    Colinear() = default;
-    void set(Point* a, Point* b, Point* c);
+    using matrix_t = Eigen::SparseMatrix<double, Eigen::RowMajor>;
+    using vector_t = Eigen::VectorXd;
 
-    double error() const override;
-    ParameterVector differentialNonOptimized() const override;
-    OptimizedVector differentialOptimized(ParameterProxyManager& manager) const override;
+    SolverBase(ParameterProxyManager& manager, const OptimizedMatrix& gradients);
 
-    void setProxies(ParameterProxyManager& manager) const override;
-    bool optimizeProxies(ParameterProxyManager& manager) const override;
+    void updateGradient(Equation* equation);
+    OptimizedVector solve();
 
-private:
-    Point* a;
-    Point* b;
-    Point* c;
+    virtual void refactor() = 0;
+    virtual vector_t _solve(const vector_t& target) = 0;
 
-    bool isAlreadyColinear(const ParameterProxyManager& manager) const;
-    bool isHorizontal(const ParameterProxyManager& manager) const;
-    bool isVertical(const ParameterProxyManager& manager) const;
+protected:
+    ParameterProxyManager& manager;
+    matrix_t gradients;
+    bool need_refactor = true;
 };
 
-} // namespace NamedSketcher::GCS
+} // namespace NamedSketcher::GCS::LinearSolvers
 
-#endif // NAMEDSKETCHER_GCS_Colinear_H
+#endif // NAMEDSKETCHER_GCS_LinearSolver_SolverBase_H

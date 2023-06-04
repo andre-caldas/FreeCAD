@@ -23,7 +23,7 @@
 
 #include <algorithm>
 
-#include "ParameterVector.h"
+#include "parameters/Vector.h"
 #include "LinearTransform.h"
 
 namespace NamedSketcher::GCS
@@ -45,10 +45,10 @@ void LinearTransform<OutType, InType>::removeDual(OutType key)
 
 
 template<typename OutType, typename InType>
-ParameterVector<OutType>
+Vector<OutType>
 LinearTransform<OutType, InType>::apply(const dual_t& vector) const
 {
-    ParameterVector<OutType> result;
+    Vector<OutType> result;
     for(auto& [k,f]: duals)
     {
         result.values.try_emplace(k, f.dot(vector));
@@ -57,13 +57,13 @@ LinearTransform<OutType, InType>::apply(const dual_t& vector) const
 }
 
 template<typename OutType, typename InType>
-ParameterVector<InType>
+Vector<InType>
 LinearTransform<OutType, InType>::project(const dual_t& vector) const
 {
-    ParameterVector<InType> result;
+    Vector<InType> result;
     for(auto& [k,f]: duals)
     {
-        result += f.dot(vector) * f;
+        result.plusKVec(f.dot(vector), f);
     }
     return result;
 }

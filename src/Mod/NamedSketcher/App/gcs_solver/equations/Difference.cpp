@@ -42,7 +42,7 @@ double Difference::error() const
     return b->getValue() - a->getValue() - difference->getValue();
 }
 
-Vector Difference::differentialNonOptimized() const
+ParameterVector Difference::differentialNonOptimized() const
 {
     Vector result;
     result.set(a, -1);

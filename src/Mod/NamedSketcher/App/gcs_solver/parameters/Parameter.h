@@ -25,6 +25,8 @@
 #ifndef NAMEDSKETCHER_GCS_Parameter_H
 #define NAMEDSKETCHER_GCS_Parameter_H
 
+#include <Base/Vector3D.h>
+
 namespace NamedSketcher::GCS
 {
 
@@ -34,8 +36,8 @@ namespace NamedSketcher::GCS
 class ParameterBase
 {
 public:
-    explicit ParameterBase(double v) : value(value) {}
-    explicit ParameterBase& operator= (double v) {value = v; return *this;}
+    ParameterBase(double v) : value(value) {}
+    ParameterBase& operator= (double v) {value = v; return *this;}
 
     operator double&() {return value;}
     ParameterBase& operator+= (double v) {value += v; return *this;}
@@ -46,18 +48,28 @@ private:
     double value;
 };
 
-class Parameter : public ParameterBase {};
-class OptimizedParameter : public ParameterBase {};
+class Parameter : public ParameterBase
+{
+    using ParameterBase::ParameterBase;
+};
+
+class OptimizedParameter : public ParameterBase
+{
+    using ParameterBase::ParameterBase;
+};
+
 
 class Point
 {
 public:
-    Point() = default;
-    Point(double x, double y) : x(x), y(y) {}
     Parameter x = 0.0;
     Parameter y = 0.0;
-};
 
+    Point() = default;
+    Point(double x, double y) : x(x), y(y) {}
+
+    operator Base::Vector3d() const;
+};
 
 } // namespace NamedSketcher::GCS
 

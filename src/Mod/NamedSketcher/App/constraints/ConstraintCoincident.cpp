@@ -31,6 +31,7 @@
 #include <Base/Accessor/ReferenceToObject.h>
 
 #include "../gcs_solver/equations/Equal.h"
+#include "geometries/GeometryPoint.h"
 #include "ConstraintCoincident.h"
 
 namespace NamedSketcher
@@ -82,8 +83,8 @@ std::vector<GCS::Equation*> ConstraintCoincident::getEquations()
         }
         if(i > 0)
         {
-            equations.at(2*i - 2)->set(first.get()->x, point_ref.get()->x);
-            equations.at(2*i - 1)->set(first.get()->y, point_ref.get()->y);
+            equations.at(2*i - 2)->set(first.get()->point.x, point_ref.get()->point.x);
+            equations.at(2*i - 1)->set(first.get()->point.y, point_ref.get()->point.y);
             result.emplace_back(equations.at(2*1 - 2).get());
             result.emplace_back(equations.at(2*1 - 1).get());
         }
