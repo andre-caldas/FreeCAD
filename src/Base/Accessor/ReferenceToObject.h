@@ -60,6 +60,8 @@ namespace Base::Accessor
 class BaseExport ReferenceToObject
 {
 public:
+    ReferenceToObject(const ReferenceToObject&) = default;
+
     /*
      * Variadic constructors! :-)
      * Thanks to @Artyer:
@@ -137,7 +139,7 @@ protected:
      * In the context of @class ReferenceTo<X>,
      * this last found object has to be of type:
      * * @class X, when there are no remaining tokens.
-     * * @class IExportPointer<X>, where there are tokens to be resolved.
+     * * @class IExport<X>, where there are tokens to be resolved.
      */
     struct lock_type
     {
@@ -188,7 +190,7 @@ public:
      * To complete the resolution process, we expect that
      * this last found lock.last_object is of type:
      * * @class T, when there are no remaining tokens.
-     * * @class IExportPointer<T>, where there are tokens to be resolved.
+     * * @class IExport<T>, where there are tokens to be resolved.
      */
     struct result
     {

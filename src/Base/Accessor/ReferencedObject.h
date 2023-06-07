@@ -107,7 +107,7 @@ private:
 };
 
 template<typename T>
-class BaseExport IExportPointer
+class BaseExport IExport
 {
 public:
     using export_type = T*;

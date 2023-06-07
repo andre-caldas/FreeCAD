@@ -32,8 +32,8 @@ namespace Base::Accessor
 {
 
 template<typename T>
-typename IExportPointer<T>::export_type
-IExportPointer<T>::resolve(token_iterator& /*start*/, token_iterator /*end*/)
+typename IExport<T>::export_type
+IExport<T>::resolve(token_iterator& /*start*/, token_iterator /*end*/)
 {
     return nullptr;
 }

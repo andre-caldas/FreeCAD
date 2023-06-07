@@ -24,6 +24,7 @@
 #include <utility>
 
 #include <Base/Exception.h>
+#include <Base/Reader.h>
 #include <App/Application.h>
 
 #include "Exception.h"
@@ -79,13 +80,13 @@ typename ReferenceTo<X>::result ReferenceTo<X>::getResult () const
         return result{std::move(lock), ptr};
     }
 
-    IExportPointer<X>* ref_obj;
+    IExport<X>* ref_obj;
     try
     {
         // We use reference so we get a e.what() to report.
         // TODO: If message is not useful, or if there is another way to get it,
         // change the cast to a pointer, not reference.
-        ref_obj = &dynamic_cast<IExportPointer<X>&>(*lock.last_object);
+        ref_obj = &dynamic_cast<IExport<X>&>(*lock.last_object);
     } catch (const std::bad_cast& e) {
         FC_THROWM(ExceptionCannotResolve, "Last object does not reference the requested type. " << e.what());
     }
@@ -140,6 +141,7 @@ template<typename X>
 bool ReferenceTo<X>::refreshLock()
 {
     lockedResult = getResult();
+    return isLocked();
 }
 
 /**
