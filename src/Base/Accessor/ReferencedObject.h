@@ -113,7 +113,7 @@ public:
     using export_type = T*;
 
     // TODO: Use range in C++20.
-    virtual export_type resolve(token_iterator& start, token_iterator end);
+    virtual export_type resolve(token_iterator& start, const token_iterator& end);
 };
 
 template<typename T>
@@ -123,7 +123,7 @@ public:
     using export_type = std::shared_ptr<T>;
 
     // TODO: Use range in C++20.
-    virtual export_type resolve(token_iterator& start, token_iterator end);
+    virtual export_type resolve(token_iterator& start, const token_iterator& end);
 };
 
 class BaseExport Chainable

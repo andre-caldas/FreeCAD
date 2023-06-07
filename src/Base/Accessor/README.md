@@ -26,8 +26,8 @@ class Line
 {
 public:
     ...
-    Point* IExport<Point>::resolve(token_iterator& start, token_iterator& end) override;
-    double* IExport<double>::resolve(token_iterator& start, token_iterator& end) override;
+    Point* IExport<Point>::resolve(token_iterator& start, const token_iterator& end) override;
+    double* IExport<double>::resolve(token_iterator& start, const token_iterator& end) override;
 };
 ```
 

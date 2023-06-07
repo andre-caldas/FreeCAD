@@ -33,14 +33,14 @@ namespace Base::Accessor
 
 template<typename T>
 typename IExport<T>::export_type
-IExport<T>::resolve(token_iterator& /*start*/, token_iterator /*end*/)
+IExport<T>::resolve(token_iterator& /*start*/, const token_iterator& /*end*/)
 {
     return nullptr;
 }
 
 template<typename T>
 typename IExportShared<T>::export_type
-IExportShared<T>::resolve(token_iterator& /*start*/, token_iterator /*end*/)
+IExportShared<T>::resolve(token_iterator& /*start*/, const token_iterator& /*end*/)
 {
     THROW(ExceptionCannotResolve);
 }

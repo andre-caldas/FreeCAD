@@ -3989,7 +3989,7 @@ bool Document::mustExecute() const
     return false;
 }
 
-Document::export_type Document::resolve(Base::Accessor::token_iterator& start, Base::Accessor::token_iterator end)
+Document::export_type Document::resolve(Base::Accessor::token_iterator& start, const Base::Accessor::token_iterator& end)
 {
     assert(start != end);
     auto name = start->getText();

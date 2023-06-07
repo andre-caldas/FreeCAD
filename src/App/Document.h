@@ -177,7 +177,7 @@ public:
 
     void clearDocument();
 
-    export_type resolve(Base::Accessor::token_iterator& start, Base::Accessor::token_iterator end) override;
+    export_type resolve(Base::Accessor::token_iterator& start, const Base::Accessor::token_iterator& end) override;
 
     /** @name File handling of the document */
     //@{
