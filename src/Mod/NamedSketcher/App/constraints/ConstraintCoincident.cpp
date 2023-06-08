@@ -83,14 +83,19 @@ std::vector<GCS::Equation*> ConstraintCoincident::getEquations()
         }
         if(i > 0)
         {
-            equations.at(2*i - 2)->set(first.get()->point.x, point_ref.get()->point.x);
-            equations.at(2*i - 1)->set(first.get()->point.y, point_ref.get()->point.y);
+            equations.at(2*i - 2)->set(&first.get()->point.x, &point_ref.get()->point.x);
+            equations.at(2*i - 1)->set(&first.get()->point.y, &point_ref.get()->point.y);
             result.emplace_back(equations.at(2*1 - 2).get());
             result.emplace_back(equations.at(2*1 - 1).get());
         }
     }
 
     return result;
+}
+
+bool ConstraintCoincident::updateReferences()
+{
+    xxx;
 }
 
 unsigned int ConstraintCoincident::getMemSize () const

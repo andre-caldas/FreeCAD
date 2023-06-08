@@ -27,6 +27,7 @@
 #include "equations/Equal.h"
 #include "equations/Constant.h"
 #include "parameters/ParameterProxyManager.h"
+#include "parameters/ParameterGroup.h"
 #include "linear_solvers/Ldlt.h"
 
 #include "System.h"
@@ -57,7 +58,7 @@ System::error(const ParameterProxyManager& manager) const
     OutputVector result;
     for(Equation* eq: gradients)
     {
-        result.set(eq, eq->error());
+        result.set(eq, eq->error(manager));
     }
     return result;
 }
@@ -68,7 +69,7 @@ System::minus_error(const ParameterProxyManager& manager) const
     equation_value_t result;
     for(Equation* eq: gradients)
     {
-        result.insert(manager.getEquationIndex(eq)) = -eq->error();
+        result.insert(manager.getEquationIndex(eq)) = -eq->error(manager);
     }
     return result;
 }
@@ -179,7 +180,7 @@ bool System::solve() const
         auto err = error(manager);
         if(err.isZero())
         {
-            manager.commitValues();
+            manager.commitParameters();
             return true;
         }
 

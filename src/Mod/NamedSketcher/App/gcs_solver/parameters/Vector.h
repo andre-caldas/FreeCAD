@@ -33,8 +33,6 @@ namespace NamedSketcher::GCS
 template<typename Index>
 class Vector
 {
-    using vector_t = Vector<Index>;
-
 public:
     std::unordered_map<Index, double> values;
 
@@ -42,19 +40,19 @@ public:
     void set(Index parameter, double value);
     bool hasKey(Index parameter) const {return values.count(parameter);}
 
-    vector_t& operator+=(const Vector<Index>& other);
-    vector_t& operator*=(double val);
-    vector_t& plusKVec(double a, const Vector<Index>& other);
+    Vector<Index>& operator+=(const Vector<Index>& other);
+    Vector<Index>& operator*=(double val);
+    Vector<Index>& plusKVec(double a, const Vector<Index>& other);
     void prune();
     bool isZero() const;
     bool isEmpty() const;
-    double dot(vector_t& other) const;
+    double dot(Vector<Index>& other) const;
     double norm2() const;
     double norm() const;
-    vector_t& normalize();
-    vector_t& setAsLinearCombination(double a, const vector_t& v, double b, const vector_t& w);
+    Vector<Index>& normalize();
+    Vector<Index>& setAsLinearCombination(double a, const Vector<Index>& v, double b, const Vector<Index>& w);
 
-    friend vector_t operator*(double a, const vector_t& vector);
+    friend Vector<Index> operator*(double a, const Vector<Index>& vector);
 };
 
 } // namespace NamedSketcher::GCS

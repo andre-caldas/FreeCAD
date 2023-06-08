@@ -21,41 +21,46 @@
  *                                                                          *
  ***************************************************************************/
 
+#include <Base/Exception.h>
+
+#include "../parameters/ParameterProxyManager.h"
 #include "Constant.h"
 
 namespace NamedSketcher::GCS
 {
 
-void Constant::set(ProxiedParameter* x, ProxiedParameter* v)
+void Constant::set(Parameter* x, Parameter* v)
 {
     if(x == v)
     {
-        FC_THROWM(Base::ReferenceError, "Different parameters must be passed.")
+        FC_THROWM(Base::ReferenceError, "Different parameters must be passed.");
     }
     a = x;
     k = v;
 }
 
-double Constant::error() const
+double Constant::error(const ParameterProxyManager& manager) const
 {
-    return a->getValue() - k->getValue();
+    const double A = manager.getOptimizedParameterValue(a);
+    const double K = manager.getOptimizedParameterValue(k);
+    return A - K;
 }
 
 ParameterVector Constant::differentialNonOptimized() const
 {
-    Vector result;
+    ParameterVector result;
     result.set(a, 1);
     return result;
 }
 
-OptimizedVector Constant::differentialOptimized() const
+OptimizedVector Constant::differentialOptimized(const ParameterProxyManager& manager) const
 {
-    return optimizeVector(differentialNonOptimized());
+    return manager.optimizeVector(differentialNonOptimized());
 }
 
 void Constant::setProxies(ParameterProxyManager& manager) const
 {
-    manager.add(a);
+    manager.addParameter(a);
 }
 
 } // namespace NamedSketcher::GCS

@@ -21,12 +21,6 @@
  *                                                                          *
  ***************************************************************************/
 
-#include <Base/Exception.h>
-
-#include "../ProxiedParameter.h"
-#include "../ParameterVector.h"
-#include "../Types.h"
-
 namespace NamedSketcher::GCS {
 
 } // namespace NamedSketcher

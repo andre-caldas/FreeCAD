@@ -29,10 +29,9 @@
 namespace NamedSketcher::GCS
 {
 
-ParameterGroup::ParameterGroup(Parameter* a, Parameter* b)
+ParameterGroup::ParameterGroup(Parameter* parameter)
 {
-    append(a);
-    append(b);
+    append(parameter);
 }
 
 bool ParameterGroup::hasParameter(Parameter* parameter) const
@@ -45,6 +44,20 @@ void ParameterGroup::append(Parameter* p)
     parameters.insert(p);
 }
 
-} // namespace NamedSketcher::GCS
+void ParameterGroup::commit() const
+{
+    for(auto parameter: parameters)
+    {
+        *parameter = (double)value;
+    }
+}
 
-#endif // NAMEDSKETCHER_GCS_ParameterGroup_H
+ParameterGroup& ParameterGroup::operator<<(ParameterGroup& other)
+{
+    for(auto p: other.parameters)
+    {
+        append(p);
+    }
+}
+
+} // namespace NamedSketcher::GCS

@@ -32,7 +32,7 @@ namespace NamedSketcher::GCS::LinearSolvers
 Ldlt::Ldlt(ParameterProxyManager& manager, const OptimizedMatrix& _gradients)
     : SolverBase(manager, _gradients)
 {
-    const auto& D = differential;
+    const auto& D = gradients;
     solver.analyzePattern(D.transpose() * D);
 }
 
@@ -45,13 +45,11 @@ void Ldlt::refactor()
     }
 }
 
-vector_t Ldlt::_solve(const vector_t& out)
+Ldlt::vector_t Ldlt::_solve(const vector_t& out)
 {
     refactor();
-    const auto& D = differential;
+    const auto& D = gradients;
     return solver.solve(D.transpose() * out).eval();
 }
 
 } // namespace NamedSketcher::GCS::LinearSolvers
-
-#endif // NAMEDSKETCHER_GCS_LinearSolver_Ldlt_H

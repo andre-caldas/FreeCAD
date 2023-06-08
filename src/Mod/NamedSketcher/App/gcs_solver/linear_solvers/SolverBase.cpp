@@ -26,6 +26,7 @@
 #include "../equations/Equation.h"
 
 #include "../parameters/ParameterProxyManager.h"
+#include "../parameters/ParameterGroup.h"
 #include "../parameters/Vector.h"
 #include "../LinearTransform.h"
 #include "../Types.h"
@@ -54,6 +55,8 @@ SolverBase::SolverBase(ParameterProxyManager& manager, const OptimizedMatrix& _g
 
 void SolverBase::updateGradient(Equation* equation)
 {
+    auto eq_index = manager.getEquationIndex(equation);
+
     OptimizedVector gradient = equation->differentialOptimized(manager);
     for(auto [k,v]: gradient.values)
     {
@@ -68,7 +71,7 @@ OptimizedVector SolverBase::solve()
     for(int i=0; i < manager.outputSize(); ++i)
     {
         Equation* eq = manager.getEquation(i);
-        eigen_target.insert(i) = -eq->error();
+        eigen_target[i] = -eq->error(manager);
     }
 
     vector_t solution = _solve(eigen_target);
@@ -77,8 +80,8 @@ OptimizedVector SolverBase::solve()
     OptimizedVector result;
     for(int index = 0; index < solution.rows(); ++index)
     {
-        double& curval = manager.getGroup(it.index())->value;
-        result.set(&curval,it.value());
+        auto group = manager.getGroup(index);
+        result.set(&group->value,group->value);
     }
     return result;
 }

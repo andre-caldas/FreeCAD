@@ -36,6 +36,9 @@
 
 #include "geometries/GeometryFactory.h"
 
+#include "geometries/GeometryBase.h"
+#include "constraints/ConstraintBase.h"
+
 #include "NamedSketch.h"
 
 
@@ -81,8 +84,23 @@ short NamedSketch::mustExecute() const
 
 App::DocumentObjectExecReturn *NamedSketch::execute()
 {
+    try {
+        App::DocumentObjectExecReturn* rtn = Part2DObject::execute();// to positionBySupport
+        if (rtn != App::DocumentObject::StdReturn)
+        {
+            // error
+            return rtn;
+        }
+    } catch (const Base::Exception& e) {
+        return new App::DocumentObjectExecReturn(e.what());
+    }
+
+    for(auto& constraint: constraintList)
+    {
+        constraint.
+    }
 #if 0
-//    ??????
+    Visit constraints and check references.
 #endif
     return App::DocumentObject::StdReturn;
 }
@@ -97,15 +115,24 @@ NamedSketch::addGeometry(std::unique_ptr<Part::Geometry> geo)
 
 void NamedSketch::delGeometry(boost::uuids::uuid tag)
 {
-    // TODO: look for constraints.
+    for(auto& constraint: constraintList)
+    {
+        auto lock = constraint.lock();
+        if(lock)
+        {
+            if(lock->informGeometryRemoval(tag))
+            {
+                xxxx;
+            }
+        }
+    }
     geometryList.removeValue(tag);
-    constraintList.
 }
 
 PropertyConstraintList::item_reference
 NamedSketch::addConstraint(std::unique_ptr<ConstraintBase> constraint)
 {
-    auto equations = constraint->getBasicEquations();
+    auto equations = constraint->getEquations();
     for(auto equation: equations)
     {
         gcs.addEquation(equation);
@@ -116,7 +143,8 @@ NamedSketch::addConstraint(std::unique_ptr<ConstraintBase> constraint)
 
 void NamedSketch::delConstraint(boost::uuids::uuid tag)
 {
-    auto equations = constraint->getBasicEquations();
+    auto constraint = constraintList.blablahblah;
+    auto equations = constraint->getEquations();
     for(auto equation: equations)
     {
         gcs.removeEquation(equation);

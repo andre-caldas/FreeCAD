@@ -21,47 +21,54 @@
  *                                                                          *
  ***************************************************************************/
 
+#include <Base/Exception.h>
+
+#include "../parameters/ParameterProxyManager.h"
 #include "Difference.h"
 
 namespace NamedSketcher::GCS
 {
 
-void Difference::set(ProxiedParameter* x, ProxiedParameter* y, ProxiedParameter* d)
+void Difference::set(Parameter* x, Parameter* y, Parameter* d)
 {
     if(x == y || x == d || y == d)
     {
-        FC_THROWM(Base::ReferenceError, "Different parameters must be passed.")
+        FC_THROWM(Base::ReferenceError, "Different parameters must be passed.");
     }
     a = x;
     b = y;
     difference = d;
 }
 
-double Difference::error() const
+double Difference::error(const ParameterProxyManager& manager) const
 {
-    return b->getValue() - a->getValue() - difference->getValue();
+    const double A = manager.getOptimizedParameterValue(a);
+    const double B = manager.getOptimizedParameterValue(b);
+    const double DIFF = manager.getOptimizedParameterValue(difference);
+    return B - A - DIFF;
 }
 
 ParameterVector Difference::differentialNonOptimized() const
 {
-    Vector result;
+    ParameterVector result;
     result.set(a, -1);
     result.set(b, 1);
+    return result;
 }
 
-OptimizedVector Difference::differentialOptimized() const
+OptimizedVector Difference::differentialOptimized(const ParameterProxyManager& manager) const
 {
-    if(!a->samePointer(b))
+    if(!manager.areParametersEqual(a, b))
     {
-        return optimizeVector(differentialNonOptimized());
+        return manager.optimizeVector(differentialNonOptimized());
     }
     return OptimizedVector();
 }
 
 void Difference::setProxies(ParameterProxyManager& manager) const
 {
-    manager.add(a);
-    manager.add(b);
+    manager.addParameter(a);
+    manager.addParameter(b);
 }
 
 } // namespace NamedSketcher::GCS

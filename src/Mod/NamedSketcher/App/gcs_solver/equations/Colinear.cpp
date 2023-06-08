@@ -25,16 +25,17 @@
 
 #include <Base/Exception.h>
 
+#include "../parameters/ParameterProxyManager.h"
 #include "Colinear.h"
 
 namespace NamedSketcher::GCS
 {
 
-void Colinear::set(ProxiedParameter* x, ProxiedParameter* y, ProxiedParameter* z)
+void Colinear::set(Point* x, Point* y, Point* z)
 {
     if(x == y || x == z || y == z)
     {
-        FC_THROWM(Base::ReferenceError, "Different parameters must be passed.")
+        FC_THROWM(Base::ReferenceError, "Different parameters must be passed.");
     }
     a = x;
     b = y;
@@ -44,64 +45,64 @@ void Colinear::set(ProxiedParameter* x, ProxiedParameter* y, ProxiedParameter* z
 // det((a1, a2, 1),
 //     (b1, b2, 1),
 //     (c1, c2, 1))
-double Colinear::error() const
+double Colinear::error(const ParameterProxyManager& manager) const
 {
-    if(isAlreadyColinear())
+    if(isAlreadyColinear(manager))
     {
         return 0.0;
     }
 
-    if(isHorizontal())
+    if(isHorizontal(manager))
     {
-        if(a->y.samePointer(b->y))
+        if(manager.areParametersEqual(&a->y, &b->y))
         {
             // ay - cy = 0.
-            double a2 = a->y.getValue();
-            double c2 = c->y.getValue();
+            double a2 = manager.getOptimizedParameterValue(&a->y);
+            double c2 = manager.getOptimizedParameterValue(&c->y);
             return a2 - c2;
         }
 
         // ay - by = 0.
-        double a2 = a->y.getValue();
-        double b2 = b->y.getValue();
+        double a2 = manager.getOptimizedParameterValue(&a->y);
+        double b2 = manager.getOptimizedParameterValue(&b->y);
         return a2 - b2;
     }
 
-    if(isVertical())
+    if(isVertical(manager))
     {
-        if(a->x.samePointer(b->x))
+        if(manager.areParametersEqual(&a->x, &b->x))
         {
             // ax - cx = 0.
-            double a1 = a->x.getValue();
-            double c1 = c->x.getValue();
+            double a1 = manager.getOptimizedParameterValue(&a->x);
+            double c1 = manager.getOptimizedParameterValue(&c->x);
             return a1 - c1;
         }
 
         // ax - bx = 0.
-        double a1 = a->x.getValue();
-        double b1 = b->x.getValue();
+        double a1 = manager.getOptimizedParameterValue(&a->x);
+        double b1 = manager.getOptimizedParameterValue(&b->x);
         return a1 - b1;
     }
 
-    double a1 = a->x.getValue();
-    double a2 = a->y.getValue();
-    double b1 = b->x.getValue();
-    double b2 = b->y.getValue();
-    double c1 = c->x.getValue();
-    double c2 = c->y.getValue();
+    double a1 = manager.getOptimizedParameterValue(&a->x);
+    double a2 = manager.getOptimizedParameterValue(&a->y);
+    double b1 = manager.getOptimizedParameterValue(&b->x);
+    double b2 = manager.getOptimizedParameterValue(&b->y);
+    double c1 = manager.getOptimizedParameterValue(&c->x);
+    double c2 = manager.getOptimizedParameterValue(&c->y);
     return (b1*c2 - b2*c1) + (a2*c1 - a1*c2) + (a1*b2 - a2*b1);
 }
 
 ParameterVector Colinear::differentialNonOptimized() const
 {
-    double a1 = a->x.getValue();
-    double a2 = a->y.getValue();
-    double b1 = b->x.getValue();
-    double b2 = b->y.getValue();
-    double c1 = c->x.getValue();
-    double c2 = c->y.getValue();
+    double a1 = a->x;
+    double a2 = a->y;
+    double b1 = b->x;
+    double b2 = b->y;
+    double c1 = c->x;
+    double c2 = c->y;
 
-    Vector result;
+    ParameterVector result;
     result.set(&a->x, b2-c2);
     result.set(&a->y, c1-b1);
     result.set(&b->x, c2-a2);
@@ -111,7 +112,7 @@ ParameterVector Colinear::differentialNonOptimized() const
     return result;
 }
 
-OptimizedVector Colinear::differentialOptimized(ParameterProxyManager& manager) const
+OptimizedVector Colinear::differentialOptimized(const ParameterProxyManager& manager) const
 {
     if(isAlreadyColinear(manager))
     {
@@ -121,46 +122,46 @@ OptimizedVector Colinear::differentialOptimized(ParameterProxyManager& manager) 
     if(isHorizontal(manager))
     {
         OptimizedVector result;
-        if(manager. a->y.samePointer(b->y))
+        if(manager.areParametersEqual(&a->y, &b->y))
         {
             // a2 - c2 = 0.
-            result.set(a->y.getPointer(), 1);
-            result.set(c->y.getPointer(), -1);
+            result.set(manager.getOptimizedParameter(&a->y), 1);
+            result.set(manager.getOptimizedParameter(&c->y), -1);
         } else {
             // a2 - b2 = 0.
-            result.set(a->y.getPointer(), 1);
-            result.set(b->y.getPointer(), -1);
+            result.set(manager.getOptimizedParameter(&a->y), 1);
+            result.set(manager.getOptimizedParameter(&b->y), -1);
         }
         return result;
     }
 
-    if(isVertical())
+    if(isVertical(manager))
     {
         OptimizedVector result;
-        if(a->x.samePointer(b->x))
+        if(manager.areParametersEqual(&a->x, &b->x))
         {
             // a1 - c1 = 0.
-            result.set(a->x.getPointer(), 1);
-            result.set(c->x.getPointer(), -1);
+            result.set(manager.getOptimizedParameter(&a->x), 1);
+            result.set(manager.getOptimizedParameter(&c->x), -1);
         } else {
             // a1 - b1 = 0.
-            result.set(a->x.getPointer(), 1);
-            result.set(b->x.getPointer(), -1);
+            result.set(manager.getOptimizedParameter(&a->x), 1);
+            result.set(manager.getOptimizedParameter(&b->x), -1);
         }
         return result;
     }
 
-    return optimizeVector(differentialNonOptimized());
+    return manager.optimizeVector(differentialNonOptimized());
 }
 
 bool Colinear::isAlreadyColinear(const ParameterProxyManager& manager) const
 {
-    if(a->x.samePointer(b->x) && a->x.samePointer(c->x))
+    if(manager.areParametersEqual(&a->x, &b->x) && manager.areParametersEqual(&a->x, &c->x))
     {
         return true;
     }
 
-    if(a->y.samePointer(b->y) && a->y.samePointer(c->y))
+    if(manager.areParametersEqual(&a->y, &b->y) && manager.areParametersEqual(&a->y, &c->y))
     {
         return true;
     }
@@ -170,37 +171,37 @@ bool Colinear::isAlreadyColinear(const ParameterProxyManager& manager) const
 
 bool Colinear::isHorizontal(const ParameterProxyManager& manager) const
 {
-    return (a->y.samePointer(b->y) || a->y.samePointer(c->y) || b->y.samePointer(c->y));
+    return (manager.areParametersEqual(&a->y, &b->y) || manager.areParametersEqual(&a->y, &c->y) || manager.areParametersEqual(&b->y, &c->y));
 }
 
 bool Colinear::isVertical(const ParameterProxyManager& manager) const
 {
-    return (a->x.samePointer(b->x) || a->x.samePointer(c->x) || b->x.samePointer(c->x));
+    return (manager.areParametersEqual(&a->x, &b->x) || manager.areParametersEqual(&a->x, &c->x) || manager.areParametersEqual(&b->x, &c->x));
 }
 
-void Difference::setProxies(ParameterProxyManager& manager) const
+void Colinear::setProxies(ParameterProxyManager& manager) const
 {
-    manager.add(&a->x);
-    manager.add(&a->y);
-    manager.add(&b->x);
-    manager.add(&b->y);
-    manager.add(&c->x);
-    manager.add(&c->y);
+    manager.addParameter(&a->x);
+    manager.addParameter(&a->y);
+    manager.addParameter(&b->x);
+    manager.addParameter(&b->y);
+    manager.addParameter(&c->x);
+    manager.addParameter(&c->y);
 }
 
 bool Colinear::optimizeProxies(ParameterProxyManager& manager) const
 {
     bool result = false;
-    if(isHorizontal())
+    if(isHorizontal(manager))
     {
-        result = manager.setEqual(a->y, b->y) || result;
-        result = manager.setEqual(a->y, c->y) || result;
+        result = manager.setParameterEqual(&a->y, &b->y) || result;
+        result = manager.setParameterEqual(&a->y, &c->y) || result;
     }
 
-    if(isVertical())
+    if(isVertical(manager))
     {
-        result = manager.setEqual(a->x, b->x) || result;
-        result = manager.setEqual(a->x, c->x) || result;
+        result = manager.setParameterEqual(&a->x, &b->x) || result;
+        result = manager.setParameterEqual(&a->x, &c->x) || result;
     }
     return result;
 }

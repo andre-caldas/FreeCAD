@@ -35,9 +35,9 @@ class NamedSketcherExport Equal : public LinearEquation
 public:
     void set(Parameter* x, Parameter* y);
 
-    double error() const override;
+    double error(const ParameterProxyManager& manager) const override;
     ParameterVector differentialNonOptimized() const override;
-    OptimizedVector differentialOptimized(ParameterProxyManager& manager) const override;
+    OptimizedVector differentialOptimized(const ParameterProxyManager& manager) const override;
 
     void setProxies(ParameterProxyManager& manager) const override;
     bool optimizeProxies(ParameterProxyManager& manager) const override;

@@ -76,21 +76,24 @@ public:
      * this function needs to be called
      * to give an index number to each @class ParameterGroup.
      */
-    void setOptimizedParameterIndexes() const;
+    void setOptimizedParameterIndexes();
     int getOptimizedParameterIndex(OptimizedParameter* parameter) const;
+    int getOptimizedParameterIndex(ParameterGroup* group) const;
+    OptimizedParameter* getOptimizedParameter(Parameter* parameter) const;
+    double getOptimizedParameterValue(Parameter* parameter) const;
+    OptimizedVector getOptimizedParameterValues() const;
+    void setOptimizedParameterValues(const OptimizedVector& vals) const;
+
     int getGroupIndex(ParameterGroup* group) const;
     ParameterGroup* getGroup(int index) const;
 
     int getEquationIndex(Equation* eq) const;
-    int getEquation(int index) const;
-    OptimizedParameter* getOptimizedParameter(Parameter* parameter) const;
-    OptimizedVector getOptimizedParameterValues() const;
-    OptimizedVector setOptimizedParameterValues(const OptimizedVector& vals);
-    OptimizedVector optimizeVector(const ParameterVector& v);
+    Equation* getEquation(int index) const;
+    OptimizedVector optimizeVector(const ParameterVector& v) const;
 
     int inputSize() const;
     int outputSize() const;
-    void commitValues() const;
+    void commitParameters() const;
 
 private:
     std::unordered_set<std::unique_ptr<ParameterGroup>> parameterGroups;

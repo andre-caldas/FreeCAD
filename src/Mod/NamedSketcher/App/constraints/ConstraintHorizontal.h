@@ -29,7 +29,7 @@
 #include <vector>
 
 #include "../gcs_solver/equations/Equal.h"
-#include "ConstraintEqual.h"
+#include "ConstraintBase.h"
 
 namespace Base::Accessor {
 template<typename T>
@@ -43,7 +43,7 @@ class GeometryBase;
 
 /** Deals with constraints of type Horizontal.
  */
-class NamedSketcherExport ConstraintHorizontal : public ConstraintEqual
+class NamedSketcherExport ConstraintHorizontal : public ConstraintBase
 {
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
@@ -51,16 +51,24 @@ public:
     ref_point start;
     ref_point end;
 
-    ConstraintHorizontal(const ref_point& start, const ref_point& end);
+    template<class ref,
+             std::enable_if_t<std::is_constructible_v<ref_point, ref>>* = nullptr>
+    ConstraintHorizontal(ref&& a, ref&& b);
 
 public:
+    std::vector<GCS::Equation*> getEquations() override;
+
     std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
     static constexpr const char* xmlTagTypeStatic() {return "Horizontal";}
 
     // Base::Persistence
+    unsigned int getMemSize () const override;
     void Save (Base::Writer& writer) const override;
     void Restore(Base::XMLReader& reader) override;
     static std::unique_ptr<ConstraintHorizontal> staticRestore(Base::XMLReader& reader);
+
+private:
+    GCS::Equal equation;
 
 public: // :-(
     ConstraintHorizontal();

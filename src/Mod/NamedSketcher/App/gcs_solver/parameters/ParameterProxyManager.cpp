@@ -22,13 +22,17 @@
  ***************************************************************************/
 
 #include <Base/Exception.h>
+#include <Base/Console.h>
 
+#include <initializer_list>
 #include <unordered_set>
 
 #include "Parameter.h"
 #include "Vector.h"
 #include "ParameterGroup.h"
 #include "ParameterProxyManager.h"
+
+FC_LOG_LEVEL_INIT("NamedSketch",true,true)
 
 namespace NamedSketcher::GCS
 {
@@ -41,12 +45,12 @@ void ParameterProxyManager::addParameter(Parameter* a)
 
 void ParameterProxyManager::addEquation(Equation* eq)
 {
-    equationIndexes.emplace({eq, equationIndexes.size()});
+    equationIndexes.emplace(eq, equationIndexes.size());
     equations.emplace_back(eq);
     assert(equations.size() == equationIndexes.size());
 }
 
-void ParameterProxyManager::setParameterEqual(Parameter* a, Parameter* b)
+bool ParameterProxyManager::setParameterEqual(Parameter* a, Parameter* b)
 {
     auto end = parameterGroups.end();
     auto has_a = end;
@@ -69,7 +73,7 @@ void ParameterProxyManager::setParameterEqual(Parameter* a, Parameter* b)
 
     if(has_a == end || has_b == end)
     {
-        FC_THROWM(Base::RuntimeError, "Optimizing a non managed proxy. This is a bug!")
+        FC_THROWM(Base::RuntimeError, "Optimizing a non managed proxy. This is a bug!");
     }
 
     if(has_a == has_b)
@@ -77,10 +81,7 @@ void ParameterProxyManager::setParameterEqual(Parameter* a, Parameter* b)
         return false;
     }
 
-    for(auto p: (*has_b)->parameters)
-    {
-        append(p);
-    }
+    **has_a << **has_b;
     optimizedParameterIndexes.extract(&(*has_b)->value);
     parameterGroups.extract(has_b);
     return true;
@@ -88,13 +89,13 @@ void ParameterProxyManager::setParameterEqual(Parameter* a, Parameter* b)
 
 bool ParameterProxyManager::areParametersEqual(Parameter* a, Parameter* b) const
 {
-    for(auto group = parameterGroups.begin(); group != end; ++group)
+    for(auto& group: parameterGroups)
     {
-        if((*group)->hasParameter(a))
+        if(group->hasParameter(a))
         {
-            return (*group)->hasParameter(b);
+            return group->hasParameter(b);
         }
-        if((*group)->hasParameter(b))
+        if(group->hasParameter(b))
         {
             return false;
         }
@@ -102,11 +103,11 @@ bool ParameterProxyManager::areParametersEqual(Parameter* a, Parameter* b) const
     FC_THROWM(Base::RuntimeError, "Comparing parameters that are not managed.");
 }
 
-void ParameterProxyManager::setOptimizedParameterIndexes() const
+void ParameterProxyManager::setOptimizedParameterIndexes()
 {
     for(auto& group: parameterGroups)
     {
-        optimizedParameterIndexes.emplace({&group->value, optimizedParameterIndexes.size()});
+        optimizedParameterIndexes.emplace(&group->value, optimizedParameterIndexes.size());
         indexedParameterGroups.emplace_back(group.get());
         assert(optimizedParameterIndexes.size() == indexedParameterGroups.size());
     }
@@ -117,9 +118,9 @@ int ParameterProxyManager::getOptimizedParameterIndex(OptimizedParameter* parame
     return optimizedParameterIndexes.at(parameter);
 }
 
-int ParameterProxyManager::getParameterIndex(ParameterGroup* group) const
+int ParameterProxyManager::getOptimizedParameterIndex(ParameterGroup* group) const
 {
-    return getParameterIndex(&group->value);
+    return getOptimizedParameterIndex(&group->value);
 }
 
 OptimizedParameter* ParameterProxyManager::getOptimizedParameter(Parameter* parameter) const
@@ -132,6 +133,11 @@ OptimizedParameter* ParameterProxyManager::getOptimizedParameter(Parameter* para
         }
     }
     FC_THROWM(Base::RuntimeError, "Attempt to optimize parameter: parameter not found.");
+}
+
+double ParameterProxyManager::getOptimizedParameterValue(Parameter* parameter) const
+{
+    return *getOptimizedParameter(parameter);
 }
 
 OptimizedVector ParameterProxyManager::getOptimizedParameterValues() const
@@ -156,11 +162,11 @@ OptimizedVector ParameterProxyManager::optimizeVector(const ParameterVector& v) 
     OptimizedVector result;
     for(auto [parameter, value]: v.values)
     {
-        if(result.hasKey(getOptimizedPointer(parameter)))
+        if(result.hasKey(getOptimizedParameter(parameter)))
         {
             FC_THROWM(Base::RuntimeError, "Cannot optimize vector. This is a bug!");
         }
-        result.set(getOptimizedPointer(parameter), value);
+        result.set(getOptimizedParameter(parameter), value);
     }
     return result;
 }
@@ -179,7 +185,7 @@ int ParameterProxyManager::getEquationIndex(Equation* eq) const
     return equationIndexes.at(eq);
 }
 
-int ParameterProxyManager::getEquation(int index) const
+Equation* ParameterProxyManager::getEquation(int index) const
 {
     return equations.at(index);
 }
@@ -197,11 +203,11 @@ int ParameterProxyManager::outputSize() const
     return equations.size();
 }
 
-void ParameterProxyManager::commitValues() const
+void ParameterProxyManager::commitParameters() const
 {
-    for(auto parameter: originalParameters)
+    for(auto& group: parameterGroups)
     {
-        parameter->commit();
+        group->commit();
     }
 }
 

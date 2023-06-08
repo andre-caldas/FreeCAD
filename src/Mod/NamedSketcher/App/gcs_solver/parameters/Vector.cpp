@@ -50,27 +50,27 @@ void Vector<Index>::set(Index parameter, double value)
 }
 
 template<typename Index>
-Vector<Index>::vector_t&
+Vector<Index>&
 Vector<Index>::operator*=(double val)
 {
-    std::for_each(values.begin(), values.end(), [val](auto& [k,v]){v *= val;});
-    retunr *this;
+    std::for_each(values.begin(), values.end(), [val](auto& pair){pair.second *= val;});
+    return *this;
 }
 
 template<typename Index>
-Vector<Index>::vector_t&
+Vector<Index>&
 Vector<Index>::operator+=(const Vector<Index>& other)
 {
-    std::for_each(other.values.begin(), other.values.end(), [](auto& [k,v]){values[k] += v;});
-    retunr *this;
+    std::for_each(other.values.begin(), other.values.end(), [this](auto& pair){values[pair.first] += pair.second;});
+    return *this;
 }
 
 template<typename Index>
-Vector<Index>::vector_t&
+Vector<Index>&
 Vector<Index>::plusKVec(double a, const Vector<Index>& other)
 {
-    std::for_each(other.values.begin(), other.values.end(), [](auto& [k,v]){values[k] += a*v;});
-    retunr *this;
+    std::for_each(other.values.begin(), other.values.end(), [this, a](auto& pair){values[pair.first] += a*pair.second;});
+    return *this;
 }
 
 template<typename Index>
@@ -94,7 +94,7 @@ bool Vector<Index>::isEmpty() const
 }
 
 template<typename Index>
-double Vector<Index>::dot(vector_t& other) const
+double Vector<Index>::dot(Vector<Index>& other) const
 {
     if(values.size() > other.size())
     {
@@ -102,14 +102,14 @@ double Vector<Index>::dot(vector_t& other) const
     }
     double result = 0.0;
     std::for_each(values.begin(), values.end(),
-                  [&other, &result](auto& [k,v]){if(other.values.count(k)) result += other.values.at(k);});
+                  [&other, &result](auto& pair){if(other.values.count(pair.first)) result += other.values.at(pair.first);});
     return result;
 }
 
 template<typename Index>
 double Vector<Index>::norm2() const
 {
-    return std::reduce(values.begin(), values.end(), 0., [](auto& [k,v]){return v*v;});
+    return std::reduce(values.begin(), values.end(), 0., [](auto& pair){return pair.second*pair.second;});
 }
 
 template<typename Index>
@@ -119,7 +119,7 @@ double Vector<Index>::norm() const
 }
 
 template<typename Index>
-vector_t& Vector<Index>::normalize()
+Vector<Index>& Vector<Index>::normalize()
 {
     prune();
     if(!values.empty())
@@ -130,8 +130,8 @@ vector_t& Vector<Index>::normalize()
 }
 
 template<typename Index>
-Vector<Index>::vector_t&
-Vector<Index>::setAsLinearCombination(double a, const vector_t& v, double b, const vector_t& w)
+Vector<Index>&
+Vector<Index>::setAsLinearCombination(double a, const Vector<Index>& v, double b, const Vector<Index>& w)
 {
     values.clear();
     values.reserve(v.values.size() + w.values.size());
@@ -147,10 +147,10 @@ Vector<Index>::setAsLinearCombination(double a, const vector_t& v, double b, con
 }
 
 template<typename Index>
-Vector<Index>::vector_t
-operator*(double a, const Vector<Index>::vector_t& vector)
+Vector<Index>
+operator*(double a, const Vector<Index>& vector)
 {
-    Vector<Index>::vector_t result;
+    Vector<Index> result;
     result.values.reserve(vector.values.size());
     for(auto& [k,v]: vector.values)
     {
@@ -160,5 +160,3 @@ operator*(double a, const Vector<Index>::vector_t& vector)
 }
 
 } // namespace NamedSketcher::GCS
-
-#endif // NAMEDSKETCHER_GCS_Vector_H

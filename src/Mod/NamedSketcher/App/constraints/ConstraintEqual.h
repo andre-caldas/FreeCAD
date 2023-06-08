@@ -25,6 +25,7 @@
 #ifndef NAMEDSKETCHER_ConstraintEqual_H
 #define NAMEDSKETCHER_ConstraintEqual_H
 
+#include <type_traits>
 #include <memory>
 
 #include "../gcs_solver/equations/Equal.h"
@@ -49,6 +50,7 @@ public:
 
 public:
     std::vector<GCS::Equation*> getEquations() override;
+    bool updateReferences() override;
 
     std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
     static constexpr const char* xmlTagTypeStatic() {return "Equal";}
@@ -60,8 +62,6 @@ public:
     static std::unique_ptr<ConstraintEqual> staticRestore(Base::XMLReader& reader);
 
 private:
-    // This could simply be an Equation, not a pointer.
-    // But FreeCAD would make us have a default constructor.
     GCS::Equal equation;
 
 public: // :-(

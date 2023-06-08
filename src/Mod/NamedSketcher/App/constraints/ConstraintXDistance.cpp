@@ -27,12 +27,14 @@
 #ifndef _PreComp_
 #include <utility>
 #endif // _PreComp_
+#include <initializer_list>
 
 #include <Base/Persistence.h>
 #include <Base/Reader.h>
 #include <Base/Writer.h>
 #include <Base/Exception.h>
 
+#include "../geometries/GeometryPoint.h"
 #include "ConstraintXDistance.h"
 
 
@@ -59,25 +61,33 @@ ConstraintXDistance::ConstraintXDistance(ref_pt&& start, ref_pt&& end, ref_par&&
 
 std::vector<GCS::Equation*> ConstraintXDistance::getEquations()
 {
-    if(!a.isLocked())
+    if(!start.isLocked())
     {
-        a.refreshLock();
+        start.refreshLock();
     }
-    if(!b.isLocked())
+    if(!end.isLocked())
     {
-        b.refreshLock();
+        end.refreshLock();
     }
-    if(!a.isLocked())
+    if(!distance.isLocked())
     {
-        FC_THROWM(Base::NameError, "Could not resolve name (" << a.pathString() << ").");
+        distance.refreshLock();
     }
-    if(!b.isLocked())
+    if(!start.isLocked())
     {
-        FC_THROWM(Base::NameError, "Could not resolve name (" << b.pathString() << ").");
+        FC_THROWM(Base::NameError, "Could not resolve name (" << start.pathString() << ").");
+    }
+    if(!end.isLocked())
+    {
+        FC_THROWM(Base::NameError, "Could not resolve name (" << end.pathString() << ").");
+    }
+    if(!distance.isLocked())
+    {
+        FC_THROWM(Base::NameError, "Could not resolve name (" << distance.pathString() << ").");
     }
 
-    equation.set(a.get(), b.get());
-    return std::vector<GCS::Equation*>({equation});
+    equation.set(&start.get()->x, &end.get()->x, distance.get());
+    return std::vector<GCS::Equation*>{&equation};
 }
 
 unsigned int ConstraintXDistance::getMemSize () const
@@ -85,7 +95,7 @@ unsigned int ConstraintXDistance::getMemSize () const
     return sizeof(ConstraintXDistance) + 100/*start.memSize() + end.memSize()*/;
 }
 
-void ConstraintXDistance::Save (Base::Writer& writer) const
+void ConstraintXDistance::Save (Base::Writer& /*writer*/) const
 {
     THROW(Base::NotImplementedError);
 }

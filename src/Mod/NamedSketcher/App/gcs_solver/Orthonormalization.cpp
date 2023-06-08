@@ -26,8 +26,11 @@
 #include <algorithm>
 
 #include <Base/Exception.h>
+#include <Base/Console.h>
 
 #include "Orthonormalization.h"
+
+FC_LOG_LEVEL_INIT("NamedSketch",true,true)
 
 namespace NamedSketcher::GCS
 {
@@ -44,6 +47,7 @@ void Orthonormalization::pushBack(Functional* functional, ParameterVector&& vect
 
 void Orthonormalization::popBack(Functional* functional)
 {
+    assert(functionals.back() == functional);
     remove(functionals.size()-1);
 }
 
@@ -91,7 +95,7 @@ int Orthonormalization::getIndex(Functional* functional) const
     {
         FC_THROWM(Base::IndexError, "No index for provided Functional '" << functional << "'.");
     }
-    return pos;
+    return std::distance(functionals.begin(), pos);
 }
 
 void Orthonormalization::remove(int index)
@@ -104,12 +108,12 @@ void Orthonormalization::remove(int index)
 
     for(int j=index; j < functionals.size()-1; ++j)
     {
-        moveBack(j);
+        moveBackward(j);
     }
     Functional* f = functionals.back();
     functionals.pop_back();
-    duals.remove(f);
-    dualsQ.remove(f);
+    duals.removeDual(f);
+    dualsQ.removeDual(f);
     assert(functionals.size() == duals.size());
     assert(functionals.size() == dualsQ.size());
 }
@@ -121,10 +125,10 @@ void Orthonormalization::moveForward(int index)
         return;
     }
 
-    moveBack(index-1);
+    moveBackward(index-1);
 }
 
-void Orthonormalization::moveBack(const int index)
+void Orthonormalization::moveBackward(const int index)
 {
     if(index <= 0 || index >= functionals.size())
     {
@@ -135,18 +139,17 @@ void Orthonormalization::moveBack(const int index)
     Functional* eq2 = functionals[index+1];
     // Write duals[index+1] as a linear combination of dualsQ[index] and dualsQ[index+1].
     double a = duals[eq2].dot(dualsQ[eq1]);
-    if(a == 0)
+    if(a != 0)
     {
-        continue;
-    }
-    double b = duals[eq2].dot(dualsQ[eq2]);
-    double c = std::sqrt(a*a + b*b);
-    a /= c;
-    b /= c;
+        double b = duals[eq2].dot(dualsQ[eq2]);
+        double c = std::sqrt(a*a + b*b);
+        a /= c;
+        b /= c;
 
-    ParameterVector movingQ = dualsQ[eq1];
-    dualsQ[eq1].setAsLinearCombination(b, movingQ, -a, dualsQ[eq2]);
-    dualsQ[eq2].setAsLinearCombination(a, movingQ, +b, dualsQ[eq2]);
+        ParameterVector movingQ = dualsQ[eq1];
+        dualsQ[eq1].setAsLinearCombination(b, movingQ, -a, dualsQ[eq2]);
+        dualsQ[eq2].setAsLinearCombination(a, movingQ, +b, dualsQ[eq2]);
+    }
 
     functionals[index] = eq2;
     functionals[index+1] = eq1;
@@ -159,7 +162,7 @@ Orthonormalization::getRedundants() const
     std::copy_if(functionals.cbegin(),
                  functionals.cend(),
                  std::back_insert_iterator(result),
-                 [](Functional* f){return f->isZero();});
+                 [this](Functional* f){return dualsQ[f].isZero();});
     return result;
 }
 
@@ -170,7 +173,7 @@ Orthonormalization::getNonRedundants() const
     std::copy_if(functionals.cbegin(),
                  functionals.cend(),
                  std::back_insert_iterator(result),
-                 [](Functional* f){return !f->isZero();});
+                 [this](Functional* f){return !dualsQ[f].isZero();});
     return result;
 }
 

@@ -38,9 +38,9 @@ public:
     Distance() = default;
     void set (Point* a, Point* b, Parameter* distance);
 
-    double error() const override;
+    double error(const ParameterProxyManager& manager) const override;
     ParameterVector differentialNonOptimized() const override;
-    OptimizedVector differentialOptimized(ParameterProxyManager& manager) const override;
+    OptimizedVector differentialOptimized(const ParameterProxyManager& manager) const override;
 
     void setProxies(ParameterProxyManager& manager) const override;
 
@@ -49,9 +49,9 @@ private:
     Point* b;
     Parameter* distance;
 
-    bool isConicident() const;
-    bool isHorizontal() const;
-    bool isVertical() const;
+    bool isCoincident(const ParameterProxyManager& manager) const;
+    bool isHorizontal(const ParameterProxyManager& manager) const;
+    bool isVertical(const ParameterProxyManager& manager) const;
 };
 
 } // namespace NamedSketcher::GCS

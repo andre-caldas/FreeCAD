@@ -33,13 +33,14 @@
 #include <Base/Writer.h>
 #include <Base/Exception.h>
 
+#include "../geometries/GeometryPoint.h"
 #include "ConstraintHorizontal.h"
 
 
 namespace NamedSketcher
 {
 
-TYPESYSTEM_SOURCE(ConstraintHorizontal, ConstraintEqual)
+TYPESYSTEM_SOURCE(ConstraintHorizontal, ConstraintHorizontal)
 
 ConstraintHorizontal::ConstraintHorizontal()
 {
@@ -47,14 +48,43 @@ ConstraintHorizontal::ConstraintHorizontal()
     FC_THROWM(Base::RuntimeError, "NamedSketcher::ConstraintHorizontal should not be constructed without arguments.");
 }
 
-ConstraintHorizontal::ConstraintHorizontal(const ref_point& start, const ref_point& end)
-    : ConstraintEqual(start.goFurther<double>("y"), end.goFurther<double>("y"))
-    , start(start)
-    , end(end)
+template<class ref,
+         std::enable_if_t<std::is_constructible_v<ConstraintHorizontal::ref_point, ref>>*>
+ConstraintHorizontal::ConstraintHorizontal(ref&& start, ref&& end)
+    : start(std::forward(start))
+    , end(std::forward(end))
 {
 }
 
-void ConstraintHorizontal::Save (Base::Writer& writer) const
+std::vector<GCS::Equation*> ConstraintHorizontal::getEquations()
+{
+    if(!start.isLocked())
+    {
+        start.refreshLock();
+    }
+    if(!end.isLocked())
+    {
+        end.refreshLock();
+    }
+    if(!start.isLocked())
+    {
+        FC_THROWM(Base::NameError, "Could not resolve name (" << start.pathString() << ").");
+    }
+    if(!end.isLocked())
+    {
+        FC_THROWM(Base::NameError, "Could not resolve name (" << end.pathString() << ").");
+    }
+
+    equation.set(&start.get()->y, &end.get()->y);
+    return std::vector<GCS::Equation*>{&equation};
+}
+
+unsigned int ConstraintHorizontal::getMemSize () const
+{
+    return sizeof(ConstraintHorizontal) + 50/*a.memSize() + b.memSize()*/;
+}
+
+void ConstraintHorizontal::Save (Base::Writer& /*writer*/) const
 {
     THROW(Base::NotImplementedError);
 }

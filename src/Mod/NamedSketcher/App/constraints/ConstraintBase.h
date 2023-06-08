@@ -46,6 +46,7 @@ class GeometryLineSegment;
 namespace GCS
 {
 class Equation;
+class ParameterProxyManager;
 }
 
 class NamedSketcherExport ConstraintBase
@@ -70,6 +71,12 @@ public:
      * that constraints the geometric objects parameters when non-proxied.
      */
     virtual std::vector<GCS::Equation*> getEquations() = 0;
+
+    /**
+     * @brief Asks ReferenceTo<T>'s to be updated.
+     * @return Has any reference changed?
+     */
+    virtual bool updateReferences() = 0;
 
     /**
      * \brief Methods derived from \class GeometryBase shall not implement

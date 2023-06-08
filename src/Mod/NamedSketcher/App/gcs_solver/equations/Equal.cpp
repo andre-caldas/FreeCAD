@@ -23,47 +23,49 @@
 
 #include <Base/Exception.h>
 
-#include "../ProxiedParameter.h""
+#include "../parameters/ParameterProxyManager.h"
 #include "Equal.h"
 
 namespace NamedSketcher::GCS
 {
 
-Equal::set(ProxiedParameter* x, ProxiedParameter* y)
+void Equal::set(Parameter* x, Parameter* y)
 {
     if(x == y)
     {
-        FC_THROWM(Base::ReferenceError, "Different parameters must be passed.")
+        FC_THROWM(Base::ReferenceError, "Different parameters must be passed.");
     }
     a = x;
     b = y;
 }
 
-double Equal::error() const
+double Equal::error(const ParameterProxyManager& manager) const
 {
-    return b->getValue() - a->getValue();
+    const double A = manager.getOptimizedParameterValue(a);
+    const double B = manager.getOptimizedParameterValue(b);
+    return B - A;
 }
 
 ParameterVector Equal::differentialNonOptimized() const
 {
-    Vector result;
+    ParameterVector result;
     result.set(a, -1);
     result.set(b, 1);
     return result;
 }
 
-OptimizedVector Equal::differentialOptimized(ParameterProxyManager& manager) const
+OptimizedVector Equal::differentialOptimized(const ParameterProxyManager& manager) const
 {
-    if(!manager.isSame(a,b))
+    if(!manager.areParametersEqual(a,b))
     {
-        return optimizeVector(differentialNonOptimized());
+        return manager.optimizeVector(differentialNonOptimized());
     }
     return OptimizedVector();
 }
 
 bool Equal::optimizeProxies(ParameterProxyManager& manager) const
 {
-    return manager.setEqual(a, b);
+    return manager.setParameterEqual(a,b);
 }
 
 } // namespace NamedSketcher::GCS

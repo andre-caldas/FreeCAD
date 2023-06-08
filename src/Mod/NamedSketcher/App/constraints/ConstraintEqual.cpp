@@ -76,7 +76,7 @@ std::vector<GCS::Equation*> ConstraintEqual::getEquations()
     }
 
     equation.set(a.get(), b.get());
-    return std::vector<GCS::Equation*>({equation});
+    return std::vector<GCS::Equation*>{&equation};
 }
 
 unsigned int ConstraintEqual::getMemSize () const

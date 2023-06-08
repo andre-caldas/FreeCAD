@@ -100,8 +100,8 @@ public:
         return uuid;
     }
 
-    void removeValue(boost::uuids::uuid tag) {
-        _lValueList.erase(tag);
+    typename list_type::node_type removeValue(boost::uuids::uuid tag) {
+        return _lValueList.extract(tag);
     }
 
     // Much nicer if it is an iterator!
@@ -112,9 +112,10 @@ public:
     class iterator : public list_iterator
     {
     public:
-        iterator(list_iterator&& it) : list_iterator(it) {}
-        using reference = typename list_type::value_type&;
+        using list_iterator::list_iterator;
+        using reference = typename list_type::mapped_type&;
         reference operator*() const {return list_iterator::operator*().second;}
+        reference operator->() const {return &list_iterator::operator*().second;}
     };
     iterator begin() const {return _lValueList.begin();}
     iterator end() const {return _lValueList.end();}

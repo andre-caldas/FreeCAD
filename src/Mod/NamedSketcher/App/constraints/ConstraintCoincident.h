@@ -52,6 +52,7 @@ public:
 
 public:
     std::vector<GCS::Equation*> getEquations() override;
+    bool updateReferences() override;
 
     std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
     static constexpr const char* xmlTagTypeStatic() {return "Coincident";}

@@ -42,10 +42,13 @@ class NamedSketcherExport ParameterGroup
 public:
     OptimizedParameter value;
 
-    ParameterGroup(Parameter* a, Parameter* b);
+    ParameterGroup(Parameter* parameter);
 
     bool hasParameter(Parameter* parameter) const;
     void append(Parameter* p);
+    void commit() const;
+
+    ParameterGroup& operator<<(ParameterGroup& other);
 
     set_t::iterator begin() {return parameters.begin();}
     set_t::iterator end() {return parameters.end();}

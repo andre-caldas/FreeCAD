@@ -36,10 +36,12 @@ namespace NamedSketcher::GCS
 class ParameterBase
 {
 public:
-    ParameterBase(double v) : value(value) {}
+    ParameterBase() = default;
+    ParameterBase(double v) : value(v) {}
     ParameterBase& operator= (double v) {value = v; return *this;}
 
     operator double&() {return value;}
+    operator double() const {return value;}
     ParameterBase& operator+= (double v) {value += v; return *this;}
     ParameterBase& operator-= (double v) {value -= v; return *this;}
     ParameterBase& operator*= (double v) {value *= v; return *this;}

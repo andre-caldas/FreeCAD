@@ -27,7 +27,6 @@
 
 #include <set>
 
-#include "../ProxiedParameter.h""
 #include "../Types.h"
 #include "Equation.h"
 
@@ -40,9 +39,9 @@ public:
     Colinear() = default;
     void set(Point* a, Point* b, Point* c);
 
-    double error() const override;
+    double error(const ParameterProxyManager& manager) const override;
     ParameterVector differentialNonOptimized() const override;
-    OptimizedVector differentialOptimized(ParameterProxyManager& manager) const override;
+    OptimizedVector differentialOptimized(const ParameterProxyManager& manager) const override;
 
     void setProxies(ParameterProxyManager& manager) const override;
     bool optimizeProxies(ParameterProxyManager& manager) const override;

@@ -53,6 +53,8 @@ public:
     GeometryPoint(std::unique_ptr<Part::GeomPoint>&& geo);
 
     GCS::Point point;
+    GCS::Parameter& x = point.x;
+    GCS::Parameter& y = point.y;
 
     void commitChanges() const override;
 

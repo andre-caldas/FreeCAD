@@ -23,17 +23,19 @@
 
 #include <random>
 
-#include "../ParameterProxyManager.h"
+#include <Base/Exception.h>
+
+#include "../parameters/ParameterProxyManager.h"
 #include "Distance.h"
 
 namespace NamedSketcher::GCS
 {
 
-Distance::set(ProxiedPoint* x, ProxiedPoint* y, ProxiedParameter* d)
+void Distance::set(Point* x, Point* y, Parameter* d)
 {
     if(x == y)
     {
-        FC_THROWM(Base::ReferenceError, "Different parameters must be passed.")
+        FC_THROWM(Base::ReferenceError, "Different parameters must be passed.");
     }
     a = x;
     b = y;
@@ -41,50 +43,50 @@ Distance::set(ProxiedPoint* x, ProxiedPoint* y, ProxiedParameter* d)
 }
 
 // |a-b|^2 - distance^2 = 0
-double Distance::error() const
+double Distance::error(const ParameterProxyManager& manager) const
 {
-    if(isCoincident())
+    if(isCoincident(manager))
     {
         // -distance = 0
-        return -distance->getValue();
+        return -manager.getOptimizedParameterValue(distance);
     }
 
-    if(isHorizontal())
+    if(isHorizontal(manager))
     {
         // ax - bx - distance = 0.
-        return a->x.getValue() - b->x.getValue() - distance->getValue();
+        return manager.getOptimizedParameterValue(&a->x) - manager.getOptimizedParameterValue(&b->x) - manager.getOptimizedParameterValue(distance);
     }
 
-    if(isVertical())
+    if(isVertical(manager))
     {
         // ay - by - distance = 0.
-        return a->y.getValue() - b->y.getValue() - distance->getValue();
+        return manager.getOptimizedParameterValue(&a->y) - manager.getOptimizedParameterValue(&b->y) - manager.getOptimizedParameterValue(distance);
     }
 
-    double a1 = a->x.getValue();
-    double a2 = a->y.getValue();
-    double b1 = b->x.getValue();
-    double b2 = b->y.getValue();
-    double d = distance->getValue();
+    double a1 = manager.getOptimizedParameterValue(&a->x);
+    double a2 = manager.getOptimizedParameterValue(&a->y);
+    double b1 = manager.getOptimizedParameterValue(&b->x);
+    double b2 = manager.getOptimizedParameterValue(&b->y);
+    double d = manager.getOptimizedParameterValue(distance);
     return (a1-b1)*(a1-b1) + (a2-b2)*(a2-b2) - d*d;
 }
 
 ParameterVector Distance::differentialNonOptimized() const
 {
-    double a1 = *a->x;
-    double a2 = *a->y;
-    double b1 = *b->x;
-    double b2 = *b->y;
+    double a1 = a->x;
+    double a2 = a->y;
+    double b1 = b->x;
+    double b2 = b->y;
 
-    Vector result;
-    result.set(a->x, 2*(a1-b1));
-    result.set(a->y, 2*(a2-b2));
-    result.set(b->x, 2*(b1-a1));
-    result.set(b->y, 2*(b2-a2));
+    ParameterVector result;
+    result.set(&a->x, 2*(a1-b1));
+    result.set(&a->y, 2*(a2-b2));
+    result.set(&b->x, 2*(b1-a1));
+    result.set(&b->y, 2*(b2-a2));
     return result;
 }
 
-OptimizedVector Distance::differentialOptimized(ParameterProxyManager& manager) const
+OptimizedVector Distance::differentialOptimized(const ParameterProxyManager& manager) const
 {
     if(isCoincident(manager))
     {
@@ -95,8 +97,8 @@ OptimizedVector Distance::differentialOptimized(ParameterProxyManager& manager) 
     {
         // ax - bx - distance = 0.
         OptimizedVector result;
-        result.set(manager.getPointer(a->x), 1);
-        result.set(manager.getPointer(b->x), -1);
+        result.set(manager.getOptimizedParameter(&a->x), 1);
+        result.set(manager.getOptimizedParameter(&b->x), -1);
         return result;
     }
 
@@ -104,35 +106,35 @@ OptimizedVector Distance::differentialOptimized(ParameterProxyManager& manager) 
     {
         // ay - by - distance = 0.
         OptimizedVector result;
-        result.set(manager.getPointer(a->y), 1);
-        result.set(manager.getPointer(b->y), -1);
+        result.set(manager.getOptimizedParameter(&a->y), 1);
+        result.set(manager.getOptimizedParameter(&b->y), -1);
         return result;
     }
 
-    return optimizeVector(differentialNonOptimized());
+    return manager.optimizeVector(differentialNonOptimized());
 }
 
 void Distance::setProxies(ParameterProxyManager& manager) const
 {
-    manager.add(&a->x);
-    manager.add(&a->y);
-    manager.add(&b->x);
-    manager.add(&b->y);
+    manager.addParameter(&a->x);
+    manager.addParameter(&a->y);
+    manager.addParameter(&b->x);
+    manager.addParameter(&b->y);
 }
 
-bool Distance::isCoincident() const
+bool Distance::isCoincident(const ParameterProxyManager& manager) const
 {
-    return (isHorizontal() && isVertical());
+    return (isHorizontal(manager) && isVertical(manager));
 }
 
-bool Distance::isHorizontal() const
+bool Distance::isHorizontal(const ParameterProxyManager& manager) const
 {
-    return a->y.samePointer(b->y);
+    return manager.areParametersEqual(&a->y, &b->y);
 }
 
-bool Distance::isVertical() const
+bool Distance::isVertical(const ParameterProxyManager& manager) const
 {
-    return a->x.samePointer(b->x);
+    return manager.areParametersEqual(&a->x, &b->x);
 }
 
 } // namespace NamedSketcher::GCS

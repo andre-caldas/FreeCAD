@@ -26,6 +26,7 @@
 
 #include "NamedSketcherGlobal.h"
 
+#include <thread>
 #include <string>
 #include <map>
 #include <memory>
@@ -54,7 +55,6 @@ public:
     /** @name methods override Feature */
     //@{
     short mustExecute() const override;
-    /// recalculate the Feature (if no recompute is needed see also solve() and solverNeedsUpdate boolean)
     App::DocumentObjectExecReturn *execute() override;
 
     /// returns the type name of the ViewProvider
@@ -99,6 +99,7 @@ public:
     void Restore(Base::XMLReader &/*reader*/) override;
 
 private:
+    std::thread solverThread;
     GCS::System gcs;
 };
 
