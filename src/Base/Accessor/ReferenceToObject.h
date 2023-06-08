@@ -226,6 +226,9 @@ public:
      */
     T* get() const;
 
+    bool hasChanged() const {return (old_reference != lockedResult.result);}
+    T* getOldReference() const {return old_reference;}
+
     static ReferenceTo<T> unserialize(Base::XMLReader& reader);
 
     template<typename X, typename... NameOrTag,
@@ -236,6 +239,11 @@ public:
 
 private:
     result lockedResult;
+    /**
+     * @brief The previous value of lockedResult.reference.
+     * @attention It might be an invalid pointer!
+     */
+    T* old_reference = nullptr;
 };
 
 } //namespace Base::Accessor

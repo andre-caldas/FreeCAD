@@ -80,15 +80,10 @@ typename ReferenceTo<X>::result ReferenceTo<X>::getResult () const
         return result{std::move(lock), ptr};
     }
 
-    IExport<X>* ref_obj;
-    try
+    IExport<X>* ref_obj = dynamic_cast<IExport<X>>(*lock.last_object);
+    if(!ref_obj)
     {
-        // We use reference so we get a e.what() to report.
-        // TODO: If message is not useful, or if there is another way to get it,
-        // change the cast to a pointer, not reference.
-        ref_obj = &dynamic_cast<IExport<X>&>(*lock.last_object);
-    } catch (const std::bad_cast& e) {
-        FC_THROWM(ExceptionCannotResolve, "Last object does not reference the requested type. " << e.what());
+        FC_THROWM(ExceptionCannotResolve, "Last object does not reference the requested type.");
     }
 
     X* ref = ref_obj->resolve(lock.remaining_tokens_start, lock.remaining_tokens_end);
@@ -140,6 +135,7 @@ ReferenceTo<X> ReferenceTo<T>::goFurther(NameOrTag&& ...furtherPath) const
 template<typename X>
 bool ReferenceTo<X>::refreshLock()
 {
+    old_reference = lockedResult.reference;
     lockedResult = getResult();
     return isLocked();
 }
@@ -150,13 +146,18 @@ bool ReferenceTo<X>::refreshLock()
 template<typename X>
 void ReferenceTo<X>::releaseLock()
 {
+    lockedResult.reference = nullptr;
     lockedResult.lock.last_object.reset();
 }
 
 template<typename X>
 bool ReferenceTo<X>::isLocked() const
 {
-    return (bool)lockedResult.lock.last_object;
+    if(lockedResult.lock.last_object)
+    {
+        return true;
+    }
+    return false;
 }
 
 template<typename X>
@@ -164,6 +165,7 @@ X* ReferenceTo<X>::get() const
 {
     if(!isLocked())
     {
+        assert(lockedResult.reference == nullptr);
         FC_THROWM(RuntimeError, "Trying to get a pointer to an object that is not locked.");
     }
 //    lockedResult.lock.last_object->resolve the rest of the lock;
