@@ -19,9 +19,9 @@ Constraints are made from equations like:
 ```math
 \left\{
 \begin{aligned}
-  x_1 {}&-&{} x_2 {}&&{} &= 5
+  x\_1 {}&-&{} x\_2 {}&&{} &= 5
   \\
-  {}&&{}x_2^2 {}&+&{} x_3^2 &= 64.
+  {}&&{}x\_2^2 {}&+&{} x\_3^2 &= 64.
 \end{aligned}
 \right.
 ```
@@ -29,9 +29,9 @@ Let's make them all equal to zero...
 ```math
 \left\{
 \begin{aligned}
-  x_1 {}&-&{} x_2 {}&+&{} {}&-&{} 5 &= 0
+  x\_1 {}&-&{} x\_2 {}&+&{} {}&-&{} 5 &= 0
   \\
-  {}&&{}x_2^2 {}&+&{} x_3^2 {}&-&{} 64 &= 0.
+  {}&&{}x\_2^2 {}&+&{} x\_3^2 {}&-&{} 64 &= 0.
 \end{aligned}
 \right.
 ```
@@ -39,9 +39,9 @@ So, we are actually dealing with a system of equations:
 ```math
 \left\{
 \begin{aligned}
-  f_1(x_1, x_2, \times) &= 0
+  f\_1(x\_1, x\_2, \times) &= 0
   \\
-  f_2(\times, x_2, x_3) &= 0.
+  f\_2(\times, x\_2, x\_3) &= 0.
 \end{aligned}
 \right.
 ```
@@ -52,7 +52,7 @@ And of course, we are talking about much more than 3 parameters and 2 equations!
 ```
 We want to find a solution for
 ```math
-  F(x_1, \dotsc, x_p) = (0, \dotsc, 0).
+  F(x\_1, \dotsc, x\_p) = (0, \dotsc, 0).
 ```
 Or, $F(x) = 0$, for short.
 
@@ -71,49 +71,49 @@ $$DF(x) \Delta x = -a.$$
 Here, $DF(x)$ is the derivative of $F$ at the point $x$.
 It is a linear transform.
 It can be thought as a matrix where the $j$-th *row* is the *gradient*
-of the corresponding $f_j$ at $x$.
+of the corresponding $f\_j$ at $x$.
 That is,
 ```math
 DF(x) =
 \begin{bmatrix}
-  \rule[.5ex]{2.5ex}{0.5pt} & \nabla f_1 & \rule[.5ex]{2.5ex}{0.5pt}
+  \rule[.5ex]{2.5ex}{0.5pt} & \nabla f\_1 & \rule[.5ex]{2.5ex}{0.5pt}
   \\
   &\vdots&
   \\
-  \rule[.5ex]{2.5ex}{0.5pt} & \nabla f_n & \rule[.5ex]{2.5ex}{0.5pt}
+  \rule[.5ex]{2.5ex}{0.5pt} & \nabla f\_n & \rule[.5ex]{2.5ex}{0.5pt}
 \end{bmatrix}
 ```
 
 
 ## Fully constrained
 
-Suppose we have found a point $x$ where $f_1, \dotsc, f_n$ are satisfied.
+Suppose we have found a point $x$ where $f\_1, \dotsc, f\_n$ are satisfied.
 We say that $F$ is fully constrained if there are no paths departing from $x$
-such all $f_j$ are kept constant.
+such all $f\_j$ are kept constant.
 Let us be a little euristic and assume that $F$ is fully constrained when
-$\nabla f_1(x), \dotsc, \nabla f_n(x)$ spawn $\mathbb{R}^p$:
+$\nabla f\_1(x), \dotsc, \nabla f\_n(x)$ spawn $\mathbb{R}^p$:
 they are a **generator**.
 
 
 ## Overconstrained
 
-And we want to add another equation to our system, given by the function $f_{q+1}$.
-Suppose we have found a point $x$ where $f_1, \dotsc, f_n$ are satisfied.
-We say that $f_{q+1}$ overconstraints the system $F$
+And we want to add another equation to our system, given by the function $f\_{q+1}$.
+Suppose we have found a point $x$ where $f\_1, \dotsc, f\_n$ are satisfied.
+We say that $f\_{q+1}$ overconstraints the system $F$
 if we cannot move in a direction perpendicular to
-$\nabla f_1(x), \dotsc, \nabla f_n(x)$
-but at the same time non-perpendicular to $\nabla f_{q+1}(x)$.
+$\nabla f\_1(x), \dotsc, \nabla f\_n(x)$
+but at the same time non-perpendicular to $\nabla f\_{q+1}(x)$.
 The idea is that, at the point $x$,
-we cannot change $f_{q+1}$ without changing the $f_1, \dotsc, f_n$.
+we cannot change $f\_{q+1}$ without changing the $f\_1, \dotsc, f\_n$.
 
-Let us say that $f_{q+1}$ overconstraints the system at $x$
-when $\nabla f_{q+1}(x)$ linearly dependent to $\nabla f_1(x), \dotsc, \nabla f_n(x)$.
+Let us say that $f\_{q+1}$ overconstraints the system at $x$
+when $\nabla f\_{q+1}(x)$ linearly dependent to $\nabla f\_1(x), \dotsc, \nabla f\_n(x)$.
 
-So, we say that a system $f_1, \dotsc, f_n$ has no overconstraints at $x$ when
-$\nabla f_1(x), \dotsc, \nabla f_n(x)$
+So, we say that a system $f\_1, \dotsc, f\_n$ has no overconstraints at $x$ when
+$\nabla f\_1(x), \dotsc, \nabla f\_n(x)$
 are linearly independent.
 
-The overconstraining $f_{q+1}$ can be compatible with $f_1, \dotsc, f_n$,
+The overconstraining $f\_{q+1}$ can be compatible with $f\_1, \dotsc, f\_n$,
 in the sense that $F(x) = 0$ can be satisfied/solved.
 In this case, the new constraint is just redundant.
 
@@ -133,30 +133,30 @@ we might disturb the system and evaluate the situation at a (or some) nearby poi
 
 ## Orthonormal basis (reduced QR-decomposition)
 
-A set of vectors $\vec{v}_1, \dotsc, \vec{v}_n$ is [orthonormal](https://en.wikipedia.org/wiki/Orthonormality) when
-$$\vec{v}_j \cdot \vec{v}_k = \delta_{jk}.$$
+A set of vectors $\vec{v}\_1, \dotsc, \vec{v}\_n$ is [orthonormal](https://en.wikipedia.org/wiki/Orthonormality) when
+$$\vec{v}\_j \cdot \vec{v}\_k = \delta\_{jk}.$$
 Orthonormal vectors are nice because:
 1. It is very easy to decompose vectors:
-$$\vec{w} = \alpha_1 \vec{v}_1 + \dotsb + \alpha_n \vec{v}_n + \vec{w}^\perp.$$
-Where $\alpha_j = \vec{w} \cdot \vec{v}_j$ and for all $j$,
-$\vec{w}^\perp \cdot \vec{v}_j = 0$.
+$$\vec{w} = \alpha\_1 \vec{v}\_1 + \dotsb + \alpha\_n \vec{v}\_n + \vec{w}^\perp.$$
+Where $\alpha\_j = \vec{w} \cdot \vec{v}\_j$ and for all $j$,
+$\vec{w}^\perp \cdot \vec{v}\_j = 0$.
 2. If $M$ is a matrix whose columns (or rows) are orthonormal vectors,
 it is very easy to invert $M$: $M^{-1} = M^T$.
 
-The so called [Gram-Schmidt process](https://en.wikipedia.org/wiki/Gram%E2%80%93Schmidt_process)
+The so called [Gram-Schmidt process](https://en.wikipedia.org/wiki/Gram%E2%80%93Schmidt\_process)
 allow us to "gradually build up" from
-linearly independent $\vec{v}_1, \dotsc, \vec{v}_n$,
+linearly independent $\vec{v}\_1, \dotsc, \vec{v}\_n$,
 a sequence of orthonormal vectors
-$\vec{q}_1, \dots, \vec{q}_n$ such that
+$\vec{q}\_1, \dots, \vec{q}\_n$ such that
 ```math
 \begin{aligned}
-  \vec{v}_1 &= \alpha_{11} \vec{q}_1
+  \vec{v}\_1 &= \alpha\_{11} \vec{q}\_1
   \\
-  \vec{v}_2 &= \alpha_{21} \vec{q}_1 + \alpha_{22} \vec{q}_2
+  \vec{v}\_2 &= \alpha\_{21} \vec{q}\_1 + \alpha\_{22} \vec{q}\_2
   \\
   &\vdots
   \\
-  \vec{v}_n &= \alpha_{n1} \vec{q}_1 + \dotsb + \alpha_{nn} \vec{q}_n.
+  \vec{v}\_n &= \alpha\_{n1} \vec{q}\_1 + \dotsb + \alpha\_{nn} \vec{q}\_n.
 \end{aligned}
 ```
 In matrix notation
@@ -164,49 +164,49 @@ In matrix notation
 \begin{bmatrix}
   \vert & & \vert
   \\
-  \vec{v}_1 & \ldots & \vec{v}_n
+  \vec{v}\_1 & \ldots & \vec{v}\_n
   \\
   \vert & & \vert
 \end{bmatrix} =
 \begin{bmatrix}
   \vert & & \vert
   \\
-  \vec{q}_1 & \ldots & \vec{q}_n
+  \vec{q}\_1 & \ldots & \vec{q}\_n
   \\
   \vert & & \vert
 \end{bmatrix}
 \begin{bmatrix}
-  \alpha_{11} & \ldots      & \ldots & \alpha_{n1}
+  \alpha\_{11} & \ldots      & \ldots & \alpha\_{n1}
   \\
-              & \alpha_{22} & \ldots & \alpha_{n2}
+              & \alpha\_{22} & \ldots & \alpha\_{n2}
   \\
               &             & \ddots & \vdots
   \\
-              &             &        & \alpha_{nn}
+              &             &        & \alpha\_{nn}
 \end{bmatrix}
 ```
 For short,
 $$V = QR.$$
 
 The process can be followed through, even if the original
-$\vec{v}_1, \dotsc, \vec{v}_n$ are not linearly independent.
-Except, that whenever $\vec{v}_j$ is dependent on the vectors that came before,
-$\vec{q}_j$ is zero.
-And, in this case, $\vec{q}_j$ is removed from $Q$,
+$\vec{v}\_1, \dotsc, \vec{v}\_n$ are not linearly independent.
+Except, that whenever $\vec{v}\_j$ is dependent on the vectors that came before,
+$\vec{q}\_j$ is zero.
+And, in this case, $\vec{q}\_j$ is removed from $Q$,
 and so is the $j$-th line of $R$.
 
 **OBS:**
 I am not sure, but I belive that
-[the $Q$ matrix is often "completed"](https://en.wikipedia.org/wiki/QR_decomposition#Square_natrix)
+[the $Q$ matrix is often "completed"](https://en.wikipedia.org/wiki/QR\_decomposition#Square\_natrix)
 to become an orthonormal basis (therefore, a square matrix).
 I don't think that in FreeCAD we need this completion.
 Here, we do not assum $Q$ is squared.
 In this work, the space spawned by the columns of $Q$
 is exactly the same as the space spawned by the initial vectors
-$\vec{v}_1, \dotsc, \vec{v}_n$.
+$\vec{v}\_1, \dotsc, \vec{v}\_n$.
 If we want to project a vector $\vec{w}$
 into the space spawned by
-$\vec{v}_1, \dotsc, \vec{v}_n$, we just have to calculate $QQ^T\vec{w}$.
+$\vec{v}\_1, \dotsc, \vec{v}\_n$, we just have to calculate $QQ^T\vec{w}$.
 
 ### Overconstraints
 
@@ -217,19 +217,19 @@ at which point the system becomes overconstrained.
 
 ### Constraints
 
-In the case of constraints, the vectors $\vec{v}_1, \dotsc, \vec{v}_n$
-are in fact the gradients $\nabla f_1(x), \dotsc, \nabla f_n(x)$.
+In the case of constraints, the vectors $\vec{v}\_1, \dotsc, \vec{v}\_n$
+are in fact the gradients $\nabla f\_1(x), \dotsc, \nabla f\_n(x)$.
 
 ### Adding or removing vectors/constraints/geometries
 
 It is very important to notice that this process is **gradual**.
 That is,
-if we keep a record of the orthonormalized vectors $\vec{q}_1, \dotsc, \vec{q}_n$,
-it is very easy to add a new vector $\vec{v}_{n+1}$ (constraint) to the list.
+if we keep a record of the orthonormalized vectors $\vec{q}\_1, \dotsc, \vec{q}\_n$,
+it is very easy to add a new vector $\vec{v}\_{n+1}$ (constraint) to the list.
 All we need to do is calculate
-$$\tilde{q}_{n+1} = \vec{v}_{n+1} - \sum_{j=1}^m (\vec{v}_{n+1} \cdot \vec{q}_j) \vec{q}_j,$$
+$$\tilde{q}\_{n+1} = \vec{v}\_{n+1} - \sum\_{j=1}^m (\vec{v}\_{n+1} \cdot \vec{q}\_j) \vec{q}\_j,$$
 and then normalize it:
-$$\vec{q}_{n+1} = \frac{1}{\lVert \tilde{q}_{n+1} \rVert} \tilde{q}_{n+1}.$$
+$$\vec{q}\_{n+1} = \frac{1}{\lVert \tilde{q}\_{n+1} \rVert} \tilde{q}\_{n+1}.$$
 Later we discuss how to add a constraint in the middle of the list.
 
 Adding a new dimension (geometry) is even easier.
@@ -248,31 +248,31 @@ To remove an arbitrary constraint,
 we can keep swapping it with the next one until it becomes the last constraint.
 Then we remove it.
 
-Swapping to consecutive constraints $\vec{v}_j$ and $\vec{v}_{j+1}$
-only affects $\vec{q}_j$ and $\vec{q}_{j+1}$.
+Swapping to consecutive constraints $\vec{v}\_j$ and $\vec{v}\_{j+1}$
+only affects $\vec{q}\_j$ and $\vec{q}\_{j+1}$.
 Make
 ```math
 \begin{aligned}
-  \tilde{p}_j &= \vec{q}_{j+1} + (\vec{v}_{j+1} \cdot \vec{q}_j) \vec{q}_j
+  \tilde{p}\_j &= \vec{q}\_{j+1} + (\vec{v}\_{j+1} \cdot \vec{q}\_j) \vec{q}\_j
   \\
-  \tilde{p}_{j+1} &= \vec{q}_j - (\vec{v}_{j+1} \cdot \vec{q}_j) \vec{q}_{j+1}
+  \tilde{p}\_{j+1} &= \vec{q}\_j - (\vec{v}\_{j+1} \cdot \vec{q}\_j) \vec{q}\_{j+1}
   \\
-  \vec{q}_{j} &= \frac{1}{\lVert \tilde{p}_{j} \rVert} \tilde{q}_{j}
+  \vec{q}\_{j} &= \frac{1}{\lVert \tilde{p}\_{j} \rVert} \tilde{q}\_{j}
   \quad\text{and}\quad
-  \vec{q}_{j+1} = \frac{1}{\lVert \tilde{p}_{j+1} \rVert} \tilde{q}_{j+1}.
+  \vec{q}\_{j+1} = \frac{1}{\lVert \tilde{p}\_{j+1} \rVert} \tilde{q}\_{j+1}.
 \end{aligned}
 ```
 
 ### Disturbing a vector
 
-If we want to substitute $\vec{v}_j$ by $\vec{v}_j + \vec{w}$ and recompute
+If we want to substitute $\vec{v}\_j$ by $\vec{v}\_j + \vec{w}$ and recompute
 the reduced QR-decomposition, one thing we can do is:
 1. Get rid of the $\vec{w}$ components for indexes before $j$:
-$$\vec{w} -= \sum_{k=1}^{j} (\vec{w} \cdot \vec{q}_k) \vec{q}_k.$$
+$$\vec{w} -= \sum\_{k=1}^{j} (\vec{w} \cdot \vec{q}\_k) \vec{q}\_k.$$
 2. If $\vec{w}$ becomes $\vec{0}$, there is nothing to be done.
-3. Replace $\vec{q}_j += \vec{w}$ and normalize it.
+3. Replace $\vec{q}\_j += \vec{w}$ and normalize it.
 4. For $k = j+1, \dotsc, n$, replace
-$$\vec{q}_k -= (\vec{w} \cdot \vec{q}_k) \vec{q}_k$$
+$$\vec{q}\_k -= (\vec{w} \cdot \vec{q}\_k) \vec{q}\_k$$
 and normalize it.
 
 In the case of constraints,
@@ -285,17 +285,17 @@ The procedure is very similar to the described above.
 ### Adding a constraint to the middle of the list
 
 Suppose we want to add a constraint just after the vectors
-$\vec{v}_1, \dotsc, \vec{v}_j$
+$\vec{v}\_1, \dotsc, \vec{v}\_j$
 and before
-$\vec{v}_{j+1}, \dotsc, \vec{w}_n$.
+$\vec{v}\_{j+1}, \dotsc, \vec{w}\_n$.
 We can simply add it to the end of the first list, as we usually do.
 Call it $\vec{q}$, by now.
 Then, for $k = 1, 2, \dotsc$ make
 ```math
-  \tilde{q}_{j+1+k} = \vec{q}_{j+1+k} - (\vec{q}_{j+1+k} \cdot) \vec{q}) \vec{q}.
+  \tilde{q}\_{j+1+k} = \vec{q}\_{j+1+k} - (\vec{q}\_{j+1+k} \cdot) \vec{q}) \vec{q}.
 ```
-and normalize to obtain $\vec{q}_{j+1+k}$.
-And finally, make $\vec{q}_j = \vec{q}$.
+and normalize to obtain $\vec{q}\_{j+1+k}$.
+And finally, make $\vec{q}\_j = \vec{q}$.
 
 ### Overconstrained only in a particular point
 
@@ -331,14 +331,14 @@ In order to solve the equation
 ```math
   DF(x)\Delta x = -F(x),
 ```
-we use a [least squares solver](https://docs.w3cub.com/eigen3/group__leastsquares).
+we use a [least squares solver](https://docs.w3cub.com/eigen3/group\_\_leastsquares).
 [Eigen3](https://eigen.tuxfamily.org/)
 is the library FreeCAD uses for solving this kind of problem.
 Some options are:
-1. Use [least squares conjugate gradient](https://eigen.tuxfamily.org/dox/classEigen_1_1LeastSquaresConjugateGradient.html).
-2. Use [BiCGSTAB](https://eigen.tuxfamily.org/dox/classEigen_1_1BiCGSTAB.html) to solve
+1. Use [least squares conjugate gradient](https://eigen.tuxfamily.org/dox/classEigen\_1\_1LeastSquaresConjugateGradient.html).
+2. Use [BiCGSTAB](https://eigen.tuxfamily.org/dox/classEigen\_1\_1BiCGSTAB.html) to solve
 $DF(x)^T DF(x) \Delta x = -DF(x)^T F(x)$.
-3. Use [LDLT Cholesky decomposition](https://eigen.tuxfamily.org/dox/classEigen_1_1LDLT.html) to solve
+3. Use [LDLT Cholesky decomposition](https://eigen.tuxfamily.org/dox/classEigen\_1\_1LDLT.html) to solve
 $DF(x)^T DF(x) \Delta x = -DF(x)^T F(x)$.
 
 Notice that our main target is not to solve $DF(x) \Delta x = -F(x)$.
@@ -346,10 +346,10 @@ We are actually looking for $\Delta x$ such that $F(x + \Delta x) = 0$.
 The linear problem gives us a **"long shot"**.
 Therefore, **we do not need** *great precision*.
 And we need to define what we mean by *"great precision"*.
-The options [least squares conjugate gradient](https://eigen.tuxfamily.org/dox/classEigen_1_1LeastSquaresConjugateGradient.html) and [BiCGSTAB](https://eigen.tuxfamily.org/dox/classEigen_1_1BiCGSTAB.html) allow setting a "tolerance" by using the method `setTolerance()`.
+The options [least squares conjugate gradient](https://eigen.tuxfamily.org/dox/classEigen\_1\_1LeastSquaresConjugateGradient.html) and [BiCGSTAB](https://eigen.tuxfamily.org/dox/classEigen\_1\_1BiCGSTAB.html) allow setting a "tolerance" by using the method `setTolerance()`.
 On the other hand,
-[documentation mentions](https://docs.w3cub.com/eigen3/group__leastsquares#LeastSquaresNormalEquations) that
-[LDLT Cholesky decomposition](https://eigen.tuxfamily.org/dox/classEigen_1_1LDLT.html)
+[documentation mentions](https://docs.w3cub.com/eigen3/group\_\_leastsquares#LeastSquaresNormalEquations) that
+[LDLT Cholesky decomposition](https://eigen.tuxfamily.org/dox/classEigen\_1\_1LDLT.html)
 is the fastest method.
 
 #### Further improvement
