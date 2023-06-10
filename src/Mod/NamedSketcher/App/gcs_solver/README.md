@@ -19,9 +19,9 @@ Constraints are made from equations like:
 ```math
 \left\{
 \begin{aligned}
-  x\_1 {}&-&{} x\_2 {}&&{} &= 5
+  x_1 {}&-&{} x_2 {}&&{} &= 5
   \\
-  {}&&{}x\_2^2 {}&+&{} x\_3^2 &= 64.
+  {}&&{}x_2^2 {}&+&{} x_3^2 &= 64.
 \end{aligned}
 \right.
 ```
@@ -29,9 +29,9 @@ Let's make them all equal to zero...
 ```math
 \left\{
 \begin{aligned}
-  x\_1 {}&-&{} x\_2 {}&+&{} {}&-&{} 5 &= 0
+  x_1 {}&-&{} x_2 {}&+&{} {}&-&{} 5 &= 0
   \\
-  {}&&{}x\_2^2 {}&+&{} x\_3^2 {}&-&{} 64 &= 0.
+  {}&&{}x_2^2 {}&+&{} x_3^2 {}&-&{} 64 &= 0.
 \end{aligned}
 \right.
 ```
@@ -39,9 +39,9 @@ So, we are actually dealing with a system of equations:
 ```math
 \left\{
 \begin{aligned}
-  f\_1(x\_1, x\_2, \times) &= 0
+  f_1(x_1, x_2, \times) &= 0
   \\
-  f\_2(\times, x\_2, x\_3) &= 0.
+  f_2(\times, x_2, x_3) &= 0.
 \end{aligned}
 \right.
 ```
@@ -52,7 +52,7 @@ And of course, we are talking about much more than 3 parameters and 2 equations!
 ```
 We want to find a solution for
 ```math
-  F(x\_1, \dotsc, x\_p) = (0, \dotsc, 0).
+  F(x_1, \dotsc, x_p) = (0, \dotsc, 0).
 ```
 Or, $F(x) = 0$, for short.
 
@@ -76,11 +76,11 @@ That is,
 ```math
 DF(x) =
 \begin{bmatrix}
-  \rule[.5ex]{2.5ex}{0.5pt} & \nabla f\_1 & \rule[.5ex]{2.5ex}{0.5pt}
+  \rule[.5ex]{2.5ex}{0.5pt} & \nabla f_1 & \rule[.5ex]{2.5ex}{0.5pt}
   \\
   &\vdots&
   \\
-  \rule[.5ex]{2.5ex}{0.5pt} & \nabla f\_n & \rule[.5ex]{2.5ex}{0.5pt}
+  \rule[.5ex]{2.5ex}{0.5pt} & \nabla f_n & \rule[.5ex]{2.5ex}{0.5pt}
 \end{bmatrix}
 ```
 
@@ -143,20 +143,20 @@ $\vec{w}^\perp \cdot \vec{v}\_j = 0$.
 2. If $M$ is a matrix whose columns (or rows) are orthonormal vectors,
 it is very easy to invert $M$: $M^{-1} = M^T$.
 
-The so called [Gram-Schmidt process](https://en.wikipedia.org/wiki/Gram%E2%80%93Schmidt\_process)
+The so called [Gram-Schmidt process](https://en.wikipedia.org/wiki/Gram%E2%80%93Schmidt_process)
 allow us to "gradually build up" from
 linearly independent $\vec{v}\_1, \dotsc, \vec{v}\_n$,
 a sequence of orthonormal vectors
 $\vec{q}\_1, \dots, \vec{q}\_n$ such that
 ```math
 \begin{aligned}
-  \vec{v}\_1 &= \alpha\_{11} \vec{q}\_1
+  \vec{v}_1 &= \alpha_{11} \vec{q}_1
   \\
-  \vec{v}\_2 &= \alpha\_{21} \vec{q}\_1 + \alpha\_{22} \vec{q}\_2
+  \vec{v}_2 &= \alpha_{21} \vec{q}_1 + \alpha_{22} \vec{q}_2
   \\
   &\vdots
   \\
-  \vec{v}\_n &= \alpha\_{n1} \vec{q}\_1 + \dotsb + \alpha\_{nn} \vec{q}\_n.
+  \vec{v}_n &= \alpha_{n1} \vec{q}_1 + \dotsb + \alpha_{nn} \vec{q}_n.
 \end{aligned}
 ```
 In matrix notation
@@ -164,25 +164,25 @@ In matrix notation
 \begin{bmatrix}
   \vert & & \vert
   \\
-  \vec{v}\_1 & \ldots & \vec{v}\_n
+  \vec{v}_1 & \ldots & \vec{v}_n
   \\
   \vert & & \vert
 \end{bmatrix} =
 \begin{bmatrix}
   \vert & & \vert
   \\
-  \vec{q}\_1 & \ldots & \vec{q}\_n
+  \vec{q}_1 & \ldots & \vec{q}_n
   \\
   \vert & & \vert
 \end{bmatrix}
 \begin{bmatrix}
-  \alpha\_{11} & \ldots      & \ldots & \alpha\_{n1}
+  \alpha_{11} & \ldots      & \ldots & \alpha_{n1}
   \\
-              & \alpha\_{22} & \ldots & \alpha\_{n2}
+              & \alpha_{22} & \ldots & \alpha_{n2}
   \\
               &             & \ddots & \vdots
   \\
-              &             &        & \alpha\_{nn}
+              &             &        & \alpha_{nn}
 \end{bmatrix}
 ```
 For short,
@@ -253,13 +253,13 @@ only affects $\vec{q}\_j$ and $\vec{q}\_{j+1}$.
 Make
 ```math
 \begin{aligned}
-  \tilde{p}\_j &= \vec{q}\_{j+1} + (\vec{v}\_{j+1} \cdot \vec{q}\_j) \vec{q}\_j
+  \tilde{p}_j &= \vec{q}_{j+1} + (\vec{v}_{j+1} \cdot \vec{q}_j) \vec{q}_j
   \\
-  \tilde{p}\_{j+1} &= \vec{q}\_j - (\vec{v}\_{j+1} \cdot \vec{q}\_j) \vec{q}\_{j+1}
+  \tilde{p}_{j+1} &= \vec{q}_j - (\vec{v}_{j+1} \cdot \vec{q}_j) \vec{q}_{j+1}
   \\
-  \vec{q}\_{j} &= \frac{1}{\lVert \tilde{p}\_{j} \rVert} \tilde{q}\_{j}
+  \vec{q}_{j} &= \frac{1}{\lVert \tilde{p}_{j} \rVert} \tilde{q}_{j}
   \quad\text{and}\quad
-  \vec{q}\_{j+1} = \frac{1}{\lVert \tilde{p}\_{j+1} \rVert} \tilde{q}\_{j+1}.
+  \vec{q}_{j+1} = \frac{1}{\lVert \tilde{p}_{j+1} \rVert} \tilde{q}_{j+1}.
 \end{aligned}
 ```
 
@@ -292,7 +292,7 @@ We can simply add it to the end of the first list, as we usually do.
 Call it $\vec{q}$, by now.
 Then, for $k = 1, 2, \dotsc$ make
 ```math
-  \tilde{q}\_{j+1+k} = \vec{q}\_{j+1+k} - (\vec{q}\_{j+1+k} \cdot) \vec{q}) \vec{q}.
+  \tilde{q}_{j+1+k} = \vec{q}_{j+1+k} - (\vec{q}_{j+1+k} \cdot) \vec{q}) \vec{q}.
 ```
 and normalize to obtain $\vec{q}\_{j+1+k}$.
 And finally, make $\vec{q}\_j = \vec{q}$.
@@ -331,14 +331,14 @@ In order to solve the equation
 ```math
   DF(x)\Delta x = -F(x),
 ```
-we use a [least squares solver](https://docs.w3cub.com/eigen3/group\_\_leastsquares).
+we use a [least squares solver](https://docs.w3cub.com/eigen3/group__leastsquares).
 [Eigen3](https://eigen.tuxfamily.org/)
 is the library FreeCAD uses for solving this kind of problem.
 Some options are:
-1. Use [least squares conjugate gradient](https://eigen.tuxfamily.org/dox/classEigen\_1\_1LeastSquaresConjugateGradient.html).
-2. Use [BiCGSTAB](https://eigen.tuxfamily.org/dox/classEigen\_1\_1BiCGSTAB.html) to solve
+1. Use [least squares conjugate gradient](https://eigen.tuxfamily.org/dox/classEigen_1_1LeastSquaresConjugateGradient.html).
+2. Use [BiCGSTAB](https://eigen.tuxfamily.org/dox/classEigen_1_1BiCGSTAB.html) to solve
 $DF(x)^T DF(x) \Delta x = -DF(x)^T F(x)$.
-3. Use [LDLT Cholesky decomposition](https://eigen.tuxfamily.org/dox/classEigen\_1\_1LDLT.html) to solve
+3. Use [LDLT Cholesky decomposition](https://eigen.tuxfamily.org/dox/classEigen_1_1LDLT.html) to solve
 $DF(x)^T DF(x) \Delta x = -DF(x)^T F(x)$.
 
 Notice that our main target is not to solve $DF(x) \Delta x = -F(x)$.
@@ -346,10 +346,10 @@ We are actually looking for $\Delta x$ such that $F(x + \Delta x) = 0$.
 The linear problem gives us a **"long shot"**.
 Therefore, **we do not need** *great precision*.
 And we need to define what we mean by *"great precision"*.
-The options [least squares conjugate gradient](https://eigen.tuxfamily.org/dox/classEigen\_1\_1LeastSquaresConjugateGradient.html) and [BiCGSTAB](https://eigen.tuxfamily.org/dox/classEigen\_1\_1BiCGSTAB.html) allow setting a "tolerance" by using the method `setTolerance()`.
+The options [least squares conjugate gradient](https://eigen.tuxfamily.org/dox/classEigen_1_1LeastSquaresConjugateGradient.html) and [BiCGSTAB](https://eigen.tuxfamily.org/dox/classEigen_1_1BiCGSTAB.html) allow setting a "tolerance" by using the method `setTolerance()`.
 On the other hand,
-[documentation mentions](https://docs.w3cub.com/eigen3/group\_\_leastsquares#LeastSquaresNormalEquations) that
-[LDLT Cholesky decomposition](https://eigen.tuxfamily.org/dox/classEigen\_1\_1LDLT.html)
+[documentation mentions](https://docs.w3cub.com/eigen3/group__leastsquares#LeastSquaresNormalEquations) that
+[LDLT Cholesky decomposition](https://eigen.tuxfamily.org/dox/classEigen_1_1LDLT.html)
 is the fastest method.
 
 #### Further improvement
