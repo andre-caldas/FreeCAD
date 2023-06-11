@@ -4146,7 +4146,7 @@ during file reading (slower but higher details).</source>
     <message>
       <location filename="../../DlgSettings3DViewPart.ui" line="52"/>
       <source>Maximum deviation depending on the model bounding box</source>
-      <translation>L'écart maximal suivant la  boîte englobant le modèle</translation>
+      <translation>Déviation maximale selon la boîte englobante du modèle</translation>
     </message>
     <message>
       <location filename="../../DlgSettings3DViewPart.ui" line="87"/>
@@ -5732,7 +5732,7 @@ in the 3D view for the sweep path.</source>
       <location filename="../../AppPartGui.cpp" line="233"/>
       <location filename="../../AppPartGui.cpp" line="234"/>
       <source>Import-Export</source>
-      <translation>Importer-Exporter</translation>
+      <translation>Importer/Exporter</translation>
     </message>
     <message>
       <location filename="../../Command.cpp" line="313"/>

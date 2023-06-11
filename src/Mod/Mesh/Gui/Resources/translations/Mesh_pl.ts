@@ -1757,7 +1757,7 @@ do gładszego wyglądu.
     <message>
       <location filename="../../RemoveComponents.ui" line="79"/>
       <source>&lt; faces than</source>
-      <translation>&lt; niż ściany</translation>
+      <translation>ścian mniejsze niż</translation>
     </message>
     <message>
       <location filename="../../RemoveComponents.ui" line="89"/>
@@ -1778,7 +1778,7 @@ do gładszego wyglądu.
     <message>
       <location filename="../../RemoveComponents.ui" line="165"/>
       <source>&gt; faces than</source>
-      <translation>&gt; niż ściany</translation>
+      <translation>ścian większe niż</translation>
     </message>
     <message>
       <location filename="../../RemoveComponents.ui" line="182"/>
@@ -2026,7 +2026,7 @@ do gładszego wyglądu.
     <message>
       <location filename="../../Workbench.cpp" line="90"/>
       <source>Mesh info box</source>
-      <translation>Informacje o siatce</translation>
+      <translation>Panel informacje o siatce</translation>
     </message>
     <message>
       <location filename="../../Workbench.cpp" line="104"/>
