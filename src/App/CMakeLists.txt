@@ -242,6 +242,7 @@ SET(Properties_HPP_SRCS
     ObjectIdentifier.h
     Property.h
     PropertyTaggedList.h
+    PropertyTaggedList.inc
     PropertyContainer.h
     PropertyFile.h
     PropertyGeo.h

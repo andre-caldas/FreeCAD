@@ -40,22 +40,28 @@ class NamedSketcherExport ParameterGroup
     using set_t = std::unordered_set<Parameter*>;
 
 public:
-    OptimizedParameter value;
-
     ParameterGroup(Parameter* parameter);
+
+    double getValue() const;
+    void setValue(double val);
+    OptimizedParameter* getValuePtr();
 
     bool hasParameter(Parameter* parameter) const;
     void append(Parameter* p);
+    void setConstant(Parameter* k);
+    bool isConstant() const;
     void commit() const;
 
-    ParameterGroup& operator<<(ParameterGroup& other);
+    ParameterGroup& operator<<(ParameterGroup&& other);
 
     set_t::iterator begin() {return parameters.begin();}
     set_t::iterator end() {return parameters.end();}
     set_t::size_type size() const {return parameters.size();}
 
 private:
+    OptimizedParameter value;
     set_t parameters;
+    Parameter* const_parameter = nullptr;
 };
 
 } // namespace NamedSketcher::GCS

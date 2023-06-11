@@ -29,7 +29,7 @@
 
 #include "LinearTransform.h"
 #include "parameters/Parameter.h"
-#include "parameters/Vector.h"
+#include "Vector.h"
 
 namespace NamedSketcher::GCS
 {

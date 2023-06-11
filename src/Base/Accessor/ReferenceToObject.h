@@ -226,7 +226,7 @@ public:
      */
     T* get() const;
 
-    bool hasChanged() const {return (old_reference != lockedResult.result);}
+    bool hasChanged() const {return (old_reference != lockedResult.reference);}
     T* getOldReference() const {return old_reference;}
 
     static ReferenceTo<T> unserialize(Base::XMLReader& reader);

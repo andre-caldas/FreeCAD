@@ -72,10 +72,7 @@ std::vector<GCS::Equation*> ConstraintCoincident::getEquations()
     for(int i=0; i < references.size(); ++i)
     {
         auto& point_ref = references.at(i);
-        if(point_ref.isLocked())
-        {
-            point_ref.refreshLock();
-        }
+        point_ref.refreshLock();
 
         if(!point_ref.isLocked())
         {
@@ -95,7 +92,30 @@ std::vector<GCS::Equation*> ConstraintCoincident::getEquations()
 
 bool ConstraintCoincident::updateReferences()
 {
-    xxx;
+    assert(references.size() > 0);
+    if(references.size() == 0)
+    {
+        return false;
+    }
+
+    bool any_change = false;
+    for(auto& ref: references)
+    {
+        ref.refreshLock();
+        any_change |= ref.hasChanged();
+    }
+    if(!any_change)
+    {
+        return false;
+    }
+    auto& first = references.at(0);
+    for(int i=1; i < references.size(); ++i)
+    {
+        auto& point_ref = references.at(i);
+        equations.at(2*i - 2)->set(&first.get()->point.x, &point_ref.get()->point.x);
+        equations.at(2*i - 1)->set(&first.get()->point.y, &point_ref.get()->point.y);
+    }
+    return true;
 }
 
 unsigned int ConstraintCoincident::getMemSize () const

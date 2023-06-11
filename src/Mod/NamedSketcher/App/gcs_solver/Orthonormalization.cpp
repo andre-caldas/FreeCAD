@@ -177,4 +177,11 @@ Orthonormalization::getNonRedundants() const
     return result;
 }
 
+std::vector<Orthonormalization::Functional*> Orthonormalization::reset()
+{
+    duals.clear();
+    dualsQ.clear();
+    return std::move(functionals);
+}
+
 } // namespace NamedSketcher::GCS

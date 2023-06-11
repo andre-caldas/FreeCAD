@@ -74,17 +74,10 @@ Vector<Index>::plusKVec(double a, const Vector<Index>& other)
 }
 
 template<typename Index>
-void Vector<Index>::prune()
-{
-    values.erase(std::remove_if(values.begin(), values.end(),
-                                [](double x){return (std::abs(x) < EPSILON);}));
-}
-
-template<typename Index>
 bool Vector<Index>::isZero() const
 {
-    return !(std::any_of(values.begin(), values.end(),
-                [](double x){return (std::abs(x) >= EPSILON);}));
+    return !(std::any_of(values.cbegin(), values.cend(),
+                [](const auto& pair){return (std::abs(pair.second) >= EPSILON);}));
 }
 
 template<typename Index>
@@ -94,22 +87,21 @@ bool Vector<Index>::isEmpty() const
 }
 
 template<typename Index>
-double Vector<Index>::dot(Vector<Index>& other) const
+double Vector<Index>::dot(const Vector<Index>& other) const
 {
-    if(values.size() > other.size())
+    if(values.size() > other.values.size())
     {
         return other.dot(*this);
     }
-    double result = 0.0;
-    std::for_each(values.begin(), values.end(),
-                  [&other, &result](auto& pair){if(other.values.count(pair.first)) result += other.values.at(pair.first);});
-    return result;
+    return std::accumulate(values.begin(), values.end(), 0.0,
+                           [&other](double acc, auto& pair){if(other.values.count(pair.first)) return acc + other.values.at(pair.first); return acc;});
 }
 
 template<typename Index>
 double Vector<Index>::norm2() const
 {
-    return std::reduce(values.begin(), values.end(), 0., [](auto& pair){return pair.second*pair.second;});
+    return std::accumulate(values.begin(), values.end(), 0.0,
+                           [](double acc, auto& pair){return acc + (pair.second)*(pair.second);});
 }
 
 template<typename Index>
@@ -121,8 +113,7 @@ double Vector<Index>::norm() const
 template<typename Index>
 Vector<Index>& Vector<Index>::normalize()
 {
-    prune();
-    if(!values.empty())
+    if(!isZero())
     {
         *this *= 1.0/norm();
     }
@@ -147,12 +138,11 @@ Vector<Index>::setAsLinearCombination(double a, const Vector<Index>& v, double b
 }
 
 template<typename Index>
-Vector<Index>
-operator*(double a, const Vector<Index>& vector)
+Vector<Index> Vector<Index>::operator*(double a) const
 {
     Vector<Index> result;
-    result.values.reserve(vector.values.size());
-    for(auto& [k,v]: vector.values)
+    result.values.reserve(values.size());
+    for(auto& [k,v]: values)
     {
         result.values[k] = a * v;
     }

@@ -52,6 +52,15 @@ void System::removeEquation(Equation* equation)
     gradients.remove(equation);
 }
 
+void System::updateGradients()
+{
+    auto equations = gradients.reset();
+    for(Equation* eq: equations)
+    {
+        addEquation(eq);
+    }
+}
+
 OutputVector
 System::error(const ParameterProxyManager& manager) const
 {

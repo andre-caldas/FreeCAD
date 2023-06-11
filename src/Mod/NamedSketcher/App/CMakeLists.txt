@@ -100,15 +100,15 @@ SET(gcs_solver_SRCS
     gcs_solver/Shaker.h
     gcs_solver/System.h
     gcs_solver/System.cpp
+    gcs_solver/Vector.h
+    gcs_solver/Vector.inc
     gcs_solver/LinearTransform.h
-    gcs_solver/LinearTransform.cpp
+    gcs_solver/LinearTransform.inc
     gcs_solver/Orthonormalization.h
     gcs_solver/Orthonormalization.cpp
 #
     gcs_solver/parameters/Parameter.h
     gcs_solver/parameters/Parameter.cpp
-    gcs_solver/parameters/Vector.h
-    gcs_solver/parameters/Vector.cpp
     gcs_solver/parameters/ParameterProxy.h
     gcs_solver/parameters/ParameterProxy.cpp
     gcs_solver/parameters/ParameterGroup.h

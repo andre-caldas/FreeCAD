@@ -27,7 +27,7 @@
 
 #include "../parameters/ParameterProxyManager.h"
 #include "../parameters/ParameterGroup.h"
-#include "../parameters/Vector.h"
+#include "../Vector.h"
 #include "../LinearTransform.h"
 #include "../Types.h"
 
@@ -68,7 +68,7 @@ void SolverBase::updateGradient(Equation* equation)
 OptimizedVector SolverBase::solve()
 {
     vector_t eigen_target(manager.outputSize());
-    for(int i=0; i < manager.outputSize(); ++i)
+    for(size_t i=0; i < manager.outputSize(); ++i)
     {
         Equation* eq = manager.getEquation(i);
         eigen_target[i] = -eq->error(manager);
@@ -78,10 +78,10 @@ OptimizedVector SolverBase::solve()
     assert(solution.rows() == manager.outputSize());
 
     OptimizedVector result;
-    for(int index = 0; index < solution.rows(); ++index)
+    for(size_t index = 0; index < solution.rows(); ++index)
     {
         auto group = manager.getGroup(index);
-        result.set(&group->value,group->value);
+        result.set(group->getValuePtr(), group->getValue());
     }
     return result;
 }

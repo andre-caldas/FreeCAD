@@ -79,6 +79,18 @@ std::vector<GCS::Equation*> ConstraintHorizontal::getEquations()
     return std::vector<GCS::Equation*>{&equation};
 }
 
+bool ConstraintHorizontal::updateReferences()
+{
+    start.refreshLock();
+    end.refreshLock();
+    if(!start.hasChanged() && !end.hasChanged())
+    {
+        return false;
+    }
+    equation.set(&start.get()->y, &end.get()->y);
+}
+
+
 unsigned int ConstraintHorizontal::getMemSize () const
 {
     return sizeof(ConstraintHorizontal) + 50/*a.memSize() + b.memSize()*/;

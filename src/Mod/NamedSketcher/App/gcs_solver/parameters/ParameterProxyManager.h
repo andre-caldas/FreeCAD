@@ -71,38 +71,84 @@ public:
      */
     bool areParametersEqual(Parameter* a, Parameter* b) const;
 
+    ParameterGroup* getParameterGroup(Parameter* parameter) const;
+
+    /**
+     * @brief Makes all @class OptimizedParameter that are equivalent to @a k
+     * to be constant equal to @a k.
+     * @param k: @class Parameter with the constant value.
+     * @return Returns false if they are already constant equal to @a k.
+     * Otherwise, returns true.
+     * @throws If group already has a constant associated to it.
+     */
+    bool setParameterConstant(Parameter* k);
+
     /**
      * @brief Finished the optimization step,
      * this function needs to be called
      * to give an index number to each @class ParameterGroup.
      */
     void setOptimizedParameterIndexes();
-    int getOptimizedParameterIndex(OptimizedParameter* parameter) const;
-    int getOptimizedParameterIndex(ParameterGroup* group) const;
+    size_t getOptimizedParameterIndex(OptimizedParameter* parameter) const;
+    size_t getNonConstantGroupIndex(ParameterGroup* group) const;
     OptimizedParameter* getOptimizedParameter(Parameter* parameter) const;
     double getOptimizedParameterValue(Parameter* parameter) const;
     OptimizedVector getOptimizedParameterValues() const;
     void setOptimizedParameterValues(const OptimizedVector& vals) const;
 
-    int getGroupIndex(ParameterGroup* group) const;
-    ParameterGroup* getGroup(int index) const;
+    size_t getGroupIndex(ParameterGroup* group) const;
+    ParameterGroup* getGroup(size_t index) const;
 
-    int getEquationIndex(Equation* eq) const;
-    Equation* getEquation(int index) const;
+    size_t getEquationIndex(Equation* eq) const;
+    Equation* getEquation(size_t index) const;
     OptimizedVector optimizeVector(const ParameterVector& v) const;
 
-    int inputSize() const;
-    int outputSize() const;
+    size_t inputSize() const;
+    size_t outputSize() const;
     void commitParameters() const;
 
 private:
+    /**
+     * @brief Parameters are grouped in @class ParameterGroup.
+     * This variable holds all groups.
+     */
     std::unordered_set<std::unique_ptr<ParameterGroup>> parameterGroups;
-    std::vector<ParameterGroup*> indexedParameterGroups;
-    std::map<OptimizedParameter*, int> optimizedParameterIndexes;
-    std::vector<Parameter*> originalParameters;
+    /**
+     * @brief Reverse lookup @class Parameter --> @class ParameterGroup.
+     * @attention Premature optimization. :-)
+     */
+    std::unordered_map<Parameter*, ParameterGroup*> parameter2Group;
 
-    std::vector<Equation*> equations;
-    std::map<Equation*, int> equationIndexes;
+    /**
+     * @brief Each non-constant @class ParameterGroup
+     * "exports" one @class OptimizedParameter.
+     * To each non-constant @class ParameterGroup we associate an index,
+     * so we can use matrices.
+     * @attention This is set only after calling setOptimizedParameterIndexes().
+     */
+    std::vector<ParameterGroup*> orderedNonConstantGroups;
+    /**
+     * @brief orderedNonConstantGroups inverse lookup.
+     * @attention This is set only after calling setOptimizedParameterIndexes().
+     */
+    std::unordered_map<ParameterGroup*, size_t> nonConstantGroupIndexes;
+    /**
+     * @brief Reverse lookup @class OptimizedParameter --> @class ParameterGroup.
+     * @attention This is set only after calling setOptimizedParameterIndexes().
+     * @attention Premature optimization. :-)
+     */
+    std::unordered_map<OptimizedParameter*, ParameterGroup*> optimizedParameter2NonConstantGroup;
+
+    /**
+     * @brief Each @class Equation passed to the manager
+     * (potentially conflicting constraints are not)
+     * is associated to an index, so we can use matrices.
+     */
+    std::vector<Equation*> orderedEquations;
+    /**
+     * @brief orderedEquations inverse lookup.
+     */
+    std::unordered_map<Equation*, size_t> equationIndexes;
 };
 
 } // namespace NamedSketcher::GCS

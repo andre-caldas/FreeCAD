@@ -26,7 +26,6 @@
 
 #include "NamedSketcherGlobal.h"
 
-#include <thread>
 #include <string>
 #include <map>
 #include <memory>
@@ -37,6 +36,10 @@
 #include "gcs_solver/System.h"
 #include "geometries/PropertyGeometryList.h"
 #include "constraints/PropertyConstraintList.h"
+
+namespace Part {
+class TopoShape;
+}
 
 namespace NamedSketcher
 {
@@ -98,8 +101,9 @@ public:
     void Save(Base::Writer &/*writer*/) const override;
     void Restore(Base::XMLReader &/*reader*/) override;
 
+    Part::TopoShape toShape() const;
+
 private:
-    std::thread solverThread;
     GCS::System gcs;
 };
 

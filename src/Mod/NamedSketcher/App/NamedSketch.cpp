@@ -32,6 +32,7 @@
 #include <Base/Exception.h>
 #include <Base/Accessor/ReferenceToObject.h>
 
+#include <Mod/Part/App/TopoShape.h>
 #include <Mod/Part/App/Geometry.h>
 
 #include "geometries/GeometryFactory.h"
@@ -95,13 +96,20 @@ App::DocumentObjectExecReturn *NamedSketch::execute()
         return new App::DocumentObjectExecReturn(e.what());
     }
 
+    bool reference_changed = false;
     for(auto& constraint: constraintList)
     {
-        constraint.
+        reference_changed |= constraint.updateReferences();
     }
-#if 0
-    Visit constraints and check references.
-#endif
+    if(reference_changed)
+    {
+        gcs.updateGradients();
+    }
+
+    solve();
+
+    Shape.setValue(toShape());
+
     return App::DocumentObject::StdReturn;
 }
 
@@ -115,17 +123,6 @@ NamedSketch::addGeometry(std::unique_ptr<Part::Geometry> geo)
 
 void NamedSketch::delGeometry(boost::uuids::uuid tag)
 {
-    for(auto& constraint: constraintList)
-    {
-        auto lock = constraint.lock();
-        if(lock)
-        {
-            if(lock->informGeometryRemoval(tag))
-            {
-                xxxx;
-            }
-        }
-    }
     geometryList.removeValue(tag);
 }
 
@@ -143,8 +140,8 @@ NamedSketch::addConstraint(std::unique_ptr<ConstraintBase> constraint)
 
 void NamedSketch::delConstraint(boost::uuids::uuid tag)
 {
-    auto constraint = constraintList.blablahblah;
-    auto equations = constraint->getEquations();
+    auto& constraint = constraintList.getElementReference(tag);
+    auto equations = constraint.getEquations();
     for(auto equation: equations)
     {
         gcs.removeEquation(equation);
@@ -154,6 +151,21 @@ void NamedSketch::delConstraint(boost::uuids::uuid tag)
 
 void NamedSketch::solve() {
     gcs.solve();
+}
+
+Part::TopoShape NamedSketch::toShape() const
+{
+    Part::TopoShape result;
+    for (auto& geometry: geometryList)
+    {
+        if(!geometry.isConstruction)
+        {
+            TopoDS_Shape sh = geometry.toShape();
+            // TODO: too many copying here. :-(
+            result.setShape(result.fuse(sh));
+        }
+    }
+    return result;
 }
 
 } // namespace NamedSketcher

@@ -23,11 +23,17 @@
 
 #include <algorithm>
 
-#include "parameters/Vector.h"
-#include "LinearTransform.h"
+#include "Vector.h"
 
 namespace NamedSketcher::GCS
 {
+
+template<typename OutType, typename InType>
+LinearTransform<OutType, InType>::LinearTransform(LinearTransform<OutType,InType>&& from)
+{
+    dualKeys = std::move(from.dualKeys);
+    duals = std::move(from.duals);
+}
 
 template<typename OutType, typename InType>
 void LinearTransform<OutType, InType>::addDual(OutType key, dual_t&& dual)
@@ -40,7 +46,7 @@ template<typename OutType, typename InType>
 void LinearTransform<OutType, InType>::removeDual(OutType key)
 {
     duals.erase(key);
-    dualKeys.erase(std::remove_if(dualKeys.begin(), dualKeys.end(), key));
+    dualKeys.erase(std::remove(dualKeys.begin(), dualKeys.end(), key));
 }
 
 
@@ -66,6 +72,15 @@ LinearTransform<OutType, InType>::project(const dual_t& vector) const
         result.plusKVec(f.dot(vector), f);
     }
     return result;
+}
+
+template<typename OutType, typename InType>
+void LinearTransform<OutType, InType>::replaceInputParameter(InType from, InType to)
+{
+    for(auto& vector: duals)
+    {
+        vector.replaceKey(from, to);
+    }
 }
 
 } // namespace NamedSketcher::GCS

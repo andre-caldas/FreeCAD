@@ -51,6 +51,7 @@ public:
 
     void addEquation(Equation* equation);
     void removeEquation(Equation* equation);
+    void updateGradients();
 
     void addUserRedundantEquation(Equation* equation);
     void optimize();

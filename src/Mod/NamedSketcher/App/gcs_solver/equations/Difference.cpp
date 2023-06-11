@@ -69,6 +69,8 @@ void Difference::setProxies(ParameterProxyManager& manager) const
 {
     manager.addParameter(a);
     manager.addParameter(b);
+    manager.addParameter(difference);
+    manager.setParameterConstant(difference);
 }
 
 } // namespace NamedSketcher::GCS

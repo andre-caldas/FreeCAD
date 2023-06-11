@@ -65,6 +65,8 @@ OptimizedVector Equal::differentialOptimized(const ParameterProxyManager& manage
 
 bool Equal::optimizeProxies(ParameterProxyManager& manager) const
 {
+    manager.addParameter(a);
+    manager.addParameter(b);
     return manager.setParameterEqual(a,b);
 }
 

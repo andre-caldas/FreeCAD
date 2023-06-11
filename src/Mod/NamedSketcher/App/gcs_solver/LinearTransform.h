@@ -39,11 +39,14 @@ class LinearTransform
 {
 public:
     using dual_t = Vector<InType>;
-
     std::vector<OutType> dualKeys;
+
+    LinearTransform() = default;
+    LinearTransform(LinearTransform<OutType,InType>&& from);
 
     void addDual(OutType key, dual_t&& dual);
     void removeDual(OutType key);
+    void clear() {dualKeys.clear();duals.clear();}
 
     dual_t& operator[](OutType functional) {return duals.at(functional);}
     const dual_t& operator[](OutType functional) const {return duals.at(functional);}
@@ -63,10 +66,14 @@ public:
      */
     dual_t project(const dual_t& dual) const;
 
+    void replaceInputParameter(InType from, InType to);
+
 private:
     std::unordered_map<OutType, dual_t> duals;
 };
 
 } // namespace NamedSketcher::GCS
+
+#include "LinearTransform.inc"
 
 #endif // NAMEDSKETCHER_GCS_LinearTransform_H

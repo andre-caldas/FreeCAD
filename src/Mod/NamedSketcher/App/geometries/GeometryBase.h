@@ -34,6 +34,8 @@
 #include <Base/Accessor/NameAndTag.h>
 #include <Base/Accessor/ReferenceToObject.h>
 
+#include <Mod/Part/App/TopoShape.h>
+
 namespace NamedSketcher
 {
 
@@ -49,6 +51,7 @@ public:
     bool isConstruction = false;
     bool isBlocked = false;
 
+    virtual TopoDS_Shape toShape() = 0;
     virtual void commitChanges() const = 0;
 
     /*!
@@ -77,12 +80,13 @@ public:
     GeometryBaseT(std::unique_ptr<GeoClass> geo);
     reference_type getReference() const;
 
+    TopoDS_Shape toShape() override {return geometry->toShape();}
+
     void Save(Base::Writer& writer) const override;
     static std::unique_ptr<GeometryBase> staticRestore(Base::XMLReader& reader);
 
 protected:
     std::shared_ptr<GeoClass> geometry;
-
     GeometryBaseT();
 };
 

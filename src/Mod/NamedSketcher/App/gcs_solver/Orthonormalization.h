@@ -71,6 +71,8 @@ public:
     void moveForward(int index);
     void moveBackward(int index);
 
+    std::vector<Functional*> reset();
+
 private:
     /**
      * @brief Each vector in "duals" is a dual vector

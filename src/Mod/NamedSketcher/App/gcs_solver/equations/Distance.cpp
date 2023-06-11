@@ -120,6 +120,8 @@ void Distance::setProxies(ParameterProxyManager& manager) const
     manager.addParameter(&a->y);
     manager.addParameter(&b->x);
     manager.addParameter(&b->y);
+    manager.addParameter(distance);
+    manager.setParameterConstant(distance);
 }
 
 bool Distance::isCoincident(const ParameterProxyManager& manager) const

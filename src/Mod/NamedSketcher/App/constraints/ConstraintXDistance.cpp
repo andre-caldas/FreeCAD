@@ -90,6 +90,20 @@ std::vector<GCS::Equation*> ConstraintXDistance::getEquations()
     return std::vector<GCS::Equation*>{&equation};
 }
 
+bool ConstraintXDistance::updateReferences()
+{
+    start.refreshLock();
+    end.refreshLock();
+    distance.refreshLock();
+    if(!start.hasChanged() && !end.hasChanged() && !distance.hasChanged())
+    {
+        return false;
+    }
+    equation.set(&start.get()->x, &end.get()->x, distance.get());
+    return true;
+}
+
+
 unsigned int ConstraintXDistance::getMemSize () const
 {
     return sizeof(ConstraintXDistance) + 100/*start.memSize() + end.memSize()*/;

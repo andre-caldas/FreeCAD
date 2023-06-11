@@ -55,12 +55,15 @@ ParameterVector Constant::differentialNonOptimized() const
 
 OptimizedVector Constant::differentialOptimized(const ParameterProxyManager& manager) const
 {
-    return manager.optimizeVector(differentialNonOptimized());
+    return OptimizedVector();
 }
 
 void Constant::setProxies(ParameterProxyManager& manager) const
 {
     manager.addParameter(a);
+    manager.addParameter(k);
+    manager.setParameterEqual(a,k);
+    manager.setParameterConstant(k);
 }
 
 } // namespace NamedSketcher::GCS

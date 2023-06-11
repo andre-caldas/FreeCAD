@@ -79,6 +79,19 @@ std::vector<GCS::Equation*> ConstraintEqual::getEquations()
     return std::vector<GCS::Equation*>{&equation};
 }
 
+bool ConstraintEqual::updateReferences()
+{
+    a.refreshLock();
+    b.refreshLock();
+    if(!a.hasChanged() && !b.hasChanged())
+    {
+        return false;
+    }
+    equation.set(a.get(), b.get());
+    return true;
+}
+
+
 unsigned int ConstraintEqual::getMemSize () const
 {
     return sizeof(ConstraintEqual) + 50/*a.memSize() + b.memSize()*/;

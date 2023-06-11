@@ -43,18 +43,22 @@ public:
     Vector<Index>& operator+=(const Vector<Index>& other);
     Vector<Index>& operator*=(double val);
     Vector<Index>& plusKVec(double a, const Vector<Index>& other);
-    void prune();
     bool isZero() const;
     bool isEmpty() const;
-    double dot(Vector<Index>& other) const;
+    double dot(const Vector<Index>& other) const;
     double norm2() const;
     double norm() const;
     Vector<Index>& normalize();
     Vector<Index>& setAsLinearCombination(double a, const Vector<Index>& v, double b, const Vector<Index>& w);
 
-    friend Vector<Index> operator*(double a, const Vector<Index>& vector);
+    Vector<Index> operator*(double a) const;
 };
 
+template<typename Index>
+Vector<Index> operator*(double a, const Vector<Index>& vector) { return vector * a; }
+
 } // namespace NamedSketcher::GCS
+
+#include "Vector.inc"
 
 #endif // NAMEDSKETCHER_GCS_Vector_H

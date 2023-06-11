@@ -81,8 +81,9 @@ class AppExport PropertyTaggedListT
         , public AtomicPropertyChangeInterface<PropertyTaggedListT<T>>
 {
 public:
+    using uuid = boost::uuids::uuid;
     using ptr_handler = std::shared_ptr<T>;
-    using list_type = std::map<boost::uuids::uuid,ptr_handler>;
+    using list_type = std::map<uuid,ptr_handler>;
     using key_type = boost::uuids::uuid;
     using parent_type = PropertyTaggedList;
     using item_reference = Base::Accessor::ReferenceTo<T>;
@@ -93,32 +94,24 @@ public:
     using PropertyTaggedList::PropertyTaggedList;
     using ReferencedObject = Base::Accessor::ReferencedObject;
 
-    boost::uuids::uuid addValue(ptr_handler&& value) {
-        boost::uuids::uuid uuid = value->getTag();
+    // TODO: call those "elements", not "values".
+    uuid addValue(ptr_handler&& value) {
+        uuid uuid = value->getTag();
         ReferencedObject::registerTag(std::dynamic_pointer_cast<ReferencedObject>(value));
         _lValueList.emplace(uuid, std::move(value));
         return uuid;
     }
 
-    typename list_type::node_type removeValue(boost::uuids::uuid tag) {
-        return _lValueList.extract(tag);
-    }
+    typename list_type::node_type removeValue(uuid tag) { return _lValueList.extract(tag); }
+    T& getElementReference(uuid tag) const { return *(_lValueList.at(tag));}
 
     // Much nicer if it is an iterator!
     const list_type &getValues() const {return _lValueList;}
     std::weak_ptr<T> getElement(const ObjectIdentifier &path) const;
 
-    using list_iterator = class list_type::iterator;
-    class iterator : public list_iterator
-    {
-    public:
-        using list_iterator::list_iterator;
-        using reference = typename list_type::mapped_type&;
-        reference operator*() const {return list_iterator::operator*().second;}
-        reference operator->() const {return &list_iterator::operator*().second;}
-    };
-    iterator begin() const {return _lValueList.begin();}
-    iterator end() const {return _lValueList.end();}
+    class iterator;
+    iterator begin() const;
+    iterator end() const;
 
 protected:
     list_type _lValueList;
@@ -153,6 +146,18 @@ public:
 //    App::ObjectIdentifier createPath(boost::uuids::uuid tag) const;
 };
 
+template<typename T>
+class PropertyTaggedListT<T>::iterator
+        : public PropertyTaggedListT<T>::list_type::const_iterator
+{
+public:
+    using list_iterator = typename PropertyTaggedListT<T>::list_type::const_iterator;
+    T& operator*() const {return *(list_iterator::operator*().second);}
+    T* operator->() const {return list_iterator::operator*().second;}
+};
+
 } // namespace App
+
+#include "PropertyTaggedList.inc"
 
 #endif // APP_PROPERTY_H

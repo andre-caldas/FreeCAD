@@ -80,7 +80,7 @@ typename ReferenceTo<X>::result ReferenceTo<X>::getResult () const
         return result{std::move(lock), ptr};
     }
 
-    IExport<X>* ref_obj = dynamic_cast<IExport<X>>(*lock.last_object);
+    IExport<X>* ref_obj = dynamic_cast<IExport<X>*>(lock.last_object.get());
     if(!ref_obj)
     {
         FC_THROWM(ExceptionCannotResolve, "Last object does not reference the requested type.");
