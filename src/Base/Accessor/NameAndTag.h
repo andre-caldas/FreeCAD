@@ -49,6 +49,8 @@ public:
     operator std::string() const {return toString();}
     operator tag_type() const {return getTag();}
 
+    static bool isTag(const std::string& name_or_tag);
+
 protected:
     tag_type tag;
 };

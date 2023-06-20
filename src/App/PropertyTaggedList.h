@@ -49,72 +49,75 @@ namespace App
 class PropertyContainer;
 class ObjectIdentifier;
 
+/**
+ * @brief Base class for a list of properties.
+ * Each property is identified not with a sequential number,
+ * but using a UUID, instead.
+ */
 class AppExport PropertyTaggedList : public Property
 {
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
 public:
-    PropertyTaggedList(std::string name) : listName(std::move(name)) {}
-
-    const std::set<boost::uuids::uuid>& getTouchList() const {
-        return _touchList;
-    }
-
-    void clearTouchList() {
-        _touchList.clear();
-    }
-
-    std::string_view getListName() const {return listName;}
-
-protected:
-    PropertyTaggedList() : PropertyTaggedList("unamed property list") {}
-    std::set<boost::uuids::uuid> _touchList;
-
-private:
-    std::string listName;
+    class NotFound : public Base::Exception {};
 };
 
-/** Helper class to implement PropertyTaggedLists */
+
+// TODO: this should go to some Base/Utils/ directory.
+/**
+ * @brief Iterators for std::map return an std::pair.
+ * This returns only the mapped std::pair::second.
+ */
+template<typename T>
+class MappedTypeIterator
+        : public T::iterator
+{
+public:
+    using list_iterator = typename T::iterator;
+    using mapped_type = typename T::mapped_type;
+
+    MappedTypeIterator() = default;
+    MappedTypeIterator(list_iterator it) : list_iterator(it) {}
+    mapped_type& operator*() const {return list_iterator::operator*().second;}
+    mapped_type* operator->() const {return &(list_iterator::operator*().second);}
+};
+
+
+/**
+ * @brief Template to help on the subclassing of @class PropertyTaggedList.
+ */
 template<typename T>
 class AppExport PropertyTaggedListT
         : public PropertyTaggedList
-        , public AtomicPropertyChangeInterface<PropertyTaggedListT<T>>
+        , public Base::Accessor::IExport<T>
 {
 public:
-    using uuid = boost::uuids::uuid;
-    using ptr_handler = std::shared_ptr<T>;
-    using list_type = std::map<uuid,ptr_handler>;
     using key_type = boost::uuids::uuid;
-    using parent_type = PropertyTaggedList;
+    using ptr_handler = std::shared_ptr<T>;
+    using list_type = std::map<key_type,ptr_handler>;
+    using token_iterator = Base::Accessor::token_iterator;
+    using list_node_type = typename list_type::node_type;
     using item_reference = Base::Accessor::ReferenceTo<T>;
-    using atomic_change = typename AtomicPropertyChangeInterface<PropertyTaggedListT<T>>::AtomicPropertyChange;
+    using reference_to_type = Base::Accessor::ReferenceTo<T>;
 
-    friend atomic_change;
-
-    using PropertyTaggedList::PropertyTaggedList;
     using ReferencedObject = Base::Accessor::ReferencedObject;
 
-    // TODO: call those "elements", not "values".
-    uuid addValue(ptr_handler&& value) {
-        uuid uuid = value->getTag();
-        ReferencedObject::registerTag(std::dynamic_pointer_cast<ReferencedObject>(value));
-        _lValueList.emplace(uuid, std::move(value));
-        return uuid;
-    }
+    key_type addElement(ptr_handler&& element);
+    list_node_type removeElement(key_type tag) { return elementList.extract(tag); }
+    /**
+     * @brief Implements @class IExportShared<T> resolution.
+     * @param start
+     * @param end
+     * @return
+     */
+    std::shared_ptr<T> resolve_share(token_iterator& start, const token_iterator& end) override;
 
-    typename list_type::node_type removeValue(uuid tag) { return _lValueList.extract(tag); }
-    T& getElementReference(uuid tag) const { return *(_lValueList.at(tag));}
-
-    // Much nicer if it is an iterator!
-    const list_type &getValues() const {return _lValueList;}
-    std::weak_ptr<T> getElement(const ObjectIdentifier &path) const;
-
-    class iterator;
+    using iterator = MappedTypeIterator<list_type>;
     iterator begin() const;
     iterator end() const;
 
 protected:
-    list_type _lValueList;
+    list_type elementList;
     virtual const char* xmlTagName() const = 0;
 
 public:
@@ -134,26 +137,11 @@ public:
     /*
      * Property getters and setters.
      */
-    void setPathValue(const App::ObjectIdentifier & path, const boost::any & value) override;
-    const boost::any getPathValue(const App::ObjectIdentifier & path) const override;
-    bool getPyPathValue(const App::ObjectIdentifier &, Py::Object &) const override;
-    App::ObjectIdentifier canonicalPath(const App::ObjectIdentifier & p) const override;
-    void getPaths(std::vector<App::ObjectIdentifier> & paths) const override;
-
-//    boost::signals2::signal<void (const std::map<App::ObjectIdentifier, App::ObjectIdentifier> &)> signalGeometriesRenamed;
-//    boost::signals2::signal<void (const std::set<App::ObjectIdentifier> &)> signalGeometriesRemoved;
-
-//    App::ObjectIdentifier createPath(boost::uuids::uuid tag) const;
-};
-
-template<typename T>
-class PropertyTaggedListT<T>::iterator
-        : public PropertyTaggedListT<T>::list_type::const_iterator
-{
-public:
-    using list_iterator = typename PropertyTaggedListT<T>::list_type::const_iterator;
-    T& operator*() const {return *(list_iterator::operator*().second);}
-    T* operator->() const {return list_iterator::operator*().second;}
+    void setPathValue(const App::ObjectIdentifier& path, const boost::any& value) override;
+    const boost::any getPathValue(const App::ObjectIdentifier& path) const override;
+    bool getPyPathValue(const App::ObjectIdentifier&, Py::Object&) const override;
+    App::ObjectIdentifier canonicalPath(const App::ObjectIdentifier& p) const override;
+    void getPaths(std::vector<App::ObjectIdentifier>& paths) const override;
 };
 
 } // namespace App

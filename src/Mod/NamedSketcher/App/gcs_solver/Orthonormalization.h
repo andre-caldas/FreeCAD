@@ -57,19 +57,19 @@ public:
     ParameterVector orthogonalComponent(const ParameterVector& vector);
     ParameterVector normalizedOrthogonalComponent(const ParameterVector& vector);
 
-    int size() const {return duals.size();}
+    size_t size() const {return duals.size();}
 
     functionals_t::const_iterator begin() const {return functionals.cbegin();}
     functionals_t::const_iterator end() const {return functionals.cend();}
     functionals_t getRedundants() const;
     functionals_t getNonRedundants() const;
 
-    Functional* operator[](int j) const {return functionals.at(j);}
+    Functional* operator[](size_t j) const {return functionals.at(j);}
 
-    int getIndex(Functional* functional) const;
-    void remove(int index);
-    void moveForward(int index);
-    void moveBackward(int index);
+    size_t getIndex(Functional* functional) const;
+    void remove(size_t index);
+    void moveForward(size_t index);
+    void moveBackward(size_t index);
 
     std::vector<Functional*> reset();
 

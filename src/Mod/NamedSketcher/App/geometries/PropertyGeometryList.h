@@ -61,8 +61,8 @@ public:
     /*
      * Property copy-paste.
      */
-    Property *Copy() const override;
-    void Paste(const App::Property &from) override;
+    Property* Copy() const override;
+    void Paste(const App::Property& from) override;
 
     /*
      * Python.

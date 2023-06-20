@@ -26,6 +26,7 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/string_generator.hpp>
 
+#include <Base/Exception.h>
 #include <Base/Console.h>
 
 #include <Base/Reader.h>
@@ -34,6 +35,8 @@
 
 #include <App/ObjectIdentifier.h>
 #include <App/ExpressionParser.h>
+
+#include "PropertyTaggedList.h"
 
 // Templates cannot be in a ".cpp". So, to use a console, we need to use
 // FC_LOG_LEVEL_INIT("PropertyTaggedList", true, true)
@@ -50,10 +53,54 @@ FC_LOG_LEVEL_INIT("PropertyTaggedList", true, true)
 namespace App {
 
 template<typename T>
+typename PropertyTaggedListT<T>::key_type
+PropertyTaggedListT<T>::addElement(ptr_handler&& element)
+{
+    key_type uuid = element->getTag();
+    elementList.emplace(uuid, std::move(element));
+    return uuid;
+}
+
+template<typename T>
+std::shared_ptr<T> PropertyTaggedListT<T>::resolve_share(token_iterator& start, const token_iterator& end)
+{
+    assert(start != end);
+    if(start == end)
+    {
+        FC_THROWM(Base::RuntimeError, "Empty token list. This is a bug!");
+    }
+
+    for(auto& element: *this)
+    {
+        if(element->PointsToMe(*start))
+        {
+            ++start;
+            return element;
+        }
+    }
+
+    FC_THROWM(NotFound, "Resource (" << start->toString() << ") not found in PropertyTaggedListT.");
+}
+
+
+template<typename T>
+typename PropertyTaggedListT<T>::iterator PropertyTaggedListT<T>::begin() const
+{
+    return iterator(elementList.begin());
+}
+
+template<typename T>
+typename PropertyTaggedListT<T>::iterator PropertyTaggedListT<T>::end() const
+{
+    return iterator(elementList.end());
+}
+
+
+template<typename T>
 unsigned int PropertyTaggedListT<T>::getMemSize() const
 {
     int size = sizeof(T);
-    for (auto& item: _lValueList)
+    for (auto& item: elementList)
     {
         size += item.second->getMemSize();
     }
@@ -65,7 +112,7 @@ void PropertyTaggedListT<T>::Save(Base::Writer& writer) const
 {
     writer.Stream() << writer.ind() << "<" << xmlTagName() << ">" << std::endl;
     writer.incInd();
-    for(auto& item: _lValueList)
+    for(auto& item: elementList)
     {
         item.second->Save(writer);
     }
@@ -74,73 +121,30 @@ void PropertyTaggedListT<T>::Save(Base::Writer& writer) const
 }
 
 template<typename T>
-void PropertyTaggedListT<T>::Restore(Base::XMLReader &reader)
+void PropertyTaggedListT<T>::Restore(Base::XMLReader& reader)
 {
     reader.readElement(xmlTagName());
     while(reader.testEndElement(xmlTagName()))
     {
-        addValue(typename T::factory(reader));
+        typename T::factory factory;
+        addElement(factory.produceFromXml(reader));
     }
 }
 
 template<typename T>
-std::weak_ptr<T> PropertyTaggedListT<T>::getElement(const ObjectIdentifier &path) const
+const boost::any PropertyTaggedListT<T>::getPathValue(const ObjectIdentifier& /*path*/) const
 {
-    if(path.numSubComponents()!=2 || path.getPropertyComponent(0).getName()!=getListName())
-    {
-        FC_THROWM(Base::ValueError,"Invalid constraint path " << path.toString());
-    }
-
-    const ObjectIdentifier::Component& c = path.getPropertyComponent(1);
-
-    // Can't we simply check if name_or_tag is a tag?
-    // It would be less noisy.
-    try {
-        auto tag = boost::uuids::string_generator()(c.getName());
-        return _lValueList.at(tag);
-    } catch(std::out_of_range&) {
-        FC_WARN("TAG not found: '" << c.getName() << "'.");
-        return std::weak_ptr<T>();
-    } catch (std::runtime_error&) {
-    }
-
-    for (auto it = _lValueList.cbegin(); it != _lValueList.cend(); ++it) {
-        if ((*it)->second->onlyName() == c.getName())
-        {
-            return (*it)->second;
-        }
-    }
-    FC_WARN("Name (" << c.getName() << ") not found in path " << path.toString() << ".");
-    return std::weak_ptr<T>();
+    FC_THROWM(Base::NotImplementedError, "Not Implemented");
 }
 
 template<typename T>
-const boost::any PropertyTaggedListT<T>::getPathValue(const ObjectIdentifier &path) const
+void PropertyTaggedListT<T>::getPaths(std::vector<ObjectIdentifier>& paths) const
 {
-    auto element = getElement(path).lock();
-    return boost::any(element->getValue());
-}
-
-template<typename T>
-void PropertyTaggedListT<T>::getPaths(std::vector<ObjectIdentifier> &paths) const
-{
-    for (auto it = _lValueList.begin(); it != _lValueList.end(); ++it) {
-        paths.push_back(ObjectIdentifier(*this) << ObjectIdentifier::SimpleComponent((*it)->first));
-        if ((*it)->second->hasName())
-            paths.push_back(ObjectIdentifier(*this) << ObjectIdentifier::SimpleComponent((*it)->second->getText()));
+    for (auto it = elementList.begin(); it != elementList.end(); ++it) {
+        paths.push_back(ObjectIdentifier(*this) << ObjectIdentifier::SimpleComponent(it->first));
+        if (it->second->hasName())
+            paths.push_back(ObjectIdentifier(*this) << ObjectIdentifier::SimpleComponent(it->second->getText()));
     }
-}
-
-template<typename T>
-typename PropertyTaggedListT<T>::iterator PropertyTaggedListT<T>::begin() const
-{
-    return iterator(_lValueList.cbegin());
-}
-
-template<typename T>
-typename PropertyTaggedListT<T>::iterator PropertyTaggedListT<T>::end() const
-{
-    return iterator(_lValueList.cend());
 }
 
 } // namespace App

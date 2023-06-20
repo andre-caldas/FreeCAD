@@ -36,6 +36,8 @@
 
 #include <Mod/Part/App/TopoShape.h>
 
+#include "GeometryFactory.h"
+
 namespace NamedSketcher
 {
 

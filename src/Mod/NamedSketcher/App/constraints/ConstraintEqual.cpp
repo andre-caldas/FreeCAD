@@ -97,7 +97,7 @@ unsigned int ConstraintEqual::getMemSize () const
     return sizeof(ConstraintEqual) + 50/*a.memSize() + b.memSize()*/;
 }
 
-void ConstraintEqual::Save (Base::Writer& writer) const
+void ConstraintEqual::Save (Base::Writer& /*writer*/) const
 {
     THROW(Base::NotImplementedError);
 }

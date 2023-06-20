@@ -3989,8 +3989,15 @@ bool Document::mustExecute() const
     return false;
 }
 
-Document::export_type Document::resolve(Base::Accessor::token_iterator& start, const Base::Accessor::token_iterator& end)
+std::shared_ptr<Document::ReferencedObject> Document::resolve_share(token_iterator& /*start*/, const token_iterator& /*end*/)
 {
+    // TODO: move every referenced object to here.
+    return std::shared_ptr<ReferencedObject>();
+}
+
+Document::ReferencedObject* Document::resolve_ptr(token_iterator& start, const token_iterator& end)
+{
+    // TODO: move every referenced out of here, to resolve_share.
     assert(start != end);
     auto name = start->getText();
     auto obj = getObject(name.c_str());
@@ -3999,6 +4006,5 @@ Document::export_type Document::resolve(Base::Accessor::token_iterator& start, c
         FC_THROWM(Base::Accessor::ExceptionCannotResolve, "No '" << name << "' found when resolving name chain.");
     }
     ++start; // Consumes the token
-    // Returns a fake shared_ptr.
-    return export_type(obj, [](auto /*p*/){});
+    return obj;
 }

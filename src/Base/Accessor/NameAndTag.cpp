@@ -53,6 +53,17 @@ void Tag::setTag(const std::string& t)
     tag = boost::uuids::string_generator()(t);
 }
 
+bool Tag::isTag(const std::string& name_or_tag)
+{
+    // Can't we simply check if name_or_tag is a tag?
+    // It would be less noisy.
+    try {
+        boost::uuids::string_generator()(name_or_tag);
+        return true;
+    } catch (std::runtime_error&) {
+    }
+    return false;
+}
 
 NameAndTag::NameAndTag() {}
 

@@ -67,7 +67,7 @@ ReferenceToObject::ReferenceToObject(NameOrTag&&... obj_path)
 }
 
 template<typename X>
-typename ReferenceTo<X>::result ReferenceTo<X>::getResult () const
+typename ReferenceTo<X>::locked_resource ReferenceTo<X>::getResult() const
 {
     lock_type lock = getLock();
     if(lock.remaining_tokens_start == lock.remaining_tokens_end)
@@ -77,7 +77,7 @@ typename ReferenceTo<X>::result ReferenceTo<X>::getResult () const
         {
             FC_THROWM(ExceptionCannotResolve, "Last object is not a reference the requested type.");
         }
-        return result{std::move(lock), ptr};
+        return locked_resource{std::move(lock.last_object), ptr};
     }
 
     IExport<X>* ref_obj = dynamic_cast<IExport<X>*>(lock.last_object.get());
@@ -86,8 +86,19 @@ typename ReferenceTo<X>::result ReferenceTo<X>::getResult () const
         FC_THROWM(ExceptionCannotResolve, "Last object does not reference the requested type.");
     }
 
-    X* ref = ref_obj->resolve(lock.remaining_tokens_start, lock.remaining_tokens_end);
-    if(!ref)
+    locked_resource shared_resource;
+    std::shared_ptr<X> ref_shared = ref_obj->resolve_share(lock.remaining_tokens_start, lock.remaining_tokens_end);
+    if(ref_shared)
+    {
+        shared_resource = std::move(ref_shared);
+    }
+    else
+    {
+        X* ref = ref_obj->resolve_ptr(lock.remaining_tokens_start, lock.remaining_tokens_end);
+        shared_resource = locked_resource{std::move(lock.last_object), ref};
+    }
+
+    if(!shared_resource)
     {
         FC_THROWM(ExceptionCannotResolve, "Object does not recognize key: '" << pathString() << "'.");
     }
@@ -97,7 +108,7 @@ typename ReferenceTo<X>::result ReferenceTo<X>::getResult () const
         FC_THROWM(ExceptionCannotResolve, "Did not use all keys when resolving object. Remaining keys: '" << pathString(lock.remaining_tokens_start, lock.remaining_tokens_end) << "'.");
     }
 
-    return result{std::move(lock), ref};
+    return shared_resource;
 }
 
 template<typename X>
@@ -106,12 +117,12 @@ ReferenceTo<X>::unserialize(Base::XMLReader& reader)
 {
     reader.readElement("ReferenceTo");
     reader.readElement("RootTag");
-    auto locked_root = ReferencedObject::getWeakPtr(reader.getCharacters()).lock();
-    if(!locked_root)
+    auto root = ReferencedObject::getWeakPtr(reader.getCharacters()).lock();
+    if(!root)
     {
         FC_THROWM(ReferenceError, "Root element does not exist when unserializing RferenceTo: '" << reader.getCharacters() << "'");
     }
-    ReferenceTo<X> result(locked_root);
+    ReferenceTo<X> result{root};
     while(!reader.testEndElement("ReferenceTo"))
     {
         reader.readElement("NameOrTag");
@@ -135,25 +146,24 @@ ReferenceTo<X> ReferenceTo<T>::goFurther(NameOrTag&& ...furtherPath) const
 template<typename X>
 bool ReferenceTo<X>::refreshLock()
 {
-    old_reference = lockedResult.reference;
+    old_reference = lockedResult.get();
     lockedResult = getResult();
     return isLocked();
 }
 
 /**
- * @brief Releases the internal @class result.
+ * @brief Releases the internal @class locked_resource.
  */
 template<typename X>
 void ReferenceTo<X>::releaseLock()
 {
-    lockedResult.reference = nullptr;
-    lockedResult.lock.last_object.reset();
+    lockedResult.reset();
 }
 
 template<typename X>
 bool ReferenceTo<X>::isLocked() const
 {
-    if(lockedResult.lock.last_object)
+    if(lockedResult)
     {
         return true;
     }
@@ -165,11 +175,9 @@ X* ReferenceTo<X>::get() const
 {
     if(!isLocked())
     {
-        assert(lockedResult.reference == nullptr);
         FC_THROWM(RuntimeError, "Trying to get a pointer to an object that is not locked.");
     }
-//    lockedResult.lock.last_object->resolve the rest of the lock;
-    FC_THROWM(NotImplementedError, "Not implemented!");
+    lockedResult.get();
 }
 
 } // namespace Base::Accessor

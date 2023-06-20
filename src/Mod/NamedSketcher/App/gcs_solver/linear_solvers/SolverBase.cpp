@@ -75,10 +75,10 @@ OptimizedVector SolverBase::solve()
     }
 
     vector_t solution = _solve(eigen_target);
-    assert(solution.rows() == manager.outputSize());
+    assert((size_t)solution.rows() == manager.outputSize());
 
     OptimizedVector result;
-    for(size_t index = 0; index < solution.rows(); ++index)
+    for(size_t index = 0; index < manager.outputSize(); ++index)
     {
         auto group = manager.getGroup(index);
         result.set(group->getValuePtr(), group->getValue());

@@ -33,16 +33,34 @@ namespace Base::Accessor
 
 template<typename T>
 typename IExport<T>::export_type
-IExport<T>::resolve(token_iterator& /*start*/, const token_iterator& /*end*/)
+IExport<T>::resolve(std::shared_ptr<ReferencedObject>& parent_lock, token_iterator& start, const token_iterator& end)
+{
+    auto share = resolve_share(start, end);
+    if(share)
+    {
+        return share;
+    }
+
+    auto ptr = resolve_ptr(start, end);
+    if(ptr)
+    {
+        return export_share_type{parent_lock, ptr};
+    }
+    return export_share_type();
+}
+
+template<typename T>
+typename IExport<T>::export_ptr_type
+IExport<T>::resolve_ptr(token_iterator& /*start*/, const token_iterator& /*end*/)
 {
     return nullptr;
 }
 
 template<typename T>
-typename IExportShared<T>::export_type
-IExportShared<T>::resolve(token_iterator& /*start*/, const token_iterator& /*end*/)
+typename IExport<T>::export_share_type
+IExport<T>::resolve_share(token_iterator& /*start*/, const token_iterator& /*end*/)
 {
-    THROW(ExceptionCannotResolve);
+    return export_share_type();
 }
 
 } //namespace Base::Accessor

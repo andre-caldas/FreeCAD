@@ -177,7 +177,9 @@ public:
 
     void clearDocument();
 
-    export_type resolve(Base::Accessor::token_iterator& start, const Base::Accessor::token_iterator& end) override;
+    std::shared_ptr<ReferencedObject> resolve_share(token_iterator& start, const token_iterator& end) override;
+    // TODO: Move everything to resolve_share.
+    ReferencedObject* resolve_ptr(token_iterator& start, const token_iterator& end) override;
 
     /** @name File handling of the document */
     //@{

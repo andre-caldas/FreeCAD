@@ -35,7 +35,7 @@ Property* PropertyGeometryList::Copy() const
     FC_THROWM(Base::NotImplementedError, "Are you sure you want to copy this?");
 }
 
-void PropertyGeometryList::Paste(const Property &from)
+void PropertyGeometryList::Paste(const Property& /*from*/)
 {
     FC_THROWM(Base::NotImplementedError, "Are you sure you want to paste this?");
 }

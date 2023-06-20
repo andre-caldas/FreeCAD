@@ -50,11 +50,11 @@ public:
 
     dual_t& operator[](OutType functional) {return duals.at(functional);}
     const dual_t& operator[](OutType functional) const {return duals.at(functional);}
-    dual_t& operator[](int index) {return duals.at(dualKeys.at(index));}
-    const dual_t& operator[](int index) const {return duals.at(dualKeys.at(index));}
-    const OutType& getKey(int index) {return dualKeys.at(index);}
+    dual_t& operator[](size_t index) {return duals.at(dualKeys.at(index));}
+    const dual_t& operator[](size_t index) const {return duals.at(dualKeys.at(index));}
+    const OutType& getKey(size_t index) {return dualKeys.at(index);}
 
-    int size() const {return dualKeys.size();}
+    size_t size() const {return dualKeys.size();}
     Vector<OutType> apply(const dual_t& vector) const;
 
     /**

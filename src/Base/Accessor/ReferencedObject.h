@@ -50,7 +50,7 @@ public:
      * @brief Globally registers a Tag.
      * This is specially useful when serializing (Save)
      * and unserializing (Restore).
-     * @param weak_ptr - a weak_ptr to the \class ReferencedObject.
+     * @param weak_ptr - a weak_ptr to the @class ReferencedObject.
      */
     static void registerTag(const std::shared_ptr<ReferencedObject>& shared_ptr);
 
@@ -67,7 +67,7 @@ public:
     /**
      * @brief When serializing (Save), tags are saved as strings.
      * When unserializing (Restore), the string can be used
-     * to get a pointer to \class ReferencedObject.
+     * to get a pointer to @class ReferencedObject.
      * @param tag - string representation of the tag.
      * @return A weak_ptr to the referenced object.
      */
@@ -110,25 +110,22 @@ template<typename T>
 class BaseExport IExport
 {
 public:
-    using export_type = T*;
-
-    // TODO: Use range in C++20.
-    virtual export_type resolve(token_iterator& start, const token_iterator& end);
-};
-
-template<typename T>
-class BaseExport IExportShared
-{
-public:
     using export_type = std::shared_ptr<T>;
+    using export_share_type = export_type;
+    using export_ptr_type = T*;
+    using token_iterator = Base::Accessor::token_iterator;
 
     // TODO: Use range in C++20.
-    virtual export_type resolve(token_iterator& start, const token_iterator& end);
+    export_type resolve(std::shared_ptr<ReferencedObject>& parent_lock, token_iterator& start, const token_iterator& end);
+
+protected:
+    virtual T* resolve_ptr(token_iterator& start, const token_iterator& end);
+    virtual export_type resolve_share(token_iterator& start, const token_iterator& end);
 };
 
 class BaseExport Chainable
-        : public ReferencedObject
-        , public IExportShared<ReferencedObject>
+    : public ReferencedObject
+    , public IExport<ReferencedObject>
 {
 };
 

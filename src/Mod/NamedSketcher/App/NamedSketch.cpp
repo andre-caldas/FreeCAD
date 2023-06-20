@@ -50,8 +50,6 @@ namespace NamedSketcher
 {
 
 NamedSketch::NamedSketch()
-    : geometryList("geometries")
-    , constraintList("constraints")
 {
     ADD_PROPERTY_TYPE_NO_DEFAULT(geometryList, "NamedSketch", (App::PropertyType)(App::Prop_None), "List of geometries used in this sketch");
     ADD_PROPERTY_TYPE_NO_DEFAULT(constraintList, "NamedSketch", (App::PropertyType)(App::Prop_None), "List of constraints used in this sketch");
@@ -117,13 +115,13 @@ App::DocumentObjectExecReturn *NamedSketch::execute()
 PropertyGeometryList::item_reference
 NamedSketch::addGeometry(std::unique_ptr<Part::Geometry> geo)
 {
-    auto uuid = geometryList.addValue(GeometryFactory(std::move(geo)));
+    auto uuid = geometryList.addElement(GeometryFactory(std::move(geo)));
     return PropertyGeometryList::item_reference(this, "geometries", uuid);
 }
 
 void NamedSketch::delGeometry(boost::uuids::uuid tag)
 {
-    geometryList.removeValue(tag);
+    geometryList.removeElement(tag);
 }
 
 PropertyConstraintList::item_reference
@@ -134,7 +132,7 @@ NamedSketch::addConstraint(std::unique_ptr<ConstraintBase> constraint)
     {
         gcs.addEquation(equation);
     }
-    auto uuid = constraintList.addValue(std::move(constraint));
+    auto uuid = constraintList.addElement(std::move(constraint));
     return PropertyConstraintList::item_reference(this, "constraints", uuid);
 }
 
@@ -146,12 +144,31 @@ void NamedSketch::delConstraint(boost::uuids::uuid tag)
     {
         gcs.removeEquation(equation);
     }
-    constraintList.removeValue(tag);
+    constraintList.removeElement(tag);
 }
 
 void NamedSketch::solve() {
     gcs.solve();
 }
+
+Base::Accessor::ReferencedObject
+NamedSketch::resolve(Base::Accessor::token_iterator& start, const Base::Accessor::token_iterator& end)
+{
+    if(*start == "geometries")
+    {
+        ++start;
+        Not shared ptr!!!;
+        return geometryList;
+    }
+    if(*start == "constraints")
+    {
+        ++start;
+        Not shared ptr!!!;
+        return geometryList;
+    }
+    return std::shared_ptr<ReferencedObject>();
+}
+
 
 Part::TopoShape NamedSketch::toShape() const
 {

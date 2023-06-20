@@ -77,6 +77,10 @@ std::weak_ptr<ReferencedObject>
 ReferencedObject::getWeakPtr(Tag::tag_type tag)
 {
     std::lock_guard lock(mutex);
+    if(map.count(tag) == 0)
+    {
+        return std::weak_ptr<ReferencedObject>();
+    }
     return map.at(tag);
 }
 

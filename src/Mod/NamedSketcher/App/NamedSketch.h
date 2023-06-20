@@ -31,6 +31,7 @@
 #include <memory>
 #include <boost/uuid/uuid.hpp>
 
+#include <Base/Accessor/ReferencedObject.h>
 #include <Mod/Part/App/Part2DObject.h>
 
 #include "gcs_solver/System.h"
@@ -45,7 +46,7 @@ namespace NamedSketcher
 {
 
 class NamedSketcherExport NamedSketch
-        : public Part::Part2DObject
+    : public Part::Part2DObject
 {
     PROPERTY_HEADER_WITH_OVERRIDE(NamedSketcher::NamedSketch);
 
@@ -97,6 +98,8 @@ public:
     void delConstraint(boost::uuids::uuid tag);
 
     void solve();
+
+    ReferencedObject* resolve_ptr(Base::Accessor::token_iterator& start, const Base::Accessor::token_iterator& end) override;
 
     void Save(Base::Writer &/*writer*/) const override;
     void Restore(Base::XMLReader &/*reader*/) override;

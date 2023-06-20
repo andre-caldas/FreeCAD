@@ -53,7 +53,7 @@ ConstraintCoincident& ConstraintCoincident::addPoint(ref&& reference)
     return *this;
 }
 
-ConstraintCoincident& ConstraintCoincident::removePoint(boost::uuids::uuid tag)
+ConstraintCoincident& ConstraintCoincident::removePoint(boost::uuids::uuid /*tag*/)
 {
     THROW(Base::NotImplementedError);
     return *this;
@@ -69,7 +69,7 @@ std::vector<GCS::Equation*> ConstraintCoincident::getEquations()
     auto& first = references.at(0);
     std::vector<GCS::Equation*> result;
     assert(2*references.size() == equations.size()+2);
-    for(int i=0; i < references.size(); ++i)
+    for(size_t i=0; i < references.size(); ++i)
     {
         auto& point_ref = references.at(i);
         point_ref.refreshLock();
@@ -109,7 +109,7 @@ bool ConstraintCoincident::updateReferences()
         return false;
     }
     auto& first = references.at(0);
-    for(int i=1; i < references.size(); ++i)
+    for(size_t i=1; i < references.size(); ++i)
     {
         auto& point_ref = references.at(i);
         equations.at(2*i - 2)->set(&first.get()->point.x, &point_ref.get()->point.x);

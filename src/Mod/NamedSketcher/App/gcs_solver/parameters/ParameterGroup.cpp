@@ -123,6 +123,7 @@ ParameterGroup& ParameterGroup::operator<<(ParameterGroup&& other)
         append(p);
     }
     other.parameters.clear();
+    return *this;
 }
 
 } // namespace NamedSketcher::GCS

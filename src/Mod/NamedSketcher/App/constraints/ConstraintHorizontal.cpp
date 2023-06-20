@@ -88,6 +88,7 @@ bool ConstraintHorizontal::updateReferences()
         return false;
     }
     equation.set(&start.get()->y, &end.get()->y);
+    return true;
 }
 
 

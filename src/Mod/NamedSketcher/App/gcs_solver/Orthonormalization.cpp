@@ -88,7 +88,7 @@ ParameterVector Orthonormalization::normalizedOrthogonalComponent(const Paramete
     return result;
 }
 
-int Orthonormalization::getIndex(Functional* functional) const
+size_t Orthonormalization::getIndex(Functional* functional) const
 {
     auto pos = std::find(functionals.begin(), functionals.end(), functional);
     if(pos == functionals.end())
@@ -98,7 +98,7 @@ int Orthonormalization::getIndex(Functional* functional) const
     return std::distance(functionals.begin(), pos);
 }
 
-void Orthonormalization::remove(int index)
+void Orthonormalization::remove(size_t index)
 {
     if(index >= functionals.size())
     {
@@ -106,7 +106,7 @@ void Orthonormalization::remove(int index)
         return;
     }
 
-    for(int j=index; j < functionals.size()-1; ++j)
+    for(size_t j=index; j < functionals.size()-1; ++j)
     {
         moveBackward(j);
     }
@@ -118,7 +118,7 @@ void Orthonormalization::remove(int index)
     assert(functionals.size() == dualsQ.size());
 }
 
-void Orthonormalization::moveForward(int index)
+void Orthonormalization::moveForward(size_t index)
 {
     if(index <= 0)
     {
@@ -128,7 +128,7 @@ void Orthonormalization::moveForward(int index)
     moveBackward(index-1);
 }
 
-void Orthonormalization::moveBackward(const int index)
+void Orthonormalization::moveBackward(const size_t index)
 {
     if(index <= 0 || index >= functionals.size())
     {

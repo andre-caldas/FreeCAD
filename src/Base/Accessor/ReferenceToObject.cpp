@@ -66,7 +66,7 @@ ReferenceToObject::lock_type ReferenceToObject::getLock() const
     lock.remaining_tokens_end = objectPath.cend();
     while(lock.remaining_tokens_start != lock.remaining_tokens_end)
     {
-        auto ref_obj = dynamic_cast<Chainable*>(lock.last_object.get());
+        auto ref_obj = dynamic_cast<IExport<ReferencedObject>*>(lock.last_object.get());
         if(!ref_obj)
         {
             // Current object is not chainable.
@@ -74,7 +74,7 @@ ReferenceToObject::lock_type ReferenceToObject::getLock() const
         }
 
         auto previous_it = lock.remaining_tokens_start;
-        ref_obj->resolve(lock.remaining_tokens_start, objectPath.cend());
+        lock.last_object = ref_obj->resolve(lock.last_object, lock.remaining_tokens_start, objectPath.cend());
 
         if(lock.remaining_tokens_start == previous_it)
         {

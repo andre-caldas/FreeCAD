@@ -44,7 +44,7 @@ class ElementFactory
     using map_type = std::map<std::string, std::function<pointer_type(Base::XMLReader&)>>;
 
 public:
-    pointer_type xmlFactory(Base::XMLReader& reader);
+    pointer_type produceFromXml(Base::XMLReader& reader);
 
 protected:
     virtual void getAttributes(Base::XMLReader& reader) = 0;
@@ -56,7 +56,7 @@ private:
 
 template<typename BaseClass>
 typename ElementFactory<BaseClass>::pointer_type
-ElementFactory<BaseClass>::xmlFactory(Base::XMLReader& reader)
+ElementFactory<BaseClass>::produceFromXml(Base::XMLReader& reader)
 {
     if(!reader.testElementConsume(BaseClass::xmlTagNameStatic()))
     {

@@ -47,11 +47,11 @@ namespace Base::Accessor
  * @brief A reference to an object is more precisely,
  * a reference to a member of some object.
  * It is composed of:
- * 1. A \class Tag that identifies a root shared \class ReferencedObject.
- * 2. A sequence of \class NameAndTag that identifies the path
+ * 1. A @class Tag that identifies a root shared @class ReferencedObject.
+ * 2. A sequence of @class NameAndTag that identifies the path
  * to the referenced entity.
  *
- * Instances of the \class ReferenceToObject are not aware of the type
+ * Instances of the @class ReferenceToObject are not aware of the type
  * of variable they point to.
  *
  * @attention This is a base class to @class ReferenceTo<T>.
@@ -163,12 +163,12 @@ protected:
 };
 
 /**
- * @brief Instances of the \class ReferenceToObject are not aware of the type
+ * @brief Instances of the @class ReferenceToObject are not aware of the type
  * of variable they point to. Through the means of the templated
- * \class ReferenceTo<variable_type>, objects can "export" the correct
- * \class ReferenceTo<variable_type> (\see \class IExport<>).
+ * @class ReferenceTo<variable_type>, objects can "export" the correct
+ * @class ReferenceTo<variable_type> (\see @class IExport<>).
  * Also, classes and methods that expect a specific type of reference
- * shall declare the correct \class ReferenceTo<variable_type>.
+ * shall declare the correct @class ReferenceTo<variable_type>.
  *
  * @example ReferenceTo<double> ref(root, "start point", "x");
  */
@@ -179,8 +179,8 @@ public:
     using ReferenceToObject::ReferenceToObject;
 
     /**
-     * @brief Locks the last object and gets a raw pointer to \class T.
-     * We assume lock.last_object owns the referenced \class T.
+     * @brief Locks the last object and gets a raw pointer to @class T.
+     * We assume the managed object owns the referenced @class T.
      *
      * The base class @class ReferenceToObject is not aware of the
      * type of object being referenced. It resolves the token chain
@@ -191,21 +191,20 @@ public:
      * this last found lock.last_object is of type:
      * * @class T, when there are no remaining tokens.
      * * @class IExport<T>, where there are tokens to be resolved.
+     *
+     * After resolving a pointer to T, we store the lock.last_object
+     * and the T pointer into a shared_ptr<T>.
      */
-    struct result
-    {
-        lock_type lock;
-        T* reference;
-    };
+    using locked_resource = std::shared_ptr<T>;
 
     /**
      * @brief Fully resolves the chain up to the last token.
-     * @return A @class result holding a lock and a pointer.
+     * @return A @class locked_resource holding a lock and a pointer.
      */
-    result getResult() const;
+    locked_resource getResult() const;
 
     /**
-     * @brief We keep an internal @class result.
+     * @brief We keep an internal @class locked_resource.
      * This function resoleves the token path (again) and
      * stores the result internally (lockedResult).
      * @return True if lookup is successful.
@@ -213,7 +212,7 @@ public:
     bool refreshLock();
 
     /**
-     * @brief Releases the internal @class result.
+     * @brief Releases the internal @class locked_resource.
      */
     void releaseLock();
 
@@ -221,12 +220,12 @@ public:
 
     /**
      * @brief Gets a pointer to the locked resource.
-     * It throws an exception if the internal @class result is not locked.
+     * It throws an exception if the internal @class locked_resource is not locked.
      * @return A pointer to the referenced resource.
      */
     T* get() const;
 
-    bool hasChanged() const {return (old_reference != lockedResult.reference);}
+    bool hasChanged() const {return (old_reference != lockedResult.get());}
     T* getOldReference() const {return old_reference;}
 
     static ReferenceTo<T> unserialize(Base::XMLReader& reader);
@@ -238,7 +237,7 @@ public:
     ReferenceTo<X> goFurther(NameOrTag&& ...furtherPath) const;
 
 private:
-    result lockedResult;
+    locked_resource lockedResult;
     /**
      * @brief The previous value of lockedResult.reference.
      * @attention It might be an invalid pointer!
