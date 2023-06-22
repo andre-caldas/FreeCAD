@@ -38,7 +38,7 @@ namespace NamedSketcher
 
 class GeometryBase;
 
-std::unique_ptr<GeometryBase> GeometryFactory(std::unique_ptr<Part::Geometry> geo);
+std::unique_ptr<GeometryBase> geometryFactory(std::unique_ptr<Part::Geometry>&& geo);
 
 class GeometryFactory : public Base::ElementFactory<GeometryBase>
 {

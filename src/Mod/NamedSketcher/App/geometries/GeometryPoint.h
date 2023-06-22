@@ -61,7 +61,7 @@ public:
     // Base::Persistence
     unsigned int getMemSize () const override;
     std::string_view xmlTagType(void) const override {return xmlTagTypeStatic();}
-    static std::string_view xmlTagTypeStatic(void) {return "Point";}
+    static constexpr const char* xmlTagTypeStatic(void) {return "Point";}
 
 protected:
     GeometryPoint();

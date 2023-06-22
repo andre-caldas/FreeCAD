@@ -69,6 +69,7 @@ SOURCE_GROUP("Python" FILES ${Python_SRCS})
 
 SET(Geometries_SRCS
     geometries/GeometryBase.h
+    geometries/GeometryBase.inc
     geometries/GeometryBase.cpp
     geometries/GeometryFactory.h
     geometries/GeometryFactory.cpp

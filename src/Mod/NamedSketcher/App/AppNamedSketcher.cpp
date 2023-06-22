@@ -23,10 +23,6 @@
 #include <Base/Console.h>
 #include <Base/Interpreter.h>
 
-//#include "Constraint.h"
-//#include "ConstraintPy.h"
-//#include "Geometry.h"
-//#include "GeometryPy.h"
 #include "NamedSketch.h"
 #include "NamedSketchPy.h"
 

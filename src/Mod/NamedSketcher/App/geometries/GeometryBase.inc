@@ -21,57 +21,43 @@
  *                                                                          *
  ***************************************************************************/
 
-#include <list>
-
-#include <Mod/Part/App/Geometry.h>
-
-#include "GeometryBase.h"
-#include "GeometryPoint.h"
-#include "GeometryLineSegment.h"
+#include <Base/Exception.h>
+#include <Base/Reader.h>
+#include <Base/Writer.h>
 
 #include "GeometryFactory.h"
+#include "GeometryBase.h"
 
 namespace NamedSketcher {
 
-std::unique_ptr<GeometryBase> geometryFactory(std::unique_ptr<Part::Geometry>&& geo)
+template<typename MySelf, typename GeoClass>
+GeometryBaseT<MySelf, GeoClass>::GeometryBaseT()
 {
-    if(geo->getTypeId() == Part::GeomPoint::getClassTypeId()) {
-        auto g = std::unique_ptr<Part::GeomPoint>(static_cast<Part::GeomPoint*>(geo.release()));
-        return std::make_unique<GeometryPoint>(std::move(g));
-    }
-    if(geo->getTypeId() == Part::GeomLineSegment::getClassTypeId()) {
-        auto g = std::unique_ptr<Part::GeomLineSegment>(static_cast<Part::GeomLineSegment*>(geo.release()));
-        return std::make_unique<GeometryLineSegment>(std::move(g));
-    }
-
-    FC_THROWM(Base::NotImplementedError, "Type '" << geo->getTypeId().getName() << "' not supported by NamedSketcher, yet!");
+    // FreeCAD objects are not RAII. :-(
+    FC_THROWM(Base::RuntimeError, "NamedSketcher::GeometryBaseT should not be constructed without arguments. This is a bug!");
 }
 
-void GeometryFactory::getAttributes(Base::XMLReader& reader)
+template<typename MySelf, typename GeoClass>
+GeometryBaseT<MySelf, GeoClass>::GeometryBaseT(std::unique_ptr<GeoClass> geo)
+    : geometry(std::move(geo))
 {
-    isConstruction =  reader.getAttributeAsBoolean("construction", false);
-    isBlocked = reader.getAttributeAsBoolean("blocked", false);
 }
 
-void GeometryFactory::setAttributes(GeometryBase* p)
+template<typename MySelf, typename GeoClass>
+void GeometryBaseT<MySelf, GeoClass>::Save(Base::Writer& writer) const
 {
-    p->isConstruction = isConstruction;
-    p->isBlocked = isBlocked;
+    SaveHead(writer);
+    geometry->Save(writer);
+    SaveTail(writer);
+}
+
+template<typename MySelf, typename GeoClass>
+std::unique_ptr<GeometryBase>
+GeometryBaseT<MySelf, GeoClass>::staticRestore(Base::XMLReader& reader)
+{
+    auto geo = std::make_unique<GeoClass>();
+    geo->Restore(reader);
+    return std::make_unique<MySelf>(std::move(geo));
 }
 
 } // namespace NamedSketcher
-
-using namespace NamedSketcher;
-template<>
-GeometryFactory::map_type Base::ElementFactory<GeometryBase>::factoryMap = {
-    {
-        GeometryPoint::xmlTagTypeStatic(),
-//        "Point",
-        [](Base::XMLReader& reader){return GeometryPoint::staticRestore(reader);}
-    }
-    ,{
-        GeometryLineSegment::xmlTagTypeStatic(),
-//        "LineSegment",
-        [](Base::XMLReader& reader){return GeometryLineSegment::staticRestore(reader);}
-    }
-};

@@ -267,7 +267,7 @@ void Feature::clearShapeCache() {
 
 static TopoShape _getTopoShape(const App::DocumentObject *obj, const char *subname,
         bool needSubElement, Base::Matrix4D *pmat, App::DocumentObject **powner,
-        bool resolveLink, bool noElementMap, std::vector<App::DocumentObject*> &linkStack)
+        bool resolveLink, bool /*noElementMap*/, std::vector<App::DocumentObject*> &linkStack)
 
 {
     TopoShape shape;

@@ -63,7 +63,7 @@ ElementFactory<BaseClass>::produceFromXml(Base::XMLReader& reader)
         FC_THROWM(Base::RuntimeError, "Wrong tag name '" << reader.localName() << "'. Expected: '" << BaseClass::xmlTagNameStatic() << "'.");
     }
 
-    std::string_view type = reader.getAttribute("type");
+    std::string type (reader.getAttribute("type"));
     getAttributes(reader);
 
     // TODO: C++20 use "contains".

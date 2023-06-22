@@ -26,6 +26,7 @@
 
 #include <Base/Exception.h>
 #include <Base/Persistence.h>
+#include <Base/Accessor/ReferencedObject.h>
 #include <boost/any.hpp>
 #include <boost/signals2.hpp>
 #include <bitset>
@@ -51,7 +52,9 @@ class ObjectIdentifier;
  * possible properties. It is also possible to define user properties
  * and use them in the framework...
  */
-class AppExport Property : public Base::Persistence
+class AppExport Property
+    : public Base::Persistence
+    , public Base::Accessor::ReferencedObject
 {
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
 

@@ -27,6 +27,7 @@
 #include <boost/uuid/string_generator.hpp>
 
 #include <Base/Exception.h>
+#include <Base/Accessor/Exception.h>
 #include <Base/Console.h>
 
 #include <Base/Reader.h>
@@ -62,6 +63,20 @@ PropertyTaggedListT<T>::addElement(ptr_handler&& element)
 }
 
 template<typename T>
+typename PropertyTaggedListT<T>::ptr_handler
+PropertyTaggedListT<T>::getElement(key_type tag)
+{
+    try
+    {
+        return elementList.at(tag);
+    }
+    catch(std::out_of_range& e)
+    {
+        FC_THROWM(Base::ReferenceError, "Object (" << tag << ") not a list element.");
+    }
+}
+
+template<typename T>
 std::shared_ptr<T> PropertyTaggedListT<T>::resolve_share(token_iterator& start, const token_iterator& end)
 {
     assert(start != end);
@@ -72,14 +87,14 @@ std::shared_ptr<T> PropertyTaggedListT<T>::resolve_share(token_iterator& start, 
 
     for(auto& element: *this)
     {
-        if(element->PointsToMe(*start))
+        if(element->pointsToMe(*start))
         {
             ++start;
             return element;
         }
     }
 
-    FC_THROWM(NotFound, "Resource (" << start->toString() << ") not found in PropertyTaggedListT.");
+    FC_THROWM(Base::Accessor::ExceptionCannotResolve, "Resource (" << start->toString() << ") not found in PropertyTaggedListT.");
 }
 
 
@@ -131,6 +146,20 @@ void PropertyTaggedListT<T>::Restore(Base::XMLReader& reader)
     }
 }
 
+
+template<typename T>
+PyObject* PropertyTaggedListT<T>::getPyObject()
+{
+    FC_THROWM(Base::NotImplementedError, "Not Implemented");
+}
+
+template<typename T>
+void PropertyTaggedListT<T>::setPyObject(PyObject* /*value*/)
+{
+    FC_THROWM(Base::NotImplementedError, "Not Implemented");
+}
+
+
 template<typename T>
 const boost::any PropertyTaggedListT<T>::getPathValue(const ObjectIdentifier& /*path*/) const
 {
@@ -138,12 +167,32 @@ const boost::any PropertyTaggedListT<T>::getPathValue(const ObjectIdentifier& /*
 }
 
 template<typename T>
+void PropertyTaggedListT<T>::setPathValue(const App::ObjectIdentifier& /*path*/, const boost::any& /*value*/)
+{
+    FC_THROWM(Base::NotImplementedError, "Not Implemented");
+}
+
+template<typename T>
+bool PropertyTaggedListT<T>::getPyPathValue(const App::ObjectIdentifier&, Py::Object&) const
+{
+    FC_THROWM(Base::NotImplementedError, "Not Implemented");
+}
+
+template<typename T>
+App::ObjectIdentifier PropertyTaggedListT<T>::canonicalPath(const App::ObjectIdentifier& /*p*/) const
+{
+    FC_THROWM(Base::NotImplementedError, "Not Implemented");
+}
+
+
+
+template<typename T>
 void PropertyTaggedListT<T>::getPaths(std::vector<ObjectIdentifier>& paths) const
 {
-    for (auto it = elementList.begin(); it != elementList.end(); ++it) {
-        paths.push_back(ObjectIdentifier(*this) << ObjectIdentifier::SimpleComponent(it->first));
-        if (it->second->hasName())
-            paths.push_back(ObjectIdentifier(*this) << ObjectIdentifier::SimpleComponent(it->second->getText()));
+    for (auto& element: elementList) {
+        paths.push_back(ObjectIdentifier(*this) << ObjectIdentifier::SimpleComponent(element.second->Tag::toString()));
+        if (element.second->hasName())
+            paths.push_back(ObjectIdentifier(*this) << ObjectIdentifier::SimpleComponent(element.second->getText()));
     }
 }
 

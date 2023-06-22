@@ -86,18 +86,7 @@ typename ReferenceTo<X>::locked_resource ReferenceTo<X>::getResult() const
         FC_THROWM(ExceptionCannotResolve, "Last object does not reference the requested type.");
     }
 
-    locked_resource shared_resource;
-    std::shared_ptr<X> ref_shared = ref_obj->resolve_share(lock.remaining_tokens_start, lock.remaining_tokens_end);
-    if(ref_shared)
-    {
-        shared_resource = std::move(ref_shared);
-    }
-    else
-    {
-        X* ref = ref_obj->resolve_ptr(lock.remaining_tokens_start, lock.remaining_tokens_end);
-        shared_resource = locked_resource{std::move(lock.last_object), ref};
-    }
-
+    locked_resource shared_resource = ref_obj->resolve(lock.last_object, lock.remaining_tokens_start, lock.remaining_tokens_end);
     if(!shared_resource)
     {
         FC_THROWM(ExceptionCannotResolve, "Object does not recognize key: '" << pathString() << "'.");
@@ -177,7 +166,7 @@ X* ReferenceTo<X>::get() const
     {
         FC_THROWM(RuntimeError, "Trying to get a pointer to an object that is not locked.");
     }
-    lockedResult.get();
+    return lockedResult.get();
 }
 
 } // namespace Base::Accessor

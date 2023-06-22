@@ -74,7 +74,7 @@ ReferenceToObject::lock_type ReferenceToObject::getLock() const
         }
 
         auto previous_it = lock.remaining_tokens_start;
-        lock.last_object = ref_obj->resolve(lock.last_object, lock.remaining_tokens_start, objectPath.cend());
+        lock.last_object = ref_obj->resolve(lock.last_object, lock.remaining_tokens_start, objectPath.end());
 
         if(lock.remaining_tokens_start == previous_it)
         {

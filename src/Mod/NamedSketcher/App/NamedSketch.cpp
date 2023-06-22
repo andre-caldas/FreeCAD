@@ -35,8 +35,6 @@
 #include <Mod/Part/App/TopoShape.h>
 #include <Mod/Part/App/Geometry.h>
 
-#include "geometries/GeometryFactory.h"
-
 #include "geometries/GeometryBase.h"
 #include "constraints/ConstraintBase.h"
 
@@ -97,7 +95,7 @@ App::DocumentObjectExecReturn *NamedSketch::execute()
     bool reference_changed = false;
     for(auto& constraint: constraintList)
     {
-        reference_changed |= constraint.updateReferences();
+        reference_changed |= constraint->updateReferences();
     }
     if(reference_changed)
     {
@@ -115,7 +113,7 @@ App::DocumentObjectExecReturn *NamedSketch::execute()
 PropertyGeometryList::item_reference
 NamedSketch::addGeometry(std::unique_ptr<Part::Geometry> geo)
 {
-    auto uuid = geometryList.addElement(GeometryFactory(std::move(geo)));
+    auto uuid = geometryList.addElement(geometryFactory(std::move(geo)));
     return PropertyGeometryList::item_reference(this, "geometries", uuid);
 }
 
@@ -138,8 +136,8 @@ NamedSketch::addConstraint(std::unique_ptr<ConstraintBase> constraint)
 
 void NamedSketch::delConstraint(boost::uuids::uuid tag)
 {
-    auto& constraint = constraintList.getElementReference(tag);
-    auto equations = constraint.getEquations();
+    auto constraint = constraintList.getElement(tag);
+    auto equations = constraint->getEquations();
     for(auto equation: equations)
     {
         gcs.removeEquation(equation);
@@ -151,22 +149,21 @@ void NamedSketch::solve() {
     gcs.solve();
 }
 
-Base::Accessor::ReferencedObject
-NamedSketch::resolve(Base::Accessor::token_iterator& start, const Base::Accessor::token_iterator& end)
+Base::Accessor::ReferencedObject*
+NamedSketch::resolve_ptr(Base::Accessor::token_iterator& start, const Base::Accessor::token_iterator& end)
 {
+    assert(start != end);
     if(*start == "geometries")
     {
         ++start;
-        Not shared ptr!!!;
-        return geometryList;
+        return &geometryList;
     }
     if(*start == "constraints")
     {
         ++start;
-        Not shared ptr!!!;
-        return geometryList;
+        return &geometryList;
     }
-    return std::shared_ptr<ReferencedObject>();
+    return nullptr;
 }
 
 
@@ -175,14 +172,24 @@ Part::TopoShape NamedSketch::toShape() const
     Part::TopoShape result;
     for (auto& geometry: geometryList)
     {
-        if(!geometry.isConstruction)
+        if(!geometry->isConstruction)
         {
-            TopoDS_Shape sh = geometry.toShape();
+            TopoDS_Shape sh = geometry->toShape();
             // TODO: too many copying here. :-(
             result.setShape(result.fuse(sh));
         }
     }
     return result;
+}
+
+void NamedSketch::Save(Base::Writer &/*writer*/) const
+{
+    FC_THROWM(Base::NotImplementedError, "NamedSketch::Save not implemented!");
+}
+
+void NamedSketch::Restore(Base::XMLReader &/*reader*/)
+{
+    FC_THROWM(Base::NotImplementedError, "NamedSketch::Restore not implemented!");
 }
 
 } // namespace NamedSketcher

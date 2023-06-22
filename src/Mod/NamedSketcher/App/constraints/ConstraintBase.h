@@ -59,7 +59,7 @@ public:
     using ref_point = Base::Accessor::ReferenceTo<GeometryPoint>;
     using ref_line_segment = Base::Accessor::ReferenceTo<GeometryLineSegment>;
 
-    using factory = class ConstraintFactory;
+    using factory = ConstraintFactory;
 
     bool isDriving = true;
     bool isDriven = false;

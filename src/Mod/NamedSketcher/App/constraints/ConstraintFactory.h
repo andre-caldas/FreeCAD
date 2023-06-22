@@ -22,8 +22,8 @@
  ***************************************************************************/
 
 
-#ifndef SKETCHER_GeometryFactory_H
-#define SKETCHER_GeometryFactory_H
+#ifndef SKETCHER_ConstraintFactory_H
+#define SKETCHER_ConstraintFactory_H
 
 #include <memory>
 
@@ -51,4 +51,4 @@ private:
 
 } // namespace NamedSketcher
 
-#endif // SKETCHER_GeometryFactory_H
+#endif // SKETCHER_ConstraintFactory_H

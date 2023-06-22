@@ -59,7 +59,7 @@ public:
     // Base::Persistence
     unsigned int getMemSize () const override;
     std::string_view xmlTagType(void) const override {return xmlTagTypeStatic();}
-    static std::string_view xmlTagTypeStatic(void) {return "LineSegment";}
+    static constexpr const char* xmlTagTypeStatic(void) {return "LineSegment";}
 
 private:
     GCS::Point start;

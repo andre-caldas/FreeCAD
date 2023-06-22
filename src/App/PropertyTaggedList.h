@@ -57,9 +57,6 @@ class ObjectIdentifier;
 class AppExport PropertyTaggedList : public Property
 {
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
-
-public:
-    class NotFound : public Base::Exception {};
 };
 
 
@@ -70,16 +67,17 @@ public:
  */
 template<typename T>
 class MappedTypeIterator
-        : public T::iterator
+        : public T::const_iterator
 {
 public:
-    using list_iterator = typename T::iterator;
+    using list_iterator = typename T::const_iterator;
     using mapped_type = typename T::mapped_type;
 
     MappedTypeIterator() = default;
+    MappedTypeIterator(const MappedTypeIterator&) = default;
     MappedTypeIterator(list_iterator it) : list_iterator(it) {}
-    mapped_type& operator*() const {return list_iterator::operator*().second;}
-    mapped_type* operator->() const {return &(list_iterator::operator*().second);}
+    const mapped_type& operator*() const {return list_iterator::operator*().second;}
+    const mapped_type* operator->() const {return &(list_iterator::operator*().second);}
 };
 
 
@@ -103,6 +101,7 @@ public:
     using ReferencedObject = Base::Accessor::ReferencedObject;
 
     key_type addElement(ptr_handler&& element);
+    ptr_handler getElement(key_type tag);
     list_node_type removeElement(key_type tag) { return elementList.extract(tag); }
     /**
      * @brief Implements @class IExportShared<T> resolution.
@@ -112,7 +111,7 @@ public:
      */
     std::shared_ptr<T> resolve_share(token_iterator& start, const token_iterator& end) override;
 
-    using iterator = MappedTypeIterator<list_type>;
+    using iterator = class MappedTypeIterator<list_type>;
     iterator begin() const;
     iterator end() const;
 

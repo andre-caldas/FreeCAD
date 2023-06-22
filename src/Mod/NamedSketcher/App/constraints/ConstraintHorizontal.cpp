@@ -106,4 +106,11 @@ void ConstraintHorizontal::Restore(Base::XMLReader& /*reader*/)
     THROW(Base::NotImplementedError);
 }
 
+std::unique_ptr<ConstraintHorizontal>
+ConstraintHorizontal::staticRestore(Base::XMLReader& /*reader*/)
+{
+    // SEE ConstraintCoincident.
+    THROW(Base::NotImplementedError);
+}
+
 } // namespace NamedSketcher

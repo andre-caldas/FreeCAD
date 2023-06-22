@@ -48,7 +48,7 @@ class NamedSketcherExport GeometryBase
     TYPESYSTEM_HEADER();
 
 public:
-    using factory = class GeometryFactory;
+    using factory = GeometryFactory;
 
     bool isConstruction = false;
     bool isBlocked = false;
@@ -93,5 +93,7 @@ protected:
 };
 
 } // namespace NamedSketcher
+
+#include "GeometryBase.inc"
 
 #endif // NAMEDSKETCHER_GeometryBase_H

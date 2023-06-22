@@ -59,18 +59,18 @@ ConstraintFactory::map_type Base::ElementFactory<ConstraintBase>::factoryMap = {
         [](Base::XMLReader& reader){return ConstraintCoincident::staticRestore(reader);}
     }
     ,{
-//        ConstraintEqual::xmlTagTypeStatic(),
-        "Equal",
+        ConstraintEqual::xmlTagTypeStatic(),
+//        "Equal",
         [](Base::XMLReader& reader){return ConstraintEqual::staticRestore(reader);}
     }
     ,{
-//        ConstraintHorizontal::xmlTagTypeStatic(),
-        "Horizontal",
+        ConstraintHorizontal::xmlTagTypeStatic(),
+//        "Horizontal",
         [](Base::XMLReader& reader){return ConstraintHorizontal::staticRestore(reader);}
     }
     ,{
-//        ConstraintXDistance::xmlTagTypeStatic(),
-        "XDistance",
+        ConstraintXDistance::xmlTagTypeStatic(),
+//        "XDistance",
         [](Base::XMLReader& reader){return ConstraintXDistance::staticRestore(reader);}
     }
 };
