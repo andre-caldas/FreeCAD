@@ -23,7 +23,7 @@
 
 #include <Base/Exception.h>
 
-#include "../parameters/ParameterProxyManager.h"
+#include "../parameters/ParameterGroupManager.h"
 #include "Constant.h"
 
 namespace NamedSketcher::GCS
@@ -39,7 +39,7 @@ void Constant::set(Parameter* x, Parameter* v)
     k = v;
 }
 
-double Constant::error(const ParameterProxyManager& manager) const
+double Constant::error(const ParameterGroupManager& manager) const
 {
     const double A = manager.getOptimizedParameterValue(a);
     const double K = manager.getOptimizedParameterValue(k);
@@ -53,12 +53,12 @@ ParameterVector Constant::differentialNonOptimized() const
     return result;
 }
 
-OptimizedVector Constant::differentialOptimized(const ParameterProxyManager& manager) const
+OptimizedVector Constant::differentialOptimized(const ParameterGroupManager& /*manager*/) const
 {
     return OptimizedVector();
 }
 
-void Constant::setProxies(ParameterProxyManager& manager) const
+void Constant::declareParameters(ParameterGroupManager& manager) const
 {
     manager.addParameter(a);
     manager.addParameter(k);

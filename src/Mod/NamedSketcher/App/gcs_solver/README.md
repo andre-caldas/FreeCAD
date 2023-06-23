@@ -13,7 +13,199 @@ But we do have classes that represent analytical conditions:
 *three points 'colinearity'*.
 All the higher level geometrical stuff must be kept outside the GCS.
 
-## Constraints
+## Implementation
+
+We shall not talk about "constraints". We shall talk about *equations*.
+We shall not talk about "points", we shall talk about *parameters*.
+Each parameter is just a real number: a *double*.
+
+### Three kinds of vectors
+
+Usually, people think of a vector as an ordered sequence of numbers.
+That is, an element $(x\_1, \dotsc, x\_n) \in \mathbb{R}^n$.
+In this sense, vectors are numbers associated to *indexes*.
+In this GCS, we do not use indexes.
+We associate a number to each element of a set.
+
+We can have one number associated to each *system parameter*.
+To represent those we use the class `ParameterVector`.
+To represent numbers associated to each *system equation*,
+we use the class `OutputVector`.
+
+Plus, in this GCS, before solving the system,
+we "solve" some very easy equations: `Equal` and `Constant`.
+For the `Equal` equations,
+instead of working with those equations,
+we simply group the *equal parameters* in one set.
+To represent numbers associated to each such *group of parameters*,
+we use the class `OptimizedVector`.
+
+Of course,
+each `OptimizedVector` can be mapped back to a regular `ParameterVector`
+as long as one knows how the parameters were optimized.
+In our implementation,
+parameter grouping is managed by some instance of the class `ParameterGroupManager`.
+A `ParameterVector` can also be mapped to an `OptimizedVector`
+through a `ParameterGroupManager` as long as it does not contradict the grouping.
+
+References:
+* [Vector types](https://github.com/andre-caldas/FreeCAD/blob/NamedSketcher/src/Mod/NamedSketcher/App/gcs_solver/Types.h)
+* [Vectors without indexes](https://github.com/andre-caldas/FreeCAD/blob/NamedSketcher/src/Mod/NamedSketcher/App/gcs_solver/Vector.h)
+* [Parameter group management](https://github.com/andre-caldas/FreeCAD/blob/NamedSketcher/src/Mod/NamedSketcher/App/gcs_solver/parameters/ParameterGroupManager.h)
+
+
+### Equation
+
+In principle,
+each equation $f$ gives a number to a given `ParameterVector`.
+The GCS system is a bunch of equations associated to a bunch of parameters.
+Each equation is represented by the an instance of `Equation`.
+Solving the system corresponds to finding a `ParameterVector`
+such that every equation gives zero to it.
+
+When we estimate how to change the parameters in order to get closer to the solution,
+we [linearize the system](https://en.wikipedia.org/wiki/Linearization).
+That gives us, for each equation, one [gradient vector](https://en.wikipedia.org/wiki/Gradient).
+This is a `ParameterVector` that is called $\nabla f$.
+It can be used to estimate how to change the parameters
+and make the equation $f$ reach the desired value.
+
+
+### Equation independence and ordering
+
+To change the parameters without changing the value of $f$,
+we need to move along directions orthogonal to $\nabla f$.
+The system $f\_1, \dotsc, f\_n$ is fully constrained
+when there are no directions you can move without changing some $f\_j$:
+there are no degrees of freedom.
+The equation $f$ is independent of $f\_1, \dotsc, f\_n$ when you can move
+in a direction that keeps all $f\_j$ constant while changing the value of $f$.
+Using the linear approximation,
+this means that the gradient of $f$
+has a component orthogonal to the gradients of all $f\_j$.
+
+For that reason,
+we keep a list (`std::vector<Equation>`) of ordered equations.
+Whenever a new equation $f$ is added to the system $f\_1, \dotsc, f\_n$,
+we use the so called
+[Gram-Schmidt process](https://en.wikipedia.org/wiki/Gram%E2%80%93Schmidt_process)
+to determine the component of $f$ orthogonal to the other $f\_j$.
+This is implemented by the `Orthonormalization` class.
+
+The `Orthonormalization` class detects when an equation is linearly dependent
+on the equations that come before it on the ordered list.
+It also allows reordering of equations.
+
+Our approach to dealing with overconstraints is very simple and easy to deal with.
+We simply ignore the dependent equations and solve the system without them.
+Then, we check the dependent equations to see if they are conflicting or just redundant.
+
+When a user has to deal with overconstraints, the UI can give him/her
+the opportunity to change the ordering and consequently choose the equations
+that are going to be ruled out.
+The user can try to remove the corresponding constraints or simply leave them there.
+The UI needs to call the user attention in case of conflicts, though.
+
+
+### Disturbing the parameters
+
+When determining non-redundant parameters,
+there might be some very special parameter values where the gradients become linearly dependent.
+So,
+in order to decide that a parameter is linearly dependent we introduce some "noise"
+and disturb the parameters value a little.
+(this still needs to be implemented)
+
+
+### Parameter manager
+
+After determining the non-redundant equations,
+the non-redundant equations of type `Equal`
+determine parameters that are supposed to be grouped together.
+Each `ParameterGroup` is composed of a set of parameters.
+Also, at most one of those parameters can be chosen to be the fixed value (constant)
+all other parameter in the group are supposed to be equal to.
+
+Therefore, all `ParameterGroup` instances
+are classified into constant and non-constant parameter groups.
+Each non-constant group correspond to one *optimized parameter*.
+The constant groups are not considered as *parameter*.
+In the future, the so called *constant groups* might no be in fact constant,
+if the fixed value is the result of some expression evaluation.
+
+A `ParameterGroup` also holds an `OptimizedParameter`.
+Each parameter is just a `double` variable.
+However, we use two classes `Parameter` and `OptimizedParameter` to distinguish
+the regular parameters and the parameters provided by the `ParameterGroup` class.
+
+An instance of the class `ParameterGroupManager` holds:
+1. An ordered list of equations.
+2. An (unordered) set of parameter groups.
+3. An ordered list of non-constant parameter groups.
+
+We need ordered lists of equations and non-constant parameter groups
+because we need to convert those to matrix indexes
+when using the matirx library (Eigen).
+
+After all parameters groups are properly set,
+the `ParameterGroupManager` is used to translate indexes
+to and from `Equation*` and `ParameterGroup*`.
+It can also translate `Parameter` to `OptimizedParameter`/`ParameterGroup`
+and back, when possible.
+
+When solving the GCS,
+the `ParameterGroup` instances have their `OprimizedParameter` set.
+To propagate the values to the original `Parameter` instances,
+we call `ParameterGroupManager::commitParameters()`.
+
+
+### Optimized and non-optimized differentials
+
+Each `Equation` generates a gradient
+(that can be different for different parameter values).
+The non-optimized gradients are handled to the `Orthonormalization` class
+and are used to determine which parameters are independent.
+Those are provided by `Equation::differentialNonOptimized`.
+
+After determining the dependent equations through the `Orthonormalization` class,
+we can call the `System::solve()` method.
+The independent equations are passed to `ParameterGroupManager`.
+By calling `Equation::declareParameters(ParameterGroupManager& manager)`,
+each equation adds to the `manager` the parameters it uses.
+
+Then,
+for each `Equation` we call `Equation::optimizeParameters(ParameterGroupManager& manager)`
+to give the `Equation` the opportunity to *optimize* its parameters.
+The procedure is repeated until no `Equation` makes a new optimization.
+For example, the equation `Colinear` takes three points $a$, $b$ and $c$ and calculates
+```math
+\begin{vmatrix}
+  a.x & a.y & 1
+  \\
+  b.x & b.y & 1
+  \\
+  c.x & c.y & 1
+\end{vmatrix}.
+```
+However, if it detects, for example, that $a.y$ and $b.y$
+are grouped together (e.g.: there is some `Equal().set(a.y, b.y)`),
+then this `Colinear` equation behaves as if it was an `Equal` equation
+stating that $a.y = c.y$.
+
+After optimizing all parameters, we get the *optimized gradients* for each `Equation`
+by calling `Equation::differentialOptimized(ParameterGroupManager& manager)`.
+If the optimization has made the equation redundant,
+then this function returns a zero gradient.
+For example, every `Equal` equation is redundant after both parameters are grouped together.
+
+
+## Theory
+
+I think that what is described here is the so called (or some variation of)
+the DogLeg algorithm.
+But I don't really know.
+
+### Constraints
 
 Constraints are made from equations like:
 ```math
@@ -57,7 +249,7 @@ We want to find a solution for
 Or, $F(x) = 0$, for short.
 
 
-# Qualitative analysis
+## Qualitative analysis
 
 If we know that $F(x) = a$,
 we might call $a$ the "error"...
@@ -85,7 +277,7 @@ DF(x) =
 ```
 
 
-## Fully constrained
+### Fully constrained
 
 Suppose we have found a point $x$ where $f\_1, \dotsc, f\_n$ are satisfied.
 We say that $F$ is fully constrained if there are no paths departing from $x$
@@ -95,7 +287,7 @@ $\nabla f\_1(x), \dotsc, \nabla f\_n(x)$ spawn $\mathbb{R}^p$:
 they are a **generator**.
 
 
-## Overconstrained
+### Overconstrained
 
 And we want to add another equation to our system, given by the function $f\_{q+1}$.
 Suppose we have found a point $x$ where $f\_1, \dotsc, f\_n$ are satisfied.
@@ -122,7 +314,7 @@ I this implementation, we do not discard overconstraints.
 We treat them as "constraints for checking".
 If those cannot be satisfied, we alert the user.
 
-## The point of evaluation
+### The point of evaluation
 
 Sometimes the gradient does not depend on the point being considered (linear constraint).
 When some gradient is dependent of the point,
@@ -131,7 +323,7 @@ So, in search for a solution to $F(x) = 0$,
 whenever the point $x$ is not a solution and at the given point the system is overconstrained,
 we might disturb the system and evaluate the situation at a (or some) nearby point(s).
 
-## Orthonormal basis (reduced QR-decomposition)
+### Orthonormal basis (reduced QR-decomposition)
 
 A set of vectors $\vec{v}\_1, \dotsc, \vec{v}\_n$ is [orthonormal](https://en.wikipedia.org/wiki/Orthonormality) when
 $$\vec{v}\_j \cdot \vec{v}\_k = \delta\_{jk}.$$
@@ -208,19 +400,19 @@ If we want to project a vector $\vec{w}$
 into the space spawned by
 $\vec{v}\_1, \dotsc, \vec{v}\_n$, we just have to calculate $QQ^T\vec{w}$.
 
-### Overconstraints
+#### Overconstraints
 
 So, not necessarily the QR-decomposition,
 but the Gram-Schmidit process is a nice way to determine,
 given an **ordered** list of equations,
 at which point the system becomes overconstrained.
 
-### Constraints
+#### Constraints
 
 In the case of constraints, the vectors $\vec{v}\_1, \dotsc, \vec{v}\_n$
 are in fact the gradients $\nabla f\_1(x), \dotsc, \nabla f\_n(x)$.
 
-### Adding or removing vectors/constraints/geometries
+#### Adding or removing vectors/constraints/geometries
 
 It is very important to notice that this process is **gradual**.
 That is,
@@ -263,7 +455,7 @@ Make
 \end{aligned}
 ```
 
-### Disturbing a vector
+#### Disturbing a vector
 
 If we want to substitute $\vec{v}\_j$ by $\vec{v}\_j + \vec{w}$ and recompute
 the reduced QR-decomposition, one thing we can do is:
@@ -282,7 +474,7 @@ In this case,
 adding a new linear constraint is the case of adding it to the middle of the list.
 The procedure is very similar to the described above.
 
-### Adding a constraint to the middle of the list
+#### Adding a constraint to the middle of the list
 
 Suppose we want to add a constraint just after the vectors
 $\vec{v}\_1, \dotsc, \vec{v}\_j$
@@ -297,7 +489,7 @@ Then, for $k = 1, 2, \dotsc$ make
 and normalize to obtain $\vec{q}\_{j+1+k}$.
 And finally, make $\vec{q}\_j = \vec{q}$.
 
-### Overconstrained only in a particular point
+#### Overconstrained only in a particular point
 
 In general,
 the gradient $\nabla f(x)$ at the point $x$ **does depend** on the chosen point $x$.
@@ -309,7 +501,7 @@ the condition of being linearly independent is "open".
 We need to decide how to choose points for evaluation.
 Maybe, the class that implements each equation could give us a hint.
 
-## Solving
+### Solving
 
 We want to find a point $X$ such that $F(X) = 0$.
 We search for such a point using linear approximations.
@@ -325,7 +517,7 @@ Heuristically,
   F(x + \Delta x) \approx 0.
 ```
 
-### Step vector
+#### Step vector
 
 In order to solve the equation
 ```math
@@ -352,37 +544,36 @@ On the other hand,
 [LDLT Cholesky decomposition](https://eigen.tuxfamily.org/dox/classEigen_1_1LDLT.html)
 is the fastest method.
 
-#### Further improvement
+##### Further improvement
 
-The gradient lines are not straight.
-It is probably true that a better $\Delta x$ is a little bigger or smaller.
-We also want to avoid too big overshooting that could make the method unstable.
-Therefore, we shall search for the $\alpha \in [0,1.5]$ such that
+The integral curves for the gradient field are not straight.
+It is probably true that a better $\Delta x$ is a little smaller.
+We also want to avoid too big overshooting that could make the method unstable (flipping).
+Therefore, we shall search for the $\alpha \in [0,1.0]$ such that
 $\lvert F(x + \alpha \Delta x)$
 is minimized.
 
-For example:
-1. Start with $\alpha = 1$ and $r = 0.5$.
-2. Choose among $F(x + (\alpha - r)\Delta x)$, $F(x + \alpha \Delta x)$
-and $F(x + (\alpha + r)\Delta x)$, the one that is closest to $0$.
-3. Call the best one, the new $\alpha$. and make $r /= 2$.
-4. Goto "2" many times. :-)
-5. Substitute $\Delta x *= \alpha$.
+For example,
+in order to avoid overshooting (and also avoid "flipping"),
+we can take $\alpha = 0, 0.1, 0.2, \cdots, 1$ in sequence.
+When the error starts increasing, we stop.
+If the error increased at $\alpha = 0.4$, then we repeat the process
+with the interval $[0.2, 0.4]$.
 
-### Giving up
+#### Giving up
 
 We also need to find a "good" criteria for giving up the search.
-Could be a hard number of iterations, for example.
+The easiest (but not very good) criteria would be a hard number of iterations, for example.
 
-### Goal
+#### Goal
 
 We are done when $\lvert F(x) \rvert < \varepsilon$ for some $\varepsilon > 0$.
 How do we know what is a good $\varepsilon$?
 
 
-# Some pathologies and ideas
+## Some pathologies and ideas
 
-## Vibrations
+### Vibrations
 
 Imagine that we have many parameters A, B, C, ..., Z constrained to be **equal**.
 Suppose this constraint is satisfied: $A = B = \dotsb = Z = 0$.
@@ -398,7 +589,7 @@ An improvement would be to constraint all parameters to being equal to only one 
 That would reduce the amount of vibrations.
 But we can do better!
 
-## Redundant constraints
+### Redundant constraints
 
 Redundant constraints are not bad!
 We do not want them if we are still figuring out about under and overconstraints.
@@ -418,7 +609,7 @@ evey set of three points (P, Q, A), (P, Q, B), (P, A, B) and (Q, A, B) are colin
 For parameters being equal, we actually have a better suggestion:
 proxied parameters.
 
-## Proxied parameters
+### Proxied parameters
 
 This is all **outside the GCS**.
 The Sketcher shall have an array of parameters.
@@ -439,7 +630,7 @@ Then all points being over the line becomes: the "x" coordinates of all of them 
 A complicated non linear set of constraints just disappeared!
 All those points have now their x coordinate proxy pointing to the same parameter.
 
-## GUI to help with overconstraints
+### GUI to help with overconstraints
 
 Iterate through suggestions of underconstrained parameters (geometries).
 

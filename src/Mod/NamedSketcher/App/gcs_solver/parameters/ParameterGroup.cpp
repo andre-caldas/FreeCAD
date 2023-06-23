@@ -74,7 +74,7 @@ void ParameterGroup::append(Parameter* p)
     parameters.insert(p);
 }
 
-void ParameterGroup::setConstant(Parameter* k)
+bool ParameterGroup::setConstant(Parameter* k)
 {
     if(!hasParameter(k))
     {
@@ -89,8 +89,10 @@ void ParameterGroup::setConstant(Parameter* k)
     if(const_parameter == k)
     {
         FC_WARN("Setting the same constant twice??? Better investigate...");
+        return false;
     }
     const_parameter = k;
+    return true;
 }
 
 bool ParameterGroup::isConstant() const

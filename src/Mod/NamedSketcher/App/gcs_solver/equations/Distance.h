@@ -38,20 +38,20 @@ public:
     Distance() = default;
     void set (Point* a, Point* b, Parameter* distance);
 
-    double error(const ParameterProxyManager& manager) const override;
+    double error(const ParameterGroupManager& manager) const override;
     ParameterVector differentialNonOptimized() const override;
-    OptimizedVector differentialOptimized(const ParameterProxyManager& manager) const override;
+    OptimizedVector differentialOptimized(const ParameterGroupManager& manager) const override;
 
-    void setProxies(ParameterProxyManager& manager) const override;
+    void declareParameters(ParameterGroupManager& manager) const override;
 
 private:
     Point* a;
     Point* b;
     Parameter* distance;
 
-    bool isCoincident(const ParameterProxyManager& manager) const;
-    bool isHorizontal(const ParameterProxyManager& manager) const;
-    bool isVertical(const ParameterProxyManager& manager) const;
+    bool isCoincident(const ParameterGroupManager& manager) const;
+    bool isHorizontal(const ParameterGroupManager& manager) const;
+    bool isVertical(const ParameterGroupManager& manager) const;
 };
 
 } // namespace NamedSketcher::GCS

@@ -25,7 +25,7 @@
 
 #include <Base/Exception.h>
 
-#include "../parameters/ParameterProxyManager.h"
+#include "../parameters/ParameterGroupManager.h"
 #include "Distance.h"
 
 namespace NamedSketcher::GCS
@@ -43,7 +43,7 @@ void Distance::set(Point* x, Point* y, Parameter* d)
 }
 
 // |a-b|^2 - distance^2 = 0
-double Distance::error(const ParameterProxyManager& manager) const
+double Distance::error(const ParameterGroupManager& manager) const
 {
     if(isCoincident(manager))
     {
@@ -86,7 +86,7 @@ ParameterVector Distance::differentialNonOptimized() const
     return result;
 }
 
-OptimizedVector Distance::differentialOptimized(const ParameterProxyManager& manager) const
+OptimizedVector Distance::differentialOptimized(const ParameterGroupManager& manager) const
 {
     if(isCoincident(manager))
     {
@@ -114,7 +114,7 @@ OptimizedVector Distance::differentialOptimized(const ParameterProxyManager& man
     return manager.optimizeVector(differentialNonOptimized());
 }
 
-void Distance::setProxies(ParameterProxyManager& manager) const
+void Distance::declareParameters(ParameterGroupManager& manager) const
 {
     manager.addParameter(&a->x);
     manager.addParameter(&a->y);
@@ -124,17 +124,17 @@ void Distance::setProxies(ParameterProxyManager& manager) const
     manager.setParameterConstant(distance);
 }
 
-bool Distance::isCoincident(const ParameterProxyManager& manager) const
+bool Distance::isCoincident(const ParameterGroupManager& manager) const
 {
     return (isHorizontal(manager) && isVertical(manager));
 }
 
-bool Distance::isHorizontal(const ParameterProxyManager& manager) const
+bool Distance::isHorizontal(const ParameterGroupManager& manager) const
 {
     return manager.areParametersEqual(&a->y, &b->y);
 }
 
-bool Distance::isVertical(const ParameterProxyManager& manager) const
+bool Distance::isVertical(const ParameterGroupManager& manager) const
 {
     return manager.areParametersEqual(&a->x, &b->x);
 }

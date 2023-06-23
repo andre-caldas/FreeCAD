@@ -41,7 +41,7 @@ namespace NamedSketcher::GCS
 class Equation;
 class Equal;
 class Constant;
-class ParameterProxyManager;
+class ParameterGroupManager;
 
 class NamedSketcherExport System
 {
@@ -57,8 +57,8 @@ public:
     void optimize();
     bool solve() const;
 
-    OutputVector error(const ParameterProxyManager& manager) const;
-    equation_value_t minus_error(const ParameterProxyManager& manager) const;
+    OutputVector error(const ParameterGroupManager& manager) const;
+    equation_value_t minus_error(const ParameterGroupManager& manager) const;
 
 private:
     /**
@@ -89,11 +89,11 @@ private:
     /**
      * @brief Searches for the "best point" between current point
      * and the approximate next step point determined by getStepTarget.
-     * @param manager: @class ParameterProxyManager to translate coordinates.
+     * @param manager: @class ParameterGroupManager to translate coordinates.
      * @param target: where to aim.
      */
     void stepIntoTargetDirection(
-            ParameterProxyManager& manager,
+            ParameterGroupManager& manager,
             const OptimizedVector& target) const;
 };
 

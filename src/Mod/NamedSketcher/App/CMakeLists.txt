@@ -110,12 +110,10 @@ SET(gcs_solver_SRCS
 #
     gcs_solver/parameters/Parameter.h
     gcs_solver/parameters/Parameter.cpp
-    gcs_solver/parameters/ParameterProxy.h
-    gcs_solver/parameters/ParameterProxy.cpp
     gcs_solver/parameters/ParameterGroup.h
     gcs_solver/parameters/ParameterGroup.cpp
-    gcs_solver/parameters/ParameterProxyManager.h
-    gcs_solver/parameters/ParameterProxyManager.cpp
+    gcs_solver/parameters/ParameterGroupManager.h
+    gcs_solver/parameters/ParameterGroupManager.cpp
 #
     gcs_solver/equations/Equation.h
     gcs_solver/equations/Equation.cpp

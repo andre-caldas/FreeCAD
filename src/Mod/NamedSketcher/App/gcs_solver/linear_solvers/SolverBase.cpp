@@ -25,7 +25,7 @@
 
 #include "../equations/Equation.h"
 
-#include "../parameters/ParameterProxyManager.h"
+#include "../parameters/ParameterGroupManager.h"
 #include "../parameters/ParameterGroup.h"
 #include "../Vector.h"
 #include "../LinearTransform.h"
@@ -36,7 +36,7 @@
 namespace NamedSketcher::GCS::LinearSolvers
 {
 
-SolverBase::SolverBase(ParameterProxyManager& manager, const OptimizedMatrix& _gradients)
+SolverBase::SolverBase(ParameterGroupManager& manager, const OptimizedMatrix& _gradients)
     : manager(manager)
 {
     int rows = _gradients.size();

@@ -25,7 +25,7 @@
 
 #include <Base/Exception.h>
 
-#include "../parameters/ParameterProxyManager.h"
+#include "../parameters/ParameterGroupManager.h"
 #include "Colinear.h"
 
 namespace NamedSketcher::GCS
@@ -45,7 +45,7 @@ void Colinear::set(Point* x, Point* y, Point* z)
 // det((a1, a2, 1),
 //     (b1, b2, 1),
 //     (c1, c2, 1))
-double Colinear::error(const ParameterProxyManager& manager) const
+double Colinear::error(const ParameterGroupManager& manager) const
 {
     if(isAlreadyColinear(manager))
     {
@@ -112,7 +112,7 @@ ParameterVector Colinear::differentialNonOptimized() const
     return result;
 }
 
-OptimizedVector Colinear::differentialOptimized(const ParameterProxyManager& manager) const
+OptimizedVector Colinear::differentialOptimized(const ParameterGroupManager& manager) const
 {
     if(isAlreadyColinear(manager))
     {
@@ -154,7 +154,7 @@ OptimizedVector Colinear::differentialOptimized(const ParameterProxyManager& man
     return manager.optimizeVector(differentialNonOptimized());
 }
 
-bool Colinear::isAlreadyColinear(const ParameterProxyManager& manager) const
+bool Colinear::isAlreadyColinear(const ParameterGroupManager& manager) const
 {
     if(manager.areParametersEqual(&a->x, &b->x) && manager.areParametersEqual(&a->x, &c->x))
     {
@@ -169,17 +169,17 @@ bool Colinear::isAlreadyColinear(const ParameterProxyManager& manager) const
     return false;
 }
 
-bool Colinear::isHorizontal(const ParameterProxyManager& manager) const
+bool Colinear::isHorizontal(const ParameterGroupManager& manager) const
 {
     return (manager.areParametersEqual(&a->y, &b->y) || manager.areParametersEqual(&a->y, &c->y) || manager.areParametersEqual(&b->y, &c->y));
 }
 
-bool Colinear::isVertical(const ParameterProxyManager& manager) const
+bool Colinear::isVertical(const ParameterGroupManager& manager) const
 {
     return (manager.areParametersEqual(&a->x, &b->x) || manager.areParametersEqual(&a->x, &c->x) || manager.areParametersEqual(&b->x, &c->x));
 }
 
-void Colinear::setProxies(ParameterProxyManager& manager) const
+void Colinear::declareParameters(ParameterGroupManager& manager) const
 {
     manager.addParameter(&a->x);
     manager.addParameter(&a->y);
@@ -189,7 +189,7 @@ void Colinear::setProxies(ParameterProxyManager& manager) const
     manager.addParameter(&c->y);
 }
 
-bool Colinear::optimizeProxies(ParameterProxyManager& manager) const
+bool Colinear::optimizeParameters(ParameterGroupManager& manager) const
 {
     bool result = false;
     if(isHorizontal(manager))

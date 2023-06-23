@@ -22,8 +22,8 @@
  ***************************************************************************/
 
 
-#ifndef NAMEDSKETCHER_GCS_ParameterProxyManager_H
-#define NAMEDSKETCHER_GCS_ParameterProxyManager_H
+#ifndef NAMEDSKETCHER_GCS_ParameterGroupManager_H
+#define NAMEDSKETCHER_GCS_ParameterGroupManager_H
 
 #include <unordered_set>
 #include <map>
@@ -36,7 +36,7 @@
 namespace NamedSketcher::GCS
 {
 
-class NamedSketcherExport ParameterProxyManager
+class NamedSketcherExport ParameterGroupManager
 {
 public:
     /**
@@ -153,4 +153,4 @@ private:
 
 } // namespace NamedSketcher::GCS
 
-#endif // NAMEDSKETCHER_GCS_ParameterProxyManager_H
+#endif // NAMEDSKETCHER_GCS_ParameterGroupManager_H

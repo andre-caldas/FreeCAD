@@ -30,14 +30,14 @@
 #include "Parameter.h"
 #include "../Vector.h"
 #include "ParameterGroup.h"
-#include "ParameterProxyManager.h"
+#include "ParameterGroupManager.h"
 
 FC_LOG_LEVEL_INIT("NamedSketch",true,true)
 
 namespace NamedSketcher::GCS
 {
 
-void ParameterProxyManager::addParameter(Parameter* a)
+void ParameterGroupManager::addParameter(Parameter* a)
 {
     assert(parameter2Group.count(a) == 0);
     assert(orderedNonConstantGroups.empty());
@@ -47,14 +47,14 @@ void ParameterProxyManager::addParameter(Parameter* a)
     parameterGroups.emplace(std::move(group));
 }
 
-void ParameterProxyManager::addEquation(Equation* eq)
+void ParameterGroupManager::addEquation(Equation* eq)
 {
     assert(equationIndexes.count(eq) == 0);
     orderedEquations.emplace_back(eq);
     equationIndexes.emplace(eq, equationIndexes.size());
 }
 
-bool ParameterProxyManager::setParameterEqual(Parameter* a, Parameter* b)
+bool ParameterGroupManager::setParameterEqual(Parameter* a, Parameter* b)
 {
     assert(parameter2Group.count(a) == 0);
     ParameterGroup* group_a = getParameterGroup(a);
@@ -76,7 +76,7 @@ bool ParameterProxyManager::setParameterEqual(Parameter* a, Parameter* b)
     return true;
 }
 
-bool ParameterProxyManager::areParametersEqual(Parameter* a, Parameter* b) const
+bool ParameterGroupManager::areParametersEqual(Parameter* a, Parameter* b) const
 {
     if(parameter2Group.count(a) == 0 || parameter2Group.count(b) == 0)
     {
@@ -86,18 +86,18 @@ bool ParameterProxyManager::areParametersEqual(Parameter* a, Parameter* b) const
     return (parameter2Group.at(a) == parameter2Group.at(b));
 }
 
-ParameterGroup* ParameterProxyManager::getParameterGroup(Parameter* parameter) const
+ParameterGroup* ParameterGroupManager::getParameterGroup(Parameter* parameter) const
 {
     return parameter2Group.at(parameter);
 }
 
-bool ParameterProxyManager::setParameterConstant(Parameter* k)
+bool ParameterGroupManager::setParameterConstant(Parameter* k)
 {
     assert(orderedNonConstantGroups.empty());
-    getParameterGroup(k)->setConstant(k);
+    return getParameterGroup(k)->setConstant(k);
 }
 
-void ParameterProxyManager::setOptimizedParameterIndexes()
+void ParameterGroupManager::setOptimizedParameterIndexes()
 {
     assert(orderedNonConstantGroups.empty());
     assert(nonConstantGroupIndexes.empty());
@@ -113,32 +113,32 @@ void ParameterProxyManager::setOptimizedParameterIndexes()
     }
 }
 
-size_t ParameterProxyManager::getOptimizedParameterIndex(OptimizedParameter* parameter) const
+size_t ParameterGroupManager::getOptimizedParameterIndex(OptimizedParameter* parameter) const
 {
     ParameterGroup* group = optimizedParameter2NonConstantGroup.at(parameter);
     return getNonConstantGroupIndex(group);
 }
 
-size_t ParameterProxyManager::getNonConstantGroupIndex(ParameterGroup* group) const
+size_t ParameterGroupManager::getNonConstantGroupIndex(ParameterGroup* group) const
 {
     assert(!group->isConstant());
     return nonConstantGroupIndexes.at(group);
 }
 
-OptimizedParameter* ParameterProxyManager::getOptimizedParameter(Parameter* parameter) const
+OptimizedParameter* ParameterGroupManager::getOptimizedParameter(Parameter* parameter) const
 {
     ParameterGroup* group = getParameterGroup(parameter);
     assert(!group->isConstant());
     return group->getValuePtr();
 }
 
-double ParameterProxyManager::getOptimizedParameterValue(Parameter* parameter) const
+double ParameterGroupManager::getOptimizedParameterValue(Parameter* parameter) const
 {
     ParameterGroup* group = getParameterGroup(parameter);
     return group->getValue();
 }
 
-OptimizedVector ParameterProxyManager::getOptimizedParameterValues() const
+OptimizedVector ParameterGroupManager::getOptimizedParameterValues() const
 {
     OptimizedVector result;
     for(ParameterGroup* group: orderedNonConstantGroups)
@@ -148,7 +148,7 @@ OptimizedVector ParameterProxyManager::getOptimizedParameterValues() const
     return result;
 }
 
-void ParameterProxyManager::setOptimizedParameterValues(const OptimizedVector& vals) const
+void ParameterGroupManager::setOptimizedParameterValues(const OptimizedVector& vals) const
 {
     for(ParameterGroup* group: orderedNonConstantGroups)
     {
@@ -156,7 +156,7 @@ void ParameterProxyManager::setOptimizedParameterValues(const OptimizedVector& v
     }
 }
 
-OptimizedVector ParameterProxyManager::optimizeVector(const ParameterVector& v) const
+OptimizedVector ParameterGroupManager::optimizeVector(const ParameterVector& v) const
 {
     OptimizedVector result;
     for(auto [parameter, value]: v.values)
@@ -176,39 +176,39 @@ OptimizedVector ParameterProxyManager::optimizeVector(const ParameterVector& v) 
     return result;
 }
 
-size_t ParameterProxyManager::getGroupIndex(ParameterGroup* group) const
+size_t ParameterGroupManager::getGroupIndex(ParameterGroup* group) const
 {
     return nonConstantGroupIndexes.at(group);
 }
 
-ParameterGroup* ParameterProxyManager::getGroup(size_t index) const
+ParameterGroup* ParameterGroupManager::getGroup(size_t index) const
 {
     return orderedNonConstantGroups.at(index);
 }
 
-size_t ParameterProxyManager::getEquationIndex(Equation* eq) const
+size_t ParameterGroupManager::getEquationIndex(Equation* eq) const
 {
     return equationIndexes.at(eq);
 }
 
-Equation* ParameterProxyManager::getEquation(size_t index) const
+Equation* ParameterGroupManager::getEquation(size_t index) const
 {
     return orderedEquations.at(index);
 }
 
-size_t ParameterProxyManager::inputSize() const
+size_t ParameterGroupManager::inputSize() const
 {
     assert(orderedNonConstantGroups.size() == nonConstantGroupIndexes.size());
     return orderedNonConstantGroups.size();
 }
 
-size_t ParameterProxyManager::outputSize() const
+size_t ParameterGroupManager::outputSize() const
 {
     assert(orderedEquations.size() == equationIndexes.size());
     return orderedEquations.size();
 }
 
-void ParameterProxyManager::commitParameters() const
+void ParameterGroupManager::commitParameters() const
 {
     for(auto& group: parameterGroups)
     {

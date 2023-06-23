@@ -29,7 +29,7 @@
 namespace NamedSketcher::GCS::LinearSolvers
 {
 
-Ldlt::Ldlt(ParameterProxyManager& manager, const OptimizedMatrix& _gradients)
+Ldlt::Ldlt(ParameterGroupManager& manager, const OptimizedMatrix& _gradients)
     : SolverBase(manager, _gradients)
 {
     const auto& D = gradients;

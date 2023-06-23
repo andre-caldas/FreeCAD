@@ -46,7 +46,7 @@ class GeometryLineSegment;
 namespace GCS
 {
 class Equation;
-class ParameterProxyManager;
+class ParameterGroupManager;
 }
 
 class NamedSketcherExport ConstraintBase

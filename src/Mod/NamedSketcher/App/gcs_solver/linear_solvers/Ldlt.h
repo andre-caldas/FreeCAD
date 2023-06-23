@@ -36,7 +36,7 @@ class Ldlt : public SolverBase
 {
 public:
     using solver_t = Eigen::SimplicialLDLT<matrix_t>;
-    Ldlt(ParameterProxyManager& manager, const OptimizedMatrix& gradients);
+    Ldlt(ParameterGroupManager& manager, const OptimizedMatrix& gradients);
     void refactor() override;
     vector_t _solve(const vector_t& out) override;
 

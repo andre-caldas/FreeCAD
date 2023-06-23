@@ -23,7 +23,7 @@
 
 #include <Base/Exception.h>
 
-#include "../parameters/ParameterProxyManager.h"
+#include "../parameters/ParameterGroupManager.h"
 #include "Equal.h"
 
 namespace NamedSketcher::GCS
@@ -39,7 +39,7 @@ void Equal::set(Parameter* x, Parameter* y)
     b = y;
 }
 
-double Equal::error(const ParameterProxyManager& manager) const
+double Equal::error(const ParameterGroupManager& manager) const
 {
     const double A = manager.getOptimizedParameterValue(a);
     const double B = manager.getOptimizedParameterValue(b);
@@ -54,7 +54,7 @@ ParameterVector Equal::differentialNonOptimized() const
     return result;
 }
 
-OptimizedVector Equal::differentialOptimized(const ParameterProxyManager& manager) const
+OptimizedVector Equal::differentialOptimized(const ParameterGroupManager& manager) const
 {
     if(!manager.areParametersEqual(a,b))
     {
@@ -63,7 +63,7 @@ OptimizedVector Equal::differentialOptimized(const ParameterProxyManager& manage
     return OptimizedVector();
 }
 
-bool Equal::optimizeProxies(ParameterProxyManager& manager) const
+bool Equal::optimizeParameters(ParameterGroupManager& manager) const
 {
     manager.addParameter(a);
     manager.addParameter(b);

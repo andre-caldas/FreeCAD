@@ -26,7 +26,7 @@
 #include "equations/Equation.h"
 #include "equations/Equal.h"
 #include "equations/Constant.h"
-#include "parameters/ParameterProxyManager.h"
+#include "parameters/ParameterGroupManager.h"
 #include "parameters/ParameterGroup.h"
 #include "linear_solvers/Ldlt.h"
 
@@ -62,7 +62,7 @@ void System::updateGradients()
 }
 
 OutputVector
-System::error(const ParameterProxyManager& manager) const
+System::error(const ParameterGroupManager& manager) const
 {
     OutputVector result;
     for(Equation* eq: gradients)
@@ -73,7 +73,7 @@ System::error(const ParameterProxyManager& manager) const
 }
 
 System::equation_value_t
-System::minus_error(const ParameterProxyManager& manager) const
+System::minus_error(const ParameterGroupManager& manager) const
 {
     equation_value_t result;
     for(Equation* eq: gradients)
@@ -85,17 +85,17 @@ System::minus_error(const ParameterProxyManager& manager) const
 
 void System::optimize()
 {
-    int next_equal = 0;
-    int next_constant = 0;
-    int next_linear = 0;
+    size_t next_equal = 0;
+    size_t next_constant = 0;
+    size_t next_linear = 0;
 
-    for(int j=0; j < gradients.size(); ++j)
+    for(size_t j=0; j < gradients.size(); ++j)
     {
         if(dynamic_cast<Equal*>(gradients[j]))
         {
             if(j != next_equal)
             {
-                for(int k=j; k != next_equal; --k)
+                for(size_t k=j; k != next_equal; --k)
                 {
                     gradients.moveForward(k);
                 }
@@ -109,7 +109,7 @@ void System::optimize()
         {
             if(j != next_constant)
             {
-                for(int k=j; k != next_constant; --k)
+                for(size_t k=j; k != next_constant; --k)
                 {
                     gradients.moveForward(k);
                 }
@@ -122,7 +122,7 @@ void System::optimize()
         {
             if(j != next_linear)
             {
-                for(int k=j; k != next_linear; --k)
+                for(size_t k=j; k != next_linear; --k)
                 {
                     gradients.moveForward(k);
                 }
@@ -136,7 +136,7 @@ void System::optimize()
 
 bool System::solve() const
 {
-    ParameterProxyManager manager;
+    ParameterGroupManager manager;
     OptimizedMatrix optimized_gcs;
 
     const std::vector<Equation*> non_redundant_equations = gradients.getNonRedundants();
@@ -150,7 +150,7 @@ bool System::solve() const
     // First we set proxies.
     for(Equation* eq: non_redundant_equations)
     {
-        eq->setProxies(manager);
+        eq->declareParameters(manager);
     }
 
     // Then, we optimize proxies.
@@ -160,12 +160,12 @@ bool System::solve() const
         shall_set_proxy = false;
         for(Equation* eq: non_redundant_equations)
         {
-            shall_set_proxy = eq->optimizeProxies(manager) || shall_set_proxy;
+            shall_set_proxy = eq->optimizeParameters(manager) || shall_set_proxy;
         }
     }
     if(shall_set_proxy)
     {
-        FC_WARN("Setting proxies through ParameterProxyManager seemed to be in an infinite loop.");
+        FC_WARN("Setting proxies through ParameterGroupManager seemed to be in an infinite loop.");
     }
 
     for(Equation* eq: non_redundant_equations)
@@ -206,7 +206,7 @@ bool System::solve() const
 }
 
 void System::stepIntoTargetDirection(
-        ParameterProxyManager& manager,
+        ParameterGroupManager& manager,
         const OptimizedVector& direction
         ) const
 {
@@ -216,26 +216,29 @@ void System::stepIntoTargetDirection(
     const int DEPTH = 4;
 
     double a = 0.0;
-    double b = 2.0;
+    double b = 1.0;
 
-    int best_n = N / 2;
     double best_error2 = 1000000000;
 
     OptimizedVector current_position = manager.getOptimizedParameterValues();
 
     for(int count=0; count < DEPTH; ++count)
     {
+        int best_n = 1;
         for(int n=0; n <= N; ++n)
         {
             OptimizedVector temp;
             temp.setAsLinearCombination(1.0, current_position, (a*n + b*(N-n))/N, direction);
             manager.setOptimizedParameterValues(std::move(temp));
             double error2 = minus_error(manager).squaredNorm();
-            if(error2 < best_error2)
+            if(best_error2 < error2)
             {
-                best_error2 = error2;
-                best_n = n;
+                // To avoid "flipping", we do not allow the error
+                // to increase.
+                break;
             }
+            best_n = n;
+            best_error2 = error2;
         }
         double new_a = (a*(best_n-1) + b*(N-best_n+1)) / N;
         double new_b = (a*(best_n+1) + b*(N-best_n-1)) / N;

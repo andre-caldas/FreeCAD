@@ -31,7 +31,7 @@
 #include "../Types.h"
 
 namespace NamedSketcher::GCS {
-class ParameterProxyManager;
+class ParameterGroupManager;
 }
 
 namespace NamedSketcher::GCS::LinearSolvers
@@ -43,7 +43,7 @@ public:
     using matrix_t = Eigen::SparseMatrix<double, Eigen::RowMajor>;
     using vector_t = Eigen::VectorXd;
 
-    SolverBase(ParameterProxyManager& manager, const OptimizedMatrix& gradients);
+    SolverBase(ParameterGroupManager& manager, const OptimizedMatrix& gradients);
 
     void updateGradient(Equation* equation);
     OptimizedVector solve();
@@ -52,7 +52,7 @@ public:
     virtual vector_t _solve(const vector_t& target) = 0;
 
 protected:
-    ParameterProxyManager& manager;
+    ParameterGroupManager& manager;
     matrix_t gradients;
     bool need_refactor = true;
 };

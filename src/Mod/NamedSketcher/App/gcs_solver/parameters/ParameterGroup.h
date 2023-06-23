@@ -33,8 +33,6 @@
 namespace NamedSketcher::GCS
 {
 
-class ParameterProxy;
-
 class NamedSketcherExport ParameterGroup
 {
     using set_t = std::unordered_set<Parameter*>;
@@ -48,7 +46,7 @@ public:
 
     bool hasParameter(Parameter* parameter) const;
     void append(Parameter* p);
-    void setConstant(Parameter* k);
+    bool setConstant(Parameter* k);
     bool isConstant() const;
     void commit() const;
 

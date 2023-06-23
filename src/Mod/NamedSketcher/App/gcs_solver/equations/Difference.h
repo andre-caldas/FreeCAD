@@ -36,11 +36,11 @@ public:
     Difference() = default;
     void set(Parameter* a, Parameter* b, Parameter* difference);
 
-    double error(const ParameterProxyManager& manager) const override;
+    double error(const ParameterGroupManager& manager) const override;
     ParameterVector differentialNonOptimized() const override;
-    OptimizedVector differentialOptimized(const ParameterProxyManager& manager) const override;
+    OptimizedVector differentialOptimized(const ParameterGroupManager& manager) const override;
 
-    void setProxies(ParameterProxyManager& manager) const override;
+    void declareParameters(ParameterGroupManager& manager) const override;
 
 private:
     Parameter* a;

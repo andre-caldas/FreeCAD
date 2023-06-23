@@ -36,13 +36,13 @@ public:
     Constant() = default;
     void set(Parameter* a, Parameter* k);
 
-    double error(const ParameterProxyManager& manager) const override;
+    double error(const ParameterGroupManager& manager) const override;
     ParameterVector differentialNonOptimized() const override;
-    OptimizedVector differentialOptimized(const ParameterProxyManager& manager) const override;
+    OptimizedVector differentialOptimized(const ParameterGroupManager& manager) const override;
 
-    void setProxies(ParameterProxyManager& manager) const override;
-// TODO: make ParameterProxyManager manage constant values as well.
-//    bool optimizeProxies(ParameterProxyManager& manager) const override;
+    void declareParameters(ParameterGroupManager& manager) const override;
+// TODO: make ParameterGroupManager manage constant values as well.
+//    bool optimizeParameters(ParameterGroupManager& manager) const override;
 
 private:
     Parameter* a;

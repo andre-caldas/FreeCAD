@@ -23,7 +23,7 @@
 
 #include <Base/Exception.h>
 
-#include "../parameters/ParameterProxyManager.h"
+#include "../parameters/ParameterGroupManager.h"
 #include "Difference.h"
 
 namespace NamedSketcher::GCS
@@ -40,7 +40,7 @@ void Difference::set(Parameter* x, Parameter* y, Parameter* d)
     difference = d;
 }
 
-double Difference::error(const ParameterProxyManager& manager) const
+double Difference::error(const ParameterGroupManager& manager) const
 {
     const double A = manager.getOptimizedParameterValue(a);
     const double B = manager.getOptimizedParameterValue(b);
@@ -56,7 +56,7 @@ ParameterVector Difference::differentialNonOptimized() const
     return result;
 }
 
-OptimizedVector Difference::differentialOptimized(const ParameterProxyManager& manager) const
+OptimizedVector Difference::differentialOptimized(const ParameterGroupManager& manager) const
 {
     if(!manager.areParametersEqual(a, b))
     {
@@ -65,7 +65,7 @@ OptimizedVector Difference::differentialOptimized(const ParameterProxyManager& m
     return OptimizedVector();
 }
 
-void Difference::setProxies(ParameterProxyManager& manager) const
+void Difference::declareParameters(ParameterGroupManager& manager) const
 {
     manager.addParameter(a);
     manager.addParameter(b);
