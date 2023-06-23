@@ -93,7 +93,7 @@ to determine the component of $f$ orthogonal to the other $f\_j$.
 This is implemented by the `Orthonormalization` class.
 
 The `Orthonormalization` class detects when an equation is linearly dependent
-on the equations that come before it on the ordered list.
+on the equations that came before it on the ordered list.
 It also allows reordering of equations.
 
 Our approach to dealing with overconstraints is very simple and easy to deal with.
@@ -268,11 +268,11 @@ That is,
 ```math
 DF(x) =
 \begin{bmatrix}
-  \rule[.5ex]{2.5ex}{0.5pt} & \nabla f_1 & \rule[.5ex]{2.5ex}{0.5pt}
+  \textcolor{blue}{\rule[.5ex]{2.5ex}{0.5pt}} & \nabla f_1 & \textcolor{blue}{\rule[.5ex]{2.5ex}{0.5pt}}
   \\
   &\vdots&
   \\
-  \rule[.5ex]{2.5ex}{0.5pt} & \nabla f_n & \rule[.5ex]{2.5ex}{0.5pt}
+  \textcolor{blue}{\rule[.5ex]{2.5ex}{0.5pt}} & \nabla f_n & \textcolor{blue}{\rule[.5ex]{2.5ex}{0.5pt}}
 \end{bmatrix}
 ```
 
@@ -284,7 +284,7 @@ We say that $F$ is fully constrained if there are no paths departing from $x$
 such all $f\_j$ are kept constant.
 Let us be a little euristic and assume that $F$ is fully constrained when
 $\nabla f\_1(x), \dotsc, \nabla f\_n(x)$ spawn $\mathbb{R}^p$:
-they are a **generator**.
+they are **generators**.
 
 
 ### Overconstrained

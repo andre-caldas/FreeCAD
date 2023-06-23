@@ -8,6 +8,8 @@ We do not use python.
 
 We also do not use raw pointers.
 Instead, we use `std::shared_ptr`.
+This scheme, in my opinion,
+is very suited to work with resources that are shared between different objects.
 
 
 ## Referenced objects
@@ -26,12 +28,21 @@ class Line
 {
 public:
     ...
-    Point* IExport<Point>::resolve(token_iterator& start, const token_iterator& end) override;
-    double* IExport<double>::resolve(token_iterator& start, const token_iterator& end) override;
+    double* IExport<double>::resolve_ptr(token_iterator& start, const token_iterator& end) override;
+    Point* IExport<Point>::resolve_ptr(token_iterator& start, const token_iterator& end) override;
+    Point* IExport<Point>::resolve_share(token_iterator& start, const token_iterator& end) override;
+
+private:
+    double value_i_export;
+    Point point_i_export;
+    std::shared_ptr<Point> point_i_share;
 };
 ```
 
-We also have `Accessor::IExportShared<T>` for resources that use `std::shared_ptr`.
+To share a member that is guaranteed to exist as long as the object exists,
+implement `IExport<>::resolve_ptr`.
+To share a member that is owned through a `shared_ptr`,
+implement `IExport<>::resolve_share`.
 
 
 ## References to objects and members
@@ -41,15 +52,15 @@ represents a reference to a variable of type `T`
 that can be accessed through the *Accessor scheme*.
 An object of type `Accessor::ReferenceTo<T>` is instantiated by passing to the constructor:
 1. A `std::shared_ptr<ReferencedObject>` that holds a known *root object*.
-2. A sequence of strings that represent a *path* to the shared resource.
+2. A sequence of "strings" (or tag/uuid) that represent a *path* to the shared resource.
 
-For convenience, there is a `Accessor::Chainable` class,
-that subclasses `Accessor::ReferencedObject` and `Accessor::IExportShared<ReferencedObject>`.
+For convenience, there is an `Accessor::Chainable` class,
+that subclasses `Accessor::ReferencedObject` and `Accessor::IExport<ReferencedObject>`.
 
 
 ## The path
 
-The referenced objects have a `Accessor::NameAndTag name_and_tag`.
+The referenced objects have an `Accessor::NameAndTag name_and_tag`.
 This gives to each of them a unique id (we use `boost::uuid` by now).
 And it can also have an optional *name*.
 By the way... this optional name cannot "look like" a *tag*.
@@ -71,16 +82,16 @@ For example:
 
 Notice how declarative this is!!!
 The object that exports a `double` declares it by subclassing `IExport<double>`.
-It then implements a `double* resolve(...)` method.
+It then implements a `double* resolve_ptr(...)` method.
 A function that expects a *reference to a double*
 states that **(usually) at compile time**:
 ```
     void i_use_a_double(Accessor::ReferenceTo<double> ref);
 ```
 There is no messing around with `boost::any` or the like.
-There is chains of `if(...TypeId...)`.
-What needs to be treated is the *path (to a double)* not resolving.
-We do not get something that is not a double to deal with!
+There are no chains of `if(...TypeId...)` tests.
+What needs to be treated is the case where *path (to a double)* does not resolve.
+We never get something that is not a double to deal with!
 
 
 ## Resolving a path
@@ -91,9 +102,9 @@ we hold a `std::shared_ptr` to the last `ReferencedObject` on the path.
 We call it a *lock*.
 And we also get a `double* reference`.
 This pointer is (shall be) guaranteed to be valid as long as we hold the lock,
-although the pointed variable might not correspond to the *path* anymore,
+although later the pointed variable might not correspond to the *path*
 if the objects are relocated or renamed on the document tree.
-In particular, an `IExport<T>` object cannot export a pointer to something
+In particular, an `IExport<T>` object cannot export a raw pointer to something
 that might get destroyed.
 
 The *Accessor infrastructure* does not inform references about changes
