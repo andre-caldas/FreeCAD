@@ -23,7 +23,7 @@
 
 __title__ = "FreeCAD FEM solver Elmer tasks"
 __author__ = "Markus Hovorka"
-__url__ = "https://www.freecadweb.org"
+__url__ = "https://www.freecad.org"
 
 ## \addtogroup FEM
 #  @{
@@ -299,11 +299,11 @@ class Results(run.Results):
         # so .split("\"") gives as 2nd the time and as 7th the filename
         for i in range(0, len(pvdContent) - 2):
             # get time
-            lineArray = pvdContent[i+1].split("\"")
+            lineArray = pvdContent[i + 1].split("\"")
             time = float(lineArray[1])
             filename = os.path.join(self.directory, lineArray[7])
             if os.path.isfile(filename):
-                self._createTimeResults(time, i+1)
+                self._createTimeResults(time, i + 1)
                 self.solver.ElmerTimeResults[i].read(filename)
 
                 # for eigen analyses the resulting values are by a factor 1000 to high
@@ -336,26 +336,28 @@ class Results(run.Results):
             tmplist = self.solver.ElmerTimeResults
             tmplist.append(pipeline)
             self.solver.ElmerTimeResults = tmplist
-            self._finishTimeResults(time, counter-1)
+            self._finishTimeResults(time, counter - 1)
         else:
             # recreate if time is not equal
-            if self.solver.ElmerTimeResults[counter-1].Name != newName:
+            if self.solver.ElmerTimeResults[counter - 1].Name != newName:
                 # store current list before removing object since object removal will automatically
                 # remove entry from self.solver.ElmerTimeResults
                 tmplist = self.solver.ElmerTimeResults
                 self.analysis.Document.removeObject(
-                    self.solver.ElmerTimeResults[counter-1].Name
+                    self.solver.ElmerTimeResults[counter - 1].Name
                 )
-                tmplist[counter-1] = self.analysis.Document.addObject(
+                tmplist[counter - 1] = self.analysis.Document.addObject(
                     "Fem::FemPostPipeline", newName
                 )
                 self.solver.ElmerTimeResults = tmplist
-                self._finishTimeResults(time, counter-1)
+                self._finishTimeResults(time, counter - 1)
 
     def _finishTimeResults(self, time, counter):
         # we purposely use the decimal dot in the label
-        self.solver.ElmerTimeResults[counter].Label\
-           = self.solver.Name + "_" + str(time) + "_" + "Result"
+        self.solver.ElmerTimeResults[counter].Label = (
+            "{}_{}_Result"
+            .format(self.solver.Name, time)
+        )
         self.solver.ElmerTimeResults[counter].ViewObject.OnTopWhenSelected = True
         self.analysis.addObject(self.solver.ElmerTimeResults[counter])
         # to assure the user sees something, set the default to Surface
@@ -364,7 +366,7 @@ class Results(run.Results):
     def _getResultFile(self):
         postPath = None
         # elmer post file path changed with version x.x
-        # see https://forum.freecadweb.org/viewtopic.php?f=18&t=42732
+        # see https://forum.freecad.org/viewtopic.php?f=18&t=42732
         # workaround
         possible_post_file_old = os.path.join(self.directory, "case0001.vtu")
         possible_post_file_single = os.path.join(self.directory, "FreeCAD_t0001.vtu")

@@ -107,6 +107,7 @@
 #include "Part.h"
 #include "PartPy.h"
 #include "Placement.h"
+#include "ProgramOptionsUtilities.h"
 #include "Property.h"
 #include "PropertyContainer.h"
 #include "PropertyExpressionEngine.h"
@@ -2145,53 +2146,6 @@ void Application::initTypes()
 }
 
 namespace {
-pair<string, string> customSyntax(const string& s)
-{
-#if defined(FC_OS_MACOSX)
-    if (s.find("-psn_") == 0)
-        return make_pair(string("psn"), s.substr(5));
-#endif
-    if (s.find("-display") == 0)
-        return make_pair(string("display"), string("null"));
-    else if (s.find("-style") == 0)
-        return make_pair(string("style"), string("null"));
-    else if (s.find("-graphicssystem") == 0)
-        return make_pair(string("graphicssystem"), string("null"));
-    else if (s.find("-widgetcount") == 0)
-        return make_pair(string("widgetcount"), string(""));
-    else if (s.find("-geometry") == 0)
-        return make_pair(string("geometry"), string("null"));
-    else if (s.find("-font") == 0)
-        return make_pair(string("font"), string("null"));
-    else if (s.find("-fn") == 0)
-        return make_pair(string("fn"), string("null"));
-    else if (s.find("-background") == 0)
-        return make_pair(string("background"), string("null"));
-    else if (s.find("-bg") == 0)
-        return make_pair(string("bg"), string("null"));
-    else if (s.find("-foreground") == 0)
-        return make_pair(string("foreground"), string("null"));
-    else if (s.find("-fg") == 0)
-        return make_pair(string("fg"), string("null"));
-    else if (s.find("-button") == 0)
-        return make_pair(string("button"), string("null"));
-    else if (s.find("-btn") == 0)
-        return make_pair(string("btn"), string("null"));
-    else if (s.find("-name") == 0)
-        return make_pair(string("name"), string("null"));
-    else if (s.find("-title") == 0)
-        return make_pair(string("title"), string("null"));
-    else if (s.find("-visual") == 0)
-        return make_pair(string("visual"), string("null"));
-//  else if (s.find("-ncols") == 0)
-//    return make_pair(string("ncols"), boost::program_options::value<int>(1));
-//  else if (s.find("-cmap") == 0)
-//    return make_pair(string("cmap"), string("null"));
-    else if ('@' == s[0])
-        return std::make_pair(string("response-file"), s.substr(1));
-    else
-        return make_pair(string(), string());
-}
 
 void parseProgramOptions(int ac, char ** av, const string& exe, variables_map& vm)
 {
@@ -2311,7 +2265,7 @@ void parseProgramOptions(int ac, char ** av, const string& exe, variables_map& v
 
     try {
         store( boost::program_options::command_line_parser(args).
-               options(cmdline_options).positional(p).extra_parser(customSyntax).run(), vm);
+               options(cmdline_options).positional(p).extra_parser(Util::customSyntax).run(), vm);
 
         std::ifstream ifs("FreeCAD.cfg");
         if (ifs)
@@ -2332,7 +2286,7 @@ void parseProgramOptions(int ac, char ** av, const string& exe, variables_map& v
     if (vm.count("help")) {
         std::stringstream str;
         str << exe << endl << endl;
-        str << "For a detailed description see https://www.freecadweb.org/wiki/Start_up_and_Configuration" << endl<<endl;
+        str << "For a detailed description see https://www.freecad.org/wiki/Start_up_and_Configuration" << endl<<endl;
         str << "Usage: " << exe << " [options] File1 File2 ..." << endl << endl;
         str << visible << endl;
         throw Base::ProgramInformation(str.str());
@@ -2358,7 +2312,7 @@ void parseProgramOptions(int ac, char ** av, const string& exe, variables_map& v
         copy(tok.begin(), tok.end(), back_inserter(args));
         // Parse the file and store the options
         store( boost::program_options::command_line_parser(args).
-               options(cmdline_options).positional(p).extra_parser(customSyntax).run(), vm);
+               options(cmdline_options).positional(p).extra_parser(Util::customSyntax).run(), vm);
     }
 }
 
@@ -2994,7 +2948,7 @@ void Application::LoadParameters()
 
 #if defined(_MSC_VER)
 // fix weird error while linking boost (all versions of VC)
-// VS2010: https://forum.freecadweb.org/viewtopic.php?f=4&t=1886&p=12553&hilit=boost%3A%3Afilesystem%3A%3Aget#p12553
+// VS2010: https://forum.freecad.org/viewtopic.php?f=4&t=1886&p=12553&hilit=boost%3A%3Afilesystem%3A%3Aget#p12553
 namespace boost { namespace program_options { std::string arg="arg"; } }
 namespace boost { namespace program_options {
     const unsigned options_description::m_default_line_length = 80;

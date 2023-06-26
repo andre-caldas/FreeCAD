@@ -37,6 +37,7 @@ from . import manager
 from .manager import get_meshname
 from .manager import init_doc
 
+
 def get_information():
     return {
         "name": "Electrostatics Electricforce - Elmer NonGUI6",
@@ -48,6 +49,7 @@ def get_information():
         "equations": ["electrostatic"]
     }
 
+
 def get_explanation(header=""):
     return header + """
 
@@ -57,11 +59,12 @@ setup()
 
 
 See forum topic post:
-https://forum.freecadweb.org/viewtopic.php?f=18&t=41488&start=40#p373292
+https://forum.freecad.org/viewtopic.php?f=18&t=41488&start=40#p373292
 
 Electrostatics equation in FreeCAD FEM-Elmer
 
 """
+
 
 def setup(doc=None, solvertype="elmer"):
 

@@ -24,7 +24,15 @@
 containers for Arch objects, and also define a terrain surface.
 """
 
-import FreeCAD,Draft,ArchCommands,ArchComponent,math,re,datetime,ArchIFC
+import datetime
+import math
+import re
+
+import FreeCAD
+import ArchCommands
+import ArchComponent
+import ArchIFC
+import Draft
 
 if FreeCAD.GuiUp:
     import FreeCADGui
@@ -49,12 +57,12 @@ else:
 
 __title__= "FreeCAD Site"
 __author__ = "Yorik van Havre"
-__url__ = "https://www.freecadweb.org"
+__url__ = "https://www.freecad.org"
 
 
-def makeSite(objectslist=None,baseobj=None,name="Site"):
+def makeSite(objectslist=None,baseobj=None,name=None):
 
-    '''makeBuilding(objectslist): creates a site including the
+    '''makeBuilding([objectslist],[baseobj],[name]): creates a site including the
     objects from the given list.'''
 
     if not FreeCAD.ActiveDocument:
@@ -62,7 +70,7 @@ def makeSite(objectslist=None,baseobj=None,name="Site"):
         return
     import Part
     obj = FreeCAD.ActiveDocument.addObject("Part::FeaturePython","Site")
-    obj.Label = translate("Arch",name)
+    obj.Label = name if name else translate("Arch","Site")
     _Site(obj)
     if FreeCAD.GuiUp:
         _ViewProviderSite(obj.ViewObject)
@@ -505,7 +513,7 @@ class _CommandSite:
         return {'Pixmap'  : 'Arch_Site',
                 'MenuText': QT_TRANSLATE_NOOP("Arch_Site","Site"),
                 'Accel': "S, I",
-                'ToolTip': QT_TRANSLATE_NOOP("Arch_Site","Creates a site object including selected objects.")}
+                'ToolTip': QT_TRANSLATE_NOOP("Arch_Site","Creates a site including selected objects.")}
 
     def IsActive(self):
 
@@ -581,7 +589,7 @@ class _Site(ArchIFC.IfcProduct):
         Terrain.
 
         You can learn more about properties here:
-        https://wiki.freecadweb.org/property
+        https://wiki.freecad.org/property
         """
 
         ArchIFC.IfcProduct.setProperties(self, obj)
@@ -758,7 +766,8 @@ class _Site(ArchIFC.IfcProduct):
                 obj.SubtractionVolume = 0
             return
 
-        import TechDraw, Part
+        import TechDraw
+        import Part
         area = 0
         perim = 0
         addvol = 0
@@ -838,7 +847,7 @@ class _ViewProviderSite:
         These include solar diagram and compass data, dealing the orientation
         of the site, and its orientation to the sun.
 
-        You can learn more about properties here: https://wiki.freecadweb.org/property
+        You can learn more about properties here: https://wiki.freecad.org/property
         """
 
         pl = vobj.PropertiesList
@@ -1057,7 +1066,7 @@ class _ViewProviderSite:
         """Updates the 'terrain' switches."""
 
         if not hasattr(self, "terrain_switches"):
-              return
+            return
 
         idx = 0 if self.Object.Terrain is None else 1
         for switch in self.terrain_switches:

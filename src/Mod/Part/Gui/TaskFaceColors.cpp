@@ -49,7 +49,6 @@
 #include <Gui/Document.h>
 #include <Gui/MainWindow.h>
 #include <Gui/Selection.h>
-#include <Gui/SoFCUnifiedSelection.h>
 #include <Gui/Tools.h>
 #include <Gui/Utilities.h>
 #include <Gui/View3DInventor.h>
@@ -201,8 +200,7 @@ public:
     {
         Gui::View3DInventorViewer* view = static_cast<Gui::View3DInventorViewer*>(cb->getUserData());
         view->removeEventCallback(SoMouseButtonEvent::getClassTypeId(), selectionCallback, ud);
-        SoNode* root = view->getSceneGraph();
-        static_cast<Gui::SoFCUnifiedSelection*>(root)->selectionRole.setValue(true);
+        view->setSelectionEnabled(true);
 
         std::vector<SbVec2f> picked = view->getGLPolygon();
         SoCamera* cam = view->getSoRenderManager()->getCamera();
@@ -244,6 +242,8 @@ FaceColors::FaceColors(ViewProviderPartExt* vp, QWidget* parent)
 {
     Q_UNUSED(parent);
     d->ui->setupUi(this);
+    setupConnections();
+
     d->ui->groupBox->setTitle(QString::fromUtf8(vp->getObject()->Label.getValue()));
     d->ui->colorButton->setDisabled(true);
     d->ui->colorButton->setAllowTransparency(true);
@@ -265,14 +265,23 @@ FaceColors::~FaceColors()
         d->view->stopSelection();
         d->view->removeEventCallback(SoMouseButtonEvent::getClassTypeId(),
             Private::selectionCallback, this);
-        SoNode* root = d->view->getSceneGraph();
-        static_cast<Gui::SoFCUnifiedSelection*>(root)->selectionRole.setValue(true);
+        d->view->setSelectionEnabled(true);
     }
     Gui::Selection().rmvSelectionGate();
     d->connectDelDoc.disconnect();
     d->connectDelObj.disconnect();
     d->connectUndoDoc.disconnect();
     delete d;
+}
+
+void FaceColors::setupConnections()
+{
+    connect(d->ui->colorButton, &Gui::ColorButton::changed,
+            this, &FaceColors::onColorButtonChanged);
+    connect(d->ui->defaultButton, &QPushButton::clicked,
+            this, &FaceColors::onDefaultButtonClicked);
+    connect(d->ui->boxSelection, &QPushButton::toggled,
+            this, &FaceColors::onBoxSelectionToggled);
 }
 
 void FaceColors::slotUndoDocument(const Gui::Document& Doc)
@@ -295,7 +304,7 @@ void FaceColors::slotDeleteObject(const Gui::ViewProvider& obj)
         Gui::Control().closeDialog();
 }
 
-void FaceColors::on_boxSelection_toggled(bool checked)
+void FaceColors::onBoxSelectionToggled(bool checked)
 {
     Gui::View3DInventor* view = qobject_cast<Gui::View3DInventor*>(Gui::getMainWindow()->activeWindow());
     // toggle the button state and feature
@@ -313,20 +322,19 @@ void FaceColors::on_boxSelection_toggled(bool checked)
             viewer->addEventCallback(SoMouseButtonEvent::getClassTypeId(), Private::selectionCallback, this);
             // avoid that the selection node handles the event otherwise the callback function won't be
             // called immediately
-            SoNode* root = viewer->getSceneGraph();
-            static_cast<Gui::SoFCUnifiedSelection*>(root)->selectionRole.setValue(false);
+            viewer->setSelectionEnabled(false);
             d->view = viewer;
         }
     }
 }
 
-void FaceColors::on_defaultButton_clicked()
+void FaceColors::onDefaultButtonClicked()
 {
     std::fill(d->perface.begin(), d->perface.end(), d->vp->ShapeColor.getValue());
     d->vp->DiffuseColor.setValues(d->perface);
 }
 
-void FaceColors::on_colorButton_changed()
+void FaceColors::onColorButtonChanged()
 {
     if (!d->index.isEmpty()) {
         QColor color = d->ui->colorButton->color();

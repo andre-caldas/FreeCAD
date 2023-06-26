@@ -36,6 +36,7 @@ from .. import writer as general_writer
 from femtools import femutils
 from . import elasticity
 
+
 class ElasticityWriter:
 
     def __init__(self, writer, solver):
@@ -402,7 +403,7 @@ class ElasticityWriter:
         # temperature
         tempObj = self.write.getSingleMember("Fem::ConstraintInitialTemperature")
         if tempObj is not None:
-            refTemp = self.write.getFromUi(tempObj.initialTemperature, "K", "O")
+            refTemp = float(tempObj.initialTemperature.getValueAs("K"))
             for name in bodies:
                 self.write.material(name, "Reference Temperature", refTemp)
         # get the material data for all bodies

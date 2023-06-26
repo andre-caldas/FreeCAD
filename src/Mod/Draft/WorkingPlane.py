@@ -48,7 +48,7 @@ FreeCADGui = lz.LazyLoader("FreeCADGui", globals(), "FreeCADGui")
 
 __title__ = "FreeCAD Working Plane utility"
 __author__ = "Ken Cline"
-__url__ = "https://www.freecadweb.org"
+__url__ = "https://www.freecad.org"
 
 
 class Plane:
@@ -892,7 +892,7 @@ class Plane:
             and a `Rotation` (`Base::Rotation`).
         """
         if rotated:
-            m = DraftVecUtils.getPlaneRotation(self.u, self.v)
+            m = DraftVecUtils.getPlaneRotation(self.u, self.axis)
         else:
             m = DraftVecUtils.getPlaneRotation(self.u, self.v)
         m.move(self.position)

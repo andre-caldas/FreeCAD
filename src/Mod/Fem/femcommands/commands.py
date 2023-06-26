@@ -23,7 +23,7 @@
 
 __title__ = "FreeCAD FEM command definitions"
 __author__ = "Bernd Hahnebach"
-__url__ = "https://www.freecadweb.org"
+__url__ = "https://www.freecad.org"
 
 ## @package commands
 #  \ingroup FEM
@@ -34,7 +34,6 @@ import FreeCADGui
 from FreeCAD import Qt
 
 from .manager import CommandManager
-from femsolver import settings
 from femtools.femutils import expandParentObject
 from femtools.femutils import is_of_type
 from femsolver.settings import get_default_solver
@@ -47,7 +46,7 @@ from femsolver.settings import get_default_solver
 # see https://www.python-course.eu/python3_classes_and_type.php
 # Translation:
 # some information in the regard of translation can be found in forum post
-# https://forum.freecadweb.org/viewtopic.php?f=18&t=62449&p=543845#p543593
+# https://forum.freecad.org/viewtopic.php?f=18&t=62449&p=543845#p543593
 
 
 class _Analysis(CommandManager):
@@ -72,7 +71,8 @@ class _Analysis(CommandManager):
         FreeCAD.ActiveDocument.commitTransaction()
         if get_default_solver() != "None":
             FreeCAD.ActiveDocument.openTransaction("Create default solver")
-            FreeCADGui.doCommand("ObjectsFem.makeSolver{}(FreeCAD.ActiveDocument)"
+            FreeCADGui.doCommand(
+                "ObjectsFem.makeSolver{}(FreeCAD.ActiveDocument)"
                 .format(get_default_solver())
             )
             FreeCADGui.doCommand(
@@ -218,6 +218,7 @@ class _ConstraintCentrif(CommandManager):
         )
         self.is_active = "with_analysis"
         self.do_activated = "add_obj_on_gui_set_edit"
+
 
 class _ConstraintCurrentDensity(CommandManager):
     "The FEM_ConstraintCurrentDensity command definition"
@@ -696,7 +697,7 @@ class _MaterialMechanicalNonlinear(CommandManager):
         # (only if one solver is available and if this solver is a CalculiX solver):
         # nonlinear material
         # nonlinear geometry --> it is triggered anyway
-        # https://forum.freecadweb.org/viewtopic.php?f=18&t=23101&p=180489#p180489
+        # https://forum.freecad.org/viewtopic.php?f=18&t=23101&p=180489#p180489
         solver_object = None
         for m in self.active_analysis.Group:
             if m.isDerivedFrom("Fem::FemSolverObjectPython"):
@@ -1097,12 +1098,12 @@ class _SolverCalculix(CommandManager):
         super(_SolverCalculix, self).__init__()
         self.pixmap = "FEM_SolverStandard"
         self.menutext = Qt.QT_TRANSLATE_NOOP(
-            "FEM_SolverCalculix",
+            "FEM_SolverCalculiX",
             "Solver CalculiX (new framework)"
         )
         self.accel = "S, C"
         self.tooltip = Qt.QT_TRANSLATE_NOOP(
-            "FEM_SolverCalculix",
+            "FEM_SolverCalculiX",
             "Creates a FEM solver CalculiX new framework (less result error handling)"
         )
         self.is_active = "with_analysis"

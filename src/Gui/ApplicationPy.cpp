@@ -976,7 +976,7 @@ PyObject* Application::sAddWorkbenchHandler(PyObject * /*self*/, PyObject *args)
         }
 
         PyDict_SetItemString(Instance->_pcWorkbenchDictionary,item.c_str(),object.ptr());
-        Instance->signalAddWorkbench(item.c_str());
+        Instance->signalRefreshWorkbenches();
     }
     catch (const Py::Exception&) {
         return nullptr;
@@ -997,9 +997,9 @@ PyObject* Application::sRemoveWorkbenchHandler(PyObject * /*self*/, PyObject *ar
         return nullptr;
     }
 
-    Instance->signalRemoveWorkbench(psKey);
     WorkbenchManager::instance()->removeWorkbench(psKey);
     PyDict_DelItemString(Instance->_pcWorkbenchDictionary,psKey);
+    Instance->signalRefreshWorkbenches();
 
     Py_Return;
 }
@@ -1552,7 +1552,7 @@ PyObject* Application::sListUserEditModes(PyObject * /*self*/, PyObject *args)
         return nullptr;
 
     for (auto const &uem : Instance->listUserEditModes()) {
-        ret.append(Py::String(uem.second));
+        ret.append(Py::String(uem.second.first));
     }
 
     return Py::new_reference_to(ret);
@@ -1563,7 +1563,7 @@ PyObject* Application::sGetUserEditMode(PyObject * /*self*/, PyObject *args)
     if (!PyArg_ParseTuple(args, ""))
         return nullptr;
 
-    return Py::new_reference_to(Py::String(Instance->getUserEditModeName()));
+    return Py::new_reference_to(Py::String(Instance->getUserEditModeUIStrings().first));
 }
 
 PyObject* Application::sSetUserEditMode(PyObject * /*self*/, PyObject *args)

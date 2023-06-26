@@ -294,7 +294,6 @@ SET(Gui_UIC_SRCS
     DlgUnitsCalculator.ui
     DlgAuthorization.ui
     DlgChooseIcon.ui
-    DlgCommands.ui
     DlgCreateNewPreferencePack.ui
     DlgCustomizeSpNavSettings.ui
     DlgDisplayProperties.ui
@@ -320,18 +319,16 @@ SET(Gui_UIC_SRCS
     DlgSettingsCacheDirectory.ui
     DlgSettingsNavigation.ui
     DlgSettingsSelection.ui
-    DlgSettingsUnits.ui
     DlgSettingsViewColor.ui
     DlgSettingsColorGradient.ui
     DlgSettingsDocument.ui
     DlgSettingsImage.ui
-    DlgSettingsLazyLoaded.ui
+    DlgSettingsWorkbenches.ui
     DlgSettingsMacro.ui
     DlgSettingsNotificationArea.ui
     DlgSettingsPythonConsole.ui
     DlgCheckableMessageBox.ui
     DlgToolbars.ui
-    DlgWorkbenches.ui
     DlgTreeWidget.ui
     DlgLocationAngle.ui
     DlgLocationPos.ui
@@ -345,8 +342,8 @@ SET(Gui_UIC_SRCS
     Placement.ui
     TextureMapping.ui
     TaskView/TaskAppearance.ui
-    TaskView/TaskImageScale.ui
     TaskView/TaskOrientation.ui
+    TaskView/TaskImage.ui
     TaskView/TaskSelectLinkProperty.ui
     TaskElementColors.ui
     DlgObjectSelection.ui
@@ -354,9 +351,14 @@ SET(Gui_UIC_SRCS
     VectorListEditor.ui
 )
 
-SET(Gui_RES_SRCS
+set (FreeCAD_TR_QRC ${CMAKE_CURRENT_BINARY_DIR}/Language/FreeCAD_translation.qrc)
+qt_find_and_add_translation(QM_SRCS "Language/FreeCAD_*.ts"
+    ${CMAKE_CURRENT_BINARY_DIR}/Language)
+qt_create_resource_file_prefix(${FreeCAD_TR_QRC} ${QM_SRCS})
+set(Gui_RES_SRCS
     Icons/resource.qrc
     Language/translation.qrc
+    ${FreeCAD_TR_QRC}
     QSint/actionpanel/schemes.qrc
 )
 
@@ -381,6 +383,7 @@ SET(Command_CPP_SRCS
     CommandPyImp.cpp
     ShortcutManager.cpp
     CommandCompleter.cpp
+    CommandActionPy.cpp
 )
 SET(Command_SRCS
     ${Command_CPP_SRCS}
@@ -390,6 +393,7 @@ SET(Command_SRCS
     CommandT.h
     ShortcutManager.h
     CommandCompleter.h
+    CommandActionPy.h
 )
 SOURCE_GROUP("Command" FILES ${Command_SRCS})
 
@@ -520,36 +524,32 @@ SOURCE_GROUP("Dialog" FILES ${Dialog_SRCS})
 # The customize dialog sources
 SET(Dialog_Customize_CPP_SRCS
     DlgActionsImp.cpp
-    DlgCommandsImp.cpp
     DlgCustomizeImp.cpp
     DlgCustomizeSpaceball.cpp
     DlgCustomizeSpNavSettings.cpp
     DlgKeyboardImp.cpp
     DlgToolbarsImp.cpp
-    DlgWorkbenchesImp.cpp
     QListWidgetCustom.cpp
+    ListWidgetDragBugFix.cpp
 )
 SET(Dialog_Customize_HPP_SRCS
     DlgActionsImp.h
-    DlgCommandsImp.h
     DlgCustomizeImp.h
     DlgCustomizeSpaceball.h
     DlgCustomizeSpNavSettings.h
     DlgKeyboardImp.h
     DlgToolbarsImp.h
-    DlgWorkbenchesImp.h
     QListWidgetCustom.h
+    ListWidgetDragBugFix.h
 )
 SET(Dialog_Customize_SRCS
     ${Dialog_Customize_CPP_SRCS}
     ${Dialog_Customize_HPP_SRCS}
     DlgActions.ui
     DlgChooseIcon.ui
-    DlgCommands.ui
     DlgCustomizeSpNavSettings.ui
     DlgKeyboard.ui
     DlgToolbars.ui
-    DlgWorkbenches.ui
 )
 SOURCE_GROUP("Dialog\\Customize" FILES ${Dialog_Customize_SRCS})
 
@@ -564,12 +564,11 @@ SET(Dialog_Settings_CPP_SRCS
     DlgSettingsCacheDirectory.cpp
     DlgSettingsNavigation.cpp
     DlgSettingsSelection.cpp
-    DlgSettingsUnitsImp.cpp
     DlgSettingsViewColor.cpp
     DlgSettingsColorGradientImp.cpp
     DlgSettingsDocumentImp.cpp
     DlgSettingsImageImp.cpp
-    DlgSettingsLazyLoadedImp.cpp
+    DlgSettingsWorkbenchesImp.cpp
     DlgSettingsMacroImp.cpp
     DlgSettingsNotificationArea.cpp
     DlgSettingsPythonConsole.cpp
@@ -584,12 +583,11 @@ SET(Dialog_Settings_HPP_SRCS
     DlgSettingsCacheDirectory.h
     DlgSettingsNavigation.h
     DlgSettingsSelection.h
-    DlgSettingsUnitsImp.h
     DlgSettingsViewColor.h
     DlgSettingsColorGradientImp.h
     DlgSettingsDocumentImp.h
     DlgSettingsImageImp.h
-    DlgSettingsLazyLoadedImp.h
+    DlgSettingsWorkbenchesImp.h
     DlgSettingsMacroImp.h
     DlgSettingsNotificationArea.h
     DlgSettingsPythonConsole.h
@@ -606,12 +604,11 @@ SET(Dialog_Settings_SRCS
     DlgSettingsCacheDirectory.ui
     DlgSettingsNavigation.ui
     DlgSettingsSelection.ui
-    DlgSettingsUnits.ui
     DlgSettingsViewColor.ui
     DlgSettingsColorGradient.ui
     DlgSettingsDocument.ui
     DlgSettingsImage.ui
-    DlgSettingsLazyLoaded.ui
+    DlgSettingsWorkbenches.ui
     DlgSettingsMacro.ui
     DlgSettingsNotificationArea.ui
     DlgSettingsPythonConsole.ui
@@ -728,12 +725,12 @@ SET(Task_View_SRCS
     TaskView/TaskAppearance.cpp
     TaskView/TaskAppearance.h
     TaskView/TaskAppearance.ui
-    TaskView/TaskImageScale.cpp
-    TaskView/TaskImageScale.h
-    TaskView/TaskImageScale.ui
     TaskView/TaskOrientation.cpp
     TaskView/TaskOrientation.h
     TaskView/TaskOrientation.ui
+    TaskView/TaskImage.cpp
+    TaskView/TaskImage.h
+    TaskView/TaskImage.ui
     TaskView/TaskSelectLinkProperty.cpp
     TaskView/TaskSelectLinkProperty.h
     TaskView/TaskSelectLinkProperty.ui
@@ -976,6 +973,7 @@ SET(Inventor_CPP_SRCS
     SoNavigationDragger.cpp
     SoAxisCrossKit.cpp
     SoTextLabel.cpp
+    SoDatumLabel.cpp
     SoTouchEvents.cpp
     SoMouseWheelEvent.cpp
     SoFCCSysDragger.cpp
@@ -1003,6 +1001,7 @@ SET(Inventor_SRCS
     SoNavigationDragger.h
     SoAxisCrossKit.h
     SoTextLabel.h
+    SoDatumLabel.h
     SoTouchEvents.h
     SoMouseWheelEvent.h
     SoFCCSysDragger.h
@@ -1243,8 +1242,8 @@ if(MSVC)
         propertyeditor/PropertyItemDelegate.cpp
         propertyeditor/PropertyModel.cpp
         TaskView/TaskAppearance.cpp
-        TaskView/TaskImageScale.cpp
         TaskView/TaskOrientation.cpp
+        TaskView/TaskImage.cpp
         TaskView/TaskSelectLinkProperty.cpp
         TaskView/TaskEditControl.cpp
         TaskView/TaskView.cpp

@@ -37,14 +37,15 @@
 
 using namespace Gui;
 
-ToolBarItem::ToolBarItem() : visibility(HideStyle::VISIBLE)
+ToolBarItem::ToolBarItem() : visibilityPolicy(DefaultVisibility::Visible)
 {
 }
 
-ToolBarItem::ToolBarItem(ToolBarItem* item, HideStyle visibility) : visibility(visibility)
+ToolBarItem::ToolBarItem(ToolBarItem* item, DefaultVisibility visibilityPolicy) : visibilityPolicy(visibilityPolicy)
 {
-    if ( item )
+    if (item) {
         item->appendItem(this);
+    }
 }
 
 ToolBarItem::~ToolBarItem()
@@ -71,11 +72,11 @@ ToolBarItem* ToolBarItem::findItem(const std::string& name)
 {
     if ( _name == name ) {
         return this;
-    } else {
-        for ( QList<ToolBarItem*>::Iterator it = _items.begin(); it != _items.end(); ++it ) {
-            if ( (*it)->_name == name ) {
-                return *it;
-            }
+    }
+
+    for (auto it : qAsConst(_items)) {
+        if (it->_name == name) {
+            return it;
         }
     }
 
@@ -88,8 +89,8 @@ ToolBarItem* ToolBarItem::copy() const
     root->setCommand( command() );
 
     QList<ToolBarItem*> items = getItems();
-    for ( QList<ToolBarItem*>::Iterator it = items.begin(); it != items.end(); ++it ) {
-        root->appendItem( (*it)->copy() );
+    for (auto it : items) {
+        root->appendItem(it->copy());
     }
 
     return root;
@@ -111,21 +112,23 @@ bool ToolBarItem::insertItem( ToolBarItem* before, ToolBarItem* item)
     if (pos != -1) {
         _items.insert(pos, item);
         return true;
-    } else
-        return false;
+    }
+
+    return false;
 }
 
 void ToolBarItem::removeItem(ToolBarItem* item)
 {
     int pos = _items.indexOf(item);
-    if (pos != -1)
+    if (pos != -1) {
         _items.removeAt(pos);
+    }
 }
 
 void ToolBarItem::clear()
 {
-    for ( QList<ToolBarItem*>::Iterator it = _items.begin(); it != _items.end(); ++it ) {
-        delete *it;
+    for (auto it : qAsConst(_items)) {
+        delete it;
     }
 
     _items.clear();
@@ -174,11 +177,9 @@ ToolBarManager::~ToolBarManager()
 {
 }
 
-void ToolBarManager::setup(ToolBarItem* toolBarItems)
+namespace {
+QPointer<QWidget> createActionWidget()
 {
-    if (!toolBarItems)
-        return; // empty menu bar
-
     static QPointer<QWidget> _ActionWidget;
     if (!_ActionWidget) {
         _ActionWidget = new QWidget(getMainWindow());
@@ -192,9 +193,22 @@ void ToolBarManager::setup(ToolBarItem* toolBarItems)
         _ActionWidget->move(QPoint(-100,-100));
     }
     else {
-        for (auto action : _ActionWidget->actions())
+        auto actions = _ActionWidget->actions();
+        for (auto action : actions) {
             _ActionWidget->removeAction(action);
+        }
     }
+
+    return _ActionWidget;
+}
+}
+
+void ToolBarManager::setup(ToolBarItem* toolBarItems)
+{
+    if (!toolBarItems)
+        return; // empty menu bar
+
+    QPointer<QWidget> _ActionWidget = createActionWidget();
 
     saveState();
     this->toolbarNames.clear();
@@ -234,14 +248,36 @@ void ToolBarManager::setup(ToolBarItem* toolBarItems)
             toolbars.removeAt(index);
         }
 
-        bool visible = hPref->GetBool(toolbarName.c_str(), (*it)->visibility == ToolBarItem::HideStyle::VISIBLE);
-        visible &= (*it)->visibility != ToolBarItem::HideStyle::FORCE_HIDE;
+        bool visible = false;
+
+        // If visibility policy is custom, the toolbar is initialised as not visible, and the
+        // toggleViewAction to control its visibility is not visible either.
+        //
+        // Both are managed under the responsibility of the client code
+        if((*it)->visibilityPolicy != ToolBarItem::DefaultVisibility::Unavailable) {
+            bool defaultvisibility = (*it)->visibilityPolicy == ToolBarItem::DefaultVisibility::Visible;
+
+            visible = hPref->GetBool(toolbarName.c_str(), defaultvisibility);
+
+            // Enable automatic handling of visibility via, for example, (contextual) menu
+            toolbar->toggleViewAction()->setVisible(true);
+        }
+        else { // ToolBarItem::DefaultVisibility::Unavailable
+            // Prevent that the action to show/hide a toolbar appears on the (contextual) menus.
+            // This is also managed by the client code for a toolbar with custom policy
+            toolbar->toggleViewAction()->setVisible(false);
+        }
+
+        // Initialise toolbar item visibility
         toolbar->setVisible(visible);
-        toolbar->toggleViewAction()->setVisible((*it)->visibility != ToolBarItem::HideStyle::FORCE_HIDE);
+
+        // Store item visibility policy within the action
+        toolbar->toggleViewAction()->setProperty("DefaultVisibility", static_cast<int>((*it)->visibilityPolicy));
 
         // setup the toolbar
         setup(*it, toolbar);
-        for (auto action : toolbar->actions()) {
+        auto actions = toolbar->actions();
+        for (auto action : actions) {
             _ActionWidget->addAction(action);
         }
 
@@ -273,7 +309,7 @@ void ToolBarManager::setup(ToolBarItem* toolBarItems)
             fw = fw->parentWidget();
         }
         // ignore toolbars which do not belong to the previously active workbench
-        QByteArray toolbarName = (*it)->objectName().toUtf8();
+        //QByteArray toolbarName = (*it)->objectName().toUtf8();
         if (!(*it)->toggleViewAction()->isVisible())
             continue;
         //hPref->SetBool(toolbarName.constData(), (*it)->isVisible());
@@ -327,6 +363,24 @@ void ToolBarManager::setup(ToolBarItem* item, QToolBar* toolbar) const
 
 void ToolBarManager::saveState() const
 {
+    auto ignoreSave = [](QAction* action) {
+        // If the toggle action is invisible then it's controlled by the application.
+        // In this case the current state is not saved.
+        if (!action->isVisible()) {
+            return true;
+        }
+
+        QVariant property = action->property("DefaultVisibility");
+        if (property.isNull()) {
+            return false;
+        }
+
+        // If DefaultVisibility is Unavailable then never save the state because it's
+        // always controlled by the client code.
+        auto value = static_cast<ToolBarItem::DefaultVisibility>(property.toInt());
+        return value == ToolBarItem::DefaultVisibility::Unavailable;
+    };
+
     ParameterGrp::handle hPref = App::GetApplication().GetUserParameter().GetGroup("BaseApp")
                                ->GetGroup("MainWindow")->GetGroup("Toolbars");
 
@@ -334,8 +388,10 @@ void ToolBarManager::saveState() const
     for (QStringList::ConstIterator it = this->toolbarNames.begin(); it != this->toolbarNames.end(); ++it) {
         QToolBar* toolbar = findToolBar(toolbars, *it);
         if (toolbar) {
-            if (!toolbar->toggleViewAction()->isVisible())
-                continue; //if toggleViewAction is not visible it means that the toolbar is FORCE_HIDE. In which case we do not save settings.
+            if (ignoreSave(toolbar->toggleViewAction())) {
+                continue;
+            }
+
             QByteArray toolbarName = toolbar->objectName().toUtf8();
             hPref->SetBool(toolbarName.constData(), toolbar->isVisible());
         }
@@ -414,26 +470,91 @@ QList<QToolBar*> ToolBarManager::toolBars() const
     return tb;
 }
 
-void ToolBarManager::setToolbarVisibility(bool show, const QList<QString>& names) {
+ToolBarItem::DefaultVisibility ToolBarManager::getToolbarPolicy(const QToolBar* toolbar) const
+{
+    auto* action = toolbar->toggleViewAction();
+
+    QVariant property = action->property("DefaultVisibility");
+    if (property.isNull()) {
+        return ToolBarItem::DefaultVisibility::Visible;
+    }
+
+    return static_cast<ToolBarItem::DefaultVisibility>(property.toInt());
+}
+
+void ToolBarManager::setState(const QList<QString>& names, State state)
+{
     for (auto& name : names) {
-        setToolbarVisibility(show, name);
+        setState(name, state);
     }
 }
 
-void ToolBarManager::setToolbarVisibility(bool show, const QString& name) {
-
+void ToolBarManager::setState(const QString& name, State state)
+{
     ParameterGrp::handle hPref = App::GetApplication().GetUserParameter().GetGroup("BaseApp")->GetGroup("MainWindow")->GetGroup("Toolbars");
+
+    auto visibility = [hPref, name](bool defaultvalue) {
+        return hPref->GetBool(name.toStdString().c_str(), defaultvalue);
+    };
+
+    auto saveVisibility = [hPref, name](bool value) {
+        hPref->SetBool(name.toStdString().c_str(), value);
+    };
+
+    auto showhide = [visibility](QToolBar* toolbar, ToolBarItem::DefaultVisibility policy) {
+
+        auto show = visibility( policy == ToolBarItem::DefaultVisibility::Visible );
+
+        if(show) {
+            toolbar->show();
+        }
+        else {
+            toolbar->hide();
+        }
+    };
 
     QToolBar* tb = findToolBar(toolBars(), name);
     if (tb) {
-        if (show) {
-            if(hPref->GetBool(name.toStdString().c_str(), true))
-                tb->show();
-            tb->toggleViewAction()->setVisible(true);
+
+        if (state == State::RestoreDefault) {
+
+            auto policy = getToolbarPolicy(tb);
+
+            if(policy == ToolBarItem::DefaultVisibility::Unavailable) {
+                tb->hide();
+                tb->toggleViewAction()->setVisible(false);
+            }
+            else  {
+                tb->toggleViewAction()->setVisible(true);
+
+                showhide(tb, policy);
+            }
         }
-        else {
-            tb->hide();
-            tb->toggleViewAction()->setVisible(false);
+        else if (state == State::ForceAvailable) {
+
+            auto policy = getToolbarPolicy(tb);
+
+            tb->toggleViewAction()->setVisible(true);
+
+            // Unavailable policy defaults to a Visible toolbars when made available
+            auto show = visibility( policy == ToolBarItem::DefaultVisibility::Visible ||
+                                    policy == ToolBarItem::DefaultVisibility::Unavailable);
+
+            if(show) {
+                tb->show();
+            }
+            else {
+                tb->hide();
+            }
+        }
+        else if (state == State::ForceHidden) {
+            tb->toggleViewAction()->setVisible(false); // not visible in context menus
+            tb->hide(); // toolbar not visible
+
+        }
+        else if (state == State::SaveState) {
+            auto show = tb->isVisible();
+            saveVisibility(show);
         }
     }
 }

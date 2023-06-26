@@ -23,11 +23,8 @@
 
 import sys
 import FreeCAD
-from FreeCAD import Placement
-from FreeCAD import Rotation
 from FreeCAD import Vector
 
-import Draft
 import ObjectsFem
 import Part
 import Sketcher
@@ -35,6 +32,7 @@ import Sketcher
 from . import manager
 from .manager import get_meshname
 from .manager import init_doc
+
 
 def get_information():
     return {
@@ -47,6 +45,7 @@ def get_information():
         "equations": ["deformation"]
     }
 
+
 def get_explanation(header=""):
     return header + """
 
@@ -57,6 +56,7 @@ setup()
 Deformation equation - Elmer solver
 
 """
+
 
 def setup(doc=None, solvertype="elmer"):
 
@@ -77,12 +77,12 @@ def setup(doc=None, solvertype="elmer"):
     SketchPath.MapMode = "FlatFace"
     SketchPath.addGeometry(Part.LineSegment(Vector(
         -20.0, 30.0, 0.0), Vector(-20.0, 0.0, 0.0)), False)
-    SketchPath.addConstraint(Sketcher.Constraint('PointOnObject', 0, 2, -1)) 
-    SketchPath.addConstraint(Sketcher.Constraint('Vertical', 0)) 
+    SketchPath.addConstraint(Sketcher.Constraint('PointOnObject', 0, 2, -1))
+    SketchPath.addConstraint(Sketcher.Constraint('Vertical', 0))
     SketchPath.addGeometry(Part.ArcOfCircle(Part.Circle(
         Vector(0.0, 0.0, 0.0), Vector(0, 0, 1), 20.0), 3.141593, 6.283185), False)
-    SketchPath.addConstraint(Sketcher.Constraint('Tangent', 0, 2, 1, 1)) 
-    SketchPath.addConstraint(Sketcher.Constraint('PointOnObject', 1, 2, -1)) 
+    SketchPath.addConstraint(Sketcher.Constraint('Tangent', 0, 2, 1, 1))
+    SketchPath.addConstraint(Sketcher.Constraint('PointOnObject', 1, 2, -1))
     SketchPath.addGeometry(Part.LineSegment(
         Vector(20.0, 0.0, 0.0), Vector(20.0, 30.0, 0.0)), False)
     SketchPath.addConstraint(Sketcher.Constraint('Tangent', 1, 2, 2, 1))

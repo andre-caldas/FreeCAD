@@ -34,6 +34,7 @@ from . import manager
 from .manager import get_meshname
 from .manager import init_doc
 
+
 def get_information():
     return {
         "name": "Electrostatics Capacitance Two Balls",
@@ -45,6 +46,7 @@ def get_information():
         "equations": ["electrostatic"]
     }
 
+
 def get_explanation(header=""):
     return header + """
 
@@ -54,11 +56,12 @@ setup()
 
 
 See forum topic post:
-https://forum.freecadweb.org/viewtopic.php?f=18&t=41488&start=90#p412047
+https://forum.freecad.org/viewtopic.php?f=18&t=41488&start=90#p412047
 
 Electrostatics equation in FreeCAD FEM-Elmer
 
 """
+
 
 def setup(doc=None, solvertype="elmer"):
 

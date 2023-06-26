@@ -21,7 +21,7 @@
 
 __title__= "FreeCAD Arch Stairs"
 __author__ = "Yorik van Havre"
-__url__ = "https://www.freecadweb.org"
+__url__ = "https://www.freecad.org"
 
 
 import FreeCAD,ArchComponent,Draft,DraftVecUtils,math,ArchPipe
@@ -50,9 +50,9 @@ else:
 zeroMM = FreeCAD.Units.Quantity('0mm')
 
 
-def makeStairs(baseobj=None,length=None,width=None,height=None,steps=None,name="Stairs"):
+def makeStairs(baseobj=None,length=None,width=None,height=None,steps=None,name=None):
 
-    """makeStairs([baseobj,length,width,height,steps]): creates a Stairs
+    """makeStairs([baseobj],[length],[width],[height],[steps],[name]): creates a Stairs
     objects with given attributes."""
 
     if not FreeCAD.ActiveDocument:
@@ -62,8 +62,9 @@ def makeStairs(baseobj=None,length=None,width=None,height=None,steps=None,name="
 
     stairs = []
     additions = []
+    label = name if name else translate("Arch","Stairs")
 
-    def setProperty(obj,length,width,height,steps,name):
+    def setProperty(obj,length,width,height,steps):
         if length:
             obj.Length = length
         else:
@@ -94,28 +95,28 @@ def makeStairs(baseobj=None,length=None,width=None,height=None,steps=None,name="
         lenSelection = len(baseobj)
         if lenSelection > 1:
             stair = FreeCAD.ActiveDocument.addObject("Part::FeaturePython","Stairs")
-            stair.Label = translate("Arch",name)
+            stair.Label = label
             _Stairs(stair)
             stairs.append(stair)
-            stairs[0].Label = translate("Arch",name)
+            stairs[0].Label = label
             i = 1
         else:
             i = 0
         for baseobjI in baseobj:
             stair = FreeCAD.ActiveDocument.addObject("Part::FeaturePython","Stairs")
-            stair.Label = translate("Arch",name)
+            stair.Label = label
             _Stairs(stair)
             stairs.append(stair)
-            stairs[i].Label = translate("Arch",name)
+            stairs[i].Label = label
             stairs[i].Base = baseobjI
 
-            if (len(baseobjI.Shape.Edges) > 1):
+            if len(baseobjI.Shape.Edges) > 1:
                 stepsI = 1                              #'landing' if 'multi-edges' currently
             elif steps:
                 stepsI = steps
             else:
                 stepsI = 20
-            setProperty(stairs[i],None,width,height,stepsI,name)
+            setProperty(stairs[i],None,width,height,stepsI)
 
             if i > 1:
                 additions.append(stairs[i])
@@ -129,9 +130,9 @@ def makeStairs(baseobj=None,length=None,width=None,height=None,steps=None,name="
 
     else:
         obj = FreeCAD.ActiveDocument.addObject("Part::FeaturePython","Stairs")
-        obj.Label = translate("Arch",name)
+        obj.Label = label
         _Stairs(obj)
-        setProperty(obj,length,width,height,steps,name)
+        setProperty(obj,length,width,height,steps)
         stairs.append(obj)
 
     if FreeCAD.GuiUp:
@@ -167,7 +168,7 @@ def makeRailing(stairs):
                 outlineLRAll = stair.OutlineRightAll
                 stairRailingLR = "RailingRight"
             if outlineLR or outlineLRAll:
-                lrRail = ArchPipe.makePipe(baseobj=None,diameter=0,length=0,placement=None,name="Rail")
+                lrRail = ArchPipe.makePipe(baseobj=None,diameter=0,length=0,placement=None,name=translate("Arch","Railing"))
                 if outlineLRAll:
                     setattr(stair, stairRailingLR, lrRail)
                     break
@@ -178,7 +179,8 @@ def makeRailing(stairs):
         sel = FreeCADGui.Selection.getSelection()
         sel0 = sel[0]
         stairs = []
-        if Draft.getType(sel[0]) == "Stairs":                       # TODO currently consider 1st selected object, then would tackle multiple objects ?
+        # TODO currently consider 1st selected object, then would tackle multiple objects?
+        if Draft.getType(sel[0]) == "Stairs":
             stairs.append(sel0)
             if Draft.getType(sel0.Base) == "Stairs":
                 stairs.append(sel0.Base)
@@ -205,7 +207,7 @@ class _CommandStairs:
         return {'Pixmap'  : 'Arch_Stairs',
                 'MenuText': QT_TRANSLATE_NOOP("Arch_Stairs","Stairs"),
                 'Accel': "S, R",
-                'ToolTip': QT_TRANSLATE_NOOP("Arch_Space","Creates a stairs object")}
+                'ToolTip': QT_TRANSLATE_NOOP("Arch_Stairs","Creates a flight of stairs")}
 
     def IsActive(self):
 
@@ -492,15 +494,15 @@ class _Stairs(ArchComponent.Component):
                 if (len(obj.Base.Shape.Edges) == 1):
                     edge = obj.Base.Shape.Edges[0]
                     if isinstance(edge.Curve,(Part.LineSegment,Part.Line)):
-                      # preparing for multi-edges landing / segment staircase
-                      if obj.NumberOfSteps > 1:
+                        # preparing for multi-edges landing / segment staircase
+                        if obj.NumberOfSteps > 1:
                             self.makeStraightStairsWithLanding(obj,edge)    # all cases use makeStraightStairsWithLanding()
 
-                      # preparing for multi-edges landing / segment staircase
-                      if obj.NumberOfSteps == 1:
+                        # preparing for multi-edges landing / segment staircase
+                        if obj.NumberOfSteps == 1:
                             # TODO - All use self.makeMultiEdgesLanding(obj,edges) ?
                             self.makeStraightLanding(obj,edge)
-                      if obj.NumberOfSteps == 0:
+                        if obj.NumberOfSteps == 0:
                             pass # Should delete the whole shape
 
                     else:
@@ -510,12 +512,12 @@ class _Stairs(ArchComponent.Component):
                         else:
                             self.makeCurvedStairs(obj,edge)
 
-                elif (len(obj.Base.Shape.Edges) >= 1):
-                      #if obj.NumberOfSteps == 1:
-                            # Sort the edges so each vertex tested of its tangent direction in order
-                            ## TODO - Found Part.sortEdges() occasionally return less edges then 'input'
-                            edges = Part.sortEdges(obj.Base.Shape.Edges)[0]
-                            self.makeMultiEdgesLanding(obj,edges)
+                elif len(obj.Base.Shape.Edges) >= 1:
+                    #if obj.NumberOfSteps == 1:
+                    # Sort the edges so each vertex tested of its tangent direction in order
+                    ## TODO - Found Part.sortEdges() occasionally return less edges then 'input'
+                    edges = Part.sortEdges(obj.Base.Shape.Edges)[0]
+                    self.makeMultiEdgesLanding(obj,edges)
             else:
                 if not obj.Length.Value:
                     return
@@ -718,7 +720,7 @@ class _Stairs(ArchComponent.Component):
                         netWidthI = widthFirstSegment.Value - offsetHLeft.Value - offsetHRight.Value  #2*offsetH
 
             else:
-               netWidthI = widthFirstSegment.Value - offsetHLeft.Value - offsetHRight.Value  #2*offsetH
+                netWidthI = widthFirstSegment.Value - offsetHLeft.Value - offsetHRight.Value  #2*offsetH
 
 
             ''' (3) append vBase '''
@@ -773,15 +775,15 @@ class _Stairs(ArchComponent.Component):
                 vOffsetH2 = DraftVecUtils.scaleTo(dvec2,offsetHLeft.Value)
 
             if align == "Left":
-              vBase[i] = _Stairs.align(vBase[i], "Right", -vOffsetH)
-              if isArc:
-                vBase1 = _Stairs.align(vBase1, "Right", -vOffsetH1)
-                vBase2 = _Stairs.align(vBase2, "Right", -vOffsetH2)
+                vBase[i] = _Stairs.align(vBase[i], "Right", -vOffsetH)
+                if isArc:
+                    vBase1 = _Stairs.align(vBase1, "Right", -vOffsetH1)
+                    vBase2 = _Stairs.align(vBase2, "Right", -vOffsetH2)
             elif align == "Right":
-              vBase[i] = _Stairs.align(vBase[i], "Right", vOffsetH)
-              if isArc:
-                vBase1 = _Stairs.align(vBase1, "Right", vOffsetH1)
-                vBase2 = _Stairs.align(vBase2, "Right", vOffsetH2)
+                vBase[i] = _Stairs.align(vBase[i], "Right", vOffsetH)
+                if isArc:
+                    vBase1 = _Stairs.align(vBase1, "Right", vOffsetH1)
+                    vBase2 = _Stairs.align(vBase2, "Right", vOffsetH2)
 
 
             ''' (3b, 2b/1c) get + alter [p1, p2, p3, p4] - Need vBase '''
@@ -831,8 +833,8 @@ class _Stairs(ArchComponent.Component):
                 outlineP3P4.insert(0, intersectionP3P4)
 
             else:
-                    outlineP1P2.append(p1[i])
-                    outlineP3P4.insert(0, p4[i])
+                outlineP1P2.append(p1[i])
+                outlineP3P4.insert(0, p4[i])
 
         # add back last/first 'missing' point(s)
         outlineP1P2.append(p2[i])
@@ -861,40 +863,40 @@ class _Stairs(ArchComponent.Component):
             outlineP3P4Closed[i+1] = intersectionP3P4    #intersection[0]
 
         if mode in ["OrderedOpen", "OrderedCloseAndOrderedOpen"]:
-          if i > 0: # Multi-edge, otherwise no use
+            if i > 0: # Multi-edge, otherwise no use
 
-            outlineP1P2Ordered = list(outlineP1P2)
+                outlineP1P2Ordered = list(outlineP1P2)
 
-            ''' Guessing the 1st Start Point based on Intersection '''
-            vx1 = Vector(outlineP1P2[1].x, outlineP1P2[1].y, 0)
-            l0 = Part.LineSegment(edges[0].Vertexes[0].Point, edges[0].Vertexes[1].Point)
-            try:
-                distFrom1stParameter = l0.parameter(vx1)
-                distFrom2ndParameter = l0.length()-distFrom1stParameter
+                ''' Guessing the 1st Start Point based on Intersection '''
+                vx1 = Vector(outlineP1P2[1].x, outlineP1P2[1].y, 0)
+                l0 = Part.LineSegment(edges[0].Vertexes[0].Point, edges[0].Vertexes[1].Point)
+                try:
+                    distFrom1stParameter = l0.parameter(vx1)
+                    distFrom2ndParameter = l0.length()-distFrom1stParameter
 
-                ''' Further point of this line from intersection '''
-                if distFrom2ndParameter > distFrom1stParameter:
-                    foundStart = edges[0].Vertexes[1].Point
-                else: # if distFrom2ndParameter = / < distFrom1stParameter (i.e. if equal, Vertexes[0].Point is taken ?)
-                    foundStart = edges[0].Vertexes[0].Point
-            except Exception:
-                print('Intersection point Not on this edge')
+                    ''' Further point of this line from intersection '''
+                    if distFrom2ndParameter > distFrom1stParameter:
+                        foundStart = edges[0].Vertexes[1].Point
+                    else: # if distFrom2ndParameter = / < distFrom1stParameter (i.e. if equal, Vertexes[0].Point is taken ?)
+                        foundStart = edges[0].Vertexes[0].Point
+                except Exception:
+                    print('Intersection point Not on this edge')
 
-            ''' Guessing the last End Point based on Intersection '''
-            vx99 = Vector(outlineP1P2[i].x, outlineP1P2[i].y, 0)
-            l99 = Part.LineSegment(edges[i].Vertexes[0].Point, edges[i].Vertexes[1].Point)
-            try:
-                distFrom1stParameter = l99.parameter(vx99)
-                distFrom2ndParameter = l99.length()-distFrom1stParameter
-                if distFrom2ndParameter > distFrom1stParameter:
-                    foundEnd = edges[i].Vertexes[1].Point
-                else:
-                    foundEnd = edges[i].Vertexes[0].Point
-            except Exception:
-                print('Intersection point Not on this edge')
+                ''' Guessing the last End Point based on Intersection '''
+                vx99 = Vector(outlineP1P2[i].x, outlineP1P2[i].y, 0)
+                l99 = Part.LineSegment(edges[i].Vertexes[0].Point, edges[i].Vertexes[1].Point)
+                try:
+                    distFrom1stParameter = l99.parameter(vx99)
+                    distFrom2ndParameter = l99.length()-distFrom1stParameter
+                    if distFrom2ndParameter > distFrom1stParameter:
+                        foundEnd = edges[i].Vertexes[1].Point
+                    else:
+                        foundEnd = edges[i].Vertexes[0].Point
+                except Exception:
+                    print('Intersection point Not on this edge')
 
-            outlineP1P2Ordered[0] = foundStart
-            outlineP1P2Ordered[i+1] = foundEnd
+                outlineP1P2Ordered[0] = foundStart
+                outlineP1P2Ordered[i+1] = foundEnd
 
         return outline, outlineP1P2, outlineP3P4, vBase, outlineP1P2Closed, outlineP3P4Closed, outlineP1P2Ordered, pArc, pArc1, pArc2
 
@@ -985,17 +987,17 @@ class _Stairs(ArchComponent.Component):
                 else:
                     print ("obj.Base has 0 z-value")
                     print (h)
-        if h==0 and obj.Height.Value != 0:
+        if (h == 0) and obj.Height.Value != 0:
             h = obj.Height.Value
         else:
             print (h)
 
         if obj.TreadDepthEnforce != 0:
-                l = obj.TreadDepthEnforce.Value * (numberofsteps-2)
-                if obj.LandingDepth:
-                    l += obj.LandingDepth.Value
-                else:
-                    l += obj.Width.Value
+            l = obj.TreadDepthEnforce.Value * (numberofsteps-2)
+            if obj.LandingDepth:
+                l += obj.LandingDepth.Value
+            else:
+                l += obj.Width.Value
         elif obj.Base:
             if hasattr(obj.Base,'Shape'):
                 l = obj.Base.Shape.Length #.Value?
@@ -1118,7 +1120,7 @@ class _Stairs(ArchComponent.Component):
         "builds a simple, straight staircase from a straight edge"
 
         # Upgrade obj if it is from an older version of FreeCAD
-        if not(hasattr(obj, "StringerOverlap")):
+        if not hasattr(obj, "StringerOverlap"):
             obj.addProperty("App::PropertyLength","StringerOverlap","Structure",QT_TRANSLATE_NOOP("App::Property","The overlap of the stringers above the bottom of the treads"))
 
         # general data

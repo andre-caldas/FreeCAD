@@ -547,11 +547,6 @@ QObject* PythonWrapper::toQObject(const Py::Object& pyobject)
     return static_cast<QObject*>(ptr);
 #endif
 
-#ifdef HAVE_PYQT // Unwrapping using sip/PyQt
-    void* ptr = qt_getCppPointer(pyobject, "sip", "unwrapinstance");
-    return static_cast<QObject*>(ptr);
-#endif
-
     return nullptr;
 }
 
@@ -568,6 +563,11 @@ QGraphicsItem* PythonWrapper::toQGraphicsItem(PyObject* pyPtr)
     return nullptr;
 }
 
+QGraphicsItem* PythonWrapper::toQGraphicsItem(const Py::Object& pyobject)
+{
+    return toQGraphicsItem(pyobject.ptr());
+}
+
 QGraphicsObject* PythonWrapper::toQGraphicsObject(PyObject* pyPtr)
 {
 #if defined (HAVE_SHIBOKEN) && defined(HAVE_PYSIDE)
@@ -580,6 +580,12 @@ QGraphicsObject* PythonWrapper::toQGraphicsObject(PyObject* pyPtr)
 #endif
     return nullptr;
 }
+
+QGraphicsObject* PythonWrapper::toQGraphicsObject(const Py::Object& pyobject)
+{
+return toQGraphicsObject(pyobject.ptr());
+}
+
 
 Py::Object PythonWrapper::fromQIcon(const QIcon* icon)
 {
@@ -668,9 +674,6 @@ Py::Object PythonWrapper::fromQPrinter(QPrinter* printer)
     //
     return qt_wrapInstance<QPrinter*>(printer, "QPrinter", shiboken, PySide + ".QtCore", "wrapInstance");
 #endif
-#ifdef HAVE_PYQT // Unwrapping using sip/PyQt
-    return qt_wrapInstance<QPrinter*>(printer, "QPrinter", "sip", "PyQt5.QtCore", "wrapinstance");
-#endif
 }
 
 Py::Object PythonWrapper::fromQObject(QObject* object, const char* className)
@@ -702,10 +705,6 @@ Py::Object PythonWrapper::fromQObject(QObject* object, const char* className)
     //
     return qt_wrapInstance<QObject*>(object, className, shiboken, PySide + ".QtCore", "wrapInstance");
 #endif
-#ifdef HAVE_PYQT // Unwrapping using sip/PyQt
-    Q_UNUSED(className);
-    return qt_wrapInstance<QObject*>(object, "QObject", "sip", "PyQt5.QtCore", "wrapinstance");
-#endif
 }
 
 Py::Object PythonWrapper::fromQWidget(QWidget* widget, const char* className)
@@ -735,11 +734,6 @@ Py::Object PythonWrapper::fromQWidget(QWidget* widget, const char* className)
     // Access shiboken/PySide via Python
     //
     return qt_wrapInstance<QWidget*>(widget, className, shiboken, PySide + ".QtWidgets", "wrapInstance");
-#endif
-
-#ifdef HAVE_PYQT // Unwrapping using sip/PyQt
-    Q_UNUSED(className);
-    return qt_wrapInstance<QWidget*>(widget, "QWidget", "sip", "PyQt5.QtWidgets", "wrapinstance");
 #endif
 }
 

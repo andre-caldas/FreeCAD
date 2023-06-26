@@ -31,9 +31,6 @@ if(FREECAD_QT_MAJOR_VERSION EQUAL 5)
     include_directories(
         ${QtXmlPatterns_INCLUDE_DIRS}
     )
-else()
-    # This is deprecated as of Qt 5.13, and removed in Qt 6
-    message(WARNING "TechDraw relies on the now-removed Qt XMLPatterns package, and must be refactored to compile against Qt6.")
 endif()
 
 include_directories(
@@ -139,8 +136,6 @@ SET(Draw_SRCS
     DrawLeaderLine.h
     DrawRichAnno.cpp
     DrawRichAnno.h
-    QDomNodeModel.cpp
-    QDomNodeModel.h
     DrawTile.cpp
     DrawTile.h
     DrawTileWeld.cpp
@@ -187,8 +182,12 @@ SET(Geometry_SRCS
     Geometry.h
     GeometryObject.cpp
     GeometryObject.h
+    CenterLine.cpp
+    CenterLine.h
     Cosmetic.cpp
     Cosmetic.h
+    CosmeticVertex.cpp
+    CosmeticVertex.h
     PropertyGeomFormatList.cpp
     PropertyGeomFormatList.h
     PropertyCenterLineList.cpp

@@ -55,6 +55,7 @@
 #include <App/FeaturePythonPyImp.h>
 #include <App/Link.h>
 #include <App/GeoFeatureGroupExtension.h>
+#include <App/ElementNamingUtils.h>
 #include <Base/Exception.h>
 #include <Base/Placement.h>
 #include <Base/Rotation.h>
@@ -64,7 +65,6 @@
 #include "PartFeaturePy.h"
 #include "PartPyCXX.h"
 #include "TopoShapePy.h"
-
 
 using namespace Part;
 namespace bp = boost::placeholders;
@@ -121,7 +121,7 @@ App::DocumentObject *Feature::getSubObject(const char *subname,
 {
     // having '.' inside subname means it is referencing some children object,
     // instead of any sub-element from ourself
-    if(subname && !Data::ComplexGeoData::isMappedElement(subname) && strchr(subname,'.'))
+    if(subname && !Data::isMappedElement(subname) && strchr(subname,'.'))
         return App::DocumentObject::getSubObject(subname,pyObj,pmat,transform,depth);
 
     Base::Matrix4D _mat;
@@ -171,7 +171,7 @@ App::DocumentObject *Feature::getSubObject(const char *subname,
     catch(Standard_Failure &e) {
         // FIXME: Do not handle the exception here because it leads to a flood of irrelevant and
         // annoying error messages.
-        // For example: https://forum.freecadweb.org/viewtopic.php?f=19&t=42216
+        // For example: https://forum.freecad.org/viewtopic.php?f=19&t=42216
         // Instead either raise a sub-class of Base::Exception and let it handle by the calling
         // instance or do simply nothing. For now the error message is degraded to a log message.
         std::ostringstream str;
@@ -280,7 +280,7 @@ static TopoShape _getTopoShape(const App::DocumentObject *obj, const char *subna
     if(powner) *powner = nullptr;
 
     std::string _subname;
-    auto subelement = Data::ComplexGeoData::findElementName(subname);
+    auto subelement = Data::findElementName(subname);
     if(!needSubElement && subname) {
         // strip out element name if not needed
         if(subelement && *subelement) {
@@ -413,7 +413,7 @@ static TopoShape _getTopoShape(const App::DocumentObject *obj, const char *subna
                     continue;
             }else{
                 if(link && !link->getShowElementValue())
-                    shape = baseShape.makeTransform(mat,(TopoShape::indexPostfix()+childName).c_str());
+                    shape = baseShape.makeTransform(mat,(Data::POSTFIX_INDEX + childName).c_str());
                 else {
                     shape = baseShape.makeTransform(mat);
                 }

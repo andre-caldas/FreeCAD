@@ -400,7 +400,6 @@ TreeWidget::TreeWidget(const char* name, QWidget* parent)
     this->setAcceptDrops(true);
     this->setDropIndicatorShown(false);
     this->setDragDropMode(QTreeWidget::InternalMove);
-    this->setRootIsDecorated(false);
     this->setColumnCount(2);
     this->setItemDelegate(new TreeWidgetEditDelegate(this));
 
@@ -409,10 +408,9 @@ TreeWidget::TreeWidget(const char* name, QWidget* parent)
     connect(this->showHiddenAction, &QAction::triggered,
             this, &TreeWidget::onShowHidden);
 
-    this->hideInTreeAction = new QAction(this);
-    this->hideInTreeAction->setCheckable(true);
-    connect(this->hideInTreeAction, &QAction::triggered,
-            this, &TreeWidget::onHideInTree);
+    this->toggleVisibilityInTreeAction = new QAction(this);
+    connect(this->toggleVisibilityInTreeAction, &QAction::triggered,
+            this, &TreeWidget::onToggleVisibilityInTree);
 
     this->createGroupAction = new QAction(this);
     connect(this->createGroupAction, &QAction::triggered,
@@ -488,8 +486,7 @@ TreeWidget::TreeWidget(const char* name, QWidget* parent)
     });
 
     // Add the first main label
-    this->rootItem = new QTreeWidgetItem(this);
-    this->rootItem->setFlags(Qt::ItemIsEnabled);
+    this->rootItem = invisibleRootItem();
     this->expandItem(this->rootItem);
     this->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
@@ -523,6 +520,7 @@ TreeWidget::TreeWidget(const char* name, QWidget* parent)
         documentPartialPixmap.reset(new QPixmap(icon.pixmap(documentPixmap->size(), QIcon::Disabled)));
     }
     setColumnHidden(1, TreeParams::getHideColumn());
+    header()->setVisible(!TreeParams::getHideColumn());
 }
 
 TreeWidget::~TreeWidget()
@@ -843,9 +841,7 @@ void TreeWidget::contextMenuEvent(QContextMenuEvent* e)
 
         showHiddenAction->setChecked(doc->ShowHidden.getValue());
         contextMenu.addAction(this->showHiddenAction);
-
-        hideInTreeAction->setChecked(!objitem->object()->showInTree());
-        contextMenu.addAction(this->hideInTreeAction);
+        contextMenu.addAction(this->toggleVisibilityInTreeAction);
 
         if (!acrossDocuments) { // is only sensible for selections within one document
             if (objitem->object()->getObject()->isDerivedFrom(App::DocumentObjectGroup::getClassTypeId()))
@@ -904,6 +900,27 @@ void TreeWidget::contextMenuEvent(QContextMenuEvent* e)
             active->setChecked(true);
         subMenu.addActions(subMenuGroup.actions());
     }
+
+    // add a submenu to present the settings of the tree.
+    QMenu settingsMenu;
+    settingsMenu.setTitle(tr("Tree settings"));
+    contextMenu.addSeparator();
+    contextMenu.addMenu(&settingsMenu);
+
+    QAction* action = new QAction(tr("Show description column"), this);
+    action->setStatusTip(tr("Show an extra tree view column for item description. The item's description can be set by pressing F2 (or your OS's edit button) or by editing the 'label2' property."));
+    action->setCheckable(true);
+
+    ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/TreeView");
+    action->setChecked(!hGrp->GetBool("HideColumn", true));
+
+    settingsMenu.addAction(action);
+    QObject::connect(action, &QAction::triggered, this, [this, action, hGrp]() {
+        bool show = action->isChecked();
+        hGrp->SetBool("HideColumn", !show);
+        setColumnHidden(1, !show);
+        header()->setVisible(show);
+    });
 
     if (contextMenu.actions().count() > 0) {
         try {
@@ -2772,13 +2789,12 @@ void TreeWidget::setupText()
 {
     this->headerItem()->setText(0, tr("Labels & Attributes"));
     this->headerItem()->setText(1, tr("Description"));
-    this->rootItem->setText(0, tr("Application"));
 
-    this->showHiddenAction->setText(tr("Show hidden items"));
-    this->showHiddenAction->setStatusTip(tr("Show hidden tree view items"));
+    this->showHiddenAction->setText(tr("Show items hidden in tree view"));
+    this->showHiddenAction->setStatusTip(tr("Show items that are marked as 'hidden' in the tree view"));
 
-    this->hideInTreeAction->setText(tr("Hide item"));
-    this->hideInTreeAction->setStatusTip(tr("Hide the item in tree"));
+    this->toggleVisibilityInTreeAction->setText(tr("Toggle visibility in tree view"));
+    this->toggleVisibilityInTreeAction->setStatusTip(tr("Toggles the visibility of selected items in the tree view"));
 
     this->createGroupAction->setText(tr("Create group..."));
     this->createGroupAction->setStatusTip(tr("Create a group"));
@@ -2837,11 +2853,28 @@ void TreeWidget::onShowHidden()
         docItem->setShowHidden(showHiddenAction->isChecked());
 }
 
-void TreeWidget::onHideInTree()
+void TreeWidget::onToggleVisibilityInTree()
 {
-    if (this->contextItem && this->contextItem->type() == ObjectType) {
-        auto item = static_cast<DocumentObjectItem*>(contextItem);
-        item->object()->ShowInTree.setValue(!hideInTreeAction->isChecked());
+    const auto items = selectedItems();
+    for (auto item : items) {
+        if (item->type() == ObjectType) {
+            auto objectItem = static_cast<DocumentObjectItem*>(item);
+            auto object = objectItem->object();
+
+            // toggle value
+            bool showInTree = !object->showInTree();
+
+            // update object
+            object->ShowInTree.setValue(showInTree);
+
+            // update GUI
+            auto ownerDocument = objectItem->getOwnerDocument();
+            bool hidden = !ownerDocument->showHidden() && !showInTree;
+            objectItem->setHidden(hidden);
+            if (hidden) {
+                objectItem->setSelected(false);
+            }
+        }
     }
 }
 
@@ -4907,7 +4940,7 @@ void DocumentObjectItem::setData(int column, int role, const QVariant& value)
         str << TreeWidget::tr("Rename").toStdString() << ' ' << getName() << '.' << label.getName();
 
         // Explicitly open and commit a transaction since this is a single change here
-        // For more details: https://forum.freecadweb.org/viewtopic.php?f=3&t=72351
+        // For more details: https://forum.freecad.org/viewtopic.php?f=3&t=72351
         App::Document* doc = obj->getDocument();
         doc->openTransaction(str.str().c_str());
         label.setValue(value.toString().toUtf8().constData());

@@ -25,7 +25,7 @@
 
 __title__ = "FreeCAD FEM solver Elmer writer"
 __author__ = "Markus Hovorka, Bernd Hahnebach, Uwe Stöhr"
-__url__ = "https://www.freecadweb.org"
+__url__ = "https://www.freecad.org"
 
 ## \addtogroup FEM
 #  @{
@@ -116,13 +116,13 @@ class Writer(object):
         #
         # ATM Elmer writer uses SI units only
         #
-        # see forum topic: https://forum.freecadweb.org/viewtopic.php?f=18&t=70150
+        # see forum topic: https://forum.freecad.org/viewtopic.php?f=18&t=70150
         #
         # TODO: adapt method and comment
         # should be only one system for all solver and not in each solver
-        # https://forum.freecadweb.org/viewtopic.php?t=47895
-        # https://forum.freecadweb.org/viewtopic.php?t=48451
-        # https://forum.freecadweb.org/viewtopic.php?f=10&t=48642
+        # https://forum.freecad.org/viewtopic.php?t=47895
+        # https://forum.freecad.org/viewtopic.php?t=48451
+        # https://forum.freecad.org/viewtopic.php?f=10&t=48642
         # The FreeCAD unit schema is only used to determine the schema number
         # all definition are done here ATM
         # keep in mind a unit schema might not be consistent:
@@ -322,10 +322,13 @@ class Writer(object):
         self._updateSimulation(self.solver)
         # output the equation parameters
         # first check what equations we have
-        hasHeat = False
-        for equation in self.solver.Group:
-            if femutils.is_of_type(equation, "Fem::EquationElmerHeat"):
-                hasHeat = True
+
+        # hasHeat ist not used, thus commented ATM
+        # hasHeat = False
+        # for equation in self.solver.Group:
+        #    if femutils.is_of_type(equation, "Fem::EquationElmerHeat"):
+        #        hasHeat = True
+
         self._simulation("Coordinate System", self.solver.CoordinateSystem)
         self._simulation("Coordinate Mapping", (1, 2, 3))
         # Elmer uses SI base units, but our mesh is in mm, therefore we must tell
@@ -348,7 +351,7 @@ class Writer(object):
             self._simulation("BDF Order", self.solver.BDFOrder)
             self._simulation("Output Intervals", self.solver.OutputIntervals)
             self._simulation("Timestep Intervals", self.solver.TimestepIntervals)
-            self._simulation("Timestep Sizes", self.solver.TimestepSizes) 
+            self._simulation("Timestep Sizes", self.solver.TimestepSizes)
             self._simulation("Timestepping Method", "BDF")
         self._simulation("Use Mesh Names", True)
 
@@ -419,7 +422,7 @@ class Writer(object):
             )
             solver.TimestepSizes = [0.1]
 
-    #-------------------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------------------------
     # Deformation
 
     def _handleDeformation(self):
@@ -447,7 +450,7 @@ class Writer(object):
             DEFW.handleDeformationBodyForces(activeIn)
             DEFW.handleDeformationMaterial(activeIn)
 
-    #-------------------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------------------------
     # Elasticity
 
     def _handleElasticity(self):
@@ -475,7 +478,7 @@ class Writer(object):
             ELW.handleElasticityBodyForces(activeIn)
             ELW.handleElasticityMaterial(activeIn)
 
-    #-------------------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------------------------
     # Electrostatic
 
     def _handleElectrostatic(self):
@@ -495,7 +498,7 @@ class Writer(object):
             ESW.handleElectrostaticBndConditions()
             ESW.handleElectrostaticMaterial(activeIn)
 
-    #-------------------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------------------------
     # Electricforce
 
     def _handleElectricforce(self):
@@ -511,7 +514,7 @@ class Writer(object):
                 for body in activeIn:
                     self._addSolver(body, solverSection)
 
-    #-------------------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------------------------
     # Flow
 
     def _handleFlow(self):
@@ -539,7 +542,7 @@ class Writer(object):
             FlowW.handleFlowInitialVelocity(activeIn)
             FlowW.handleFlowMaterial(activeIn)
 
-    #-------------------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------------------------
     # Flux
 
     def _handleFlux(self):
@@ -555,7 +558,7 @@ class Writer(object):
                 for body in activeIn:
                     self._addSolver(body, solverSection)
 
-    #-------------------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------------------------
     # Heat
 
     def _handleHeat(self):
@@ -578,7 +581,7 @@ class Writer(object):
             HeatW.handleHeatBodyForces(activeIn)
             HeatW.handleHeatMaterial(activeIn)
 
-    #-------------------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------------------------
     # Magnetodynamic
 
     def _handleMagnetodynamic(self):
@@ -602,7 +605,7 @@ class Writer(object):
             MgDyn.handleMagnetodynamicBodyForces(activeIn, equation)
             MgDyn.handleMagnetodynamicMaterial(activeIn)
 
-    #-------------------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------------------------
     # Magnetodynamic2D
 
     def _handleMagnetodynamic2D(self):
@@ -615,7 +618,7 @@ class Writer(object):
                 else:
                     activeIn = self.getAllBodies()
                 # Magnetodynamic2D cannot handle all coordinate sysytems
-                if self.solver.CoordinateSystem in _COORDS_NON_MAGNETO_2D :
+                if self.solver.CoordinateSystem in _COORDS_NON_MAGNETO_2D:
                     raise WriteError(
                         "The coordinate setting '{}'\n is not "
                         "supported by the equation 'Magnetodynamic2D'.\n\n"
@@ -635,7 +638,7 @@ class Writer(object):
             MgDyn2D.handleMagnetodynamic2DBodyForces(activeIn, equation)
             MgDyn2D.handleMagnetodynamic2DMaterial(activeIn)
 
-    #-------------------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------------------------
     # Solver handling
 
     def createEmptySolver(self):
@@ -730,14 +733,14 @@ class Writer(object):
             equation.NonlinearNewtonAfterTolerance
         return s
 
-    #-------------------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------------------------
     # Helper functions
 
     def _haveMaterialSolid(self):
         for obj in self.getMember("App::MaterialObject"):
             m = obj.Material
             # fluid material always has KinematicViscosity defined
-            if not "KinematicViscosity" in m:
+            if "KinematicViscosity" not in m:
                 return True
         return False
 

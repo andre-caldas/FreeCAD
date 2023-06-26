@@ -87,15 +87,14 @@ QRectF DrawViewSymbol::getRect() const
 {
     double w = 64.0;//must default to something
     double h = 64.0;
-    return (QRectF(0, 0, w, h));
+    return QRectF(0, 0, w, h);
 }
 
 //!Assume all svg files fit the page and/or the user will scale manually
 bool DrawViewSymbol::checkFit(TechDraw::DrawPage* p) const
 {
     (void)p;
-    bool result = true;
-    return result;
+    return true;
 }
 
 //get editable fields from symbol

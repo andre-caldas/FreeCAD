@@ -136,6 +136,8 @@ SweepWidget::SweepWidget(QWidget* parent)
     d->ui.selector->setSelectedLabel(tr("Selected profiles"));
     d->ui.labelPath->clear();
 
+    connect(d->ui.buttonPath, &QPushButton::toggled,
+            this, &SweepWidget::onButtonPathToggled);
     connect(d->ui.selector->availableTreeWidget(), &QTreeWidget::currentItemChanged,
             this, &SweepWidget::onCurrentItemChanged);
     connect(d->ui.selector->selectedTreeWidget(), &QTreeWidget::currentItemChanged,
@@ -376,7 +378,7 @@ bool SweepWidget::accept()
         doc->commitCommand();
     }
     catch (const Base::Exception& e) {
-        QMessageBox::warning(this, tr("Input error"), QString::fromLatin1(e.what()));
+        QMessageBox::warning(this, tr("Input error"), QCoreApplication::translate("Exception", e.what()));
         return false;
     }
 
@@ -402,7 +404,7 @@ void SweepWidget::onCurrentItemChanged(QTreeWidgetItem* current, QTreeWidgetItem
     }
 }
 
-void SweepWidget::on_buttonPath_toggled(bool on)
+void SweepWidget::onButtonPathToggled(bool on)
 {
     if (on) {
         QList<QWidget*> c = this->findChildren<QWidget*>();

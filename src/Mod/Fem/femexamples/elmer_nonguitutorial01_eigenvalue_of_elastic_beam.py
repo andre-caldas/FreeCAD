@@ -39,7 +39,7 @@ def get_information():
         "constraints": [],
         "solvers": ["calculix", "ccxtools", "elmer"],
         "material": "solid",
-        "equations": ["elasticity"] # "frequency", but list not allowed here
+        "equations": ["elasticity"]  # "frequency", but list not allowed here
     }
 
 
@@ -52,7 +52,7 @@ setup()
 
 
 See forum topic post:
-https://forum.freecadweb.org/viewtopic.php?t=56590
+https://forum.freecad.org/viewtopic.php?t=56590
 
 """
 
