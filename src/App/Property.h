@@ -24,6 +24,7 @@
 #ifndef APP_PROPERTY_H
 #define APP_PROPERTY_H
 
+#include <Base/Accessor/ChainableObject.h>
 #include <Base/Exception.h>
 #include <Base/Persistence.h>
 #include <boost/any.hpp>
@@ -51,7 +52,9 @@ class ObjectIdentifier;
  * possible properties. It is also possible to define user properties
  * and use them in the framework...
  */
-class AppExport Property : public Base::Persistence
+class AppExport Property
+        : public Base::Persistence
+        , public App::Accessor::ChainableObject
 {
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
 

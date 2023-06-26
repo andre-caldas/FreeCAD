@@ -27,6 +27,7 @@
 #include <map>
 #include <cstring>
 #include <Base/Persistence.h>
+#include <App/Accessor/ChainableObject.h>
 
 #include "DynamicProperty.h"
 
@@ -138,7 +139,9 @@ struct AppExport PropertyData
 
 /** Base class of all classes with properties
  */
-class AppExport PropertyContainer: public Base::Persistence
+class AppExport PropertyContainer
+        : public Base::Persistence
+        , public App::Accessor::ChainableObject
 {
 
   TYPESYSTEM_HEADER_WITH_OVERRIDE();
@@ -150,13 +153,9 @@ public:
    */
   PropertyContainer();
 
-  /**
-   * A destructor.
-   * A more elaborate description of the destructor.
-   */
-  ~PropertyContainer() override;
-
   unsigned int getMemSize () const override;
+
+  std::unique_ptr<Accessor> getNextAccessor(std::string_view name) override;
 
   virtual std::string getFullName() const {return std::string();}
 

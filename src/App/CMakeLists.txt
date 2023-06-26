@@ -290,10 +290,42 @@ SET(FreeCADApp_HPP_SRCS
     Metadata.h
 )
 
+SET(FreeCADApp_Accessor_SRCS
+    Accessor/Path.h
+    Accessor/PathIterator.h
+    Accessor/Path.cpp
+
+    Accessor/PathComponent.h
+    Accessor/PathSimpleComponent.h
+    Accessor/PathArrayComponent.h
+    Accessor/PathMapComponent.h
+    Accessor/PathComponent.cpp
+
+    Accessor/PathComponentIterator.h
+    Accessor/PathSimpleComponentIterator.h
+    Accessor/PathArrayComponentIterator.h
+    Accessor/PathMapComponentIterator.h
+    Accessor/PathComponentIterator.cpp
+
+    Accessor/Accessor.h
+#    Accessor/AccessorArray.h
+#    Accessor/AccessorMap.h
+    Accessor/AccessorProperty.h
+    Accessor/Accessor.cpp
+
+    Accessor/ChainableObject.h
+    Accessor/ChainableObject.cpp
+
+    Accessor/StringParser.h
+    Accessor/StringParser.cpp
+)
+SOURCE_GROUP("Accessor" FILES ${FreeCADApp_Accessor_SRCS})
+
 SET(FreeCADApp_SRCS
     ${FreeCADApp_CPP_SRCS}
     ${FreeCADApp_HPP_SRCS}
     ${FreeCADApp_XML_SRCS}
+    ${FreeCADApp_Accessor_SRCS}
     FreeCADInit.py
     FreeCADTest.py
     PreCompiled.cpp

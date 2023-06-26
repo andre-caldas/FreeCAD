@@ -27,6 +27,7 @@
 #include <Base/Exception.h>
 #include <Base/Reader.h>
 #include <Base/Writer.h>
+#include <App/Accessor/AccessorProperty.h>
 
 #include "Property.h"
 #include "PropertyContainer.h"
@@ -50,7 +51,7 @@ PropertyContainer::PropertyContainer()
     propertyData.parentPropertyData = nullptr;
 }
 
-PropertyContainer::~PropertyContainer() = default;
+
 
 unsigned int PropertyContainer::getMemSize () const
 {
@@ -69,6 +70,11 @@ App::Property* PropertyContainer::addDynamicProperty(
     short attr, bool ro, bool hidden)
 {
     return dynamicProps.addDynamicProperty(*this,type,name,group,doc,attr,ro,hidden);
+}
+
+std::unique_ptr<Accessor> PropertyContainer::resolveComponent(const std::string& name) override
+{
+    return std::make_unique<AccessorPropertyContainer>
 }
 
 Property *PropertyContainer::getPropertyByName(const char* name) const
