@@ -49,8 +49,6 @@ namespace NamedSketcher
 class NamedSketcherExport GeometryLineSegment
         : public GeometryBaseT<GeometryLineSegment, Part::GeomLineSegment>
 {
-    TYPESYSTEM_HEADER_WITH_OVERRIDE();
-
 public:
     GeometryLineSegment(std::unique_ptr<Part::GeomLineSegment>&& geo);
 
@@ -64,8 +62,6 @@ public:
 private:
     GCS::Point start;
     GCS::Point end;
-
-    GeometryLineSegment();
 };
 
 } // namespace NamedSketcher

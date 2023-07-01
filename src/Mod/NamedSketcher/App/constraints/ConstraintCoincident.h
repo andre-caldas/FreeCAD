@@ -40,8 +40,6 @@ namespace NamedSketcher
  */
 class NamedSketcherExport ConstraintCoincident : public ConstraintBase
 {
-    TYPESYSTEM_HEADER_WITH_OVERRIDE();
-
 public:
     std::vector<ref_point> references;
 
@@ -57,17 +55,12 @@ public:
     std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
     static constexpr const char* xmlTagTypeStatic() {return "Coincident";}
 
-    // Base::Persistence
-    unsigned int getMemSize () const override;
-    void Save (Base::Writer& writer) const override;
-    void Restore(Base::XMLReader& reader) override;
+    unsigned int getMemSize() const override;
+    void Save(Base::Writer& writer) const override;
     static std::unique_ptr<ConstraintCoincident> staticRestore(Base::XMLReader& reader);
 
 private:
     std::vector<std::unique_ptr<GCS::Equal>> equations;
-
-public: // :-(
-    ConstraintCoincident();
 };
 
 } // namespace NamedSketcher

@@ -28,13 +28,6 @@
 
 namespace NamedSketcher {
 
-TYPESYSTEM_SOURCE_ABSTRACT(ConstraintBase, Base::Persistence)
-
-void ConstraintBase::Restore(Base::XMLReader& /*reader*/)
-{
-    FC_THROWM(Base::NotImplementedError, "Restore is provided by the ConstraintBase::factory");
-}
-
 void ConstraintBase::SaveHead(Base::Writer& writer) const
 {
     writer.Stream() << writer.ind() << "<" << xmlTagName()

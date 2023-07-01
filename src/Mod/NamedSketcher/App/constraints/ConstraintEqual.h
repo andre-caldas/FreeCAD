@@ -38,8 +38,6 @@ namespace NamedSketcher
  */
 class NamedSketcherExport ConstraintEqual : public ConstraintBase
 {
-    TYPESYSTEM_HEADER_WITH_OVERRIDE();
-
 public:
     ref_parameter a;
     ref_parameter b;
@@ -58,14 +56,10 @@ public:
     // Base::Persistence
     unsigned int getMemSize () const override;
     void Save (Base::Writer& writer) const override;
-    void Restore(Base::XMLReader& reader) override;
     static std::unique_ptr<ConstraintEqual> staticRestore(Base::XMLReader& reader);
 
 private:
     GCS::Equal equation;
-
-public: // :-(
-    ConstraintEqual();
 };
 
 } // namespace NamedSketcher

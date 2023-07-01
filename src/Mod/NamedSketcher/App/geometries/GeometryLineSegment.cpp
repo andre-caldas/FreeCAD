@@ -27,8 +27,6 @@
 #include <memory>
 #endif // _PreComp_
 
-#include <Base/Persistence.h>
-#include <Base/Reader.h>
 #include <Base/Writer.h>
 #include <Base/Exception.h>
 
@@ -38,14 +36,6 @@
 
 namespace NamedSketcher
 {
-
-TYPESYSTEM_SOURCE(GeometryLineSegment, GeometryBaseT<Part::GeomLineSegment>)
-
-GeometryLineSegment::GeometryLineSegment()
-{
-    // FreeCAD objects are not RAII. :-(
-    FC_THROWM(Base::RuntimeError, "NamedSketcher::GeometryLineSegment should not be constructed without arguments.");
-}
 
 GeometryLineSegment::GeometryLineSegment(std::unique_ptr<Part::GeomLineSegment>&& geo)
     : GeometryBaseT(std::move(geo))

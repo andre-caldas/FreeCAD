@@ -21,49 +21,55 @@
  *                                                                          *
  ***************************************************************************/
 
-#ifndef SKETCHER_GeometryPoint_H
-#define SKETCHER_GeometryPoint_H
+#include <utility>
 
-#include <memory>
+#include <App/Application.h>
 
-#include <Base/Vector3D.h>
+#include "ReferencedObject.h"
+#include "PathToObject.h"
 
-#include "gcs_solver/parameters/Parameter.h"
-#include "GeometryBase.h"
+namespace Base::Accessor {
 
-namespace Base {
-class XMLReader;
-class Writer;
-}
-namespace Part {
-class GeomPoint;
-}
+class ReferencedObject;
 
-namespace NamedSketcher
+template<typename... NameOrTag,
+         std::enable_if_t<std::conjunction_v<
+                 std::is_convertible<NameOrTag, NameAndTag>...
+             >>*>
+PathToObject::PathToObject(std::shared_ptr<ReferencedObject> root, NameOrTag&&... obj_path)
+    : rootTag(root->getTag())
+    , objectPath(std::initializer_list<NameAndTag>{std::forward(obj_path)...})
 {
+}
 
-/** Sketcher geometry structure that represents one point.
- */
-class NamedSketcherExport GeometryPoint
-        : public GeometryBaseT<GeometryPoint, Part::GeomPoint>
+template<typename... NameOrTag,
+         std::enable_if_t<std::conjunction_v<
+                 std::is_convertible<NameOrTag, NameAndTag>...
+             >>*>
+PathToObject::PathToObject(ReferencedObject* root, NameOrTag&&... obj_path)
+    : rootTag(root->registerTag("I know it is deprecated"))
+    , objectPath({NameAndTag(std::forward<NameOrTag>(obj_path))...})
 {
-public:
-    GeometryPoint(std::unique_ptr<Part::GeomPoint>&& geo);
+}
 
-    GCS::Point point;
-    GCS::Parameter& x = point.x;
-    GCS::Parameter& y = point.y;
+template<typename... NameOrTag,
+         std::enable_if_t<std::conjunction_v<
+                 std::is_convertible<NameOrTag, NameAndTag>...
+             >>*>
+PathToObject::PathToObject(NameOrTag&&... obj_path)
+    : PathToObject(App::GetApplication().getActiveDocument(), std::forward<NameOrTag>(obj_path)...)
+{
+}
 
-    void commitChanges() const override;
+template<typename... NameOrTag,
+         std::enable_if_t<std::conjunction_v<
+                 std::is_convertible<NameOrTag, NameAndTag>...
+             >>*>
+PathToObject PathToObject::goFurther(NameOrTag&& ...furtherPath) const
+{
+    auto new_path = objectPath;
+    new_path.insert(new_path.end(), {NameAndTag(std::forward<NameOrTag>(furtherPath))...});
+    return PathToObject{rootTag, new_path};
+}
 
-    unsigned int getMemSize () const override;
-    std::string_view xmlTagType(void) const override {return xmlTagTypeStatic();}
-    static constexpr const char* xmlTagTypeStatic(void) {return "Point";}
-
-protected:
-    GeometryPoint();
-};
-
-} // namespace NamedSketcher
-
-#endif // SKETCHER_GeometryPoint_H
+} // namespace Base::Accessor

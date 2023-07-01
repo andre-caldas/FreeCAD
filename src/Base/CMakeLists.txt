@@ -340,9 +340,11 @@ SET(FreeCADBase_Accessor_SRCS
     Accessor/ReferencedObject.h
     Accessor/ReferencedObject.inl
     Accessor/ReferencedObject.cpp
+    Accessor/PathToObject.h
+    Accessor/PathToObject.inl
+    Accessor/PathToObject.cpp
     Accessor/ReferenceToObject.h
     Accessor/ReferenceToObject.inl
-    Accessor/ReferenceToObject.cpp
     Accessor/Exception.h
 )
 SOURCE_GROUP("Accessor" FILES ${FreeCADBase_Accessor_SRCS})

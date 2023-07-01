@@ -28,8 +28,6 @@
 #include <utility>
 #endif // _PreComp_
 
-#include <Base/Persistence.h>
-#include <Base/Reader.h>
 #include <Base/Writer.h>
 #include <Base/Exception.h>
 
@@ -39,14 +37,6 @@
 
 namespace NamedSketcher
 {
-
-TYPESYSTEM_SOURCE(ConstraintHorizontal, ConstraintHorizontal)
-
-ConstraintHorizontal::ConstraintHorizontal()
-{
-    // FreeCAD objects are not RAII. :-(
-    FC_THROWM(Base::RuntimeError, "NamedSketcher::ConstraintHorizontal should not be constructed without arguments.");
-}
 
 template<class ref,
          std::enable_if_t<std::is_constructible_v<ConstraintHorizontal::ref_point, ref>>*>
@@ -98,10 +88,6 @@ unsigned int ConstraintHorizontal::getMemSize () const
 }
 
 void ConstraintHorizontal::Save (Base::Writer& /*writer*/) const
-{
-    THROW(Base::NotImplementedError);
-}
-void ConstraintHorizontal::Restore(Base::XMLReader& /*reader*/)
 {
     THROW(Base::NotImplementedError);
 }

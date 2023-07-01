@@ -24,8 +24,6 @@
 #include <numeric>
 #include <memory>
 
-#include <Base/Persistence.h>
-#include <Base/Reader.h>
 #include <Base/Writer.h>
 #include <Base/Exception.h>
 #include <Base/Accessor/ReferenceToObject.h>
@@ -36,14 +34,6 @@
 
 namespace NamedSketcher
 {
-
-TYPESYSTEM_SOURCE_ABSTRACT(ConstraintCoincident, ConstraintBase)
-
-ConstraintCoincident::ConstraintCoincident()
-{
-    // FreeCAD objects are not RAII. :-(
-    FC_THROWM(Base::RuntimeError, "NamedSketcher::ConstraintCoincident should not be constructed without arguments.");
-}
 
 template<typename ref,
          std::enable_if_t<std::is_constructible_v<ConstraintCoincident::ref_point, ref>>*>
@@ -129,11 +119,6 @@ unsigned int ConstraintCoincident::getMemSize () const
     return size;
 #endif
     return 15*references.size();
-}
-
-void ConstraintCoincident::Restore(Base::XMLReader& /*reader*/)
-{
-    THROW(Base::NotImplementedError);
 }
 
 void ConstraintCoincident::Save(Base::Writer& writer) const

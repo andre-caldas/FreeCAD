@@ -29,8 +29,6 @@
 #endif // _PreComp_
 #include <initializer_list>
 
-#include <Base/Persistence.h>
-#include <Base/Reader.h>
 #include <Base/Writer.h>
 #include <Base/Exception.h>
 
@@ -40,14 +38,6 @@
 
 namespace NamedSketcher
 {
-
-TYPESYSTEM_SOURCE(ConstraintXDistance, ConstraintBase)
-
-ConstraintXDistance::ConstraintXDistance()
-{
-    // FreeCAD objects are not RAII. :-(
-    FC_THROWM(Base::RuntimeError, "NamedSketcher::ConstraintXDistance should not be constructed without arguments.");
-}
 
 template<typename ref_pt, typename ref_par,
          std::enable_if_t<std::is_constructible_v<ConstraintXDistance::ref_point, ref_pt>>*,
@@ -110,10 +100,6 @@ unsigned int ConstraintXDistance::getMemSize () const
 }
 
 void ConstraintXDistance::Save (Base::Writer& /*writer*/) const
-{
-    THROW(Base::NotImplementedError);
-}
-void ConstraintXDistance::Restore(Base::XMLReader& /*reader*/)
 {
     THROW(Base::NotImplementedError);
 }

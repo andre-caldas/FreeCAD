@@ -26,7 +26,6 @@
 #include <memory>
 #endif // _PreComp_
 
-#include <Base/Reader.h>
 #include <Base/Writer.h>
 
 #include <Mod/Part/App/Geometry.h>
@@ -35,14 +34,6 @@
 
 namespace NamedSketcher
 {
-
-TYPESYSTEM_SOURCE(GeometryPoint, GeometryBaseT<Part::GeomPoint>)
-
-GeometryPoint::GeometryPoint()
-{
-    // FreeCAD objects are not RAII. :-(
-    FC_THROWM(Base::RuntimeError, "NamedSketcher::GeometryPoint should not be constructed without arguments.");
-}
 
 GeometryPoint::GeometryPoint(std::unique_ptr<Part::GeomPoint>&& geo)
     : GeometryBaseT(std::move(geo))

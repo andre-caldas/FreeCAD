@@ -28,8 +28,6 @@
 #include <utility>
 #endif // _PreComp_
 
-#include <Base/Persistence.h>
-#include <Base/Reader.h>
 #include <Base/Writer.h>
 #include <Base/Exception.h>
 
@@ -39,14 +37,6 @@
 
 namespace NamedSketcher
 {
-
-TYPESYSTEM_SOURCE(ConstraintEqual, ConstraintBase)
-
-ConstraintEqual::ConstraintEqual()
-{
-    // FreeCAD objects are not RAII. :-(
-    FC_THROWM(Base::RuntimeError, "NamedSketcher::ConstraintEqual should not be constructed without arguments.");
-}
 
 template<typename ref,
          std::enable_if_t<std::is_constructible_v<ConstraintEqual::ref_parameter, ref>>*>
@@ -98,10 +88,6 @@ unsigned int ConstraintEqual::getMemSize () const
 }
 
 void ConstraintEqual::Save (Base::Writer& /*writer*/) const
-{
-    THROW(Base::NotImplementedError);
-}
-void ConstraintEqual::Restore(Base::XMLReader& /*reader*/)
 {
     THROW(Base::NotImplementedError);
 }

@@ -30,12 +30,15 @@
 #include <memory>
 #include <string>
 
-#include <Base/Persistence.h>
 #include <Base/Accessor/NameAndTag.h>
 #include <Base/Accessor/ReferenceToObject.h>
 
 #include "../gcs_solver/parameters/Parameter.h"
 #include "ConstraintFactory.h"
+
+namespace Base {
+class Writer;
+}
 
 namespace NamedSketcher
 {
@@ -50,10 +53,8 @@ class ParameterGroupManager;
 }
 
 class NamedSketcherExport ConstraintBase
-        : public Base::Persistence
-        , public Base::Accessor::NameAndTag
+        : public Base::Accessor::NameAndTag
 {
-    TYPESYSTEM_HEADER();
 public:
     using ref_parameter = Base::Accessor::ReferenceTo<GCS::Parameter>;
     using ref_point = Base::Accessor::ReferenceTo<GeometryPoint>;
@@ -78,12 +79,9 @@ public:
      */
     virtual bool updateReferences() = 0;
 
-    /**
-     * \brief Methods derived from \class GeometryBase shall not implement
-     * Persistence::Restore. Restore is done by factory().
-     * \param reader
-     */
-    void Restore(Base::XMLReader& reader) override;
+    virtual unsigned int getMemSize () const = 0;
+    virtual void Save (Base::Writer& writer) const = 0;
+
     void SaveHead(Base::Writer& writer) const;
     void SaveTail(Base::Writer& writer) const;
     virtual std::string xmlAttributes() const;

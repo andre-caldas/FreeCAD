@@ -32,17 +32,18 @@
 #include <Base/Exception.h>
 
 #include "Exception.h"
+#include "ReferencedObject.h"
 
-#include "ReferenceToObject.h"
+#include "PathToObject.h"
 
 namespace Base::Accessor {
 
-std::string ReferenceToObject::pathString() const
+std::string PathToObject::pathString() const
 {
     return pathString(objectPath.cbegin(), objectPath.cend());
 }
 
-std::string ReferenceToObject::pathString(token_iterator start, const token_iterator end)
+std::string PathToObject::pathString(token_iterator start, const token_iterator end)
 {
     std::string result;
     for(auto pos = start; pos != end; ++pos)
@@ -52,7 +53,7 @@ std::string ReferenceToObject::pathString(token_iterator start, const token_iter
     return result;
 }
 
-ReferenceToObject::lock_type ReferenceToObject::getLock() const
+PathToObject::lock_type PathToObject::getLock() const
 {
     // TODO: Implement different "cache expire" policies.
     lock_type lock;
@@ -84,9 +85,9 @@ ReferenceToObject::lock_type ReferenceToObject::getLock() const
     return lock;
 }
 
-void ReferenceToObject::serialize(Base::Writer& writer) const
+void PathToObject::serialize(Base::Writer& writer) const
 {
-    writer.Stream() << writer.ind() << "<ReferenceTo>" << std::endl;
+    writer.Stream() << writer.ind() << "<PathToObject>" << std::endl;
     writer.incInd();
     writer.Stream() << writer.ind() << "<RootTag>";
     writer.Stream() << rootTag.toString() << "</RootTag>" << std::endl;
@@ -97,7 +98,26 @@ void ReferenceToObject::serialize(Base::Writer& writer) const
         writer.Stream() << token.getText() << "</NameOrTag>" << std::endl;
     }
     writer.decInd();
-    writer.Stream() << writer.ind() << "</ReferenceTo>" << std::endl;
+    writer.Stream() << writer.ind() << "</PathToObject>" << std::endl;
+}
+
+PathToObject
+PathToObject::unserialize(Base::XMLReader& reader)
+{
+    reader.readElement("PathToObject");
+    reader.readElement("RootTag");
+    auto root = ReferencedObject::getWeakPtr(reader.getCharacters()).lock();
+    if(!root)
+    {
+        FC_THROWM(ReferenceError, "Root element does not exist when unserializing RferenceTo: '" << reader.getCharacters() << "'");
+    }
+    PathToObject result{root};
+    while(!reader.testEndElement("PathToObject"))
+    {
+        reader.readElement("NameOrTag");
+        result.objectPath.push_back(NameAndTag(reader.getCharacters()));
+    }
+    return result;
 }
 
 } // namespace Base::Accessor

@@ -30,7 +30,6 @@
 #include <memory>
 #include <string>
 
-#include <Base/Persistence.h>
 #include <Base/Accessor/NameAndTag.h>
 #include <Base/Accessor/ReferenceToObject.h>
 
@@ -38,15 +37,16 @@
 
 #include "GeometryFactory.h"
 
+namespace Base {
+class Writer;
+}
+
 namespace NamedSketcher
 {
 
 class NamedSketcherExport GeometryBase
-        : public Base::Persistence
-        , public Base::Accessor::NameAndTag
+        : public Base::Accessor::NameAndTag
 {
-    TYPESYSTEM_HEADER();
-
 public:
     using factory = GeometryFactory;
 
@@ -56,14 +56,11 @@ public:
     virtual TopoDS_Shape toShape() = 0;
     virtual void commitChanges() const = 0;
 
-    /*!
-     * \brief Methods derived from \class GeometryBase shall not implement
-     * Persistence::Restore. Restore is done by factory().
-     * \param reader
-     */
-    void Restore(Base::XMLReader& reader) override;
     void SaveHead(Base::Writer& writer) const;
     void SaveTail(Base::Writer& writer) const;
+
+    virtual unsigned int getMemSize () const = 0;
+    virtual void Save (Base::Writer& writer) const = 0;
     virtual std::string xmlAttributes() const;
     virtual std::string_view xmlTagType() const = 0;
     std::string_view xmlTagName() const {return xmlTagNameStatic();}

@@ -22,15 +22,11 @@
  ***************************************************************************/
 
 #include <Base/Exception.h>
-#include <Base/Reader.h>
 #include <Base/Writer.h>
 
-#include "GeometryFactory.h"
 #include "GeometryBase.h"
 
 namespace NamedSketcher {
-
-TYPESYSTEM_SOURCE_ABSTRACT(GeometryBase, Base::Persistence)
 
 std::string GeometryBase::xmlAttributes() const
 {
@@ -44,11 +40,6 @@ std::string GeometryBase::xmlAttributes() const
         result += " construction='true'";
     }
     return result;
-}
-
-void GeometryBase::Restore(Base::XMLReader& /*reader*/)
-{
-    FC_THROWM(Base::NotImplementedError, "Restore is provided by the GeometryBase::factory");
 }
 
 void GeometryBase::SaveHead(Base::Writer& writer) const
