@@ -49,9 +49,7 @@ public:
     ref_point start;
     ref_point end;
 
-    template<class ref,
-             std::enable_if_t<std::is_constructible_v<ref_point, ref>>* = nullptr>
-    ConstraintHorizontal(ref&& a, ref&& b);
+    ConstraintHorizontal(ref_point a, ref_point b);
 
 public:
     std::vector<GCS::Equation*> getEquations() override;

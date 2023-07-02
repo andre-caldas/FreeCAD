@@ -28,6 +28,11 @@
 
 namespace NamedSketcher {
 
+std::string ConstraintBase::xmlAttributes() const
+{
+    return std::string();
+}
+
 void ConstraintBase::SaveHead(Base::Writer& writer) const
 {
     writer.Stream() << writer.ind() << "<" << xmlTagName()

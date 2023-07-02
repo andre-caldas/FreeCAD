@@ -21,80 +21,43 @@
  *                                                                          *
  ***************************************************************************/
 
+#include <pybind11/pybind11.h>
+namespace py = pybind11;
 
-#include "PreCompiled.h"
+#include <stdexcept>
 
-#ifndef _PreComp_
-#include <utility>
-#endif // _PreComp_
+#include <Mod/Part/App/Geometry.h>
+#include <Mod/Part/App/GeometryPy.h>
 
-#include <Base/Writer.h>
-#include <Base/Exception.h>
-
-#include "../geometries/GeometryPoint.h"
-#include "ConstraintHorizontal.h"
-
+#include "GeometryBase.h"
+#include "GeometryFactory.h"
+#include "Geometry.pybind.h"
 
 namespace NamedSketcher
 {
 
-ConstraintHorizontal::ConstraintHorizontal(ref_point start, ref_point end)
-    : start(std::move(start))
-    , end(std::move(end))
+std::unique_ptr<GeometryBase> geometryFactoryPy(py::object* geo)
 {
+    return geometryFactory(pyObjectToPartGeometry(geo));
 }
 
-std::vector<GCS::Equation*> ConstraintHorizontal::getEquations()
+std::unique_ptr<Part::Geometry> pyObjectToPartGeometry(py::object* geo)
 {
-    if(!start.isLocked())
+    if (PyObject_TypeCheck(geo->ptr(), &(Part::GeometryPy::Type)))
     {
-        start.refreshLock();
+        const Part::Geometry* g = static_cast<Part::GeometryPy*>(geo->ptr())->getGeometryPtr();
+        return std::unique_ptr<Part::Geometry>(g->copy());
     }
-    if(!end.isLocked())
-    {
-        end.refreshLock();
-    }
-    if(!start.isLocked())
-    {
-        FC_THROWM(Base::NameError, "Could not resolve name (" << start.pathString() << ").");
-    }
-    if(!end.isLocked())
-    {
-        FC_THROWM(Base::NameError, "Could not resolve name (" << end.pathString() << ").");
-    }
-
-    equation.set(&start.get()->y, &end.get()->y);
-    return std::vector<GCS::Equation*>{&equation};
+    else
+        throw std::invalid_argument("Argument must be a Part::Geometry.");
 }
 
-bool ConstraintHorizontal::updateReferences()
+
+void init_Geometry(py::module& m)
 {
-    start.refreshLock();
-    end.refreshLock();
-    if(!start.hasChanged() && !end.hasChanged())
-    {
-        return false;
-    }
-    equation.set(&start.get()->y, &end.get()->y);
-    return true;
+    py::class_<GeometryBase>(m, "Geometry")
+        .def(py::init(&geometryFactoryPy))
+    ;
 }
 
-
-unsigned int ConstraintHorizontal::getMemSize () const
-{
-    return sizeof(ConstraintHorizontal) + 50/*a.memSize() + b.memSize()*/;
-}
-
-void ConstraintHorizontal::Save (Base::Writer& /*writer*/) const
-{
-    THROW(Base::NotImplementedError);
-}
-
-std::unique_ptr<ConstraintHorizontal>
-ConstraintHorizontal::staticRestore(Base::XMLReader& /*reader*/)
-{
-    // SEE ConstraintCoincident.
-    THROW(Base::NotImplementedError);
-}
-
-} // namespace NamedSketcher
+} //namespace NamedSketcher

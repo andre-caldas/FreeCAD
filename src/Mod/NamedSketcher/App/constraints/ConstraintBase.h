@@ -62,9 +62,6 @@ public:
 
     using factory = ConstraintFactory;
 
-    bool isDriving = true;
-    bool isDriven = false;
-
     /**
      * @brief Vector of @class Equation, as used by the GCS solver
      * for under / over constraining evaluation.
@@ -88,6 +85,8 @@ public:
     virtual std::string_view xmlTagType() const = 0;
     std::string_view xmlTagName() const {return xmlTagNameStatic();}
     static constexpr const char* xmlTagNameStatic() {return "Constraint";}
+
+    virtual ~ConstraintBase() {}
 };
 
 } // namespace NamedSketcher

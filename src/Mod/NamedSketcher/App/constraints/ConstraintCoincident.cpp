@@ -35,9 +35,13 @@
 namespace NamedSketcher
 {
 
-template<typename ref,
-         std::enable_if_t<std::is_constructible_v<ConstraintCoincident::ref_point, ref>>*>
-ConstraintCoincident& ConstraintCoincident::addPoint(ref&& reference)
+ConstraintCoincident& ConstraintCoincident::addPoint(const ref_point& reference)
+{
+    references.emplace_back(reference);
+    return *this;
+}
+
+ConstraintCoincident& ConstraintCoincident::addPoint(ref_point&& reference)
 {
     references.emplace_back(reference);
     return *this;

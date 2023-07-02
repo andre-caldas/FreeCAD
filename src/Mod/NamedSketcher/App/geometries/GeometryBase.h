@@ -65,6 +65,8 @@ public:
     virtual std::string_view xmlTagType() const = 0;
     std::string_view xmlTagName() const {return xmlTagNameStatic();}
     static constexpr const char* xmlTagNameStatic() {return "Geometry";}
+
+    virtual ~GeometryBase() {}
 };
 
 /**

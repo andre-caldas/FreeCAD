@@ -21,80 +21,44 @@
  *                                                                          *
  ***************************************************************************/
 
+#include <pybind11/pybind11.h>
+namespace py = pybind11;
 
-#include "PreCompiled.h"
-
-#ifndef _PreComp_
-#include <utility>
-#endif // _PreComp_
-
-#include <Base/Writer.h>
-#include <Base/Exception.h>
-
-#include "../geometries/GeometryPoint.h"
+#include "ConstraintEqual.h"
+#include "ConstraintCoincident.h"
 #include "ConstraintHorizontal.h"
+#include "ConstraintXDistance.h"
 
+#include "ConstraintBase.h"
+#include "Constraint.pybind.h"
+
+using namespace Base::Accessor;
 
 namespace NamedSketcher
 {
 
-ConstraintHorizontal::ConstraintHorizontal(ref_point start, ref_point end)
-    : start(std::move(start))
-    , end(std::move(end))
+using ref_parameter = ConstraintBase::ref_parameter;
+using ref_point = ConstraintBase::ref_point;
+
+void init_Constraint(py::module& m)
 {
+    py::class_<ConstraintBase>(m, "Constraint");
+
+    py::class_<ConstraintEqual, ConstraintBase>(m, "ConstraintEqual")
+        .def(py::init<ref_parameter, ref_parameter>())
+    ;
+    py::class_<ConstraintCoincident, ConstraintBase>(m, "ConstraintCoincident")
+        .def(py::init<>())
+//        .def("addPoint", py::overload_cast<const ref_point&>(&ConstraintCoincident::addPoint))
+//        .def("addPoint", py::overload_cast<ref_point&&>(&ConstraintCoincident::addPoint))
+//        .def("removePoint", &ConstraintCoincident::removePoint)
+    ;
+    py::class_<ConstraintHorizontal, ConstraintBase>(m, "ConstraintHorizontal")
+        .def(py::init<ref_point, ref_point>())
+    ;
+    py::class_<ConstraintXDistance, ConstraintBase>(m, "ConstraintXDistance")
+            .def(py::init<ref_point, ref_point, ref_parameter>())
+    ;
 }
 
-std::vector<GCS::Equation*> ConstraintHorizontal::getEquations()
-{
-    if(!start.isLocked())
-    {
-        start.refreshLock();
-    }
-    if(!end.isLocked())
-    {
-        end.refreshLock();
-    }
-    if(!start.isLocked())
-    {
-        FC_THROWM(Base::NameError, "Could not resolve name (" << start.pathString() << ").");
-    }
-    if(!end.isLocked())
-    {
-        FC_THROWM(Base::NameError, "Could not resolve name (" << end.pathString() << ").");
-    }
-
-    equation.set(&start.get()->y, &end.get()->y);
-    return std::vector<GCS::Equation*>{&equation};
-}
-
-bool ConstraintHorizontal::updateReferences()
-{
-    start.refreshLock();
-    end.refreshLock();
-    if(!start.hasChanged() && !end.hasChanged())
-    {
-        return false;
-    }
-    equation.set(&start.get()->y, &end.get()->y);
-    return true;
-}
-
-
-unsigned int ConstraintHorizontal::getMemSize () const
-{
-    return sizeof(ConstraintHorizontal) + 50/*a.memSize() + b.memSize()*/;
-}
-
-void ConstraintHorizontal::Save (Base::Writer& /*writer*/) const
-{
-    THROW(Base::NotImplementedError);
-}
-
-std::unique_ptr<ConstraintHorizontal>
-ConstraintHorizontal::staticRestore(Base::XMLReader& /*reader*/)
-{
-    // SEE ConstraintCoincident.
-    THROW(Base::NotImplementedError);
-}
-
-} // namespace NamedSketcher
+} //namespace NamedSketcher

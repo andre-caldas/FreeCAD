@@ -25,13 +25,6 @@ set(NamedSketcher_LIBS
     FreeCADApp
 )
 
-generate_from_xml(NamedSketchPy)
-generate_from_xml(geometries/GeometryBasePy)
-generate_from_xml(geometries/GeometryPointPy)
-generate_from_xml(geometries/GeometryLineSegmentPy)
-generate_from_xml(constraints/ConstraintBasePy)
-generate_from_xml(constraints/ConstraintConcidentPy)
-
 
 SET(Properties_SRCS
     constraints/PropertyConstraintList.h
@@ -45,25 +38,23 @@ SOURCE_GROUP("Properties" FILES ${Properties_SRCS})
 SET(Features_SRCS
     NamedSketch.cpp
     NamedSketch.h
-#     PythonConverter.cpp
-#     PythonConverter.h
 )
 SOURCE_GROUP("Features" FILES ${Features_SRCS})
 
 
+include_directories(${pybind11_INCLUDE_DIR})
 SET(Python_SRCS
-    NamedSketchPy.xml
-#    NamedSketchPyImp.cpp
-    geometries/GeometryBasePy.xml
-#    geometries/GeometryBasePyImp.cpp
-    geometries/GeometryPointPy.xml
-#    geometries/GeometryPointPyImp.cpp
-    geometries/GeometryLineSegmentPy.xml
-#    geometries/GeometryLineSegmentPyImp.cpp
-    constraints/ConstraintBasePy.xml
-#    constraints/ConstraintBasePyImp.cpp
-    constraints/ConstraintCoincidentPy.xml
-#    constraints/ConstraintCoincidentPyImp.cpp
+    Module.pybind.cpp
+    NamedSketch.pybind.h
+    NamedSketch.pybind.cpp
+    Reference.pybind.h
+    Reference.pybind.cpp
+    geometries/Geometry.pybind.h
+    geometries/Geometry.pybind.cpp
+    constraints/Constraint.pybind.h
+    constraints/Constraint.pybind.cpp
+#    constraints/ConstraintBasePybind.cpp
+#    constraints/ConstraintCoincidentPybind.cpp
 )
 SOURCE_GROUP("Python" FILES ${Python_SRCS})
 
@@ -141,14 +132,6 @@ SET(PreCompiled_SRCS
     PreCompiled.cpp
 )
 SOURCE_GROUP("Precompiled" FILES ${PreCompiled_SRCS})
-
-SET(SketchModule_SRCS
-    AppNamedSketcher.cpp
-    AppNamedSketcherPy.cpp
-#     PreCompiled.cpp
-#     PreCompiled.h
-)
-SOURCE_GROUP("Module" FILES ${SketchModule_SRCS})
 
 SET(NamedSketcher_SRCS
     ${PreCompiled_SRCS}

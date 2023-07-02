@@ -49,10 +49,7 @@ public:
     ref_point end;
     ref_parameter distance;
 
-    template<typename ref_pt, typename ref_par,
-             std::enable_if_t<std::is_constructible_v<ref_point, ref_pt>>* = nullptr,
-             std::enable_if_t<std::is_constructible_v<ref_parameter, ref_par>>* = nullptr>
-    ConstraintXDistance(ref_pt&& start, ref_pt&& end, ref_par&& distance);
+    ConstraintXDistance(ref_point start, ref_point end, ref_parameter distance);
 
 public:
     std::vector<GCS::Equation*> getEquations() override;

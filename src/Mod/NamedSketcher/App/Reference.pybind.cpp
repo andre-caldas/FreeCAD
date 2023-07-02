@@ -21,80 +21,57 @@
  *                                                                          *
  ***************************************************************************/
 
+/*
+ * This is not supposed to be here.
+ * These python bindings should be in Base::Accessor.
+ */
 
-#include "PreCompiled.h"
+#include <pybind11/pybind11.h>
+#include <pybind11/operators.h>
+namespace py = pybind11;
 
-#ifndef _PreComp_
-#include <utility>
-#endif // _PreComp_
+#include <Base/Accessor/PathToObject.h>
+#include <Base/Accessor/ReferenceToObject.h>
 
-#include <Base/Writer.h>
-#include <Base/Exception.h>
+#include "gcs_solver/parameters/Parameter.h"
+#include "geometries/GeometryPoint.h"
+#include "geometries/GeometryLineSegment.h"
+#include "constraints/ConstraintBase.h"
 
-#include "../geometries/GeometryPoint.h"
-#include "ConstraintHorizontal.h"
+#include "Reference.pybind.h"
 
+using namespace Base::Accessor;
 
 namespace NamedSketcher
 {
 
-ConstraintHorizontal::ConstraintHorizontal(ref_point start, ref_point end)
-    : start(std::move(start))
-    , end(std::move(end))
+using ref_parameter = ReferenceTo<GCS::Parameter>;
+using ref_point = ReferenceTo<GeometryPoint>;
+using ref_line = ReferenceTo<GeometryLineSegment>;
+using ref_constraint = ReferenceTo<ConstraintBase>;
+
+void init_Reference(py::module& m)
 {
+    py::class_<PathToObject>(m, "PathToObject", py::module_local())
+        .def(py::self + std::string())
+    ;
+
+    py::class_<ref_parameter>(m, "ReferenceToParameter", py::module_local())
+        .def(py::self + std::string())
+    ;
+    py::implicitly_convertible<PathToObject, ref_parameter>();
+
+    py::class_<ref_point>(m, "ReferenceToPoint", py::module_local())
+        .def(py::self + std::string())
+    ;
+    py::implicitly_convertible<PathToObject, ref_point>();
+
+    py::class_<ref_line>(m, "ReferenceToLine", py::module_local())
+        .def(py::self + std::string())
+    ;
+    py::implicitly_convertible<PathToObject, ref_line>();
+
+    py::class_<ref_constraint>(m, "ReferenceToConstraint", py::module_local());
 }
 
-std::vector<GCS::Equation*> ConstraintHorizontal::getEquations()
-{
-    if(!start.isLocked())
-    {
-        start.refreshLock();
-    }
-    if(!end.isLocked())
-    {
-        end.refreshLock();
-    }
-    if(!start.isLocked())
-    {
-        FC_THROWM(Base::NameError, "Could not resolve name (" << start.pathString() << ").");
-    }
-    if(!end.isLocked())
-    {
-        FC_THROWM(Base::NameError, "Could not resolve name (" << end.pathString() << ").");
-    }
-
-    equation.set(&start.get()->y, &end.get()->y);
-    return std::vector<GCS::Equation*>{&equation};
-}
-
-bool ConstraintHorizontal::updateReferences()
-{
-    start.refreshLock();
-    end.refreshLock();
-    if(!start.hasChanged() && !end.hasChanged())
-    {
-        return false;
-    }
-    equation.set(&start.get()->y, &end.get()->y);
-    return true;
-}
-
-
-unsigned int ConstraintHorizontal::getMemSize () const
-{
-    return sizeof(ConstraintHorizontal) + 50/*a.memSize() + b.memSize()*/;
-}
-
-void ConstraintHorizontal::Save (Base::Writer& /*writer*/) const
-{
-    THROW(Base::NotImplementedError);
-}
-
-std::unique_ptr<ConstraintHorizontal>
-ConstraintHorizontal::staticRestore(Base::XMLReader& /*reader*/)
-{
-    // SEE ConstraintCoincident.
-    THROW(Base::NotImplementedError);
-}
-
-} // namespace NamedSketcher
+} //namespace NamedSketcher

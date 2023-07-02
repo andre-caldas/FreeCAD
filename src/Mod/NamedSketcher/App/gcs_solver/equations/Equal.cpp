@@ -63,10 +63,14 @@ OptimizedVector Equal::differentialOptimized(const ParameterGroupManager& manage
     return OptimizedVector();
 }
 
-bool Equal::optimizeParameters(ParameterGroupManager& manager) const
+void Equal::declareParameters(ParameterGroupManager& manager) const
 {
     manager.addParameter(a);
     manager.addParameter(b);
+}
+
+bool Equal::optimizeParameters(ParameterGroupManager& manager) const
+{
     return manager.setParameterEqual(a,b);
 }
 

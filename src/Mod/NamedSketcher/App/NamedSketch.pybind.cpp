@@ -21,80 +21,33 @@
  *                                                                          *
  ***************************************************************************/
 
+#include <pybind11/pybind11.h>
+namespace py = pybind11;
 
-#include "PreCompiled.h"
+#include <Mod/Part/App/Geometry.h>
+#include "geometries/Geometry.pybind.h"
 
-#ifndef _PreComp_
-#include <utility>
-#endif // _PreComp_
-
-#include <Base/Writer.h>
-#include <Base/Exception.h>
-
-#include "../geometries/GeometryPoint.h"
-#include "ConstraintHorizontal.h"
-
+#include "NamedSketch.h"
+#include "NamedSketch.pybind.h"
 
 namespace NamedSketcher
 {
 
-ConstraintHorizontal::ConstraintHorizontal(ref_point start, ref_point end)
-    : start(std::move(start))
-    , end(std::move(end))
+PropertyGeometryList::item_reference
+NamedSketchPy::addGeometry(py::object* geo)
 {
+    return NamedSketch::addGeometry(pyObjectToPartGeometry(geo));
 }
 
-std::vector<GCS::Equation*> ConstraintHorizontal::getEquations()
+void init_NamedSketch(py::module& m)
 {
-    if(!start.isLocked())
-    {
-        start.refreshLock();
-    }
-    if(!end.isLocked())
-    {
-        end.refreshLock();
-    }
-    if(!start.isLocked())
-    {
-        FC_THROWM(Base::NameError, "Could not resolve name (" << start.pathString() << ").");
-    }
-    if(!end.isLocked())
-    {
-        FC_THROWM(Base::NameError, "Could not resolve name (" << end.pathString() << ").");
-    }
-
-    equation.set(&start.get()->y, &end.get()->y);
-    return std::vector<GCS::Equation*>{&equation};
+    py::class_<NamedSketchPy, NamedSketch>(m, "NamedSketch")
+        .def("addGeometry", &NamedSketchPy::addGeometry)
+        .def("delGeometry", &NamedSketchPy::delGeometry)
+//        .def("addConstraint", &NamedSketchPy::addConstraint)
+        .def("delConstraint", &NamedSketchPy::delConstraint)
+        .def("solve", &NamedSketchPy::solve)
+    ;
 }
 
-bool ConstraintHorizontal::updateReferences()
-{
-    start.refreshLock();
-    end.refreshLock();
-    if(!start.hasChanged() && !end.hasChanged())
-    {
-        return false;
-    }
-    equation.set(&start.get()->y, &end.get()->y);
-    return true;
-}
-
-
-unsigned int ConstraintHorizontal::getMemSize () const
-{
-    return sizeof(ConstraintHorizontal) + 50/*a.memSize() + b.memSize()*/;
-}
-
-void ConstraintHorizontal::Save (Base::Writer& /*writer*/) const
-{
-    THROW(Base::NotImplementedError);
-}
-
-std::unique_ptr<ConstraintHorizontal>
-ConstraintHorizontal::staticRestore(Base::XMLReader& /*reader*/)
-{
-    // SEE ConstraintCoincident.
-    THROW(Base::NotImplementedError);
-}
-
-} // namespace NamedSketcher
+} //namespace NamedSketcher

@@ -88,6 +88,9 @@ public:
     ReferenceTo(ReferencedObject* root, NameOrTag&&... obj_path)
         : pathToObject(root, obj_path...) {}
 
+    template<typename NameOrTag>
+    PathToObject operator+ (NameOrTag&& extra_path) const {return pathToObject + extra_path;}
+
     using lock_type = PathToObject::lock_type;
     /**
      * @brief Locks the last object and gets a raw pointer to @class T.

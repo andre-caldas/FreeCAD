@@ -21,80 +21,28 @@
  *                                                                          *
  ***************************************************************************/
 
+/*
+ * This is not supposed to be here.
+ * These python bindings should be in Base::Accessor.
+ */
 
-#include "PreCompiled.h"
+#ifndef NAMEDSKETCHER_ReferencePybind_H
+#define NAMEDSKETCHER_ReferencePybind_H
 
-#ifndef _PreComp_
-#include <utility>
-#endif // _PreComp_
+#include <pybind11/pybind11.h>
+namespace py = pybind11;
 
-#include <Base/Writer.h>
-#include <Base/Exception.h>
+#include <Base/Accessor/PathToObject.h>
 
-#include "../geometries/GeometryPoint.h"
-#include "ConstraintHorizontal.h"
-
+namespace Base::Accessor {
+class ReferencedObject;
+}
 
 namespace NamedSketcher
 {
 
-ConstraintHorizontal::ConstraintHorizontal(ref_point start, ref_point end)
-    : start(std::move(start))
-    , end(std::move(end))
-{
-}
+void init_Reference(py::module& m);
 
-std::vector<GCS::Equation*> ConstraintHorizontal::getEquations()
-{
-    if(!start.isLocked())
-    {
-        start.refreshLock();
-    }
-    if(!end.isLocked())
-    {
-        end.refreshLock();
-    }
-    if(!start.isLocked())
-    {
-        FC_THROWM(Base::NameError, "Could not resolve name (" << start.pathString() << ").");
-    }
-    if(!end.isLocked())
-    {
-        FC_THROWM(Base::NameError, "Could not resolve name (" << end.pathString() << ").");
-    }
+} //namespace NamedSketcher
 
-    equation.set(&start.get()->y, &end.get()->y);
-    return std::vector<GCS::Equation*>{&equation};
-}
-
-bool ConstraintHorizontal::updateReferences()
-{
-    start.refreshLock();
-    end.refreshLock();
-    if(!start.hasChanged() && !end.hasChanged())
-    {
-        return false;
-    }
-    equation.set(&start.get()->y, &end.get()->y);
-    return true;
-}
-
-
-unsigned int ConstraintHorizontal::getMemSize () const
-{
-    return sizeof(ConstraintHorizontal) + 50/*a.memSize() + b.memSize()*/;
-}
-
-void ConstraintHorizontal::Save (Base::Writer& /*writer*/) const
-{
-    THROW(Base::NotImplementedError);
-}
-
-std::unique_ptr<ConstraintHorizontal>
-ConstraintHorizontal::staticRestore(Base::XMLReader& /*reader*/)
-{
-    // SEE ConstraintCoincident.
-    THROW(Base::NotImplementedError);
-}
-
-} // namespace NamedSketcher
+#endif // NAMEDSKETCHER_ReferencePybind_H

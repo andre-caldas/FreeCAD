@@ -39,13 +39,10 @@
 namespace NamedSketcher
 {
 
-template<typename ref_pt, typename ref_par,
-         std::enable_if_t<std::is_constructible_v<ConstraintXDistance::ref_point, ref_pt>>*,
-         std::enable_if_t<std::is_constructible_v<ConstraintXDistance::ref_parameter, ref_par>>*>
-ConstraintXDistance::ConstraintXDistance(ref_pt&& start, ref_pt&& end, ref_par&& distance)
-    : start(std::forward(start))
-    , end(std::forward(end))
-    , distance(std::forward(distance))
+ConstraintXDistance::ConstraintXDistance(ref_point start, ref_point end, ref_parameter distance)
+    : start(std::move(start))
+    , end(std::move(end))
+    , distance(std::move(distance))
 {
 }
 

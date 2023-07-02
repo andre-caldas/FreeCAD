@@ -1,24 +1,25 @@
-/***************************************************************************
- *   Copyright (c) 2008 Jürgen Riegel <juergen.riegel@web.de>              *
- *   Copyright (c) 2023 André Caldas <andre.em.caldas@gmail.com>           *
- *                                                                         *
- *   This file is part of the FreeCAD CAx development system.              *
- *                                                                         *
- *   This library is free software; you can redistribute it and/or         *
- *   modify it under the terms of the GNU Library General Public           *
- *   License as published by the Free Software Foundation; either          *
- *   version 2 of the License, or (at your option) any later version.      *
- *                                                                         *
- *   This library  is distributed in the hope that it will be useful,      *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
- *   GNU Library General Public License for more details.                  *
- *                                                                         *
- *   You should have received a copy of the GNU Library General Public     *
- *   License along with this library; see the file COPYING.LIB. If not,    *
- *   write to the Free Software Foundation, Inc., 59 Temple Place,         *
- *   Suite 330, Boston, MA  02111-1307, USA                                *
- *                                                                         *
+// SPDX-License-Identifier: LGPL-2.1-or-later
+/****************************************************************************
+ *                                                                          *
+ *   Copyright (c) 2008 Jürgen Riegel <juergen.riegel@web.de>               *
+ *   Copyright (c) 2023 André Caldas <andre.em.caldas@gmail.com>            *
+ *                                                                          *
+ *   This file is part of FreeCAD.                                          *
+ *                                                                          *
+ *   FreeCAD is free software: you can redistribute it and/or modify it     *
+ *   under the terms of the GNU Lesser General Public License as            *
+ *   published by the Free Software Foundation, either version 2.1 of the   *
+ *   License, or (at your option) any later version.                        *
+ *                                                                          *
+ *   FreeCAD is distributed in the hope that it will be useful, but         *
+ *   WITHOUT ANY WARRANTY; without even the implied warranty of             *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU       *
+ *   Lesser General Public License for more details.                        *
+ *                                                                          *
+ *   You should have received a copy of the GNU Lesser General Public       *
+ *   License along with FreeCAD. If not, see                                *
+ *   <https://www.gnu.org/licenses/>.                                       *
+ *                                                                          *
  ***************************************************************************/
 
 #ifndef NAMEDSKETCHER_NamedSketch_H
@@ -74,7 +75,7 @@ public:
      \retval reference to the newly created GeometryBase.
      */
     PropertyGeometryList::item_reference
-    addGeometry(std::unique_ptr<Part::Geometry> geo);
+    addGeometry(std::unique_ptr<Part::Geometry>&& geo);
 
     /*!
      \brief Deletes indicated geometry (by tag).
@@ -88,7 +89,7 @@ public:
      \retval tag of the added constraint.
      */
     PropertyConstraintList::item_reference
-    addConstraint(std::unique_ptr<ConstraintBase> constraint);
+    addConstraint(std::unique_ptr<ConstraintBase>&& constraint);
 
     /*!
      \brief Deletes indicated constraint.
@@ -101,8 +102,8 @@ public:
 
     ReferencedObject* resolve_ptr(Base::Accessor::token_iterator& start, const Base::Accessor::token_iterator& end) override;
 
-    void Save(Base::Writer &/*writer*/) const override;
-    void Restore(Base::XMLReader &/*reader*/) override;
+    void Save(Base::Writer& /*writer*/) const override;
+    void Restore(Base::XMLReader& /*reader*/) override;
 
     Part::TopoShape toShape() const;
 

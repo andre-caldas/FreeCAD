@@ -42,9 +42,7 @@ public:
     ref_parameter a;
     ref_parameter b;
 
-    template<typename ref,
-             std::enable_if_t<std::is_constructible_v<ref_parameter, ref>>* = nullptr>
-    ConstraintEqual(ref&& a, ref&& b);
+    ConstraintEqual(ref_parameter a, ref_parameter b);
 
 public:
     std::vector<GCS::Equation*> getEquations() override;

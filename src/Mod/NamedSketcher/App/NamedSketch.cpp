@@ -1,24 +1,25 @@
-/***************************************************************************
- *   Copyright (c) 2008 Jürgen Riegel <juergen.riegel@web.de>              *
- *   Copyright (c) 2023 André Caldas <andre.em.caldas@gmail.com>           *
- *                                                                         *
- *   This file is part of the FreeCAD CAx development system.              *
- *                                                                         *
- *   This library is free software; you can redistribute it and/or         *
- *   modify it under the terms of the GNU Library General Public           *
- *   License as published by the Free Software Foundation; either          *
- *   version 2 of the License, or (at your option) any later version.      *
- *                                                                         *
- *   This library  is distributed in the hope that it will be useful,      *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
- *   GNU Library General Public License for more details.                  *
- *                                                                         *
- *   You should have received a copy of the GNU Library General Public     *
- *   License along with this library; see the file COPYING.LIB. If not,    *
- *   write to the Free Software Foundation, Inc., 59 Temple Place,         *
- *   Suite 330, Boston, MA  02111-1307, USA                                *
- *                                                                         *
+// SPDX-License-Identifier: LGPL-2.1-or-later
+/****************************************************************************
+ *                                                                          *
+ *   Copyright (c) 2008 Jürgen Riegel <juergen.riegel@web.de>               *
+ *   Copyright (c) 2023 André Caldas <andre.em.caldas@gmail.com>            *
+ *                                                                          *
+ *   This file is part of FreeCAD.                                          *
+ *                                                                          *
+ *   FreeCAD is free software: you can redistribute it and/or modify it     *
+ *   under the terms of the GNU Lesser General Public License as            *
+ *   published by the Free Software Foundation, either version 2.1 of the   *
+ *   License, or (at your option) any later version.                        *
+ *                                                                          *
+ *   FreeCAD is distributed in the hope that it will be useful, but         *
+ *   WITHOUT ANY WARRANTY; without even the implied warranty of             *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU       *
+ *   Lesser General Public License for more details.                        *
+ *                                                                          *
+ *   You should have received a copy of the GNU Lesser General Public       *
+ *   License along with FreeCAD. If not, see                                *
+ *   <https://www.gnu.org/licenses/>.                                       *
+ *                                                                          *
  ***************************************************************************/
 
 #include "PreCompiled.h"
@@ -111,7 +112,7 @@ App::DocumentObjectExecReturn *NamedSketch::execute()
 
 // TODO: in the future, return an ObjectPath-like "reference".
 PropertyGeometryList::item_reference
-NamedSketch::addGeometry(std::unique_ptr<Part::Geometry> geo)
+NamedSketch::addGeometry(std::unique_ptr<Part::Geometry>&& geo)
 {
     auto uuid = geometryList.addElement(geometryFactory(std::move(geo)));
     return PropertyGeometryList::item_reference(this, "geometries", uuid);
@@ -123,7 +124,7 @@ void NamedSketch::delGeometry(boost::uuids::uuid tag)
 }
 
 PropertyConstraintList::item_reference
-NamedSketch::addConstraint(std::unique_ptr<ConstraintBase> constraint)
+NamedSketch::addConstraint(std::unique_ptr<ConstraintBase>&& constraint)
 {
     auto equations = constraint->getEquations();
     for(auto equation: equations)

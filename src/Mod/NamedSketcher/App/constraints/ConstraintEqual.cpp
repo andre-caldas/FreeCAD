@@ -38,11 +38,9 @@
 namespace NamedSketcher
 {
 
-template<typename ref,
-         std::enable_if_t<std::is_constructible_v<ConstraintEqual::ref_parameter, ref>>*>
-ConstraintEqual::ConstraintEqual(ref&& a, ref&& b)
-    : a(std::forward(a))
-    , b(std::forward(b))
+ConstraintEqual::ConstraintEqual(ref_parameter a, ref_parameter b)
+    : a(std::move(a))
+    , b(std::move(b))
 {
 }
 

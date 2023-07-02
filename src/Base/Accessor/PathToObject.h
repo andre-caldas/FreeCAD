@@ -132,6 +132,9 @@ public:
                  >>* = nullptr>
     PathToObject goFurther(NameOrTag&& ...furtherPath) const;
 
+    template<typename NameOrTag>
+    PathToObject operator+ (NameOrTag&& extra_path) const {return goFurther(extra_path);}
+
     /**
      * @brief The resolution mechanism resolves the token chain
      * up to the end of the chain, or up to the first non-chainable object.

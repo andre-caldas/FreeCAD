@@ -45,8 +45,8 @@ protected:
     void setAttributes(ConstraintBase* p) override;
 
 private:
-    bool isDriving;
-    bool isDriven;
+//    bool isDriving;
+//    bool isDriven;
 };
 
 } // namespace NamedSketcher

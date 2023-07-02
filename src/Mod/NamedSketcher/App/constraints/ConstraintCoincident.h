@@ -43,9 +43,8 @@ class NamedSketcherExport ConstraintCoincident : public ConstraintBase
 public:
     std::vector<ref_point> references;
 
-    template<typename ref,
-             std::enable_if_t<std::is_constructible_v<ref_point, ref>>* = nullptr>
-    ConstraintCoincident& addPoint(ref&& reference);
+    ConstraintCoincident& addPoint(const ref_point& reference);
+    ConstraintCoincident& addPoint(ref_point&& reference);
     ConstraintCoincident& removePoint(boost::uuids::uuid tag);
 
 public:

@@ -36,16 +36,16 @@
 
 namespace NamedSketcher {
 
-void ConstraintFactory::getAttributes(Base::XMLReader& reader)
+void ConstraintFactory::getAttributes(Base::XMLReader& /*reader*/)
 {
-    isDriving = reader.getAttributeAsBoolean("driving", true);
-    isDriven =  reader.getAttributeAsBoolean("driven", false);
+//    isDriving = reader.getAttributeAsBoolean("driving", true);
+//    isDriven =  reader.getAttributeAsBoolean("driven", false);
 }
 
-void ConstraintFactory::setAttributes(ConstraintBase* p)
+void ConstraintFactory::setAttributes(ConstraintBase* /*p*/)
 {
-    p->isDriving = isDriving;
-    p->isDriven = isDriven;
+//    p->isDriving = isDriving;
+//    p->isDriven = isDriven;
 }
 
 } // namespace NamedSketcher
