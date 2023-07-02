@@ -34,19 +34,20 @@ namespace NamedSketcher
 {
 
 PropertyGeometryList::item_reference
-NamedSketchPy::addGeometry(py::object* geo)
+addGeometry(NamedSketch& sketch, py::object* geo)
 {
-    return NamedSketch::addGeometry(pyObjectToPartGeometry(geo));
+    return sketch.addGeometry(pyObjectToPartGeometry(geo));
 }
 
 void init_NamedSketch(py::module& m)
 {
-    py::class_<NamedSketchPy, NamedSketch>(m, "NamedSketch")
-        .def("addGeometry", &NamedSketchPy::addGeometry)
-        .def("delGeometry", &NamedSketchPy::delGeometry)
-//        .def("addConstraint", &NamedSketchPy::addConstraint)
-        .def("delConstraint", &NamedSketchPy::delConstraint)
-        .def("solve", &NamedSketchPy::solve)
+    py::class_<NamedSketch>(m, "NamedSketch")
+        .def(py::init<>())
+        .def("addGeometry", &addGeometry)
+        .def("delGeometry", &NamedSketch::delGeometry)
+//        .def("addConstraint", &NamedSketch::addConstraint)
+        .def("delConstraint", &NamedSketch::delConstraint)
+        .def("solve", &NamedSketch::solve)
     ;
 }
 

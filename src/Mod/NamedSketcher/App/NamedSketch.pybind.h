@@ -36,16 +36,7 @@ namespace NamedSketcher
 class GeometryBase;
 
 void init_NamedSketch(py::module& m);
-
-/*
- * Temporary trampolim class to deal with heterogeneous
- * pybind and non-pybind python bindings.
- */
-class NamedSketchPy : public NamedSketch
-{
-public:
-    PropertyGeometryList::item_reference addGeometry(py::object* geo);
-};
+PropertyGeometryList::item_reference addGeometry(NamedSketch& sketch, py::object* geo);
 
 } //namespace NamedSketcher
 
