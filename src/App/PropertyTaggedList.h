@@ -100,7 +100,7 @@ public:
 
     using ReferencedObject = Base::Accessor::ReferencedObject;
 
-    key_type addElement(ptr_handler&& element);
+    key_type addElement(ptr_handler element);
     ptr_handler getElement(key_type tag);
     list_node_type removeElement(key_type tag) { return elementList.extract(tag); }
     /**

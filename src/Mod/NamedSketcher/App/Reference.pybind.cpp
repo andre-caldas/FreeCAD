@@ -58,20 +58,25 @@ void init_Reference(py::module& m)
     ;
 
     py::class_<ref_geometry_base>(m, "ReferenceToGeometryBase", py::module_local())
+        .def(py::init<const PathToObject&>())
         .def(py::self + std::string())
     ;
+    py::implicitly_convertible<PathToObject, ref_geometry_base>();
 
     py::class_<ref_parameter>(m, "ReferenceToParameter", py::module_local())
+        .def(py::init<const PathToObject&>())
         .def(py::self + std::string())
     ;
     py::implicitly_convertible<PathToObject, ref_parameter>();
 
     py::class_<ref_point>(m, "ReferenceToPoint", py::module_local())
+        .def(py::init<const PathToObject&>())
         .def(py::self + std::string())
     ;
     py::implicitly_convertible<PathToObject, ref_point>();
 
     py::class_<ref_line>(m, "ReferenceToLine", py::module_local())
+        .def(py::init<const PathToObject&>())
         .def(py::self + std::string())
     ;
     py::implicitly_convertible<PathToObject, ref_line>();

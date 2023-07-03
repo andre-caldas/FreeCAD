@@ -127,7 +127,7 @@ void NamedSketch::delGeometry(boost::uuids::uuid tag)
 }
 
 PropertyConstraintList::item_reference
-NamedSketch::addConstraint(std::unique_ptr<ConstraintBase>&& constraint)
+NamedSketch::addConstraint(std::shared_ptr<ConstraintBase> constraint)
 {
     auto equations = constraint->getEquations();
     for(auto equation: equations)

@@ -42,21 +42,21 @@ using ref_point = ConstraintBase::ref_point;
 
 void init_Constraint(py::module& m)
 {
-    py::class_<ConstraintBase>(m, "Constraint");
+    py::class_<ConstraintBase, std::shared_ptr<ConstraintBase>>(m, "Constraint");
 
-    py::class_<ConstraintEqual, ConstraintBase>(m, "ConstraintEqual")
+    py::class_<ConstraintEqual, std::shared_ptr<ConstraintEqual>, ConstraintBase>(m, "ConstraintEqual")
         .def(py::init<ref_parameter, ref_parameter>())
     ;
-    py::class_<ConstraintCoincident, ConstraintBase>(m, "ConstraintCoincident")
+    py::class_<ConstraintCoincident, std::shared_ptr<ConstraintCoincident>, ConstraintBase>(m, "ConstraintCoincident")
         .def(py::init<>())
-//        .def("addPoint", py::overload_cast<const ref_point&>(&ConstraintCoincident::addPoint))
+        .def("addPoint", py::overload_cast<const ref_point&>(&ConstraintCoincident::addPoint))
 //        .def("addPoint", py::overload_cast<ref_point&&>(&ConstraintCoincident::addPoint))
-//        .def("removePoint", &ConstraintCoincident::removePoint)
+        .def("removePoint", &ConstraintCoincident::removePoint)
     ;
-    py::class_<ConstraintHorizontal, ConstraintBase>(m, "ConstraintHorizontal")
+    py::class_<ConstraintHorizontal, std::shared_ptr<ConstraintHorizontal>, ConstraintBase>(m, "ConstraintHorizontal")
         .def(py::init<ref_point, ref_point>())
     ;
-    py::class_<ConstraintXDistance, ConstraintBase>(m, "ConstraintXDistance")
+    py::class_<ConstraintXDistance, std::shared_ptr<ConstraintXDistance>, ConstraintBase>(m, "ConstraintXDistance")
             .def(py::init<ref_point, ref_point, ref_parameter>())
     ;
 }

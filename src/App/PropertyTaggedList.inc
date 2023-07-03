@@ -55,7 +55,7 @@ namespace App {
 
 template<typename T>
 typename PropertyTaggedListT<T>::key_type
-PropertyTaggedListT<T>::addElement(ptr_handler&& element)
+PropertyTaggedListT<T>::addElement(ptr_handler element)
 {
     key_type uuid = element->getTag();
     elementList.emplace(uuid, std::move(element));

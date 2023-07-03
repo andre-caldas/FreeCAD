@@ -89,7 +89,7 @@ public:
      \retval tag of the added constraint.
      */
     PropertyConstraintList::item_reference
-    addConstraint(std::unique_ptr<ConstraintBase>&& constraint);
+    addConstraint(std::shared_ptr<ConstraintBase> constraint);
 
     /*!
      \brief Deletes indicated constraint.

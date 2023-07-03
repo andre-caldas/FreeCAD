@@ -59,7 +59,6 @@ template<typename T>
 class BaseExport ReferenceTo
 {
 public:
-    ReferenceTo(); // Not RAII! :-(
     ReferenceTo(PathToObject&& path) : pathToObject(path) {}
     ReferenceTo(const PathToObject& path) : pathToObject(path) {}
     /**

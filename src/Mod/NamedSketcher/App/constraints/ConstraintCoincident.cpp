@@ -35,22 +35,19 @@
 namespace NamedSketcher
 {
 
-ConstraintCoincident& ConstraintCoincident::addPoint(const ref_point& reference)
+void ConstraintCoincident::addPoint(const ref_point& reference)
 {
     references.emplace_back(reference);
-    return *this;
 }
 
-ConstraintCoincident& ConstraintCoincident::addPoint(ref_point&& reference)
+void ConstraintCoincident::addPoint(ref_point&& reference)
 {
     references.emplace_back(reference);
-    return *this;
 }
 
-ConstraintCoincident& ConstraintCoincident::removePoint(boost::uuids::uuid /*tag*/)
+void ConstraintCoincident::removePoint(boost::uuids::uuid /*tag*/)
 {
     THROW(Base::NotImplementedError);
-    return *this;
 }
 
 std::vector<GCS::Equation*> ConstraintCoincident::getEquations()
