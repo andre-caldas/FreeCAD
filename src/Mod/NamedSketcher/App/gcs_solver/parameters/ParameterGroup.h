@@ -45,7 +45,7 @@ public:
     OptimizedParameter* getValuePtr();
 
     bool hasParameter(Parameter* parameter) const;
-    void append(Parameter* p);
+    void append(Parameter* p, bool set_as_mean = true);
     bool setConstant(Parameter* k);
     bool isConstant() const;
     void commit() const;
@@ -55,6 +55,8 @@ public:
     set_t::iterator begin() {return parameters.begin();}
     set_t::iterator end() {return parameters.end();}
     set_t::size_type size() const {return parameters.size();}
+
+    void setAsMean();
 
 private:
     OptimizedParameter value;

@@ -69,9 +69,13 @@ bool ParameterGroup::hasParameter(Parameter* parameter) const
     return parameters.count(parameter);
 }
 
-void ParameterGroup::append(Parameter* p)
+void ParameterGroup::append(Parameter* p, bool set_as_mean)
 {
     parameters.insert(p);
+    if(set_as_mean)
+    {
+        setAsMean();
+    }
 }
 
 bool ParameterGroup::setConstant(Parameter* k)
@@ -122,10 +126,32 @@ ParameterGroup& ParameterGroup::operator<<(ParameterGroup&& other)
     }
     for(auto p: other.parameters)
     {
-        append(p);
+        append(p, false);
     }
     other.parameters.clear();
+    setAsMean();
     return *this;
+}
+
+void ParameterGroup::setAsMean()
+{
+    if(isConstant())
+    {
+        return;
+    }
+
+    if(parameters.size() == 0)
+    {
+        assert(false);
+        return;
+    }
+
+    value = 0.0;
+    for(const auto& parameter: parameters)
+    {
+        value += (double)*parameter;
+    }
+    value /= parameters.size();
 }
 
 } // namespace NamedSketcher::GCS
