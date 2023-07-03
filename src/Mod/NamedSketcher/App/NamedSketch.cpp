@@ -222,13 +222,15 @@ void NamedSketch::report() const
         geometry->report();
     }
     std::cout << std::endl;
+/*
     std::cout << "Constraints" << std::endl;
     std::cout << "===========" << std::endl;
     for (auto& constraint: constraintList)
     {
-std::cout << "Implementar!" << std::endl;
-//        constraint->report();
+        constraint->report();
     }
+    std::cout << std::endl;
+*/
 }
 
 } // namespace NamedSketcher
