@@ -52,4 +52,42 @@ unsigned int GeometryPoint::getMemSize() const
     return geometry->getMemSize() + sizeof(*this);
 }
 
+GCS::Parameter* GeometryPoint::resolve_ptr(token_iterator& start, const token_iterator& end, GCS::Parameter*)
+{
+    assert(start != end);
+    token_iterator pos = start;
+    if(*pos == "gcs_point")
+    {
+        ++pos;
+    }
+    if(start == end)
+    {
+        // TODO: warning. Did you mean to get a point?
+        return nullptr;
+    }
+
+    if(*pos == "x")
+    {
+        start = ++pos;
+        return &x;
+    }
+    if(*pos == "y")
+    {
+        start = ++pos;
+        return &y;
+    }
+    return nullptr;
+}
+
+GCS::Point* GeometryPoint::resolve_ptr(token_iterator& start, const token_iterator& end, GCS::Point*)
+{
+    assert(start != end);
+    if(*start == "gcs_point")
+    {
+        ++start;
+        return &point;
+    }
+    return nullptr;
+}
+
 } // namespace NamedSketcher

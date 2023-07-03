@@ -77,7 +77,7 @@ PropertyTaggedListT<T>::getElement(key_type tag)
 }
 
 template<typename T>
-std::shared_ptr<T> PropertyTaggedListT<T>::resolve_share(token_iterator& start, const token_iterator& end)
+std::shared_ptr<T> PropertyTaggedListT<T>::resolve_share(token_iterator& start, const token_iterator& end, T*)
 {
     assert(start != end);
     if(start == end)

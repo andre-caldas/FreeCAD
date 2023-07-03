@@ -52,14 +52,14 @@ IExport<T>::resolve(std::shared_ptr<ReferencedObject>& parent_lock, token_iterat
 
 template<typename T>
 typename IExport<T>::export_ptr_type
-IExport<T>::resolve_ptr(token_iterator& /*start*/, const token_iterator& /*end*/)
+IExport<T>::resolve_ptr(token_iterator& /*start*/, const token_iterator& /*end*/, T*)
 {
     return nullptr;
 }
 
 template<typename T>
 typename IExport<T>::export_share_type
-IExport<T>::resolve_share(token_iterator& /*start*/, const token_iterator& /*end*/)
+IExport<T>::resolve_share(token_iterator& /*start*/, const token_iterator& /*end*/, T*)
 {
     return export_share_type();
 }

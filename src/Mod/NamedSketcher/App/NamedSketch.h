@@ -100,12 +100,16 @@ public:
 
     void solve();
 
-    ReferencedObject* resolve_ptr(Base::Accessor::token_iterator& start, const Base::Accessor::token_iterator& end) override;
+    ReferencedObject* resolve_ptr(Base::Accessor::token_iterator& start, const Base::Accessor::token_iterator& end, ReferencedObject*) override;
 
     void Save(Base::Writer& /*writer*/) const override;
     void Restore(Base::XMLReader& /*reader*/) override;
 
     Part::TopoShape toShape() const;
+
+    // Old python interface...
+    // Document::addObject uses it. :-(
+    PyObject* getPyObject();
 
 private:
     GCS::System gcs;

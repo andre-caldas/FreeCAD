@@ -29,6 +29,9 @@
 #include <boost/uuid/uuid_io.hpp>
 #endif
 
+#include <pybind11/pybind11.h>
+namespace py = pybind11;
+
 #include <Base/Console.h>
 #include <Base/Exception.h>
 #include <Base/Accessor/ReferenceToObject.h>
@@ -151,7 +154,7 @@ void NamedSketch::solve() {
 }
 
 Base::Accessor::ReferencedObject*
-NamedSketch::resolve_ptr(Base::Accessor::token_iterator& start, const Base::Accessor::token_iterator& end)
+NamedSketch::resolve_ptr(Base::Accessor::token_iterator& start, const Base::Accessor::token_iterator& end, ReferencedObject*)
 {
     assert(start != end);
     if(*start == "geometries")
@@ -191,6 +194,22 @@ void NamedSketch::Save(Base::Writer &/*writer*/) const
 void NamedSketch::Restore(Base::XMLReader &/*reader*/)
 {
     FC_THROWM(Base::NotImplementedError, "NamedSketch::Restore not implemented!");
+}
+
+PyObject* NamedSketch::getPyObject()
+{
+    /*
+     * TODO: I hope that in the near future this can just throw an exception.
+     * This is used by Document::addObject.
+     * I hope one day Document::addObject can simply take a python object.
+     */
+    if (!PythonObject.is(Py::_None())) {
+        return Py::new_reference_to(PythonObject);
+    }
+
+    py::object py_object = py::cast(this);
+    PythonObject = py_object.ptr();
+    return Py::new_reference_to(PythonObject);
 }
 
 } // namespace NamedSketcher

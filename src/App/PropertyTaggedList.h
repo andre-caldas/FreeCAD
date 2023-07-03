@@ -109,7 +109,7 @@ public:
      * @param end
      * @return
      */
-    std::shared_ptr<T> resolve_share(token_iterator& start, const token_iterator& end) override;
+    std::shared_ptr<T> resolve_share(token_iterator& start, const token_iterator& end, T*) override;
 
     using iterator = class MappedTypeIterator<list_type>;
     iterator begin() const;

@@ -28,6 +28,7 @@ namespace py = pybind11;
 #include "constraints/Constraint.pybind.h"
 #include "Reference.pybind.h"
 #include "NamedSketch.pybind.h"
+#include "NamedSketch.h"
 
 namespace NamedSketcher
 {
@@ -39,6 +40,8 @@ PYBIND11_MODULE(NamedSketcher, m)
     init_Geometry(m);
     init_Constraint(m);
     init_NamedSketch(m);
+
+    NamedSketch::init();
 }
 
 } //namespace NamedSketcher

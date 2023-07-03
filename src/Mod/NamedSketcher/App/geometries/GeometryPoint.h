@@ -27,6 +27,7 @@
 #include <memory>
 
 #include <Base/Vector3D.h>
+#include <Base/Accessor/ReferencedObject.h>
 
 #include "gcs_solver/parameters/Parameter.h"
 #include "GeometryBase.h"
@@ -46,6 +47,8 @@ namespace NamedSketcher
  */
 class NamedSketcherExport GeometryPoint
         : public GeometryBaseT<GeometryPoint, Part::GeomPoint>
+        , public Base::Accessor::IExport<GCS::Parameter>
+        , public Base::Accessor::IExport<GCS::Point>
 {
 public:
     GeometryPoint(std::unique_ptr<Part::GeomPoint>&& geo);
@@ -60,8 +63,10 @@ public:
     std::string_view xmlTagType(void) const override {return xmlTagTypeStatic();}
     static constexpr const char* xmlTagTypeStatic(void) {return "Point";}
 
-protected:
-    GeometryPoint();
+private:
+    using token_iterator = IExport<GCS::Point>::token_iterator;
+    GCS::Point* resolve_ptr(token_iterator& start, const token_iterator& end, GCS::Point*) override;
+    GCS::Parameter* resolve_ptr(token_iterator& start, const token_iterator& end, GCS::Parameter*) override;
 };
 
 } // namespace NamedSketcher

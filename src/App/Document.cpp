@@ -3989,13 +3989,13 @@ bool Document::mustExecute() const
     return false;
 }
 
-std::shared_ptr<Document::ReferencedObject> Document::resolve_share(token_iterator& /*start*/, const token_iterator& /*end*/)
+std::shared_ptr<Document::ReferencedObject> Document::resolve_share(token_iterator& /*start*/, const token_iterator& /*end*/, ReferencedObject*)
 {
     // TODO: move every referenced object to here.
     return std::shared_ptr<ReferencedObject>();
 }
 
-Document::ReferencedObject* Document::resolve_ptr(token_iterator& start, const token_iterator& end)
+Document::ReferencedObject* Document::resolve_ptr(token_iterator& start, const token_iterator& end, ReferencedObject*)
 {
     // TODO: move every referenced out of here, to resolve_share.
     assert(start != end);

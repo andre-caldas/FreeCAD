@@ -119,8 +119,12 @@ public:
     export_type resolve(std::shared_ptr<ReferencedObject>& parent_lock, token_iterator& start, const token_iterator& end);
 
 protected:
-    virtual T* resolve_ptr(token_iterator& start, const token_iterator& end);
-    virtual export_type resolve_share(token_iterator& start, const token_iterator& end);
+    /*
+     * To allow a class to derive from multiple IExport<T> classes,
+     * we have added a T* to the end of the methods signature.
+     */
+    virtual T* resolve_ptr(token_iterator& start, const token_iterator& end, T* = nullptr);
+    virtual export_type resolve_share(token_iterator& start, const token_iterator& end, T* = nullptr);
 };
 
 class BaseExport Chainable
