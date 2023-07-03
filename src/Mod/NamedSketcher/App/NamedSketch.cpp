@@ -29,6 +29,7 @@
 #include <boost/uuid/uuid_io.hpp>
 #endif
 
+#include <iostream>
 #include <pybind11/pybind11.h>
 namespace py = pybind11;
 
@@ -210,6 +211,24 @@ PyObject* NamedSketch::getPyObject()
     py::object py_object = py::cast(this);
     PythonObject = py_object.ptr();
     return Py::new_reference_to(PythonObject);
+}
+
+void NamedSketch::report() const
+{
+    std::cout << "Geometries" << std::endl;
+    std::cout << "==========" << std::endl;
+    for (auto& geometry: geometryList)
+    {
+        geometry->report();
+    }
+    std::cout << std::endl;
+    std::cout << "Constraints" << std::endl;
+    std::cout << "===========" << std::endl;
+    for (auto& constraint: constraintList)
+    {
+std::cout << "Implementar!" << std::endl;
+//        constraint->report();
+    }
 }
 
 } // namespace NamedSketcher

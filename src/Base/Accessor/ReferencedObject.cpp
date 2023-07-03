@@ -61,9 +61,9 @@ Tag::tag_type ReferencedObject::registerTag(std::string deprecated)
         std::shared_ptr<ReferencedObject> shared_ptr(this, [](auto){}); // Fake shared_ptr.
         map.insert({getTag(), shared_ptr});
         deprecatedFakeSharePointers.insert({this, shared_ptr});
-        return name_and_tag;
+        return getTag();
     }
-    return deprecatedFakeSharePointers.at(this)->name_and_tag;
+    return deprecatedFakeSharePointers.at(this)->getTag();
 }
 
 std::weak_ptr<ReferencedObject>

@@ -48,6 +48,7 @@ void init_NamedSketch(py::module& m)
         .def("addConstraint", &NamedSketch::addConstraint)
         .def("delConstraint", &NamedSketch::delConstraint)
         .def("solve", &NamedSketch::solve)
+        .def("report", &NamedSketch::report)
     ;
 }
 

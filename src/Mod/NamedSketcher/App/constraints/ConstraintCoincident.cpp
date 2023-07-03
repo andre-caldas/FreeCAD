@@ -71,8 +71,8 @@ std::vector<GCS::Equation*> ConstraintCoincident::getEquations()
         }
         if(i > 0)
         {
-            equations.at(2*i - 2)->set(&first.get()->point.x, &point_ref.get()->point.x);
-            equations.at(2*i - 1)->set(&first.get()->point.y, &point_ref.get()->point.y);
+            equations.at(2*i - 2)->set(&first.get()->x, &point_ref.get()->x);
+            equations.at(2*i - 1)->set(&first.get()->y, &point_ref.get()->y);
             result.emplace_back(equations.at(2*1 - 2).get());
             result.emplace_back(equations.at(2*1 - 1).get());
         }
@@ -103,8 +103,8 @@ bool ConstraintCoincident::updateReferences()
     for(size_t i=1; i < references.size(); ++i)
     {
         auto& point_ref = references.at(i);
-        equations.at(2*i - 2)->set(&first.get()->point.x, &point_ref.get()->point.x);
-        equations.at(2*i - 1)->set(&first.get()->point.y, &point_ref.get()->point.y);
+        equations.at(2*i - 2)->set(&first.get()->x, &point_ref.get()->x);
+        equations.at(2*i - 1)->set(&first.get()->y, &point_ref.get()->y);
     }
     return true;
 }

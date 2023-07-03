@@ -26,7 +26,6 @@
 #include <string>
 #include <vector>
 
-#include <Base/Accessor/NameAndTag.h>
 #include <App/PropertyTaggedList.h>
 
 #include "GeometryBase.h"
@@ -39,8 +38,7 @@ namespace NamedSketcher
 {
 
 class NamedSketcherExport PropertyGeometryList
-        : public Base::Accessor::NameAndTag
-        , public App::PropertyTaggedListT<GeometryBase>
+        : public App::PropertyTaggedListT<GeometryBase>
 {
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
 

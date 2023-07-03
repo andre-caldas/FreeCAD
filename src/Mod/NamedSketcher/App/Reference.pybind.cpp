@@ -45,10 +45,9 @@ using namespace Base::Accessor;
 namespace NamedSketcher
 {
 
-using ref_parameter = ReferenceTo<GCS::Parameter>;
 using ref_geometry_base = ReferenceTo<GeometryBase>;
-using ref_point = ReferenceTo<GeometryPoint>;
-using ref_line = ReferenceTo<GeometryLineSegment>;
+using ref_parameter = ReferenceTo<GCS::Parameter>;
+using ref_point = ReferenceTo<GCS::Point>;
 using ref_constraint = ReferenceTo<ConstraintBase>;
 
 void init_Reference(py::module& m)
@@ -74,12 +73,6 @@ void init_Reference(py::module& m)
         .def(py::self + std::string())
     ;
     py::implicitly_convertible<PathToObject, ref_point>();
-
-    py::class_<ref_line>(m, "ReferenceToLine", py::module_local())
-        .def(py::init<const PathToObject&>())
-        .def(py::self + std::string())
-    ;
-    py::implicitly_convertible<PathToObject, ref_line>();
 
     py::class_<ref_constraint>(m, "ReferenceToConstraint", py::module_local());
 }

@@ -22,6 +22,7 @@
  ***************************************************************************/
 
 #include <cassert>
+#include <type_traits>
 
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/string_generator.hpp>
@@ -97,6 +98,13 @@ std::shared_ptr<T> PropertyTaggedListT<T>::resolve_share(token_iterator& start, 
     FC_THROWM(Base::Accessor::ExceptionCannotResolve, "Resource (" << start->toString() << ") not found in PropertyTaggedListT.");
 }
 
+template<typename T>
+std::shared_ptr<Base::Accessor::ReferencedObject>
+PropertyTaggedListT<T>::resolve_share(token_iterator& start, const token_iterator& end, ReferencedObject*)
+{
+    static_assert(std::is_base_of_v<ReferencedObject,T>);
+    return resolve_share(start, end, (T*)nullptr);
+}
 
 template<typename T>
 typename PropertyTaggedListT<T>::iterator PropertyTaggedListT<T>::begin() const

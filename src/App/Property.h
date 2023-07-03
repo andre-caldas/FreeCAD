@@ -54,7 +54,7 @@ class ObjectIdentifier;
  */
 class AppExport Property
     : public Base::Persistence
-    , public Base::Accessor::ReferencedObject
+    , public virtual Base::Accessor::ReferencedObject
 {
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
 

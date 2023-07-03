@@ -111,6 +111,8 @@ public:
     // Document::addObject uses it. :-(
     PyObject* getPyObject();
 
+    void report() const;
+
 private:
     GCS::System gcs;
 };

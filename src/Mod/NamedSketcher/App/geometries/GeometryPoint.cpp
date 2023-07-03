@@ -26,6 +26,8 @@
 #include <memory>
 #endif // _PreComp_
 
+#include <iostream>
+
 #include <Base/Writer.h>
 
 #include <Mod/Part/App/Geometry.h>
@@ -88,6 +90,13 @@ GCS::Point* GeometryPoint::resolve_ptr(token_iterator& start, const token_iterat
         return &point;
     }
     return nullptr;
+}
+
+void GeometryPoint::report() const
+{
+    std::cout << "Point: ";
+    std::cout << "(" << point.x << ", " << point.y << ")";
+    std::cout << std::endl;
 }
 
 } // namespace NamedSketcher

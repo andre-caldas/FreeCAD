@@ -30,7 +30,6 @@
 #include <memory>
 #include <string>
 
-#include <Base/Accessor/NameAndTag.h>
 #include <Base/Accessor/ReferenceToObject.h>
 
 #include "../gcs_solver/parameters/Parameter.h"
@@ -53,12 +52,11 @@ class ParameterGroupManager;
 }
 
 class NamedSketcherExport ConstraintBase
-        : public Base::Accessor::NameAndTag
+        : public virtual Base::Accessor::ReferencedObject
 {
 public:
     using ref_parameter = Base::Accessor::ReferenceTo<GCS::Parameter>;
-    using ref_point = Base::Accessor::ReferenceTo<GeometryPoint>;
-    using ref_line_segment = Base::Accessor::ReferenceTo<GeometryLineSegment>;
+    using ref_point = Base::Accessor::ReferenceTo<GCS::Point>;
 
     using factory = ConstraintFactory;
 

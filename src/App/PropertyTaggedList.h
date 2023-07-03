@@ -87,6 +87,7 @@ public:
 template<typename T>
 class AppExport PropertyTaggedListT
         : public PropertyTaggedList
+        , public Base::Accessor::Chainable
         , public Base::Accessor::IExport<T>
 {
 public:
@@ -110,6 +111,7 @@ public:
      * @return
      */
     std::shared_ptr<T> resolve_share(token_iterator& start, const token_iterator& end, T*) override;
+    std::shared_ptr<ReferencedObject> resolve_share(token_iterator& start, const token_iterator& end, ReferencedObject*) override;
 
     using iterator = class MappedTypeIterator<list_type>;
     iterator begin() const;

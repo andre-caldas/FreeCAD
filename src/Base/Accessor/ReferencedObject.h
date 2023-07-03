@@ -42,6 +42,7 @@ namespace Base::Accessor
  * to resolve the next step in a path.
  */
 class BaseExport ReferencedObject
+        : public NameAndTag
 {
 public:
     virtual ~ReferencedObject() = default;
@@ -80,11 +81,7 @@ public:
      */
     static std::weak_ptr<ReferencedObject> getWeakPtr(Tag::tag_type tag);
 
-    NameAndTag::tag_type getTag() const {return name_and_tag.getTag();}
-
 private:
-    NameAndTag name_and_tag;
-
     /**
      * @brief Referenced objects can register themselves.
      * This is specialy useful when
@@ -108,6 +105,7 @@ private:
 
 template<typename T>
 class BaseExport IExport
+        : public virtual ReferencedObject
 {
 public:
     using export_type = std::shared_ptr<T>;
@@ -128,8 +126,7 @@ protected:
 };
 
 class BaseExport Chainable
-    : public ReferencedObject
-    , public IExport<ReferencedObject>
+    : public IExport<ReferencedObject>
 {
 };
 

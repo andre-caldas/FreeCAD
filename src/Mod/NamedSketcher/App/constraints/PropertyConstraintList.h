@@ -26,7 +26,6 @@
 #include <string>
 #include <vector>
 
-#include <Base/Accessor/NameAndTag.h>
 #include <App/PropertyTaggedList.h>
 
 #include "ConstraintBase.h"
@@ -39,8 +38,7 @@ namespace NamedSketcher
 {
 
 class NamedSketcherExport PropertyConstraintList
-        : public Base::Accessor::NameAndTag
-        , public App::PropertyTaggedListT<ConstraintBase>
+        : public App::PropertyTaggedListT<ConstraintBase>
 {
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
 

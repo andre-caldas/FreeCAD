@@ -56,7 +56,6 @@ void ParameterGroupManager::addEquation(Equation* eq)
 
 bool ParameterGroupManager::setParameterEqual(Parameter* a, Parameter* b)
 {
-    assert(parameter2Group.count(a) == 0);
     ParameterGroup* group_a = getParameterGroup(a);
     ParameterGroup* group_b = getParameterGroup(b);
 

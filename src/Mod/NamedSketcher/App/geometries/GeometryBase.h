@@ -30,7 +30,6 @@
 #include <memory>
 #include <string>
 
-#include <Base/Accessor/NameAndTag.h>
 #include <Base/Accessor/ReferenceToObject.h>
 
 #include <Mod/Part/App/TopoShape.h>
@@ -45,7 +44,7 @@ namespace NamedSketcher
 {
 
 class NamedSketcherExport GeometryBase
-        : public Base::Accessor::NameAndTag
+        : public virtual Base::Accessor::ReferencedObject
 {
 public:
     using factory = GeometryFactory;
@@ -67,6 +66,8 @@ public:
     static constexpr const char* xmlTagNameStatic() {return "Geometry";}
 
     virtual ~GeometryBase() {}
+
+    virtual void report() const = 0;
 };
 
 /**

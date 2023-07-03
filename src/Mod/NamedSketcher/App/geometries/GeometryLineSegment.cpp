@@ -27,6 +27,8 @@
 #include <memory>
 #endif // _PreComp_
 
+#include <iostream>
+
 #include <Base/Writer.h>
 #include <Base/Exception.h>
 
@@ -111,6 +113,15 @@ GCS::Point* GeometryLineSegment::resolve_ptr(token_iterator& start, const token_
     }
 
     return nullptr;
+}
+
+void GeometryLineSegment::report() const
+{
+    std::cout << "Line segment: ";
+    std::cout << "(" << start.x << ", " << start.y << ")";
+    std::cout << " --> ";
+    std::cout << "(" << end.x << ", " << end.y << ")";
+    std::cout << std::endl;
 }
 
 } // namespace NamedSketcher

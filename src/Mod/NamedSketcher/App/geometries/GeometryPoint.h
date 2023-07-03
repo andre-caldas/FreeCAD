@@ -63,6 +63,8 @@ public:
     std::string_view xmlTagType(void) const override {return xmlTagTypeStatic();}
     static constexpr const char* xmlTagTypeStatic(void) {return "Point";}
 
+    void report() const override;
+
 private:
     using token_iterator = IExport<GCS::Point>::token_iterator;
     GCS::Point* resolve_ptr(token_iterator& start, const token_iterator& end, GCS::Point*) override;
