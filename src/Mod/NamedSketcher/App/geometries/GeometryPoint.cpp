@@ -56,11 +56,11 @@ GCS::Parameter* GeometryPoint::resolve_ptr(token_iterator& start, const token_it
 {
     assert(start != end);
     token_iterator pos = start;
-    if(*pos == "gcs_point")
+    if(*pos == "point")
     {
         ++pos;
     }
-    if(start == end)
+    if(pos == end)
     {
         // TODO: warning. Did you mean to get a point?
         return nullptr;
@@ -82,7 +82,7 @@ GCS::Parameter* GeometryPoint::resolve_ptr(token_iterator& start, const token_it
 GCS::Point* GeometryPoint::resolve_ptr(token_iterator& start, const token_iterator& end, GCS::Point*)
 {
     assert(start != end);
-    if(*start == "gcs_point")
+    if(*start == "point")
     {
         ++start;
         return &point;

@@ -48,6 +48,8 @@ namespace NamedSketcher
  */
 class NamedSketcherExport GeometryLineSegment
         : public GeometryBaseT<GeometryLineSegment, Part::GeomLineSegment>
+        , public Base::Accessor::IExport<GCS::Parameter>
+        , public Base::Accessor::IExport<GCS::Point>
 {
 public:
     GeometryLineSegment(std::unique_ptr<Part::GeomLineSegment>&& geo);
@@ -62,6 +64,10 @@ public:
 private:
     GCS::Point start;
     GCS::Point end;
+
+    using token_iterator = IExport<GCS::Point>::token_iterator;
+    GCS::Point* resolve_ptr(token_iterator& start, const token_iterator& end, GCS::Point*) override;
+    GCS::Parameter* resolve_ptr(token_iterator& start, const token_iterator& end, GCS::Parameter*) override;
 };
 
 } // namespace NamedSketcher
