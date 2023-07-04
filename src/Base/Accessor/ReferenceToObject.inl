@@ -40,7 +40,7 @@ class ReferencedObject;
 template<typename X>
 typename ReferenceTo<X>::locked_resource ReferenceTo<X>::getResult() const
 {
-    lock_type lock = pathToObject.getLock();
+    lock_type lock = getLock();
     if(lock.remaining_tokens_start == lock.remaining_tokens_end)
     {
         X* ptr = dynamic_cast<X*>(lock.last_object.get());
@@ -65,7 +65,7 @@ typename ReferenceTo<X>::locked_resource ReferenceTo<X>::getResult() const
 
     if(lock.remaining_tokens_start != lock.remaining_tokens_end)
     {
-        FC_THROWM(ExceptionCannotResolve, "Did not use all keys when resolving object. Remaining keys: '" << pathToObject.pathString(lock.remaining_tokens_start, lock.remaining_tokens_end) << "'.");
+        FC_THROWM(ExceptionCannotResolve, "Did not use all keys when resolving object. Remaining keys: '" << pathString(lock.remaining_tokens_start, lock.remaining_tokens_end) << "'.");
     }
 
     return shared_resource;
@@ -75,7 +75,7 @@ template<typename T>
 template<typename X, typename... NameOrTag>
 ReferenceTo<X> ReferenceTo<T>::goFurther(NameOrTag&& ...furtherPath) const
 {
-    return ReferenceTo<X>{pathToObject.goFurther(furtherPath...)};
+    return ReferenceTo<X>{PathToObject::goFurther(furtherPath...)};
 }
 
 template<typename X>

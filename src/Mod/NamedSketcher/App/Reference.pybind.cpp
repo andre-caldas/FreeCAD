@@ -56,25 +56,25 @@ void init_Reference(py::module& m)
         .def(py::self + std::string())
     ;
 
-    py::class_<ref_geometry_base>(m, "ReferenceToGeometryBase", py::module_local())
+    py::class_<ref_geometry_base, PathToObject>(m, "ReferenceToGeometryBase", py::module_local())
         .def(py::init<const PathToObject&>())
         .def(py::self + std::string())
     ;
     py::implicitly_convertible<PathToObject, ref_geometry_base>();
 
-    py::class_<ref_parameter>(m, "ReferenceToParameter", py::module_local())
+    py::class_<ref_parameter, PathToObject>(m, "ReferenceToParameter", py::module_local())
         .def(py::init<const PathToObject&>())
         .def(py::self + std::string())
     ;
     py::implicitly_convertible<PathToObject, ref_parameter>();
 
-    py::class_<ref_point>(m, "ReferenceToPoint", py::module_local())
+    py::class_<ref_point, PathToObject>(m, "ReferenceToPoint", py::module_local())
         .def(py::init<const PathToObject&>())
         .def(py::self + std::string())
     ;
     py::implicitly_convertible<PathToObject, ref_point>();
 
-    py::class_<ref_constraint>(m, "ReferenceToConstraint", py::module_local());
+    py::class_<ref_constraint, PathToObject>(m, "ReferenceToConstraint", py::module_local());
 }
 
 } //namespace NamedSketcher

@@ -44,6 +44,11 @@ ConstraintHorizontal::ConstraintHorizontal(ref_point start, ref_point end)
 {
 }
 
+ConstraintHorizontal::ConstraintHorizontal(const Base::Accessor::PathToObject& p)
+    : ConstraintHorizontal(p + "start", p + "end")
+{
+}
+
 std::vector<GCS::Equation*> ConstraintHorizontal::getEquations()
 {
     if(!start.isLocked())

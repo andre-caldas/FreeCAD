@@ -50,6 +50,7 @@ public:
     ref_point end;
 
     ConstraintHorizontal(ref_point a, ref_point b);
+    ConstraintHorizontal(const Base::Accessor::PathToObject& p);
 
 public:
     std::vector<GCS::Equation*> getEquations() override;

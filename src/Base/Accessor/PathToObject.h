@@ -121,6 +121,14 @@ public:
     std::string pathString() const;
     static std::string pathString(token_iterator first, const token_iterator end);
 
+    /**
+     * @brief References are *NOT* serialized with knowledge
+     * of what is is the most derived class.
+     * When unserializing, the application needs to know what specific
+     * subclass must be instantiated.
+     * Then, serialization is implemented as a static method of the derived class.
+     * @param writer - stream to write to.
+     */
     void serialize(Base::Writer& writer) const;
     static PathToObject unserialize(Base::XMLReader& reader);
 

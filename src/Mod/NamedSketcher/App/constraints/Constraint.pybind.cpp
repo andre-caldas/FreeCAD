@@ -24,6 +24,8 @@
 #include <pybind11/pybind11.h>
 namespace py = pybind11;
 
+#include <Base/Accessor/PathToObject.h>
+
 #include "ConstraintEqual.h"
 #include "ConstraintCoincident.h"
 #include "ConstraintHorizontal.h"
@@ -39,6 +41,7 @@ namespace NamedSketcher
 
 using ref_parameter = ConstraintBase::ref_parameter;
 using ref_point = ConstraintBase::ref_point;
+using path = Base::Accessor::PathToObject;
 
 void init_Constraint(py::module& m)
 {
@@ -47,15 +50,19 @@ void init_Constraint(py::module& m)
     py::class_<ConstraintEqual, std::shared_ptr<ConstraintEqual>, ConstraintBase>(m, "ConstraintEqual")
         .def(py::init<ref_parameter, ref_parameter>())
     ;
+
     py::class_<ConstraintCoincident, std::shared_ptr<ConstraintCoincident>, ConstraintBase>(m, "ConstraintCoincident")
         .def(py::init<>())
         .def("addPoint", py::overload_cast<const ref_point&>(&ConstraintCoincident::addPoint))
 //        .def("addPoint", py::overload_cast<ref_point&&>(&ConstraintCoincident::addPoint))
         .def("removePoint", &ConstraintCoincident::removePoint)
     ;
+
     py::class_<ConstraintHorizontal, std::shared_ptr<ConstraintHorizontal>, ConstraintBase>(m, "ConstraintHorizontal")
         .def(py::init<ref_point, ref_point>())
+        .def(py::init<const path&>())
     ;
+
     py::class_<ConstraintXDistance, std::shared_ptr<ConstraintXDistance>, ConstraintBase>(m, "ConstraintXDistance")
             .def(py::init<ref_point, ref_point, ref_parameter>())
     ;

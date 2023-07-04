@@ -57,10 +57,11 @@ namespace Base::Accessor
  */
 template<typename T>
 class BaseExport ReferenceTo
+        : public PathToObject
 {
 public:
-    ReferenceTo(PathToObject&& path) : pathToObject(path) {}
-    ReferenceTo(const PathToObject& path) : pathToObject(path) {}
+    ReferenceTo(PathToObject&& path) : PathToObject(path) {}
+    ReferenceTo(const PathToObject& path) : PathToObject(path) {}
     /**
      * @brief References an object through an initial @a root
      * and a chain of strings/tags. The ownership of root
@@ -73,7 +74,7 @@ public:
      */
     template<typename... NameOrTag>
     ReferenceTo(std::shared_ptr<ReferencedObject> root, NameOrTag&&... obj_path)
-        : pathToObject(root, obj_path...) {}
+        : PathToObject(root, obj_path...) {}
 
     /**
      * @brief (DEPRECATED) References an object using a root
@@ -85,10 +86,7 @@ public:
      */
     template<typename... NameOrTag>
     ReferenceTo(ReferencedObject* root, NameOrTag&&... obj_path)
-        : pathToObject(root, obj_path...) {}
-
-    template<typename NameOrTag>
-    PathToObject operator+ (NameOrTag&& extra_path) const {return pathToObject + extra_path;}
+        : PathToObject(root, obj_path...) {}
 
     using lock_type = PathToObject::lock_type;
     /**
@@ -143,21 +141,10 @@ public:
 
     template<typename X, typename... NameOrTag>
     ReferenceTo<X> goFurther(NameOrTag&& ...furtherPath) const;
-    std::string pathString() const {return pathToObject.pathString();}
 
-    /**
-     * @brief References are *NOT* serialized with knowledge
-     * of what is is the most derived class.
-     * When unserializing, the application needs to know what specific
-     * subclass must be instantiated.
-     * Then, serialization is implemented as a static method of the derived class.
-     * @param writer - stream to write to.
-     */
-    void serialize(Base::Writer& writer) const {pathToObject.serialize(writer);}
     static ReferenceTo<T> unserialize(Base::XMLReader& reader) {return ReferenceTo<T>{PathToObject::unserialize(reader)};}
 
 private:
-    PathToObject pathToObject;
     locked_resource lockedResult;
     /**
      * @brief The previous value of lockedResult.reference.
