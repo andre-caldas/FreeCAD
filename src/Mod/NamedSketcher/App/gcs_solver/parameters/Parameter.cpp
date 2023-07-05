@@ -21,12 +21,30 @@
  *                                                                          *
  ***************************************************************************/
 
+#include <cmath>
+
 #include "Parameter.h"
 
 namespace NamedSketcher::GCS
 {
 
 Point::operator Base::Vector3d() const
+{
+    return Base::Vector3d(x, y);
+}
+
+Vec2& Vec2::normalize()
+{
+    double sqrt = std::sqrt(x*x + y*y);
+    if(sqrt != 0)
+    {
+        x /= sqrt;
+        y /= sqrt;
+    }
+    return *this;
+}
+
+Vec2::operator Base::Vector3d() const
 {
     return Base::Vector3d(x, y);
 }

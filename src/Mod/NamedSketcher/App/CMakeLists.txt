@@ -68,6 +68,8 @@ SET(Geometries_SRCS
     geometries/GeometryPoint.cpp
     geometries/GeometryLineSegment.h
     geometries/GeometryLineSegment.cpp
+    geometries/GeometryCircle.h
+    geometries/GeometryCircle.cpp
 )
 SOURCE_GROUP("Geometries" FILES ${Geometries_SRCS})
 

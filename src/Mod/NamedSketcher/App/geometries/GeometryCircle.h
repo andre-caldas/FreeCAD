@@ -22,72 +22,59 @@
  ***************************************************************************/
 
 
-#ifndef NAMEDSKETCHER_GCS_Parameter_H
-#define NAMEDSKETCHER_GCS_Parameter_H
+#ifndef SKETCHER_GeometryCircle_H
+#define SKETCHER_GeometryCircle_H
+
+#include <memory>
 
 #include <Base/Vector3D.h>
 
-namespace NamedSketcher::GCS
+#include "gcs_solver/parameters/Parameter.h"
+#include "GeometryBase.h"
+
+namespace Base {
+class Reader;
+class Writer;
+}
+namespace Part {
+class GeomCircle;
+}
+
+namespace NamedSketcher
 {
 
-/*
- * Unfortunately, C++ does not allow us to derive from "double". :-(
+/**
+ * @brief Sketcher geometry structure that represents one point.
  */
-class ParameterBase
+class NamedSketcherExport GeometryCircle
+        : public GeometryBaseT<GeometryCircle, Part::GeomCircle>
+        , public Base::Accessor::IExport<GCS::Parameter>
+        , public Base::Accessor::IExport<GCS::Point>
 {
 public:
-    ParameterBase() = default;
-    ParameterBase(double v) : value(v) {}
-    ParameterBase& operator= (double v) {value = v; return *this;}
+    GeometryCircle(std::unique_ptr<Part::GeomCircle>&& geo);
 
-    operator double&() {return value;}
-    operator double() const {return value;}
-    ParameterBase& operator+= (double v) {value += v; return *this;}
-    ParameterBase& operator-= (double v) {value -= v; return *this;}
-    ParameterBase& operator*= (double v) {value *= v; return *this;}
+    void commitChanges() const override;
+
+    // Base::Persistence
+    unsigned int getMemSize () const override;
+    std::string_view xmlTagType(void) const override {return xmlTagTypeStatic();}
+    static constexpr const char* xmlTagTypeStatic(void) {return "Circle";}
+
+    GCS::Point positionAtParameter(double t) const override;
+    GCS::Vec2 normalAtParameter(double t) const override;
+
+    void report() const override;
 
 private:
-    double value;
+    GCS::Point center;
+    GCS::Parameter radius;
+
+    using token_iterator = IExport<GCS::Point>::token_iterator;
+    GCS::Point* resolve_ptr(token_iterator& start, const token_iterator& end, GCS::Point*) override;
+    GCS::Parameter* resolve_ptr(token_iterator& start, const token_iterator& end, GCS::Parameter*) override;
 };
 
-class Parameter : public ParameterBase
-{
-    using ParameterBase::ParameterBase;
-};
+} // namespace NamedSketcher
 
-class OptimizedParameter : public ParameterBase
-{
-    using ParameterBase::ParameterBase;
-};
-
-
-class Point
-{
-public:
-    Parameter x = 0.0;
-    Parameter y = 0.0;
-
-    Point() = default;
-    Point(double x, double y) : x(x), y(y) {}
-    Point(const Base::Vector3d& p) : Point(p.x, p.y) {}
-
-    operator Base::Vector3d() const;
-};
-
-class Vec2
-{
-public:
-    Parameter x = 0.0;
-    Parameter y = 0.0;
-
-    Vec2() = default;
-    Vec2(double x, double y) : x(x), y(y) {}
-    Vec2(const Base::Vector3d& p) : Vec2(p.x, p.y) {}
-
-    Vec2& normalize();
-    operator Base::Vector3d() const;
-};
-
-} // namespace NamedSketcher::GCS
-
-#endif // NAMEDSKETCHER_GCS_Parameter_H
+#endif // SKETCHER_GeometryCircle_H

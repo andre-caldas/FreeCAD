@@ -61,6 +61,9 @@ public:
     std::string_view xmlTagType(void) const override {return xmlTagTypeStatic();}
     static constexpr const char* xmlTagTypeStatic(void) {return "LineSegment";}
 
+    GCS::Point positionAtParameter(double t) const override;
+    GCS::Vec2 normalAtParameter(double t) const override;
+
     void report() const override;
 
 private:

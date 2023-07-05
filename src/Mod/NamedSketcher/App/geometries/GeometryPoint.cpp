@@ -39,7 +39,7 @@ namespace NamedSketcher
 
 GeometryPoint::GeometryPoint(std::unique_ptr<Part::GeomPoint>&& geo)
     : GeometryBaseT(std::move(geo))
-    , point(geometry->getPoint().x, geometry->getPoint().y)
+    , point(geometry->getPoint())
 {
 }
 
@@ -90,6 +90,16 @@ GCS::Point* GeometryPoint::resolve_ptr(token_iterator& start, const token_iterat
         return &point;
     }
     return nullptr;
+}
+
+GCS::Point GeometryPoint::positionAtParameter(double /*t*/) const
+{
+    return point;
+}
+
+GCS::Vec2 GeometryPoint::normalAtParameter(double /*t*/) const
+{
+    return GCS::Vec2{0,0};
 }
 
 void GeometryPoint::report() const

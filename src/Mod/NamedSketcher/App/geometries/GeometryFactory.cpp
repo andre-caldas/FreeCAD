@@ -28,6 +28,7 @@
 #include "GeometryBase.h"
 #include "GeometryPoint.h"
 #include "GeometryLineSegment.h"
+#include "GeometryCircle.h"
 
 #include "GeometryFactory.h"
 
@@ -42,6 +43,10 @@ std::unique_ptr<GeometryBase> geometryFactory(std::unique_ptr<Part::Geometry>&& 
     if(geo->getTypeId() == Part::GeomLineSegment::getClassTypeId()) {
         auto g = std::unique_ptr<Part::GeomLineSegment>(static_cast<Part::GeomLineSegment*>(geo.release()));
         return std::make_unique<GeometryLineSegment>(std::move(g));
+    }
+    if(geo->getTypeId() == Part::GeomCircle::getClassTypeId()) {
+        auto g = std::unique_ptr<Part::GeomCircle>(static_cast<Part::GeomCircle*>(geo.release()));
+        return std::make_unique<GeometryCircle>(std::move(g));
     }
 
     FC_THROWM(Base::NotImplementedError, "Type '" << geo->getTypeId().getName() << "' not supported by NamedSketcher, yet!");
@@ -66,12 +71,10 @@ template<>
 GeometryFactory::map_type Base::ElementFactory<GeometryBase>::factoryMap = {
     {
         GeometryPoint::xmlTagTypeStatic(),
-//        "Point",
         [](Base::XMLReader& reader){return GeometryPoint::staticRestore(reader);}
     }
     ,{
         GeometryLineSegment::xmlTagTypeStatic(),
-//        "LineSegment",
         [](Base::XMLReader& reader){return GeometryLineSegment::staticRestore(reader);}
     }
 };

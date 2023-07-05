@@ -27,6 +27,7 @@
 #include <memory>
 #endif // _PreComp_
 
+#include <cmath>
 #include <iostream>
 
 #include <Base/Writer.h>
@@ -34,44 +35,46 @@
 
 #include <Mod/Part/App/Geometry.h>
 
-#include "GeometryLineSegment.h"
+#include "GeometryCircle.h"
 
 namespace NamedSketcher
 {
 
-GeometryLineSegment::GeometryLineSegment(std::unique_ptr<Part::GeomLineSegment>&& geo)
+GeometryCircle::GeometryCircle(std::unique_ptr<Part::GeomCircle>&& geo)
     : GeometryBaseT(std::move(geo))
-    , start(geometry->getStartPoint())
-    , end(geometry->getEndPoint())
+    , center(geometry->getLocation())
+    , radius(geometry->getRadius())
 {
 }
 
-void GeometryLineSegment::commitChanges() const
+void GeometryCircle::commitChanges() const
 {
-    geometry->setPoints(start, end);
+    geometry->setLocation(center);
+    geometry->setRadius(radius);
 }
 
 
-unsigned int GeometryLineSegment::getMemSize () const
+unsigned int GeometryCircle::getMemSize () const
 {
     return geometry->getMemSize() + sizeof(*this);
 }
 
-GCS::Parameter* GeometryLineSegment::resolve_ptr(token_iterator& start, const token_iterator& end, GCS::Parameter*)
+GCS::Parameter* GeometryCircle::resolve_ptr(token_iterator& start, const token_iterator& end, GCS::Parameter*)
 {
     assert(start != end);
-    token_iterator pos = start;
 
-    GCS::Point* result = nullptr;
-    if(*pos == "start")
+    if(*start == "radius")
     {
-        ++pos;
-        result = &this->start;
+        ++start;
+        return &radius;
     }
-    else if(*pos == "end")
+
+    token_iterator pos = start;
+    GCS::Point* result = nullptr;
+    if(*pos == "center")
     {
         ++pos;
-        result = &this->end;
+        result = &center;
     }
     else
     {
@@ -97,45 +100,38 @@ GCS::Parameter* GeometryLineSegment::resolve_ptr(token_iterator& start, const to
     return nullptr;
 }
 
-GCS::Point* GeometryLineSegment::resolve_ptr(token_iterator& start, const token_iterator& end, GCS::Point*)
+GCS::Point* GeometryCircle::resolve_ptr(token_iterator& start, const token_iterator& end, GCS::Point*)
 {
     assert(start != end);
 
-    if(*start == "start")
+    if(*start == "center")
     {
         ++start;
-        return &this->start;
-    }
-    if(*start == "end")
-    {
-        ++start;
-        return &this->end;
+        return &center;
     }
 
     return nullptr;
 }
 
-GCS::Point GeometryLineSegment::positionAtParameter(double t) const
+GCS::Point GeometryCircle::positionAtParameter(double t) const
 {
-    double x = t * start.x + (1-t) * end.x;
-    double y = t * start.y + (1-t) * end.y;
+    double x = center.x + radius * std::cos(t);
+    double y = center.y + radius * std::sin(t);
     return GCS::Point{x,y};
 }
 
-GCS::Vec2 GeometryLineSegment::normalAtParameter(double t) const
+GCS::Vec2 GeometryCircle::normalAtParameter(double t) const
 {
-    double x = end.x - start.x;
-    double y = end.y - start.y;
-    // Rotate clockwise.
-    return GCS::Vec2{y,-x}.normalize();
+    double x = std::cos(t);
+    double y = std::sin(t);
+    return GCS::Vec2{x,y};
 }
 
-void GeometryLineSegment::report() const
+void GeometryCircle::report() const
 {
-    std::cout << "Line segment: ";
-    std::cout << "(" << start.x << ", " << start.y << ")";
-    std::cout << " --> ";
-    std::cout << "(" << end.x << ", " << end.y << ")";
+    std::cout << "Circle: center";
+    std::cout << "(" << center.x << ", " << center.y << ")";
+    std::cout << ", radius = " << radius;
     std::cout << std::endl;
 }
 

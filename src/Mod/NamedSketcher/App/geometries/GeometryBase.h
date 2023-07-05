@@ -34,6 +34,7 @@
 
 #include <Mod/Part/App/TopoShape.h>
 
+#include "../gcs_solver/parameters/Parameter.h"
 #include "GeometryFactory.h"
 
 namespace Base {
@@ -44,7 +45,7 @@ namespace NamedSketcher
 {
 
 class NamedSketcherExport GeometryBase
-        : public virtual Base::Accessor::ReferencedObject
+        : public Base::Accessor::IExport<GCS::Parameter>
 {
 public:
     using factory = GeometryFactory;
@@ -66,6 +67,9 @@ public:
     static constexpr const char* xmlTagNameStatic() {return "Geometry";}
 
     virtual ~GeometryBase() {}
+
+    virtual GCS::Point positionAtParameter(double t) const = 0;
+    virtual GCS::Vec2 normalAtParameter(double t) const = 0;
 
     virtual void report() const = 0;
 };
