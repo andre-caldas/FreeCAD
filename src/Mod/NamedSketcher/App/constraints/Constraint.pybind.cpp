@@ -53,8 +53,7 @@ void init_Constraint(py::module& m)
 
     py::class_<ConstraintCoincident, std::shared_ptr<ConstraintCoincident>, ConstraintBase>(m, "ConstraintCoincident")
         .def(py::init<>())
-        .def("addPoint", py::overload_cast<const ref_point&>(&ConstraintCoincident::addPoint))
-//        .def("addPoint", py::overload_cast<ref_point&&>(&ConstraintCoincident::addPoint))
+        .def("addPoint", py::overload_cast<ref_point>(&ConstraintCoincident::addPoint))
         .def("removePoint", &ConstraintCoincident::removePoint)
     ;
 

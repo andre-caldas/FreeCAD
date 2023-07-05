@@ -43,8 +43,7 @@ class NamedSketcherExport ConstraintCoincident : public ConstraintBase
 public:
     std::vector<ref_point> references;
 
-    void addPoint(const ref_point& reference);
-    void addPoint(ref_point&& reference);
+    void addPoint(ref_point reference);
     void removePoint(boost::uuids::uuid tag);
 
 public:

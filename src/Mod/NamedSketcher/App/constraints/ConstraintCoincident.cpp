@@ -35,14 +35,9 @@
 namespace NamedSketcher
 {
 
-void ConstraintCoincident::addPoint(const ref_point& reference)
+void ConstraintCoincident::addPoint(ref_point reference)
 {
-    references.emplace_back(reference);
-}
-
-void ConstraintCoincident::addPoint(ref_point&& reference)
-{
-    references.emplace_back(reference);
+    references.emplace_back(std::move(reference));
 }
 
 void ConstraintCoincident::removePoint(boost::uuids::uuid /*tag*/)
