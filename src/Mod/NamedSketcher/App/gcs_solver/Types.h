@@ -37,12 +37,12 @@ namespace NamedSketcher::GCS
 class Equation;
 class ParameterGroup;
 
-using OutputVector = Vector<Equation*>;
-using ParameterVector = Vector<Parameter*>;
-using OptimizedVector = Vector<OptimizedParameter*>;
+using OutputVector = Vector<const Equation*>;
+using ParameterVector = Vector<const Parameter*>;
+using OptimizedVector = Vector<const OptimizedParameter*>;
 
-using ParameterMatrix = LinearTransform<Equation*, Parameter*>;
-using OptimizedMatrix = LinearTransform<Equation*, OptimizedParameter*>;
+using ParameterMatrix = LinearTransform<const Equation*, const Parameter*>;
+using OptimizedMatrix = LinearTransform<const Equation*, const OptimizedParameter*>;
 
 } // namespace NamedSketcher::GCS
 

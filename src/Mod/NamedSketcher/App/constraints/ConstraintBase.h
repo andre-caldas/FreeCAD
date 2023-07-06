@@ -42,8 +42,7 @@ class Writer;
 namespace NamedSketcher
 {
 
-class GeometryPoint;
-class GeometryLineSegment;
+class GeometryBase;
 
 namespace GCS
 {
@@ -57,6 +56,7 @@ class NamedSketcherExport ConstraintBase
 public:
     using ref_parameter = Base::Accessor::ReferenceTo<GCS::Parameter>;
     using ref_point = Base::Accessor::ReferenceTo<GCS::Point>;
+    using ref_geometry = Base::Accessor::ReferenceTo<GeometryBase>;
 
     using factory = ConstraintFactory;
 

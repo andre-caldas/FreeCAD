@@ -26,6 +26,7 @@
 #include <Base/Exception.h>
 
 #include "../parameters/ParameterGroupManager.h"
+#include "../parameters/ParameterValueMapper.h"
 #include "Colinear.h"
 
 namespace NamedSketcher::GCS
@@ -57,14 +58,14 @@ double Colinear::error(const ParameterGroupManager& manager) const
         if(manager.areParametersEqual(&a->y, &b->y))
         {
             // ay - cy = 0.
-            double a2 = manager.getOptimizedParameterValue(&a->y);
-            double c2 = manager.getOptimizedParameterValue(&c->y);
+            double a2 = manager.getValue(&a->y);
+            double c2 = manager.getValue(&c->y);
             return a2 - c2;
         }
 
         // ay - by = 0.
-        double a2 = manager.getOptimizedParameterValue(&a->y);
-        double b2 = manager.getOptimizedParameterValue(&b->y);
+        double a2 = manager.getValue(&a->y);
+        double b2 = manager.getValue(&b->y);
         return a2 - b2;
     }
 
@@ -73,34 +74,34 @@ double Colinear::error(const ParameterGroupManager& manager) const
         if(manager.areParametersEqual(&a->x, &b->x))
         {
             // ax - cx = 0.
-            double a1 = manager.getOptimizedParameterValue(&a->x);
-            double c1 = manager.getOptimizedParameterValue(&c->x);
+            double a1 = manager.getValue(&a->x);
+            double c1 = manager.getValue(&c->x);
             return a1 - c1;
         }
 
         // ax - bx = 0.
-        double a1 = manager.getOptimizedParameterValue(&a->x);
-        double b1 = manager.getOptimizedParameterValue(&b->x);
+        double a1 = manager.getValue(&a->x);
+        double b1 = manager.getValue(&b->x);
         return a1 - b1;
     }
 
-    double a1 = manager.getOptimizedParameterValue(&a->x);
-    double a2 = manager.getOptimizedParameterValue(&a->y);
-    double b1 = manager.getOptimizedParameterValue(&b->x);
-    double b2 = manager.getOptimizedParameterValue(&b->y);
-    double c1 = manager.getOptimizedParameterValue(&c->x);
-    double c2 = manager.getOptimizedParameterValue(&c->y);
+    double a1 = manager.getValue(&a->x);
+    double a2 = manager.getValue(&a->y);
+    double b1 = manager.getValue(&b->x);
+    double b2 = manager.getValue(&b->y);
+    double c1 = manager.getValue(&c->x);
+    double c2 = manager.getValue(&c->y);
     return (b1*c2 - b2*c1) + (a2*c1 - a1*c2) + (a1*b2 - a2*b1);
 }
 
-ParameterVector Colinear::differentialNonOptimized() const
+ParameterVector Colinear::differentialNonOptimized(const GCS::ParameterValueMapper& _) const
 {
-    double a1 = a->x;
-    double a2 = a->y;
-    double b1 = b->x;
-    double b2 = b->y;
-    double c1 = c->x;
-    double c2 = c->y;
+    double a1 = _(a->x);
+    double a2 = _(a->y);
+    double b1 = _(b->x);
+    double b2 = _(b->y);
+    double c1 = _(c->x);
+    double c2 = _(c->y);
 
     ParameterVector result;
     result.set(&a->x, b2-c2);
@@ -151,7 +152,7 @@ OptimizedVector Colinear::differentialOptimized(const ParameterGroupManager& man
         return result;
     }
 
-    return manager.optimizeVector(differentialNonOptimized());
+    return manager.optimizeVector(differentialNonOptimized(manager));
 }
 
 bool Colinear::isAlreadyColinear(const ParameterGroupManager& manager) const
@@ -179,7 +180,7 @@ bool Colinear::isVertical(const ParameterGroupManager& manager) const
     return (manager.areParametersEqual(&a->x, &b->x) || manager.areParametersEqual(&a->x, &c->x) || manager.areParametersEqual(&b->x, &c->x));
 }
 
-void Colinear::declareParameters(ParameterGroupManager& manager) const
+void Colinear::declareParameters(ParameterGroupManager& manager)
 {
     manager.addParameter(&a->x);
     manager.addParameter(&a->y);

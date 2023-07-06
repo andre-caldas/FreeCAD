@@ -28,6 +28,7 @@
 #include "equations/Constant.h"
 #include "parameters/ParameterGroupManager.h"
 #include "parameters/ParameterGroup.h"
+#include "parameters/ParameterValueMapper.h"
 #include "linear_solvers/Ldlt.h"
 
 #include "System.h"
@@ -39,7 +40,7 @@ namespace NamedSketcher::GCS
 
 void System::addEquation(Equation* equation)
 {
-    gradients.pushBack(equation, equation->differentialNonOptimized());
+    gradients.pushBack(equation, equation->differentialNonOptimized({}));
 }
 
 void System::addUserRedundantEquation(Equation* equation)

@@ -115,19 +115,19 @@ GCS::Point* GeometryLineSegment::resolve_ptr(token_iterator& start, const token_
     return nullptr;
 }
 
-GCS::Point GeometryLineSegment::positionAtParameter(double t) const
+GCS::Point GeometryLineSegment::positionAtParameter(const GCS::ParameterValueMapper& _, const GCS::Parameter* t) const
 {
-    double x = t * start.x + (1-t) * end.x;
-    double y = t * start.y + (1-t) * end.y;
+    double x = _(t) * _(start.x) + (1-_(t)) * _(end.x);
+    double y = _(t) * _(start.y) + (1-_(t)) * _(end.y);
     return GCS::Point{x,y};
 }
 
-GCS::Vec2 GeometryLineSegment::normalAtParameter(double t) const
+GCS::Point GeometryLineSegment::normalAtParameter(const GCS::ParameterValueMapper& _, const GCS::Parameter* t) const
 {
-    double x = end.x - start.x;
-    double y = end.y - start.y;
+    double x = _(start.x) + _(end.x);
+    double y = _(start.y) + _(end.y);
     // Rotate clockwise.
-    return GCS::Vec2{y,-x}.normalize();
+    return GCS::Point{y,-x}.normalize();
 }
 
 void GeometryLineSegment::report() const

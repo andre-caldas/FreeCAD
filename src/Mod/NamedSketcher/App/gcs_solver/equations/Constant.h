@@ -37,10 +37,10 @@ public:
     void set(Parameter* a, Parameter* k);
 
     double error(const ParameterGroupManager& manager) const override;
-    ParameterVector differentialNonOptimized() const override;
+    ParameterVector differentialNonOptimized(const GCS::ParameterValueMapper& parameter_mapper) const override;
     OptimizedVector differentialOptimized(const ParameterGroupManager& manager) const override;
 
-    void declareParameters(ParameterGroupManager& manager) const override;
+    void declareParameters(ParameterGroupManager& manager) override;
 // TODO: make ParameterGroupManager manage constant values as well.
 //    bool optimizeParameters(ParameterGroupManager& manager) const override;
 

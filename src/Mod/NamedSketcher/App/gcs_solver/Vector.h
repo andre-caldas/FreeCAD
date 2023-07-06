@@ -36,9 +36,9 @@ class Vector
 public:
     std::unordered_map<Index, double> values;
 
-    double operator[](Index parameter) const;
-    void set(Index parameter, double value);
-    bool hasKey(Index parameter) const {return values.count(parameter);}
+    double operator[](const Index parameter) const;
+    void set(const Index parameter, double value);
+    bool hasKey(const Index parameter) const {return values.count(parameter);}
 
     Vector<Index>& operator+=(const Vector<Index>& other);
     Vector<Index>& operator*=(double val);

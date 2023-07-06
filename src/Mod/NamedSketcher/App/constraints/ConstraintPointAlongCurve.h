@@ -22,31 +22,52 @@
  ***************************************************************************/
 
 
-#ifndef NAMEDSKETCHER_GCS_Equal_H
-#define NAMEDSKETCHER_GCS_Equal_H
+#ifndef NAMEDSKETCHER_ConstraintPointAlongCurve_H
+#define NAMEDSKETCHER_ConstraintPointAlongCurve_H
 
-#include "Equation.h"
+#include <memory>
+#include <vector>
 
-namespace NamedSketcher::GCS
+#include "../gcs_solver/equations/PointAlongCurve.h"
+#include "ConstraintBase.h"
+
+namespace Base::Accessor {
+template<typename T>
+class ReferenceTo;
+}
+
+namespace NamedSketcher
 {
 
-class NamedSketcherExport Equal : public LinearEquation
+class GeometryBase;
+
+/** Deals with constraints of type PointAlongCurve.
+ */
+class NamedSketcherExport ConstraintPointAlongCurve : public ConstraintBase
 {
 public:
-    void set(Parameter* x, Parameter* y);
+    ref_point point;
+    ref_geometry curve;
 
-    double error(const ParameterGroupManager& manager) const override;
-    ParameterVector differentialNonOptimized(const GCS::ParameterValueMapper& parameter_mapper) const override;
-    OptimizedVector differentialOptimized(const ParameterGroupManager& manager) const override;
+    ConstraintPointAlongCurve(ref_point point, ref_geometry curve);
 
-    void declareParameters(ParameterGroupManager& manager) override;
-    bool optimizeParameters(ParameterGroupManager& manager) const override;
+public:
+    std::vector<GCS::Equation*> getEquations() override;
+    bool updateReferences() override;
+
+    std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
+    static constexpr const char* xmlTagTypeStatic() {return "PointAlongCurve";}
+
+    // Base::Persistence
+    unsigned int getMemSize () const override;
+    void Save (Base::Writer& writer) const override;
+    static std::unique_ptr<ConstraintPointAlongCurve> staticRestore(Base::XMLReader& reader);
 
 private:
-    Parameter* a = nullptr;
-    Parameter* b = nullptr;
+    // TODO: Use colinear for line segments.
+    GCS::PointAlongCurve equation;
 };
 
-} // namespace NamedSketcher::GCS
+} // namespace NamedSketcher
 
-#endif // NAMEDSKETCHER_GCS_Equal_H
+#endif // NAMEDSKETCHER_ConstraintPointAlongCurve_H

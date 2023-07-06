@@ -92,14 +92,14 @@ GCS::Point* GeometryPoint::resolve_ptr(token_iterator& start, const token_iterat
     return nullptr;
 }
 
-GCS::Point GeometryPoint::positionAtParameter(double /*t*/) const
+GCS::Point GeometryPoint::positionAtParameter(const GCS::ParameterValueMapper& value_mapper, const GCS::Parameter* /*t*/) const
 {
-    return point;
+    return {value_mapper(&point.x), value_mapper(&point.x)};
 }
 
-GCS::Vec2 GeometryPoint::normalAtParameter(double /*t*/) const
+GCS::Point GeometryPoint::normalAtParameter(const GCS::ParameterValueMapper& /*value_mapper*/, const GCS::Parameter* /*t*/) const
 {
-    return GCS::Vec2{0,0};
+    return GCS::Point{0,0};
 }
 
 void GeometryPoint::report() const

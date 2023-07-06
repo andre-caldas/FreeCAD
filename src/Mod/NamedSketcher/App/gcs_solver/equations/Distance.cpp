@@ -26,6 +26,7 @@
 #include <Base/Exception.h>
 
 #include "../parameters/ParameterGroupManager.h"
+#include "../parameters/ParameterValueMapper.h"
 #include "Distance.h"
 
 namespace NamedSketcher::GCS
@@ -48,35 +49,35 @@ double Distance::error(const ParameterGroupManager& manager) const
     if(isCoincident(manager))
     {
         // -distance = 0
-        return -manager.getOptimizedParameterValue(distance);
+        return -manager.getValue(distance);
     }
 
     if(isHorizontal(manager))
     {
         // ax - bx - distance = 0.
-        return manager.getOptimizedParameterValue(&a->x) - manager.getOptimizedParameterValue(&b->x) - manager.getOptimizedParameterValue(distance);
+        return manager.getValue(&a->x) - manager.getValue(&b->x) - manager.getValue(distance);
     }
 
     if(isVertical(manager))
     {
         // ay - by - distance = 0.
-        return manager.getOptimizedParameterValue(&a->y) - manager.getOptimizedParameterValue(&b->y) - manager.getOptimizedParameterValue(distance);
+        return manager.getValue(&a->y) - manager.getValue(&b->y) - manager.getValue(distance);
     }
 
-    double a1 = manager.getOptimizedParameterValue(&a->x);
-    double a2 = manager.getOptimizedParameterValue(&a->y);
-    double b1 = manager.getOptimizedParameterValue(&b->x);
-    double b2 = manager.getOptimizedParameterValue(&b->y);
-    double d = manager.getOptimizedParameterValue(distance);
+    double a1 = manager.getValue(&a->x);
+    double a2 = manager.getValue(&a->y);
+    double b1 = manager.getValue(&b->x);
+    double b2 = manager.getValue(&b->y);
+    double d = manager.getValue(distance);
     return (a1-b1)*(a1-b1) + (a2-b2)*(a2-b2) - d*d;
 }
 
-ParameterVector Distance::differentialNonOptimized() const
+ParameterVector Distance::differentialNonOptimized(const GCS::ParameterValueMapper& parameter_mapper) const
 {
-    double a1 = a->x;
-    double a2 = a->y;
-    double b1 = b->x;
-    double b2 = b->y;
+    double a1 = parameter_mapper(&a->x);
+    double a2 = parameter_mapper(&a->y);
+    double b1 = parameter_mapper(&b->x);
+    double b2 = parameter_mapper(&b->y);
 
     ParameterVector result;
     result.set(&a->x, 2*(a1-b1));
@@ -111,10 +112,10 @@ OptimizedVector Distance::differentialOptimized(const ParameterGroupManager& man
         return result;
     }
 
-    return manager.optimizeVector(differentialNonOptimized());
+    return manager.optimizeVector(differentialNonOptimized(manager));
 }
 
-void Distance::declareParameters(ParameterGroupManager& manager) const
+void Distance::declareParameters(ParameterGroupManager& manager)
 {
     manager.addParameter(&a->x);
     manager.addParameter(&a->y);

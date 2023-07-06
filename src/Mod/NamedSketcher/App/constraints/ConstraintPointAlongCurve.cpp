@@ -22,31 +22,79 @@
  ***************************************************************************/
 
 
-#ifndef NAMEDSKETCHER_GCS_Equal_H
-#define NAMEDSKETCHER_GCS_Equal_H
+#include "PreCompiled.h"
 
-#include "Equation.h"
+#ifndef _PreComp_
+#include <utility>
+#endif // _PreComp_
 
-namespace NamedSketcher::GCS
+#include <Base/Writer.h>
+#include <Base/Exception.h>
+
+#include "../geometries/GeometryPoint.h"
+#include "ConstraintPointAlongCurve.h"
+
+
+namespace NamedSketcher
 {
 
-class NamedSketcherExport Equal : public LinearEquation
+ConstraintPointAlongCurve::ConstraintPointAlongCurve(ref_point point, ref_geometry curve)
+    : point(std::move(point))
+    , curve(std::move(curve))
 {
-public:
-    void set(Parameter* x, Parameter* y);
+}
 
-    double error(const ParameterGroupManager& manager) const override;
-    ParameterVector differentialNonOptimized(const GCS::ParameterValueMapper& parameter_mapper) const override;
-    OptimizedVector differentialOptimized(const ParameterGroupManager& manager) const override;
+std::vector<GCS::Equation*> ConstraintPointAlongCurve::getEquations()
+{
+    if(!point.isLocked())
+    {
+        point.refreshLock();
+    }
+    if(!curve.isLocked())
+    {
+        curve.refreshLock();
+    }
+    if(!point.isLocked())
+    {
+        FC_THROWM(Base::NameError, "Could not resolve name (" << point.pathString() << ").");
+    }
+    if(!curve.isLocked())
+    {
+        FC_THROWM(Base::NameError, "Could not resolve name (" << curve.pathString() << ").");
+    }
 
-    void declareParameters(ParameterGroupManager& manager) override;
-    bool optimizeParameters(ParameterGroupManager& manager) const override;
+    equation.set(point.get(), curve.get());
+    return std::vector<GCS::Equation*>{&equation};
+}
 
-private:
-    Parameter* a = nullptr;
-    Parameter* b = nullptr;
-};
+bool ConstraintPointAlongCurve::updateReferences()
+{
+    point.refreshLock();
+    curve.refreshLock();
+    if(!point.hasChanged() && !curve.hasChanged())
+    {
+        return false;
+    }
+    equation.set(point.get(), curve.get());
+    return true;
+}
 
-} // namespace NamedSketcher::GCS
 
-#endif // NAMEDSKETCHER_GCS_Equal_H
+unsigned int ConstraintPointAlongCurve::getMemSize () const
+{
+    return sizeof(ConstraintPointAlongCurve) + 50/*a.memSize() + b.memSize()*/;
+}
+
+void ConstraintPointAlongCurve::Save (Base::Writer& /*writer*/) const
+{
+    THROW(Base::NotImplementedError);
+}
+
+std::unique_ptr<ConstraintPointAlongCurve>
+ConstraintPointAlongCurve::staticRestore(Base::XMLReader& /*reader*/)
+{
+    // SEE ConstraintCoincident.
+    THROW(Base::NotImplementedError);
+}
+
+} // namespace NamedSketcher

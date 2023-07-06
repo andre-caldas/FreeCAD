@@ -35,6 +35,7 @@
 #include <Mod/Part/App/TopoShape.h>
 
 #include "../gcs_solver/parameters/Parameter.h"
+#include "../gcs_solver/parameters/ParameterValueMapper.h"
 #include "GeometryFactory.h"
 
 namespace Base {
@@ -44,14 +45,21 @@ class Writer;
 namespace NamedSketcher
 {
 
+namespace GCS {
+class ParameterGroupManager;
+}
+
 class NamedSketcherExport GeometryBase
         : public Base::Accessor::IExport<GCS::Parameter>
 {
 public:
     using factory = GeometryFactory;
+    using derivative_map = std::map<const GCS::Parameter*,GCS::Point>;
 
     bool isConstruction = false;
     bool isBlocked = false;
+
+    virtual ~GeometryBase() {}
 
     virtual TopoDS_Shape toShape() = 0;
     virtual void commitChanges() const = 0;
@@ -66,12 +74,21 @@ public:
     std::string_view xmlTagName() const {return xmlTagNameStatic();}
     static constexpr const char* xmlTagNameStatic() {return "Geometry";}
 
-    virtual ~GeometryBase() {}
+    /*
+     * Virtual methods with information for the solver
+     */
+    virtual std::vector<const GCS::Parameter*> getParameters() const = 0;
+    virtual GCS::Point positionAtParameter(const GCS::ParameterValueMapper& value_mapper, const GCS::Parameter* t) const = 0;
+    virtual GCS::Point normalAtParameter(const GCS::ParameterValueMapper& value_mapper, const GCS::Parameter* t) const;
 
-    virtual GCS::Point positionAtParameter(double t) const = 0;
-    virtual GCS::Vec2 normalAtParameter(double t) const = 0;
+    virtual void partialDerivativesPoint(const GCS::ParameterValueMapper& value_mapper, derivative_map& map, const GCS::Parameter* t) const;
+    virtual void partialDerivativesNormal(const GCS::ParameterValueMapper& value_mapper, derivative_map& map, const GCS::Parameter* t) const;
 
     virtual void report() const = 0;
+
+private:
+    template<decltype(&GeometryBase::positionAtParameter) func>
+    void partialDerivatives(const GCS::ParameterValueMapper& value_mapper, derivative_map& map, const GCS::Parameter* t) const;
 };
 
 /**

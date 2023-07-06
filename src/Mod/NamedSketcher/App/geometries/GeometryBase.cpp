@@ -56,4 +56,50 @@ void GeometryBase::SaveTail(Base::Writer& writer) const
     writer.Stream() << writer.ind() << "</" << xmlTagName() << ">" << std::endl;
 }
 
+template<decltype(&GeometryBase::positionAtParameter) func>
+void GeometryBase::partialDerivatives(const GCS::ParameterValueMapper& value_mapper, derivative_map& map, const GCS::Parameter* t) const
+{
+    // TODO: move this magic number somewhere else.
+    const double delta = 1.0 / (1024*1024);
+
+    auto parameters = getParameters();
+    parameters.push_back(t);
+    for(auto parameter: parameters)
+    {
+        if(map.count(parameter) == 0)
+        {
+            auto c0 = (this->*func)({value_mapper, parameter, -delta/2}, t);
+            auto c1 = (this->*func)({value_mapper, parameter, delta/2}, t);
+            double dx = (c1.x - c0.x) / delta;
+            double dy = (c1.y - c0.y) / delta;
+            map.try_emplace(parameter, dx, dy);
+        }
+    }
+}
+
+GCS::Point GeometryBase::normalAtParameter(const GCS::ParameterValueMapper& value_mapper, const GCS::Parameter* t) const
+{
+    // TODO: move this magic number somewhere else.
+    const double delta = 1.0 / (1024*1024*8);
+
+    auto c0 = positionAtParameter({value_mapper, t, -delta/2}, t);
+    auto c1 = positionAtParameter({value_mapper, t, -delta/2}, t);
+
+    // Non-normalized tangent vector (speed).
+    double dx = (c1.x - c0.x) / delta;
+    double dy = (c1.y - c0.y) / delta;
+    // Rotate clockwise.
+    return GCS::Point(dy,-dx).normalize();
+}
+
+void GeometryBase::partialDerivativesPoint(const GCS::ParameterValueMapper& value_mapper, derivative_map& map, const GCS::Parameter* t) const
+{
+    partialDerivatives<&GeometryBase::positionAtParameter>(value_mapper, map, t);
+}
+
+void GeometryBase::partialDerivativesNormal(const GCS::ParameterValueMapper& value_mapper, derivative_map& map, const GCS::Parameter* t) const
+{
+    partialDerivatives<&GeometryBase::normalAtParameter>(value_mapper, map, t);
+}
+
 } // namespace NamedSketcher

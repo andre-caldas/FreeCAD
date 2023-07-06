@@ -25,6 +25,7 @@
 #ifndef NAMEDSKETCHER_GCS_ParameterGroupManager_H
 #define NAMEDSKETCHER_GCS_ParameterGroupManager_H
 
+#include <functional>
 #include <unordered_set>
 #include <map>
 #include <vector>
@@ -39,6 +40,13 @@ namespace NamedSketcher::GCS
 class NamedSketcherExport ParameterGroupManager
 {
 public:
+    /**
+     * @brief The value assigned to a @a parameter through this manager.
+     * @param parameter
+     * @return The value attributed to @a parameter.
+     */
+    double getValue(const Parameter* parameter) const {return getOptimizedParameterValue(parameter);}
+
     /**
      * @brief Adds a parameter to the system.
      * @param a: The @class Parameter to add to the system.
@@ -60,7 +68,7 @@ public:
      * @return Returns false if they are already equal.
      * Otherwise, returns true.
      */
-    bool setParameterEqual(Parameter* a, Parameter* b);
+    bool setParameterEqual(const Parameter* a, const Parameter* b);
 
     /**
      * @brief Verify if two @class Parameter where optimized
@@ -69,9 +77,7 @@ public:
      * @param b: second @class Parameter to compare.
      * @return True if both @class Parameter are proxied to the same @class OptimizedParameter.
      */
-    bool areParametersEqual(Parameter* a, Parameter* b) const;
-
-    ParameterGroup* getParameterGroup(Parameter* parameter) const;
+    bool areParametersEqual(const Parameter* a, const Parameter* b) const;
 
     /**
      * @brief Makes all @class OptimizedParameter that are equivalent to @a k
@@ -84,22 +90,31 @@ public:
     bool setParameterConstant(Parameter* k);
 
     /**
+     * @brief Checks if parameter @a k is constant.
+     * @param p: @class Parameter to check.
+     * @return Iis constant?
+     */
+    bool isParameterConstant(const Parameter* p);
+
+    ParameterGroup* getParameterGroup(const Parameter* parameter) const;
+
+    /**
      * @brief Finished the optimization step,
      * this function needs to be called
      * to give an index number to each @class ParameterGroup.
      */
     void setOptimizedParameterIndexes();
-    size_t getOptimizedParameterIndex(OptimizedParameter* parameter) const;
-    size_t getNonConstantGroupIndex(ParameterGroup* group) const;
-    OptimizedParameter* getOptimizedParameter(Parameter* parameter) const;
-    double getOptimizedParameterValue(Parameter* parameter) const;
+    size_t getOptimizedParameterIndex(const OptimizedParameter* parameter) const;
+    size_t getNonConstantGroupIndex(const ParameterGroup* group) const;
+    OptimizedParameter* getOptimizedParameter(const Parameter* parameter) const;
+    double getOptimizedParameterValue(const Parameter* parameter) const;
     OptimizedVector getOptimizedParameterValues() const;
     void setOptimizedParameterValues(const OptimizedVector& vals) const;
 
-    size_t getGroupIndex(ParameterGroup* group) const;
+    size_t getGroupIndex(const ParameterGroup* group) const;
     ParameterGroup* getGroup(size_t index) const;
 
-    size_t getEquationIndex(Equation* eq) const;
+    size_t getEquationIndex(const Equation* eq) const;
     Equation* getEquation(size_t index) const;
     OptimizedVector optimizeVector(const ParameterVector& v) const;
 
@@ -117,7 +132,7 @@ private:
      * @brief Reverse lookup @class Parameter --> @class ParameterGroup.
      * @attention Premature optimization. :-)
      */
-    std::unordered_map<Parameter*, ParameterGroup*> parameter2Group;
+    std::unordered_map<const Parameter*, ParameterGroup*> parameter2Group;
 
     /**
      * @brief Each non-constant @class ParameterGroup
@@ -131,13 +146,13 @@ private:
      * @brief orderedNonConstantGroups inverse lookup.
      * @attention This is set only after calling setOptimizedParameterIndexes().
      */
-    std::unordered_map<ParameterGroup*, size_t> nonConstantGroupIndexes;
+    std::unordered_map<const ParameterGroup*, size_t> nonConstantGroupIndexes;
     /**
      * @brief Reverse lookup @class OptimizedParameter --> @class ParameterGroup.
      * @attention This is set only after calling setOptimizedParameterIndexes().
      * @attention Premature optimization. :-)
      */
-    std::unordered_map<OptimizedParameter*, ParameterGroup*> optimizedParameter2NonConstantGroup;
+    std::unordered_map<const OptimizedParameter*, ParameterGroup*> optimizedParameter2NonConstantGroup;
 
     /**
      * @brief Each @class Equation passed to the manager
@@ -148,7 +163,7 @@ private:
     /**
      * @brief orderedEquations inverse lookup.
      */
-    std::unordered_map<Equation*, size_t> equationIndexes;
+    std::unordered_map<const Equation*, size_t> equationIndexes;
 };
 
 } // namespace NamedSketcher::GCS

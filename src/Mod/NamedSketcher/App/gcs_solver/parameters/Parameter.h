@@ -71,20 +71,7 @@ public:
     Point(double x, double y) : x(x), y(y) {}
     Point(const Base::Vector3d& p) : Point(p.x, p.y) {}
 
-    operator Base::Vector3d() const;
-};
-
-class Vec2
-{
-public:
-    Parameter x = 0.0;
-    Parameter y = 0.0;
-
-    Vec2() = default;
-    Vec2(double x, double y) : x(x), y(y) {}
-    Vec2(const Base::Vector3d& p) : Vec2(p.x, p.y) {}
-
-    Vec2& normalize();
+    Point& normalize();
     operator Base::Vector3d() const;
 };
 

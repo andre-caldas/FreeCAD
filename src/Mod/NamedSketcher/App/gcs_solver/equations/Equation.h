@@ -36,12 +36,13 @@ namespace NamedSketcher::GCS
 
 class Point;
 class ParameterGroupManager;
+class ParameterValueMapper;
 
 class NamedSketcherExport Equation
 {
 public:
     virtual double error(const ParameterGroupManager& manager) const = 0;
-    virtual ParameterVector differentialNonOptimized() const = 0;
+    virtual ParameterVector differentialNonOptimized(const GCS::ParameterValueMapper& parameter_mapper) const = 0;
     virtual OptimizedVector differentialOptimized(const ParameterGroupManager& manager) const = 0;
     virtual bool isLinear() const = 0;
 
@@ -49,7 +50,7 @@ public:
      * @brief Informs the @a manager which proxied parameters are used by the system.
      * @param manager: object that manages the group of proxied parameters.
      */
-    virtual void declareParameters(ParameterGroupManager& manager) const = 0;
+    virtual void declareParameters(ParameterGroupManager& manager) = 0;
 
     /**
      * @brief Informs the @a manager which proxies to optimize (set equal or fixed value).

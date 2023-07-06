@@ -21,58 +21,84 @@
  *                                                                          *
  ***************************************************************************/
 
+#include <random>
+
 #include <Base/Exception.h>
 
 #include "../parameters/ParameterGroupManager.h"
 #include "../parameters/ParameterValueMapper.h"
-#include "Equal.h"
+#include "../../geometries/GeometryBase.h"
+#include "PointAlongCurve.h"
 
 namespace NamedSketcher::GCS
 {
 
-void Equal::set(Parameter* x, Parameter* y)
+void PointAlongCurve::set(Point* p, GeometryBase* c)
 {
-    if(x == y)
-    {
-        FC_THROWM(Base::ReferenceError, "Different parameters must be passed.");
-    }
-    a = x;
-    b = y;
+    point = p;
+    curve = c;
 }
 
-double Equal::error(const ParameterGroupManager& manager) const
+// ||curve(t) - point||^2
+double PointAlongCurve::error(const ParameterGroupManager& manager) const
 {
-    const double A = manager.getValue(a);
-    const double B = manager.getValue(b);
-    return B - A;
+    double t = manager.getValue(&parameter_t);
+    double px = manager.getValue(&point->x);
+    double py = manager.getValue(&point->y);
+    auto c = curve->positionAtParameter(manager, &parameter_t);
+    return (c.x-px)*(c.x-px) + (c.y-py)*(c.y-py);
 }
 
-ParameterVector Equal::differentialNonOptimized(const GCS::ParameterValueMapper& /*parameter_mapper*/) const
+ParameterVector PointAlongCurve::differentialNonOptimized(const GCS::ParameterValueMapper& _) const
 {
+    /*
+     * Here we calculate the partial derivatives of ||curve(t) - point||^2.
+     */
+    double px = _(point->x);
+    double py = _(point->y);
+    auto c = curve->positionAtParameter(_, &parameter_t);
+
+    double vx = 2.0*(c.x - px);
+    double vy = 2.0*(c.y - py);
+
     ParameterVector result;
-    result.set(a, -1);
-    result.set(b, 1);
+    /*
+     * For the x and y coordinate of point,
+     * it is the x and y coordinates of 2(c(t) - p).
+     */
+    result.set(&point->x, vx);
+    result.set(&point->y, vy);
+
+    GeometryBase::derivative_map partial_derivatives;
+    curve->partialDerivativesPoint(_, partial_derivatives, &parameter_t);
+
+    /*
+     * For the curve parameter h, the derivative is:
+     * 2 * (dc/dh) dot_product (c(t) - p).
+     */
+    for(const auto& [parameter, vector]: partial_derivatives)
+    {
+        // Chain rule.
+        result.set(parameter, vx*vector.x + vy*vector.y);
+    }
     return result;
 }
 
-OptimizedVector Equal::differentialOptimized(const ParameterGroupManager& manager) const
+OptimizedVector PointAlongCurve::differentialOptimized(const ParameterGroupManager& manager) const
 {
-    if(!manager.areParametersEqual(a,b))
-    {
-        return manager.optimizeVector(differentialNonOptimized(manager));
-    }
-    return OptimizedVector();
+    return manager.optimizeVector(differentialNonOptimized(manager));
 }
 
-void Equal::declareParameters(ParameterGroupManager& manager)
+void PointAlongCurve::declareParameters(ParameterGroupManager& manager)
 {
-    manager.addParameter(a);
-    manager.addParameter(b);
+    manager.addParameter(&parameter_t);
+    manager.addParameter(&point->x);
+    manager.addParameter(&point->y);
 }
 
-bool Equal::optimizeParameters(ParameterGroupManager& manager) const
+bool PointAlongCurve::optimizeParameters(ParameterGroupManager& /*manager*/) const
 {
-    return manager.setParameterEqual(a,b);
+    return false;
 }
 
 } // namespace NamedSketcher::GCS

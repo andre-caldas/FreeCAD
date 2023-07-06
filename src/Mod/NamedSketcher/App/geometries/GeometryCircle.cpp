@@ -113,18 +113,18 @@ GCS::Point* GeometryCircle::resolve_ptr(token_iterator& start, const token_itera
     return nullptr;
 }
 
-GCS::Point GeometryCircle::positionAtParameter(double t) const
+GCS::Point GeometryCircle::positionAtParameter(const GCS::ParameterValueMapper& _, const GCS::Parameter* t) const
 {
-    double x = center.x + radius * std::cos(t);
-    double y = center.y + radius * std::sin(t);
+    double x = _(center.x) + _(radius) * std::cos(_(t));
+    double y = _(center.y) + _(radius) * std::sin(_(t));
     return GCS::Point{x,y};
 }
 
-GCS::Vec2 GeometryCircle::normalAtParameter(double t) const
+GCS::Point GeometryCircle::normalAtParameter(const GCS::ParameterValueMapper& _, const GCS::Parameter* t) const
 {
-    double x = std::cos(t);
-    double y = std::sin(t);
-    return GCS::Vec2{x,y};
+    double x = std::cos(_(t));
+    double y = std::sin(_(t));
+    return GCS::Point{x,y};
 }
 
 void GeometryCircle::report() const

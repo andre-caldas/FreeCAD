@@ -41,12 +41,12 @@ void Constant::set(Parameter* x, Parameter* v)
 
 double Constant::error(const ParameterGroupManager& manager) const
 {
-    const double A = manager.getOptimizedParameterValue(a);
-    const double K = manager.getOptimizedParameterValue(k);
+    const double A = manager.getValue(a);
+    const double K = manager.getValue(k);
     return A - K;
 }
 
-ParameterVector Constant::differentialNonOptimized() const
+ParameterVector Constant::differentialNonOptimized(const GCS::ParameterValueMapper& /*parameter_mapper*/) const
 {
     ParameterVector result;
     result.set(a, 1);
@@ -58,7 +58,7 @@ OptimizedVector Constant::differentialOptimized(const ParameterGroupManager& /*m
     return OptimizedVector();
 }
 
-void Constant::declareParameters(ParameterGroupManager& manager) const
+void Constant::declareParameters(ParameterGroupManager& manager)
 {
     manager.addParameter(a);
     manager.addParameter(k);

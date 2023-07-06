@@ -22,18 +22,26 @@
  ***************************************************************************/
 
 
-#ifndef NAMEDSKETCHER_GCS_Equal_H
-#define NAMEDSKETCHER_GCS_Equal_H
+#ifndef NAMEDSKETCHER_GCS_PointAlongCurve_H
+#define NAMEDSKETCHER_GCS_PointAlongCurve_H
 
+#include <set>
+
+#include "../Types.h"
 #include "Equation.h"
+
+namespace NamedSketcher {
+class GeometryBase;
+}
 
 namespace NamedSketcher::GCS
 {
 
-class NamedSketcherExport Equal : public LinearEquation
+class NamedSketcherExport PointAlongCurve : public NonLinearEquation
 {
 public:
-    void set(Parameter* x, Parameter* y);
+    PointAlongCurve() = default;
+    void set(Point* point, GeometryBase* curve);
 
     double error(const ParameterGroupManager& manager) const override;
     ParameterVector differentialNonOptimized(const GCS::ParameterValueMapper& parameter_mapper) const override;
@@ -43,10 +51,11 @@ public:
     bool optimizeParameters(ParameterGroupManager& manager) const override;
 
 private:
-    Parameter* a = nullptr;
-    Parameter* b = nullptr;
+    Point* point;
+    Parameter parameter_t{0.5}; // parametrization: t --> c(t).
+    GeometryBase* curve;
 };
 
 } // namespace NamedSketcher::GCS
 
-#endif // NAMEDSKETCHER_GCS_Equal_H
+#endif // NAMEDSKETCHER_GCS_PointAlongCurve_H

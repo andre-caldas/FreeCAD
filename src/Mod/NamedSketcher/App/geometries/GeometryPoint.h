@@ -47,7 +47,6 @@ namespace NamedSketcher
  */
 class NamedSketcherExport GeometryPoint
         : public GeometryBaseT<GeometryPoint, Part::GeomPoint>
-        , public Base::Accessor::IExport<GCS::Parameter>
         , public Base::Accessor::IExport<GCS::Point>
 {
 public:
@@ -63,8 +62,9 @@ public:
     std::string_view xmlTagType(void) const override {return xmlTagTypeStatic();}
     static constexpr const char* xmlTagTypeStatic(void) {return "Point";}
 
-    GCS::Point positionAtParameter(double t) const override;
-    GCS::Vec2 normalAtParameter(double t) const override;
+    std::vector<const GCS::Parameter*> getParameters() const override {return {&x,&y};}
+    GCS::Point positionAtParameter(const GCS::ParameterValueMapper& value_mapper, const GCS::Parameter* t) const override;
+    GCS::Point normalAtParameter(const GCS::ParameterValueMapper& value_mapper, const GCS::Parameter* t) const override;
 
     void report() const override;
 

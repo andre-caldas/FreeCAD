@@ -34,7 +34,7 @@ namespace NamedSketcher::GCS
 {
 
 template<typename Index>
-double Vector<Index>::operator[](Index parameter) const
+double Vector<Index>::operator[](const Index parameter) const
 {
     if(values.count(parameter))
     {
@@ -44,7 +44,7 @@ double Vector<Index>::operator[](Index parameter) const
 }
 
 template<typename Index>
-void Vector<Index>::set(Index parameter, double value)
+void Vector<Index>::set(const Index parameter, double value)
 {
     values[parameter] = value;
 }

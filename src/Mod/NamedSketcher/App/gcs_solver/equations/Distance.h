@@ -39,10 +39,10 @@ public:
     void set (Point* a, Point* b, Parameter* distance);
 
     double error(const ParameterGroupManager& manager) const override;
-    ParameterVector differentialNonOptimized() const override;
+    ParameterVector differentialNonOptimized(const GCS::ParameterValueMapper& parameter_mapper) const override;
     OptimizedVector differentialOptimized(const ParameterGroupManager& manager) const override;
 
-    void declareParameters(ParameterGroupManager& manager) const override;
+    void declareParameters(ParameterGroupManager& manager) override;
 
 private:
     Point* a;

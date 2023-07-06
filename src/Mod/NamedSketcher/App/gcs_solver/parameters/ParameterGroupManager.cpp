@@ -54,7 +54,7 @@ void ParameterGroupManager::addEquation(Equation* eq)
     equationIndexes.emplace(eq, equationIndexes.size());
 }
 
-bool ParameterGroupManager::setParameterEqual(Parameter* a, Parameter* b)
+bool ParameterGroupManager::setParameterEqual(const Parameter* a, const Parameter* b)
 {
     ParameterGroup* group_a = getParameterGroup(a);
     ParameterGroup* group_b = getParameterGroup(b);
@@ -75,7 +75,7 @@ bool ParameterGroupManager::setParameterEqual(Parameter* a, Parameter* b)
     return true;
 }
 
-bool ParameterGroupManager::areParametersEqual(Parameter* a, Parameter* b) const
+bool ParameterGroupManager::areParametersEqual(const Parameter* a, const Parameter* b) const
 {
     if(parameter2Group.count(a) == 0 || parameter2Group.count(b) == 0)
     {
@@ -85,7 +85,7 @@ bool ParameterGroupManager::areParametersEqual(Parameter* a, Parameter* b) const
     return (parameter2Group.at(a) == parameter2Group.at(b));
 }
 
-ParameterGroup* ParameterGroupManager::getParameterGroup(Parameter* parameter) const
+ParameterGroup* ParameterGroupManager::getParameterGroup(const Parameter* parameter) const
 {
     return parameter2Group.at(parameter);
 }
@@ -94,6 +94,11 @@ bool ParameterGroupManager::setParameterConstant(Parameter* k)
 {
     assert(orderedNonConstantGroups.empty());
     return getParameterGroup(k)->setConstant(k);
+}
+
+bool ParameterGroupManager::isParameterConstant(const Parameter* p)
+{
+    return getParameterGroup(p)->isConstant();
 }
 
 void ParameterGroupManager::setOptimizedParameterIndexes()
@@ -112,26 +117,26 @@ void ParameterGroupManager::setOptimizedParameterIndexes()
     }
 }
 
-size_t ParameterGroupManager::getOptimizedParameterIndex(OptimizedParameter* parameter) const
+size_t ParameterGroupManager::getOptimizedParameterIndex(const OptimizedParameter* parameter) const
 {
     ParameterGroup* group = optimizedParameter2NonConstantGroup.at(parameter);
     return getNonConstantGroupIndex(group);
 }
 
-size_t ParameterGroupManager::getNonConstantGroupIndex(ParameterGroup* group) const
+size_t ParameterGroupManager::getNonConstantGroupIndex(const ParameterGroup* group) const
 {
     assert(!group->isConstant());
     return nonConstantGroupIndexes.at(group);
 }
 
-OptimizedParameter* ParameterGroupManager::getOptimizedParameter(Parameter* parameter) const
+OptimizedParameter* ParameterGroupManager::getOptimizedParameter(const Parameter* parameter) const
 {
     ParameterGroup* group = getParameterGroup(parameter);
     assert(!group->isConstant());
     return group->getValuePtr();
 }
 
-double ParameterGroupManager::getOptimizedParameterValue(Parameter* parameter) const
+double ParameterGroupManager::getOptimizedParameterValue(const Parameter* parameter) const
 {
     ParameterGroup* group = getParameterGroup(parameter);
     return group->getValue();
@@ -175,7 +180,7 @@ OptimizedVector ParameterGroupManager::optimizeVector(const ParameterVector& v) 
     return result;
 }
 
-size_t ParameterGroupManager::getGroupIndex(ParameterGroup* group) const
+size_t ParameterGroupManager::getGroupIndex(const ParameterGroup* group) const
 {
     return nonConstantGroupIndexes.at(group);
 }
@@ -185,7 +190,7 @@ ParameterGroup* ParameterGroupManager::getGroup(size_t index) const
     return orderedNonConstantGroups.at(index);
 }
 
-size_t ParameterGroupManager::getEquationIndex(Equation* eq) const
+size_t ParameterGroupManager::getEquationIndex(const Equation* eq) const
 {
     return equationIndexes.at(eq);
 }

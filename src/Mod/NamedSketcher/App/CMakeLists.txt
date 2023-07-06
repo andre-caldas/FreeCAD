@@ -53,8 +53,6 @@ SET(Python_SRCS
     geometries/Geometry.pybind.cpp
     constraints/Constraint.pybind.h
     constraints/Constraint.pybind.cpp
-#    constraints/ConstraintBasePybind.cpp
-#    constraints/ConstraintCoincidentPybind.cpp
 )
 SOURCE_GROUP("Python" FILES ${Python_SRCS})
 
@@ -86,6 +84,8 @@ SET(Constraints_SRCS
     constraints/ConstraintHorizontal.cpp
     constraints/ConstraintXDistance.h
     constraints/ConstraintXDistance.cpp
+    constraints/ConstraintPointAlongCurve.h
+    constraints/ConstraintPointAlongCurve.cpp
 )
 SOURCE_GROUP("Constraints" FILES ${Constraints_SRCS})
 
@@ -107,6 +107,7 @@ SET(gcs_solver_SRCS
     gcs_solver/parameters/ParameterGroup.cpp
     gcs_solver/parameters/ParameterGroupManager.h
     gcs_solver/parameters/ParameterGroupManager.cpp
+    gcs_solver/parameters/ParameterValueMapper.h
 #
     gcs_solver/equations/Equation.h
     gcs_solver/equations/Equation.cpp
@@ -120,6 +121,8 @@ SET(gcs_solver_SRCS
     gcs_solver/equations/Distance.cpp
     gcs_solver/equations/Colinear.h
     gcs_solver/equations/Colinear.cpp
+    gcs_solver/equations/PointAlongCurve.h
+    gcs_solver/equations/PointAlongCurve.cpp
 #
     gcs_solver/linear_solvers/SolverBase.h
     gcs_solver/linear_solvers/SolverBase.cpp

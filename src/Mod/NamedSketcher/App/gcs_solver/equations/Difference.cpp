@@ -24,6 +24,7 @@
 #include <Base/Exception.h>
 
 #include "../parameters/ParameterGroupManager.h"
+#include "../parameters/ParameterValueMapper.h"
 #include "Difference.h"
 
 namespace NamedSketcher::GCS
@@ -42,13 +43,13 @@ void Difference::set(Parameter* x, Parameter* y, Parameter* d)
 
 double Difference::error(const ParameterGroupManager& manager) const
 {
-    const double A = manager.getOptimizedParameterValue(a);
-    const double B = manager.getOptimizedParameterValue(b);
-    const double DIFF = manager.getOptimizedParameterValue(difference);
+    const double A = manager.getValue(a);
+    const double B = manager.getValue(b);
+    const double DIFF = manager.getValue(difference);
     return B - A - DIFF;
 }
 
-ParameterVector Difference::differentialNonOptimized() const
+ParameterVector Difference::differentialNonOptimized(const GCS::ParameterValueMapper& /*parameter_mapper*/) const
 {
     ParameterVector result;
     result.set(a, -1);
@@ -60,12 +61,12 @@ OptimizedVector Difference::differentialOptimized(const ParameterGroupManager& m
 {
     if(!manager.areParametersEqual(a, b))
     {
-        return manager.optimizeVector(differentialNonOptimized());
+        return manager.optimizeVector(differentialNonOptimized(manager));
     }
     return OptimizedVector();
 }
 
-void Difference::declareParameters(ParameterGroupManager& manager) const
+void Difference::declareParameters(ParameterGroupManager& manager)
 {
     manager.addParameter(a);
     manager.addParameter(b);
