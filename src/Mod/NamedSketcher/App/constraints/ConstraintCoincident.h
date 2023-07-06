@@ -47,6 +47,9 @@ public:
     void removePoint(boost::uuids::uuid tag);
 
 public:
+    ConstraintCoincident() = default;
+    ConstraintCoincident(ref_parameter a, ref_parameter b);
+
     std::vector<GCS::Equation*> getEquations() override;
     bool updateReferences() override;
 

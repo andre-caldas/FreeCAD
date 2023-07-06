@@ -40,7 +40,8 @@ void Ldlt::refactor()
 {
     if(need_refactor)
     {
-        solver.factorize(gradients);
+        const auto& D = gradients;
+        solver.factorize(D.transpose() * D);
         need_refactor = false;
     }
 }

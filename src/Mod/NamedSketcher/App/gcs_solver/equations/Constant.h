@@ -40,9 +40,7 @@ public:
     ParameterVector differentialNonOptimized(const GCS::ParameterValueMapper& parameter_mapper) const override;
     OptimizedVector differentialOptimized(const ParameterGroupManager& manager) const override;
 
-    void declareParameters(ParameterGroupManager& manager) override;
-// TODO: make ParameterGroupManager manage constant values as well.
-//    bool optimizeParameters(ParameterGroupManager& manager) const override;
+    void declareParameters(ParameterGroupManager& manager) const override;
 
 private:
     Parameter* a;

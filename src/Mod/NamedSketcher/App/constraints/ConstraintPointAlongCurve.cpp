@@ -63,7 +63,7 @@ std::vector<GCS::Equation*> ConstraintPointAlongCurve::getEquations()
         FC_THROWM(Base::NameError, "Could not resolve name (" << curve.pathString() << ").");
     }
 
-    equation.set(point.get(), curve.get());
+    equation.set(point.get(), curve.get(), &parameter_t);
     return std::vector<GCS::Equation*>{&equation};
 }
 
@@ -75,7 +75,7 @@ bool ConstraintPointAlongCurve::updateReferences()
     {
         return false;
     }
-    equation.set(point.get(), curve.get());
+    equation.set(point.get(), curve.get(), &parameter_t);
     return true;
 }
 

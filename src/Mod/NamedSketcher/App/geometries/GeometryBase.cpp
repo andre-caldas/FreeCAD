@@ -56,6 +56,33 @@ void GeometryBase::SaveTail(Base::Writer& writer) const
     writer.Stream() << writer.ind() << "</" << xmlTagName() << ">" << std::endl;
 }
 
+std::vector<GCS::Parameter*> GeometryBase::getParameters()
+{
+    std::vector<const GCS::Parameter*> parameters = const_cast<const GeometryBase*>(this)->getParameters();
+    std::vector<GCS::Parameter*> result;
+    result.reserve(parameters.size());
+    for(auto parameter: parameters)
+    {
+        result.push_back(const_cast<GCS::Parameter*>(parameter));
+    }
+    return result;
+}
+
+GCS::Point GeometryBase::normalAtParameter(const GCS::ParameterValueMapper& value_mapper, const GCS::Parameter* t) const
+{
+    // TODO: move this magic number somewhere else.
+    const double delta = 1.0 / (1024*1024*8);
+
+    auto c0 = positionAtParameter({value_mapper, t, -delta/2}, t);
+    auto c1 = positionAtParameter({value_mapper, t, -delta/2}, t);
+
+    // Non-normalized tangent vector (speed).
+    double dx = (c1.x - c0.x) / delta;
+    double dy = (c1.y - c0.y) / delta;
+    // Rotate clockwise.
+    return GCS::Point(dy,-dx).normalize();
+}
+
 template<decltype(&GeometryBase::positionAtParameter) func>
 void GeometryBase::partialDerivatives(const GCS::ParameterValueMapper& value_mapper, derivative_map& map, const GCS::Parameter* t) const
 {
@@ -75,21 +102,6 @@ void GeometryBase::partialDerivatives(const GCS::ParameterValueMapper& value_map
             map.try_emplace(parameter, dx, dy);
         }
     }
-}
-
-GCS::Point GeometryBase::normalAtParameter(const GCS::ParameterValueMapper& value_mapper, const GCS::Parameter* t) const
-{
-    // TODO: move this magic number somewhere else.
-    const double delta = 1.0 / (1024*1024*8);
-
-    auto c0 = positionAtParameter({value_mapper, t, -delta/2}, t);
-    auto c1 = positionAtParameter({value_mapper, t, -delta/2}, t);
-
-    // Non-normalized tangent vector (speed).
-    double dx = (c1.x - c0.x) / delta;
-    double dy = (c1.y - c0.y) / delta;
-    // Rotate clockwise.
-    return GCS::Point(dy,-dx).normalize();
 }
 
 void GeometryBase::partialDerivativesPoint(const GCS::ParameterValueMapper& value_mapper, derivative_map& map, const GCS::Parameter* t) const

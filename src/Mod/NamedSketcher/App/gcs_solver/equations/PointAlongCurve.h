@@ -41,18 +41,17 @@ class NamedSketcherExport PointAlongCurve : public NonLinearEquation
 {
 public:
     PointAlongCurve() = default;
-    void set(Point* point, GeometryBase* curve);
+    void set(Point* point, GeometryBase* curve, Parameter* t);
 
     double error(const ParameterGroupManager& manager) const override;
     ParameterVector differentialNonOptimized(const GCS::ParameterValueMapper& parameter_mapper) const override;
     OptimizedVector differentialOptimized(const ParameterGroupManager& manager) const override;
 
-    void declareParameters(ParameterGroupManager& manager) override;
-    bool optimizeParameters(ParameterGroupManager& manager) const override;
+    void declareParameters(ParameterGroupManager& manager) const override;
 
 private:
     Point* point;
-    Parameter parameter_t{0.5}; // parametrization: t --> c(t).
+    Parameter* parameter_t; // parametrization: t --> c(t).
     GeometryBase* curve;
 };
 

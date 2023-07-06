@@ -122,7 +122,7 @@ GCS::Point GeometryLineSegment::positionAtParameter(const GCS::ParameterValueMap
     return GCS::Point{x,y};
 }
 
-GCS::Point GeometryLineSegment::normalAtParameter(const GCS::ParameterValueMapper& _, const GCS::Parameter* t) const
+GCS::Point GeometryLineSegment::normalAtParameter(const GCS::ParameterValueMapper& _, const GCS::Parameter* /*t*/) const
 {
     double x = _(start.x) + _(end.x);
     double y = _(start.y) + _(end.y);

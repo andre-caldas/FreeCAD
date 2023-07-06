@@ -78,6 +78,7 @@ public:
      * Virtual methods with information for the solver
      */
     virtual std::vector<const GCS::Parameter*> getParameters() const = 0;
+    std::vector<GCS::Parameter*> getParameters();
     virtual GCS::Point positionAtParameter(const GCS::ParameterValueMapper& value_mapper, const GCS::Parameter* t) const = 0;
     virtual GCS::Point normalAtParameter(const GCS::ParameterValueMapper& value_mapper, const GCS::Parameter* t) const;
 

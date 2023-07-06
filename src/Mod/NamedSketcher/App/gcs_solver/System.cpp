@@ -168,6 +168,7 @@ bool System::solve() const
     {
         FC_WARN("Setting proxies through ParameterGroupManager seemed to be in an infinite loop.");
     }
+    manager.finishOptimization();
 
     for(Equation* eq: non_redundant_equations)
     {

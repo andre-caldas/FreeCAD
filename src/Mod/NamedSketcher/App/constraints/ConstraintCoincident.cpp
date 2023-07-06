@@ -35,9 +35,20 @@
 namespace NamedSketcher
 {
 
+ConstraintCoincident::ConstraintCoincident(ref_parameter a, ref_parameter b)
+{
+    addPoint(std::move(a));
+    addPoint(std::move(b));
+}
+
 void ConstraintCoincident::addPoint(ref_point reference)
 {
     references.emplace_back(std::move(reference));
+    if(references.size() > 1)
+    {
+        equations.emplace_back(std::make_unique<GCS::Equal>());
+        equations.emplace_back(std::make_unique<GCS::Equal>());
+    }
 }
 
 void ConstraintCoincident::removePoint(boost::uuids::uuid /*tag*/)
@@ -54,7 +65,7 @@ std::vector<GCS::Equation*> ConstraintCoincident::getEquations()
 
     auto& first = references.at(0);
     std::vector<GCS::Equation*> result;
-    assert(2*references.size() == equations.size()+2);
+    assert(references.size() == 0 || 2*references.size() == equations.size()+2);
     for(size_t i=0; i < references.size(); ++i)
     {
         auto& point_ref = references.at(i);

@@ -39,8 +39,13 @@ namespace NamedSketcher::GCS
 
 void ParameterGroupManager::addParameter(Parameter* a)
 {
-    assert(parameter2Group.count(a) == 0);
+    // No parameter can be added after we start optimizing them.
     assert(orderedNonConstantGroups.empty());
+
+    if(hasParameter(a))
+    {
+        return;
+    }
 
     auto group = std::make_unique<ParameterGroup>(a);
     parameter2Group.emplace(a, group.get());
@@ -56,6 +61,9 @@ void ParameterGroupManager::addEquation(Equation* eq)
 
 bool ParameterGroupManager::setParameterEqual(const Parameter* a, const Parameter* b)
 {
+    // No parameter can be added after we start optimizing them.
+    assert(orderedNonConstantGroups.empty());
+
     ParameterGroup* group_a = getParameterGroup(a);
     ParameterGroup* group_b = getParameterGroup(b);
 
@@ -92,7 +100,9 @@ ParameterGroup* ParameterGroupManager::getParameterGroup(const Parameter* parame
 
 bool ParameterGroupManager::setParameterConstant(Parameter* k)
 {
+    // No parameter can be added after we start optimizing them.
     assert(orderedNonConstantGroups.empty());
+
     return getParameterGroup(k)->setConstant(k);
 }
 
@@ -101,8 +111,9 @@ bool ParameterGroupManager::isParameterConstant(const Parameter* p)
     return getParameterGroup(p)->isConstant();
 }
 
-void ParameterGroupManager::setOptimizedParameterIndexes()
+void ParameterGroupManager::finishOptimization()
 {
+    called_finish_optimization = true;
     assert(orderedNonConstantGroups.empty());
     assert(nonConstantGroupIndexes.empty());
     assert(optimizedParameter2NonConstantGroup.empty());
@@ -119,6 +130,9 @@ void ParameterGroupManager::setOptimizedParameterIndexes()
 
 size_t ParameterGroupManager::getOptimizedParameterIndex(const OptimizedParameter* parameter) const
 {
+    // Did you call finishOptimization()?
+    assert(called_finish_optimization);
+
     ParameterGroup* group = optimizedParameter2NonConstantGroup.at(parameter);
     return getNonConstantGroupIndex(group);
 }
@@ -131,6 +145,9 @@ size_t ParameterGroupManager::getNonConstantGroupIndex(const ParameterGroup* gro
 
 OptimizedParameter* ParameterGroupManager::getOptimizedParameter(const Parameter* parameter) const
 {
+    // Did you call finishOptimization()?
+    assert(called_finish_optimization);
+
     ParameterGroup* group = getParameterGroup(parameter);
     assert(!group->isConstant());
     return group->getValuePtr();
@@ -138,12 +155,18 @@ OptimizedParameter* ParameterGroupManager::getOptimizedParameter(const Parameter
 
 double ParameterGroupManager::getOptimizedParameterValue(const Parameter* parameter) const
 {
+    // Did you call finishOptimization()?
+    assert(called_finish_optimization);
+
     ParameterGroup* group = getParameterGroup(parameter);
     return group->getValue();
 }
 
 OptimizedVector ParameterGroupManager::getOptimizedParameterValues() const
 {
+    // Did you call finishOptimization()?
+    assert(called_finish_optimization);
+
     OptimizedVector result;
     for(ParameterGroup* group: orderedNonConstantGroups)
     {
@@ -154,6 +177,9 @@ OptimizedVector ParameterGroupManager::getOptimizedParameterValues() const
 
 void ParameterGroupManager::setOptimizedParameterValues(const OptimizedVector& vals) const
 {
+    // Did you call finishOptimization()?
+    assert(called_finish_optimization);
+
     for(ParameterGroup* group: orderedNonConstantGroups)
     {
         group->setValue(vals[group->getValuePtr()]);

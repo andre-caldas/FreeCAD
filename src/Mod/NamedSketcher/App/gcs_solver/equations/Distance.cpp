@@ -115,7 +115,7 @@ OptimizedVector Distance::differentialOptimized(const ParameterGroupManager& man
     return manager.optimizeVector(differentialNonOptimized(manager));
 }
 
-void Distance::declareParameters(ParameterGroupManager& manager)
+void Distance::declareParameters(ParameterGroupManager& manager) const
 {
     manager.addParameter(&a->x);
     manager.addParameter(&a->y);

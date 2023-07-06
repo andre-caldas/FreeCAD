@@ -64,15 +64,11 @@ OptimizedVector Equal::differentialOptimized(const ParameterGroupManager& manage
     return OptimizedVector();
 }
 
-void Equal::declareParameters(ParameterGroupManager& manager)
+void Equal::declareParameters(ParameterGroupManager& manager) const
 {
     manager.addParameter(a);
     manager.addParameter(b);
-}
-
-bool Equal::optimizeParameters(ParameterGroupManager& manager) const
-{
-    return manager.setParameterEqual(a,b);
+    manager.setParameterEqual(a,b);
 }
 
 } // namespace NamedSketcher::GCS

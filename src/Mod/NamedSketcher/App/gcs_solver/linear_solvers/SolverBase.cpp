@@ -39,9 +39,11 @@ namespace NamedSketcher::GCS::LinearSolvers
 SolverBase::SolverBase(ParameterGroupManager& manager, const OptimizedMatrix& _gradients)
     : manager(manager)
 {
-    int rows = _gradients.size();
-    // Reserve 10 parameters per dual vector. Magic number. :-(
-    gradients.reserve(10*rows);
+    assert(manager.outputSize() == _gradients.size());
+    int rows = manager.outputSize();
+    int cols = manager.inputSize();
+    gradients.resize(rows,cols);
+    // TODO: reserve non-zero spots.
     for(int row=0; row < rows; ++row)
     {
         for(auto [k,v]: _gradients[row].values)
@@ -75,10 +77,10 @@ OptimizedVector SolverBase::solve()
     }
 
     vector_t solution = _solve(eigen_target);
-    assert((size_t)solution.rows() == manager.outputSize());
+    assert((size_t)solution.rows() == manager.inputSize());
 
     OptimizedVector result;
-    for(size_t index = 0; index < manager.outputSize(); ++index)
+    for(size_t index = 0; index < manager.inputSize(); ++index)
     {
         auto group = manager.getGroup(index);
         result.set(group->getValuePtr(), group->getValue());

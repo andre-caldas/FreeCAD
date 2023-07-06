@@ -180,7 +180,7 @@ bool Colinear::isVertical(const ParameterGroupManager& manager) const
     return (manager.areParametersEqual(&a->x, &b->x) || manager.areParametersEqual(&a->x, &c->x) || manager.areParametersEqual(&b->x, &c->x));
 }
 
-void Colinear::declareParameters(ParameterGroupManager& manager)
+void Colinear::declareParameters(ParameterGroupManager& manager) const
 {
     manager.addParameter(&a->x);
     manager.addParameter(&a->y);

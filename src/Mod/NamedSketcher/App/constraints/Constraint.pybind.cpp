@@ -30,6 +30,7 @@ namespace py = pybind11;
 #include "ConstraintCoincident.h"
 #include "ConstraintHorizontal.h"
 #include "ConstraintXDistance.h"
+#include "ConstraintPointAlongCurve.h"
 
 #include "ConstraintBase.h"
 #include "Constraint.pybind.h"
@@ -41,6 +42,7 @@ namespace NamedSketcher
 
 using ref_parameter = ConstraintBase::ref_parameter;
 using ref_point = ConstraintBase::ref_point;
+using ref_geometry = ConstraintBase::ref_geometry;
 using path = Base::Accessor::PathToObject;
 
 void init_Constraint(py::module& m)
@@ -53,6 +55,7 @@ void init_Constraint(py::module& m)
 
     py::class_<ConstraintCoincident, std::shared_ptr<ConstraintCoincident>, ConstraintBase>(m, "ConstraintCoincident")
         .def(py::init<>())
+        .def(py::init<ref_point, ref_point>())
         .def("addPoint", py::overload_cast<ref_point>(&ConstraintCoincident::addPoint))
         .def("removePoint", &ConstraintCoincident::removePoint)
     ;
@@ -64,6 +67,10 @@ void init_Constraint(py::module& m)
 
     py::class_<ConstraintXDistance, std::shared_ptr<ConstraintXDistance>, ConstraintBase>(m, "ConstraintXDistance")
             .def(py::init<ref_point, ref_point, ref_parameter>())
+    ;
+
+    py::class_<ConstraintPointAlongCurve, std::shared_ptr<ConstraintPointAlongCurve>, ConstraintBase>(m, "ConstraintPointAlongCurve")
+            .def(py::init<ref_point, ref_geometry>())
     ;
 }
 

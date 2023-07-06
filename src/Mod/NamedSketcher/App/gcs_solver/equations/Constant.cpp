@@ -58,7 +58,7 @@ OptimizedVector Constant::differentialOptimized(const ParameterGroupManager& /*m
     return OptimizedVector();
 }
 
-void Constant::declareParameters(ParameterGroupManager& manager)
+void Constant::declareParameters(ParameterGroupManager& manager) const
 {
     manager.addParameter(a);
     manager.addParameter(k);

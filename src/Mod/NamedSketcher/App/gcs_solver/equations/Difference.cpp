@@ -66,7 +66,7 @@ OptimizedVector Difference::differentialOptimized(const ParameterGroupManager& m
     return OptimizedVector();
 }
 
-void Difference::declareParameters(ParameterGroupManager& manager)
+void Difference::declareParameters(ParameterGroupManager& manager) const
 {
     manager.addParameter(a);
     manager.addParameter(b);

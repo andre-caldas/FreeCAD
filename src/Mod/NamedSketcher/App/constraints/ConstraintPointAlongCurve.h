@@ -66,6 +66,7 @@ public:
 private:
     // TODO: Use colinear for line segments.
     GCS::PointAlongCurve equation;
+    GCS::Parameter parameter_t{0.5}; // parametrization: t --> c(t).
 };
 
 } // namespace NamedSketcher

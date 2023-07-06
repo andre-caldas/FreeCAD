@@ -48,6 +48,13 @@ public:
     double getValue(const Parameter* parameter) const {return getOptimizedParameterValue(parameter);}
 
     /**
+     * @brief Checks if @a parameter is already managed.
+     * @param parameter: parameter to check.
+     * @return Is it already managed?
+     */
+    bool hasParameter(const Parameter* parameter) const {return (parameter2Group.count(parameter) != 0);}
+
+    /**
      * @brief Adds a parameter to the system.
      * @param a: The @class Parameter to add to the system.
      * @attention Idempotent: this can be called twice for the same argument.
@@ -103,7 +110,7 @@ public:
      * this function needs to be called
      * to give an index number to each @class ParameterGroup.
      */
-    void setOptimizedParameterIndexes();
+    void finishOptimization();
     size_t getOptimizedParameterIndex(const OptimizedParameter* parameter) const;
     size_t getNonConstantGroupIndex(const ParameterGroup* group) const;
     OptimizedParameter* getOptimizedParameter(const Parameter* parameter) const;
@@ -164,6 +171,8 @@ private:
      * @brief orderedEquations inverse lookup.
      */
     std::unordered_map<const Equation*, size_t> equationIndexes;
+
+    bool called_finish_optimization = false;
 };
 
 } // namespace NamedSketcher::GCS

@@ -42,7 +42,7 @@ public:
     ParameterVector differentialNonOptimized(const GCS::ParameterValueMapper& parameter_mapper) const override;
     OptimizedVector differentialOptimized(const ParameterGroupManager& manager) const override;
 
-    void declareParameters(ParameterGroupManager& manager) override;
+    void declareParameters(ParameterGroupManager& manager) const override;
 
 private:
     Point* a;
