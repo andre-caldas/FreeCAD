@@ -76,7 +76,7 @@ System::error(const ParameterGroupManager& manager) const
 System::equation_value_t
 System::minus_error(const ParameterGroupManager& manager) const
 {
-    equation_value_t result;
+    equation_value_t result(gradients.size());
     for(Equation* eq: gradients)
     {
         result.insert(manager.getEquationIndex(eq)) = -eq->error(manager);
