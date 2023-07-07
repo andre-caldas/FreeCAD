@@ -21,6 +21,8 @@
  *                                                                          *
  ***************************************************************************/
 
+#include <iostream>
+
 #include <Base/Console.h>
 
 #include "equations/Equation.h"
@@ -29,7 +31,10 @@
 #include "parameters/ParameterGroupManager.h"
 #include "parameters/ParameterGroup.h"
 #include "parameters/ParameterValueMapper.h"
-#include "linear_solvers/Ldlt.h"
+//#include "linear_solvers/Ldlt.h"
+//#define SOLVER LinearSolvers::Ldlt
+#include "linear_solvers/SimpleSolver.h"
+#define SOLVER LinearSolvers::SimpleSolver
 
 #include "System.h"
 
@@ -62,15 +67,10 @@ void System::updateGradients()
     }
 }
 
-OutputVector
-System::error(const ParameterGroupManager& manager) const
+double
+System::error2(const ParameterGroupManager& manager) const
 {
-    OutputVector result;
-    for(Equation* eq: gradients)
-    {
-        result.set(eq, eq->error(manager));
-    }
-    return result;
+    return minus_error(manager).squaredNorm();
 }
 
 System::equation_value_t
@@ -79,7 +79,10 @@ System::minus_error(const ParameterGroupManager& manager) const
     equation_value_t result(gradients.size());
     for(Equation* eq: gradients)
     {
-        result.insert(manager.getEquationIndex(eq)) = -eq->error(manager);
+        if(manager.hasEquation(eq))
+        {
+            result.insert(manager.getEquationIndex(eq)) = -eq->error(manager);
+        }
     }
     return result;
 }
@@ -182,14 +185,16 @@ bool System::solve() const
 
     // TODO: Add extra redundants.
 
-    LinearSolvers::Ldlt linear_solver(manager, optimized_gcs);
+    manager.report();
+
+    SOLVER linear_solver(manager, optimized_gcs);
 
     // TODO: give up criteria.
     // TODO: use the shaker!
-    for(int trials=0; trials < 1000; ++trials)
+    for(int trials=0; trials < 10; ++trials)
     {
-        auto err = error(manager);
-        if(err.isZero())
+        double err2 = error2(manager);
+        if(err2 < 1.0/(1024*1024*256))
         {
             manager.commitParameters();
             return true;
@@ -203,6 +208,7 @@ bool System::solve() const
         OptimizedVector target = linear_solver.solve();
         stepIntoTargetDirection(manager, target);
     }
+manager.commitParameters();
 
     return false;
 }
@@ -217,38 +223,41 @@ void System::stepIntoTargetDirection(
     const int N = 16;
     const int DEPTH = 4;
 
-    double a = 0.0;
+    double a = -1.0;
     double b = 1.0;
 
-    double best_error2 = 1000000000;
+    double best_err2 = 1000000000;
 
     OptimizedVector current_position = manager.getOptimizedParameterValues();
+    current_position += direction;
 
     for(int count=0; count < DEPTH; ++count)
     {
-        int best_n = 1;
+        OptimizedVector next_position;
         for(int n=0; n <= N; ++n)
         {
-            OptimizedVector temp;
-            temp.setAsLinearCombination(1.0, current_position, (a*n + b*(N-n))/N, direction);
-            manager.setOptimizedParameterValues(std::move(temp));
-            double error2 = minus_error(manager).squaredNorm();
-            if(best_error2 < error2)
+            next_position.setAsLinearCombination(1.0, current_position, (a*(N-n) + b*n)/N, direction);
+            manager.setOptimizedParameterValues(next_position);
+            double err2 = error2(manager);
+            if(err2 == 0)
+            {
+                return;
+            }
+            if(best_err2 < err2 && n != 0)
             {
                 // To avoid "flipping", we do not allow the error
                 // to increase.
+                // Use position just before the error started increasing.
+                next_position.setAsLinearCombination(1.0, current_position, (a*(N-(n-1)) + b*(n-1))/N, direction);
                 break;
             }
-            best_n = n;
-            best_error2 = error2;
+            best_err2 = err2;
         }
-        double new_a = (a*(best_n-1) + b*(N-best_n+1)) / N;
-        double new_b = (a*(best_n+1) + b*(N-best_n-1)) / N;
-        a = new_a; b = new_b;
+        a /= N;
+        b /= N;
+        current_position = std::move(next_position);
     }
-    OptimizedVector new_pos;
-    new_pos.setAsLinearCombination(1.0, current_position, (a+b)/2, direction);
-    manager.setOptimizedParameterValues(std::move(new_pos));
+    manager.setOptimizedParameterValues(std::move(current_position));
 }
 
 } // namespace NamedSketcher::GCS

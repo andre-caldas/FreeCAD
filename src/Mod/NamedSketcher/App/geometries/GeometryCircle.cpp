@@ -129,9 +129,9 @@ GCS::Point GeometryCircle::normalAtParameter(const GCS::ParameterValueMapper& _,
 
 void GeometryCircle::report() const
 {
-    std::cout << "Circle: center";
+    std::cout << "(" << this << ") Circle: center (" << &center << ")";
     std::cout << "(" << center.x << ", " << center.y << ")";
-    std::cout << ", radius = " << radius;
+    std::cout << ", radius (" << &radius << ") = " << radius;
     std::cout << std::endl;
 }
 

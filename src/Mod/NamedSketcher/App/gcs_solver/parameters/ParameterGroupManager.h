@@ -121,6 +121,7 @@ public:
     size_t getGroupIndex(const ParameterGroup* group) const;
     ParameterGroup* getGroup(size_t index) const;
 
+    bool hasEquation(const Equation* eq) const;
     size_t getEquationIndex(const Equation* eq) const;
     Equation* getEquation(size_t index) const;
     OptimizedVector optimizeVector(const ParameterVector& v) const;
@@ -128,6 +129,9 @@ public:
     size_t inputSize() const;
     size_t outputSize() const;
     void commitParameters() const;
+
+    void report_position() const;
+    void report() const;
 
 private:
     /**

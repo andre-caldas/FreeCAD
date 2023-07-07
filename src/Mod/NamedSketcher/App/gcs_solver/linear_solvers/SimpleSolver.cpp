@@ -21,51 +21,47 @@
  *                                                                          *
  ***************************************************************************/
 
+#include <iostream>
 
-#ifndef NAMEDSKETCHER_GCS_ParameterGroup_H
-#define NAMEDSKETCHER_GCS_ParameterGroup_H
+#include <Eigen/Cholesky>
 
-#include <unordered_set>
+#include "../parameters/ParameterGroupManager.h"
 
-#include "Parameter.h"
-#include "../NamedSketcherGlobal.h"
+#include "SimpleSolver.h"
 
-namespace NamedSketcher::GCS
+namespace NamedSketcher::GCS::LinearSolvers
 {
 
-class NamedSketcherExport ParameterGroup
+SimpleSolver::SimpleSolver(ParameterGroupManager& manager, const OptimizedMatrix& gradients)
+    : SolverBase(manager, gradients)
+    , denseMatrix(manager.outputSize(), manager.inputSize())
 {
-    using set_t = std::unordered_set<Parameter*>;
+}
 
-public:
-    ParameterGroup(Parameter* parameter);
+void SimpleSolver::refactor()
+{
+    if(need_refactor)
+    {
+        denseMatrix = eigenMatrix;
+    }
+}
 
-    double getValue() const;
-    void setValue(double val);
-    OptimizedParameter* getValuePtr();
+SimpleSolver::vector_t SimpleSolver::_solve(const vector_t& out)
+{
+    refactor();
+    const auto& D = denseMatrix;
+    std::cout << "Will solve using (SimpleSolver)..." << std::endl;
+    std::cout << "Matrix:" << std::endl;
+    std::cout << eigenMatrix << std::endl;
+    std::cout << "M^t M:" << std::endl;
+    std::cout << (D.transpose() * D) << std::endl;
+    std::cout << "Target:" << std::endl;
+    std::cout << out << std::endl;
+    std::cout << "M^t Target:" << std::endl;
+    std::cout << (D.transpose() * out) << std::endl;
+    std::cout << "Solution:" << std::endl;
+    std::cout << (D.transpose() * D).ldlt().solve(D.transpose() * out) << std::endl;
+    return (D.transpose() * D).ldlt().solve(D.transpose() * out).eval();
+}
 
-    bool hasParameter(Parameter* parameter) const;
-    void append(Parameter* p, bool set_as_mean = true);
-    bool setConstant(Parameter* k);
-    bool isConstant() const;
-    void commit() const;
-
-    ParameterGroup& operator<<(ParameterGroup&& other);
-
-    set_t::iterator begin() {return parameters.begin();}
-    set_t::iterator end() {return parameters.end();}
-    set_t::size_type size() const {return parameters.size();}
-
-    void setAsMean();
-
-    void report() const;
-
-private:
-    OptimizedParameter value;
-    set_t parameters;
-    Parameter* const_parameter = nullptr;
-};
-
-} // namespace NamedSketcher::GCS
-
-#endif // NAMEDSKETCHER_GCS_ParameterGroup_H
+} // namespace NamedSketcher::GCS::LinearSolvers

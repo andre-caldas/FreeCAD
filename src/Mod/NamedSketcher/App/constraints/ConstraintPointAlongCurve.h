@@ -51,7 +51,6 @@ public:
 
     ConstraintPointAlongCurve(ref_point point, ref_geometry curve);
 
-public:
     std::vector<GCS::Equation*> getEquations() override;
     bool updateReferences() override;
 
@@ -63,10 +62,12 @@ public:
     void Save (Base::Writer& writer) const override;
     static std::unique_ptr<ConstraintPointAlongCurve> staticRestore(Base::XMLReader& reader);
 
+    void report() const override;
+
 private:
     // TODO: Use colinear for line segments.
     GCS::PointAlongCurve equation;
-    GCS::Parameter parameter_t{0.5}; // parametrization: t --> c(t).
+    GCS::Parameter parameter_t{"t", 0}; // parametrization: t --> c(t).
 };
 
 } // namespace NamedSketcher

@@ -22,50 +22,32 @@
  ***************************************************************************/
 
 
-#ifndef NAMEDSKETCHER_GCS_ParameterGroup_H
-#define NAMEDSKETCHER_GCS_ParameterGroup_H
+#ifndef NAMEDSKETCHER_GCS_LinearSolvers_SimpleSolver_H
+#define NAMEDSKETCHER_GCS_LinearSolvers_SimpleSolver_H
 
-#include <unordered_set>
+#include <Eigen/Core>
 
-#include "Parameter.h"
-#include "../NamedSketcherGlobal.h"
+#include "SolverBase.h"
 
-namespace NamedSketcher::GCS
+namespace NamedSketcher::GCS {
+class ParameterGroupManager;
+}
+
+namespace NamedSketcher::GCS::LinearSolvers
 {
 
-class NamedSketcherExport ParameterGroup
+class SimpleSolver : public SolverBase
 {
-    using set_t = std::unordered_set<Parameter*>;
-
 public:
-    ParameterGroup(Parameter* parameter);
+    SimpleSolver(ParameterGroupManager& manager, const OptimizedMatrix& gradients);
 
-    double getValue() const;
-    void setValue(double val);
-    OptimizedParameter* getValuePtr();
-
-    bool hasParameter(Parameter* parameter) const;
-    void append(Parameter* p, bool set_as_mean = true);
-    bool setConstant(Parameter* k);
-    bool isConstant() const;
-    void commit() const;
-
-    ParameterGroup& operator<<(ParameterGroup&& other);
-
-    set_t::iterator begin() {return parameters.begin();}
-    set_t::iterator end() {return parameters.end();}
-    set_t::size_type size() const {return parameters.size();}
-
-    void setAsMean();
-
-    void report() const;
+    void refactor() override;
+    vector_t _solve(const vector_t& out) override;
 
 private:
-    OptimizedParameter value;
-    set_t parameters;
-    Parameter* const_parameter = nullptr;
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> denseMatrix;
 };
 
-} // namespace NamedSketcher::GCS
+} // namespace NamedSketcher::GCS::LinearSolvers
 
-#endif // NAMEDSKETCHER_GCS_ParameterGroup_H
+#endif // NAMEDSKETCHER_GCS_LinearSolver_SimpleSolver_H

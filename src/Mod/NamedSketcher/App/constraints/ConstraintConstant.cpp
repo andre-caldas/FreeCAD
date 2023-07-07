@@ -27,99 +27,78 @@
 #ifndef _PreComp_
 #include <utility>
 #endif // _PreComp_
-#include <initializer_list>
 
 #include <iostream>
 
 #include <Base/Writer.h>
 #include <Base/Exception.h>
 
-#include "../geometries/GeometryPoint.h"
-#include "ConstraintXDistance.h"
+#include "../gcs_solver/equations/Constant.h"
+#include "ConstraintConstant.h"
 
 
 namespace NamedSketcher
 {
 
-ConstraintXDistance::ConstraintXDistance(ref_point start, ref_point end, ref_parameter distance)
-    : start(std::move(start))
-    , end(std::move(end))
-    , distance(std::move(distance))
+ConstraintConstant::ConstraintConstant(ref_parameter a, double value)
+    : a(std::move(a))
+    , k(value)
 {
 }
 
-std::vector<GCS::Equation*> ConstraintXDistance::getEquations()
+std::vector<GCS::Equation*> ConstraintConstant::getEquations()
 {
-    if(!start.isLocked())
+    if(!a.isLocked())
     {
-        start.refreshLock();
+        a.refreshLock();
     }
-    if(!end.isLocked())
+    if(!a.isLocked())
     {
-        end.refreshLock();
-    }
-    if(!distance.isLocked())
-    {
-        distance.refreshLock();
-    }
-    if(!start.isLocked())
-    {
-        FC_THROWM(Base::NameError, "Could not resolve name (" << start.pathString() << ").");
-    }
-    if(!end.isLocked())
-    {
-        FC_THROWM(Base::NameError, "Could not resolve name (" << end.pathString() << ").");
-    }
-    if(!distance.isLocked())
-    {
-        FC_THROWM(Base::NameError, "Could not resolve name (" << distance.pathString() << ").");
+        FC_THROWM(Base::NameError, "Could not resolve name (" << a.pathString() << ").");
     }
 
-    equation.set(&start.get()->x, &end.get()->x, distance.get());
+    equation.set(a.get(), &k);
     return std::vector<GCS::Equation*>{&equation};
 }
 
-bool ConstraintXDistance::updateReferences()
+bool ConstraintConstant::updateReferences()
 {
-    start.refreshLock();
-    end.refreshLock();
-    distance.refreshLock();
-    if(!start.hasChanged() && !end.hasChanged() && !distance.hasChanged())
+    a.refreshLock();
+    if(!a.hasChanged())
     {
         return false;
     }
-    equation.set(&start.get()->x, &end.get()->x, distance.get());
+    equation.set(a.get(), &k);
     return true;
 }
 
 
-unsigned int ConstraintXDistance::getMemSize () const
+unsigned int ConstraintConstant::getMemSize () const
 {
-    return sizeof(ConstraintXDistance) + 100/*start.memSize() + end.memSize()*/;
+    return sizeof(ConstraintConstant) + 50/*a.memSize() + b.memSize()*/;
 }
 
-void ConstraintXDistance::Save (Base::Writer& /*writer*/) const
+void ConstraintConstant::Save (Base::Writer& /*writer*/) const
 {
     THROW(Base::NotImplementedError);
 }
 
-std::unique_ptr<ConstraintXDistance>
-ConstraintXDistance::staticRestore(Base::XMLReader& /*reader*/)
+std::unique_ptr<ConstraintConstant>
+ConstraintConstant::staticRestore(Base::XMLReader& /*reader*/)
 {
     // SEE ConstraintCoincident.
     THROW(Base::NotImplementedError);
 }
 
 
-void ConstraintXDistance::report() const
+void ConstraintConstant::report() const
 {
     try
     {
-        std::cout << "Distance x-direction (" << this << "): ";
-        std::cout << "(" << start.get()->x << ", " << start.get()->y << ")";
+        std::cout << "Constant (" << this << "): ";
+        std::cout << "(constant: " << k << ")";
         std::cout << " --> ";
-        std::cout << "(" << end.get()->x << ", " << end.get()->y << ")";
-        std::cout << ", distance = " << *distance.get();
+        std::cout << "(" << *a.get() << ")";
         std::cout << std::endl;
     } catch (...) {}
 }

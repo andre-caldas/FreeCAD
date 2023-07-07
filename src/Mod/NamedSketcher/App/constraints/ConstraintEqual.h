@@ -44,7 +44,6 @@ public:
 
     ConstraintEqual(ref_parameter a, ref_parameter b);
 
-public:
     std::vector<GCS::Equation*> getEquations() override;
     bool updateReferences() override;
 
@@ -55,6 +54,8 @@ public:
     unsigned int getMemSize () const override;
     void Save (Base::Writer& writer) const override;
     static std::unique_ptr<ConstraintEqual> staticRestore(Base::XMLReader& reader);
+
+    void report() const override;
 
 private:
     GCS::Equal equation;

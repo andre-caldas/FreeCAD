@@ -79,6 +79,8 @@ SET(Constraints_SRCS
     constraints/ConstraintCoincident.h
     constraints/ConstraintCoincident.cpp
     constraints/ConstraintEqual.h
+    constraints/ConstraintConstant.cpp
+    constraints/ConstraintConstant.h
     constraints/ConstraintEqual.cpp
     constraints/ConstraintHorizontal.h
     constraints/ConstraintHorizontal.cpp
@@ -128,6 +130,8 @@ SET(gcs_solver_SRCS
     gcs_solver/linear_solvers/SolverBase.cpp
     gcs_solver/linear_solvers/Ldlt.h
     gcs_solver/linear_solvers/Ldlt.cpp
+    gcs_solver/linear_solvers/SimpleSolver.h
+    gcs_solver/linear_solvers/SimpleSolver.cpp
 #    gcs_solver/linear_solvers/BiCGStab.h
 )
 SOURCE_GROUP("GCS Solver" FILES ${gcs_solver_SRCS})

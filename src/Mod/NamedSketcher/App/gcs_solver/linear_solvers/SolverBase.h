@@ -26,7 +26,6 @@
 #define NAMEDSKETCHER_GCS_LinearSolvers_SolverBase_H
 
 #include <Eigen/SparseCore>
-#include <Eigen/Sparse>
 
 #include "../Types.h"
 
@@ -43,18 +42,18 @@ public:
     using matrix_t = Eigen::SparseMatrix<double, Eigen::RowMajor>;
     using vector_t = Eigen::VectorXd;
 
-    SolverBase(ParameterGroupManager& manager, const OptimizedMatrix& gradients);
+    SolverBase(ParameterGroupManager& manager, const OptimizedMatrix& optimizedMatrix);
 
     void updateGradient(Equation* equation);
     OptimizedVector solve();
 
-    virtual void refactor() = 0;
-    virtual vector_t _solve(const vector_t& target) = 0;
-
 protected:
     ParameterGroupManager& manager;
-    matrix_t gradients;
+    matrix_t eigenMatrix;
     bool need_refactor = true;
+
+    virtual void refactor() = 0;
+    virtual vector_t _solve(const vector_t& target) = 0;
 };
 
 } // namespace NamedSketcher::GCS::LinearSolvers

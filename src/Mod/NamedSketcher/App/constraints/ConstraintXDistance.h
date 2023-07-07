@@ -51,7 +51,6 @@ public:
 
     ConstraintXDistance(ref_point start, ref_point end, ref_parameter distance);
 
-public:
     std::vector<GCS::Equation*> getEquations() override;
     bool updateReferences() override;
 
@@ -62,6 +61,8 @@ public:
     unsigned int getMemSize () const override;
     void Save (Base::Writer& writer) const override;
     static std::unique_ptr<ConstraintXDistance> staticRestore(Base::XMLReader& reader);
+
+    void report() const override;
 
 private:
     GCS::Difference equation;

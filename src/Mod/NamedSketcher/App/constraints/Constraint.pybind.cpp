@@ -27,6 +27,7 @@ namespace py = pybind11;
 #include <Base/Accessor/PathToObject.h>
 
 #include "ConstraintEqual.h"
+#include "ConstraintConstant.h"
 #include "ConstraintCoincident.h"
 #include "ConstraintHorizontal.h"
 #include "ConstraintXDistance.h"
@@ -51,6 +52,10 @@ void init_Constraint(py::module& m)
 
     py::class_<ConstraintEqual, std::shared_ptr<ConstraintEqual>, ConstraintBase>(m, "ConstraintEqual")
         .def(py::init<ref_parameter, ref_parameter>())
+    ;
+
+    py::class_<ConstraintConstant, std::shared_ptr<ConstraintConstant>, ConstraintBase>(m, "ConstraintConstant")
+        .def(py::init<ref_parameter, double>())
     ;
 
     py::class_<ConstraintCoincident, std::shared_ptr<ConstraintCoincident>, ConstraintBase>(m, "ConstraintCoincident")

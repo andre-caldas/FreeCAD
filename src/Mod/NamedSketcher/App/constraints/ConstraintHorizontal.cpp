@@ -28,6 +28,8 @@
 #include <utility>
 #endif // _PreComp_
 
+#include <iostream>
+
 #include <Base/Writer.h>
 #include <Base/Exception.h>
 
@@ -100,6 +102,19 @@ ConstraintHorizontal::staticRestore(Base::XMLReader& /*reader*/)
 {
     // SEE ConstraintCoincident.
     THROW(Base::NotImplementedError);
+}
+
+
+void ConstraintHorizontal::report() const
+{
+    try
+    {
+        std::cout << "Horizontal (" << this << "): ";
+        std::cout << "(" << start.get()->x << ", " << start.get()->y << ")";
+        std::cout << " --> ";
+        std::cout << "(" << end.get()->x << ", " << end.get()->y << ")";
+        std::cout << std::endl;
+    } catch (...) {}
 }
 
 } // namespace NamedSketcher

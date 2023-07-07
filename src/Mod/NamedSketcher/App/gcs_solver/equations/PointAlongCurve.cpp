@@ -21,7 +21,8 @@
  *                                                                          *
  ***************************************************************************/
 
-#include <random>
+#include <iostream>
+#include <cmath>
 
 #include <Base/Exception.h>
 
@@ -40,34 +41,44 @@ void PointAlongCurve::set(Point* p, GeometryBase* c, Parameter* t)
     parameter_t = t;
 }
 
-// ||curve(t) - point||^2
+// ||curve(t) - point||
 double PointAlongCurve::error(const ParameterGroupManager& manager) const
 {
     double px = manager.getValue(&point->x);
     double py = manager.getValue(&point->y);
     auto c = curve->positionAtParameter(manager, parameter_t);
-    return (c.x-px)*(c.x-px) + (c.y-py)*(c.y-py);
+    double result = std::sqrt((c.x-px)*(c.x-px) + (c.y-py)*(c.y-py));
+    std::cout << "Point (" << px << ", " << py << ") along curve.";
+    std::cout << "Parameter " << *parameter_t << " --> (" << c.x << ", " << c.y << ").";
+    std::cout << std::endl;
+    return result;
 }
 
 ParameterVector PointAlongCurve::differentialNonOptimized(const GCS::ParameterValueMapper& _) const
 {
     /*
-     * Here we calculate the partial derivatives of ||curve(t) - point||^2.
+     * Here we calculate the partial derivatives of ||curve(t) - point||.
      */
     double px = _(point->x);
     double py = _(point->y);
     auto c = curve->positionAtParameter(_, parameter_t);
 
-    double vx = 2.0*(c.x - px);
-    double vy = 2.0*(c.y - py);
+    double vx = (c.x - px);
+    double vy = (c.y - py);
+    double denominator = std::sqrt(vx*vx + vy*vy);
+    if(denominator != 0)
+    {
+        vx /= denominator;
+        vy /= denominator;
+    }
 
     ParameterVector result;
     /*
      * For the x and y coordinate of point,
      * it is the x and y coordinates of 2(c(t) - p).
      */
-    result.set(&point->x, vx);
-    result.set(&point->y, vy);
+    result.set(&point->x, -vx);
+    result.set(&point->y, -vy);
 
     GeometryBase::derivative_map partial_derivatives;
     curve->partialDerivativesPoint(_, partial_derivatives, parameter_t);
@@ -79,7 +90,13 @@ ParameterVector PointAlongCurve::differentialNonOptimized(const GCS::ParameterVa
     for(const auto& [parameter, vector]: partial_derivatives)
     {
         // Chain rule.
-        result.set(parameter, vx*vector.x + vy*vector.y);
+        double partial = vx*vector.x + vy*vector.y;
+        result.set(parameter, partial);
+    }
+
+    for(const auto& [parameter,partial]: result.values)
+    {
+        std::cout << "d/d("<<parameter->name<<") --> " << partial << std::endl;
     }
     return result;
 }

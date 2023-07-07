@@ -21,6 +21,8 @@
  *                                                                          *
  ***************************************************************************/
 
+#include <iostream>
+
 #include <Base/Exception.h>
 #include <Base/Console.h>
 
@@ -33,6 +35,7 @@ namespace NamedSketcher::GCS
 {
 
 ParameterGroup::ParameterGroup(Parameter* parameter)
+    : value(parameter->name)
 {
     append(parameter);
 }
@@ -96,6 +99,7 @@ bool ParameterGroup::setConstant(Parameter* k)
         return false;
     }
     const_parameter = k;
+    value = (double)*k;
     return true;
 }
 
@@ -108,6 +112,7 @@ void ParameterGroup::commit() const
 {
     for(auto parameter: parameters)
     {
+        std::cout << "Group (" << this << ") commit: " << value << std::endl;
         *parameter = (double)value;
     }
 }
@@ -137,6 +142,7 @@ void ParameterGroup::setAsMean()
 {
     if(isConstant())
     {
+        value = (double)*const_parameter;
         return;
     }
 
@@ -152,6 +158,21 @@ void ParameterGroup::setAsMean()
         value += (double)*parameter;
     }
     value /= parameters.size();
+}
+
+
+void ParameterGroup::report() const
+{
+    std::cout << "(" << this << " = " << value << "): ";
+    for(auto& p: parameters)
+    {
+        std::cout << "(" << *p << ") ";
+    }
+    if(isConstant())
+    {
+        std::cout << "-->constant<--";
+    }
+    std::cout << std::endl;
 }
 
 } // namespace NamedSketcher::GCS

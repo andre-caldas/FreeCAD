@@ -84,6 +84,8 @@ public:
     std::string_view xmlTagName() const {return xmlTagNameStatic();}
     static constexpr const char* xmlTagNameStatic() {return "Constraint";}
 
+    virtual void report() const = 0;
+
     virtual ~ConstraintBase() {}
 };
 

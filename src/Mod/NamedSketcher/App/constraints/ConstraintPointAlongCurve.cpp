@@ -28,6 +28,8 @@
 #include <utility>
 #endif // _PreComp_
 
+#include <iostream>
+
 #include <Base/Writer.h>
 #include <Base/Exception.h>
 
@@ -95,6 +97,19 @@ ConstraintPointAlongCurve::staticRestore(Base::XMLReader& /*reader*/)
 {
     // SEE ConstraintCoincident.
     THROW(Base::NotImplementedError);
+}
+
+
+void ConstraintPointAlongCurve::report() const
+{
+    try
+    {
+        std::cout << "(" << this << ") Point along curve: ";
+        std::cout << "candidate point " << *point.get();
+        std::cout << " <-" << parameter_t << "-> ";
+        std::cout << "curve (" << curve.get() << ")";
+        std::cout << std::endl;
+    } catch (...) {}
 }
 
 } // namespace NamedSketcher

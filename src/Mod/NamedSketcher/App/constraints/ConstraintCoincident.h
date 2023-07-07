@@ -46,7 +46,6 @@ public:
     void addPoint(ref_point reference);
     void removePoint(boost::uuids::uuid tag);
 
-public:
     ConstraintCoincident() = default;
     ConstraintCoincident(ref_parameter a, ref_parameter b);
 
@@ -59,6 +58,8 @@ public:
     unsigned int getMemSize() const override;
     void Save(Base::Writer& writer) const override;
     static std::unique_ptr<ConstraintCoincident> staticRestore(Base::XMLReader& reader);
+
+    void report() const override;
 
 private:
     std::vector<std::unique_ptr<GCS::Equal>> equations;

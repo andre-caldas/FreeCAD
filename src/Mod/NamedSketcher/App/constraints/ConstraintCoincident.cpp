@@ -21,6 +21,7 @@
  *                                                                          *
  ***************************************************************************/
 
+#include <iostream>
 #include <numeric>
 #include <memory>
 
@@ -148,6 +149,22 @@ ConstraintCoincident::staticRestore(Base::XMLReader& reader)
         result->addPoint(std::move(reference));
     }
     return result;
+}
+
+
+void ConstraintCoincident::report() const
+{
+    try
+    {
+        std::cout << "Coincident (" << this << "): ";
+        for(auto& p: references)
+        {
+            std::cout << "-";
+            std::cout << "(" << p.get()->x << ", " << p.get()->y << ")";
+            std::cout << "-";
+        }
+        std::cout << std::endl;
+    } catch (...) {}
 }
 
 } // namespace NamedSketcher

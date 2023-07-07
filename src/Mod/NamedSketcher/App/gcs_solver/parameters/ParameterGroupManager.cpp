@@ -21,6 +21,8 @@
  *                                                                          *
  ***************************************************************************/
 
+#include <iostream>
+
 #include <Base/Exception.h>
 #include <Base/Console.h>
 
@@ -216,6 +218,11 @@ ParameterGroup* ParameterGroupManager::getGroup(size_t index) const
     return orderedNonConstantGroups.at(index);
 }
 
+bool ParameterGroupManager::hasEquation(const Equation* eq) const
+{
+    return (equationIndexes.count(eq) != 0);
+}
+
 size_t ParameterGroupManager::getEquationIndex(const Equation* eq) const
 {
     return equationIndexes.at(eq);
@@ -243,6 +250,36 @@ void ParameterGroupManager::commitParameters() const
     for(auto& group: parameterGroups)
     {
         group->commit();
+    }
+}
+
+
+void ParameterGroupManager::report_position() const
+{
+    std::cout << "Current position:" << std::endl;
+    for(auto& group: orderedNonConstantGroups)
+    {
+        group->report();
+    }
+}
+
+void ParameterGroupManager::report() const
+{
+    std::cout << "Groups" << std::endl;
+    std::cout << "------" << std::endl;
+    std::cout << std::endl;
+    for(auto& group: parameterGroups)
+    {
+        group->report();
+    }
+
+    std::cout << std::endl;
+    std::cout << "Equations" << std::endl;
+    std::cout << "---------" << std::endl;
+    std::cout << std::endl;
+    for(auto& eq: orderedEquations)
+    {
+(void*)eq;//        eq->report();
     }
 }
 

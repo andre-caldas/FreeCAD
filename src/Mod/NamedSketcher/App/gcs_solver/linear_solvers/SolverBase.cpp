@@ -21,6 +21,7 @@
  *                                                                          *
  ***************************************************************************/
 
+#include <iostream>
 #include <Eigen/Core>
 
 #include "../equations/Equation.h"
@@ -36,23 +37,23 @@
 namespace NamedSketcher::GCS::LinearSolvers
 {
 
-SolverBase::SolverBase(ParameterGroupManager& manager, const OptimizedMatrix& _gradients)
+SolverBase::SolverBase(ParameterGroupManager& manager, const OptimizedMatrix& optimizedMatrix)
     : manager(manager)
 {
-    assert(manager.outputSize() == _gradients.size());
+    assert(manager.outputSize() == optimizedMatrix.size());
     int rows = manager.outputSize();
     int cols = manager.inputSize();
-    gradients.resize(rows,cols);
+    eigenMatrix.resize(rows,cols);
     // TODO: reserve non-zero spots.
     for(int row=0; row < rows; ++row)
     {
-        for(auto [k,v]: _gradients[row].values)
+        for(auto [k,v]: optimizedMatrix[row].values)
         {
             int col = manager.getOptimizedParameterIndex(k);
-            gradients.insert(row, col) = v;
+            eigenMatrix.insert(row, col) = v;
         }
     }
-    gradients.makeCompressed();
+    eigenMatrix.makeCompressed();
 }
 
 void SolverBase::updateGradient(Equation* equation)
@@ -62,7 +63,7 @@ void SolverBase::updateGradient(Equation* equation)
     OptimizedVector gradient = equation->differentialOptimized(manager);
     for(auto [k,v]: gradient.values)
     {
-        gradients.coeffRef(eq_index, manager.getOptimizedParameterIndex(k)) = v;
+        eigenMatrix.coeffRef(eq_index, manager.getOptimizedParameterIndex(k)) = v;
     }
     need_refactor = true;
 }
@@ -76,14 +77,16 @@ OptimizedVector SolverBase::solve()
         eigen_target[i] = -eq->error(manager);
     }
 
+    std::cout << "Linear target: " << eigen_target << std::endl;
     vector_t solution = _solve(eigen_target);
+    std::cout << "Linear solution: " << solution << std::endl;
     assert((size_t)solution.rows() == manager.inputSize());
 
     OptimizedVector result;
     for(size_t index = 0; index < manager.inputSize(); ++index)
     {
         auto group = manager.getGroup(index);
-        result.set(group->getValuePtr(), group->getValue());
+        result.set(group->getValuePtr(), solution[index]);
     }
     return result;
 }

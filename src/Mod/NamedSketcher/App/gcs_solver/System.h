@@ -57,7 +57,7 @@ public:
     void optimize();
     bool solve() const;
 
-    OutputVector error(const ParameterGroupManager& manager) const;
+    double error2(const ParameterGroupManager& manager) const;
     equation_value_t minus_error(const ParameterGroupManager& manager) const;
 
 private:

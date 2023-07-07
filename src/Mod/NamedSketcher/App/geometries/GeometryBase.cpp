@@ -63,6 +63,7 @@ std::vector<GCS::Parameter*> GeometryBase::getParameters()
     result.reserve(parameters.size());
     for(auto parameter: parameters)
     {
+std::cout << "Geometry get_parameters " << *parameter << std::endl;
         result.push_back(const_cast<GCS::Parameter*>(parameter));
     }
     return result;

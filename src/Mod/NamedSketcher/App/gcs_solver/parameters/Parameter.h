@@ -25,6 +25,9 @@
 #ifndef NAMEDSKETCHER_GCS_Parameter_H
 #define NAMEDSKETCHER_GCS_Parameter_H
 
+#if FC_DEBUG
+#include <iostream>
+#endif // FC_DEBUG
 #include <Base/Vector3D.h>
 
 namespace NamedSketcher::GCS
@@ -37,6 +40,7 @@ class ParameterBase
 {
 public:
     ParameterBase() = default;
+    ParameterBase(std::string name, double v = 0);
     ParameterBase(double v) : value(v) {}
     ParameterBase& operator= (double v) {value = v; return *this;}
 
@@ -48,16 +52,36 @@ public:
 
 private:
     double value;
+
+#if FC_DEBUG
+public:
+    const std::string name;
+#endif // FC_DEBUG
 };
+
+#if FC_DEBUG
+inline ParameterBase::ParameterBase(std::string name, double v) : value(v), name(name) {}
+inline std::ostream& operator<<(std::ostream& out, ParameterBase& p)
+{
+    out << "(" << p.name << (p.name.empty()?"":": ") << (double)p << ")";
+    return out;
+}
+#else
+ParameterBase::ParameterBase(std::string, double v) : ParameterBase(v) {}
+#endif // FC_DEBUG
 
 class Parameter : public ParameterBase
 {
+public:
     using ParameterBase::ParameterBase;
+    Parameter& operator= (double v) {*(ParameterBase*)this= v; return *this;} // Cargo cult.
 };
 
 class OptimizedParameter : public ParameterBase
 {
+public:
     using ParameterBase::ParameterBase;
+    OptimizedParameter& operator= (double v) {*(ParameterBase*)this= v; return *this;} // Cargo cult.
 };
 
 
@@ -68,12 +92,29 @@ public:
     Parameter y = 0.0;
 
     Point() = default;
+    Point(std::string name, double x = 0, double y = 0);
     Point(double x, double y) : x(x), y(y) {}
     Point(const Base::Vector3d& p) : Point(p.x, p.y) {}
 
     Point& normalize();
     operator Base::Vector3d() const;
+
+#if FC_DEBUG
+public:
+    const std::string name;
+#endif // FC_DEBUG
 };
+
+#if FC_DEBUG
+inline Point::Point(std::string name, double x, double y) : x(name + ".x",x), y(name + ".y",y), name(name) {}
+inline std::ostream& operator<<(std::ostream& out, Point& p)
+{
+    out << "(" << p.name << (p.name.empty()?"":": ") << (double)p.x << "," << (double)p.y << ")";
+    return out;
+}
+#else
+Point::Point(std::string) {}
+#endif // FC_DEBUG
 
 } // namespace NamedSketcher::GCS
 

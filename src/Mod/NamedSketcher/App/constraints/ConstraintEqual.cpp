@@ -28,6 +28,8 @@
 #include <utility>
 #endif // _PreComp_
 
+#include <iostream>
+
 #include <Base/Writer.h>
 #include <Base/Exception.h>
 
@@ -95,6 +97,19 @@ ConstraintEqual::staticRestore(Base::XMLReader& /*reader*/)
 {
     // SEE ConstraintCoincident.
     THROW(Base::NotImplementedError);
+}
+
+
+void ConstraintEqual::report() const
+{
+    try
+    {
+        std::cout << "Equal (" << this << "): ";
+        std::cout << "(" << *a.get() << ")";
+        std::cout << " == ";
+        std::cout << "(" << *b.get() << ")";
+        std::cout << std::endl;
+    } catch (...) {}
 }
 
 } // namespace NamedSketcher

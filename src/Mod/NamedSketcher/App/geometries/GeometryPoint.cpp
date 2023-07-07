@@ -104,7 +104,7 @@ GCS::Point GeometryPoint::normalAtParameter(const GCS::ParameterValueMapper& /*v
 
 void GeometryPoint::report() const
 {
-    std::cout << "Point: ";
+    std::cout << "Point (" << this << "): ";
     std::cout << "(" << point.x << ", " << point.y << ")";
     std::cout << std::endl;
 }

@@ -52,7 +52,6 @@ public:
     ConstraintHorizontal(ref_point a, ref_point b);
     ConstraintHorizontal(const Base::Accessor::PathToObject& p);
 
-public:
     std::vector<GCS::Equation*> getEquations() override;
     bool updateReferences() override;
 
@@ -63,6 +62,8 @@ public:
     unsigned int getMemSize () const override;
     void Save (Base::Writer& writer) const override;
     static std::unique_ptr<ConstraintHorizontal> staticRestore(Base::XMLReader& reader);
+
+    void report() const override;
 
 private:
     GCS::Equal equation;

@@ -22,50 +22,45 @@
  ***************************************************************************/
 
 
-#ifndef NAMEDSKETCHER_GCS_ParameterGroup_H
-#define NAMEDSKETCHER_GCS_ParameterGroup_H
+#ifndef NAMEDSKETCHER_ConstraintConstant_H
+#define NAMEDSKETCHER_ConstraintConstant_H
 
-#include <unordered_set>
+#include <type_traits>
+#include <memory>
 
-#include "Parameter.h"
-#include "../NamedSketcherGlobal.h"
+#include "../gcs_solver/equations/Constant.h"
+#include "ConstraintBase.h"
 
-namespace NamedSketcher::GCS
+namespace NamedSketcher
 {
 
-class NamedSketcherExport ParameterGroup
+/** Deals with constraints of type Constant.
+ */
+class NamedSketcherExport ConstraintConstant : public ConstraintBase
 {
-    using set_t = std::unordered_set<Parameter*>;
-
 public:
-    ParameterGroup(Parameter* parameter);
+    ref_parameter a;
 
-    double getValue() const;
-    void setValue(double val);
-    OptimizedParameter* getValuePtr();
+    ConstraintConstant(ref_parameter a, double value);
 
-    bool hasParameter(Parameter* parameter) const;
-    void append(Parameter* p, bool set_as_mean = true);
-    bool setConstant(Parameter* k);
-    bool isConstant() const;
-    void commit() const;
+    std::vector<GCS::Equation*> getEquations() override;
+    bool updateReferences() override;
 
-    ParameterGroup& operator<<(ParameterGroup&& other);
+    std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
+    static constexpr const char* xmlTagTypeStatic() {return "Constant";}
 
-    set_t::iterator begin() {return parameters.begin();}
-    set_t::iterator end() {return parameters.end();}
-    set_t::size_type size() const {return parameters.size();}
+    // Base::Persistence
+    unsigned int getMemSize () const override;
+    void Save (Base::Writer& writer) const override;
+    static std::unique_ptr<ConstraintConstant> staticRestore(Base::XMLReader& reader);
 
-    void setAsMean();
-
-    void report() const;
+    void report() const override;
 
 private:
-    OptimizedParameter value;
-    set_t parameters;
-    Parameter* const_parameter = nullptr;
+    GCS::Parameter k;
+    GCS::Constant equation;
 };
 
-} // namespace NamedSketcher::GCS
+} // namespace NamedSketcher
 
-#endif // NAMEDSKETCHER_GCS_ParameterGroup_H
+#endif // NAMEDSKETCHER_ConstraintConstant_H
