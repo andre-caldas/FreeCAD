@@ -72,7 +72,7 @@ ParameterVector PointAlongCurve::differentialNonOptimized(const GCS::ParameterVa
     ParameterVector result;
     /*
      * For the x and y coordinate of point,
-     * it is the x and y coordinates of 2(c(t) - p).
+     * it is the x and y coordinates of -(c(t) - p) / ||c(t) - p||.
      */
     result.set(&point->x, -vx);
     result.set(&point->y, -vy);
@@ -82,7 +82,7 @@ ParameterVector PointAlongCurve::differentialNonOptimized(const GCS::ParameterVa
 
     /*
      * For the curve parameter h, the derivative is:
-     * 2 * (dc/dh) dot_product (c(t) - p).
+     * (dc/dh) dot_product (c(t) - p) / ||c(t) - p||.
      */
     for(const auto& [parameter, vector]: partial_derivatives)
     {

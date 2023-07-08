@@ -77,9 +77,11 @@ OptimizedVector SolverBase::solve()
         eigen_target[i] = -eq->error(manager);
     }
 
-    std::cout << "Linear target: " << eigen_target << std::endl;
+    std::cout << "Matrix: " << std::endl << eigenMatrix << std::endl;
+    std::cout << "Linear target: " << std::endl << eigen_target << std::endl;
     vector_t solution = _solve(eigen_target);
-    std::cout << "Linear solution: " << solution << std::endl;
+    std::cout << "Matrix: " << std::endl << eigenMatrix << std::endl;
+    std::cout << "Linear solution: " << std::endl << solution << std::endl;
     assert((size_t)solution.rows() == manager.inputSize());
 
     OptimizedVector result;

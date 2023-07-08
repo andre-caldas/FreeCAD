@@ -42,8 +42,8 @@ namespace NamedSketcher
 
 GeometryCircle::GeometryCircle(std::unique_ptr<Part::GeomCircle>&& geo)
     : GeometryBaseT(std::move(geo))
-    , center(geometry->getLocation())
-    , radius(geometry->getRadius())
+    , center("center", geometry->getLocation())
+    , radius("radius", geometry->getRadius())
 {
 }
 
@@ -115,15 +115,27 @@ GCS::Point* GeometryCircle::resolve_ptr(token_iterator& start, const token_itera
 
 GCS::Point GeometryCircle::positionAtParameter(const GCS::ParameterValueMapper& _, const GCS::Parameter* t) const
 {
-    double x = _(center.x) + _(radius) * std::cos(_(t));
-    double y = _(center.y) + _(radius) * std::sin(_(t));
+    double r = _(radius);
+    double _t = _(t);
+    if(r == 0)
+    {
+        _t /= r;
+    }
+    double x = _(center.x) + r * std::cos(_t);
+    double y = _(center.y) + r * std::sin(_t);
     return GCS::Point{x,y};
 }
 
 GCS::Point GeometryCircle::normalAtParameter(const GCS::ParameterValueMapper& _, const GCS::Parameter* t) const
 {
-    double x = std::cos(_(t));
-    double y = std::sin(_(t));
+    double r = _(radius);
+    double _t = _(t);
+    if(r == 0)
+    {
+        _t /= r;
+    }
+    double x = std::cos(_t);
+    double y = std::sin(_t);
     return GCS::Point{x,y};
 }
 

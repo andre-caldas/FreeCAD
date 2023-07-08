@@ -210,6 +210,7 @@ bool System::solve() const
 
         OptimizedVector target = linear_solver.solve();
         stepIntoTargetDirection(manager, target);
+        manager.report_position();
     }
 manager.commitParameters();
 

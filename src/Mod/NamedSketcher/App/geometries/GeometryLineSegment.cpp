@@ -41,8 +41,8 @@ namespace NamedSketcher
 
 GeometryLineSegment::GeometryLineSegment(std::unique_ptr<Part::GeomLineSegment>&& geo)
     : GeometryBaseT(std::move(geo))
-    , start(geometry->getStartPoint())
-    , end(geometry->getEndPoint())
+    , start("start", geometry->getStartPoint())
+    , end("end", geometry->getEndPoint())
 {
 }
 

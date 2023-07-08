@@ -21,6 +21,8 @@
  *                                                                          *
  ***************************************************************************/
 
+#include <iostream>
+
 #include <Base/Exception.h>
 #include <Base/Writer.h>
 
@@ -101,6 +103,7 @@ void GeometryBase::partialDerivatives(const GCS::ParameterValueMapper& value_map
             double dx = (c1.x - c0.x) / delta;
             double dy = (c1.y - c0.y) / delta;
             map.try_emplace(parameter, dx, dy);
+std::cout << "Parameter: (" << parameter->name << "). Derivative: (" << dx << ", " << dy << ")." << std::endl;
         }
     }
 }

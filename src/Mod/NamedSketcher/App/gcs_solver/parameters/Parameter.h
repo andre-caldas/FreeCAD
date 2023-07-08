@@ -95,6 +95,7 @@ public:
     Point(std::string name, double x = 0, double y = 0);
     Point(double x, double y) : x(x), y(y) {}
     Point(const Base::Vector3d& p) : Point(p.x, p.y) {}
+    Point(std::string name, const Base::Vector3d& p) : Point(name, p.x, p.y) {}
 
     Point& normalize();
     operator Base::Vector3d() const;

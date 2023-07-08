@@ -39,7 +39,7 @@ namespace NamedSketcher
 
 GeometryPoint::GeometryPoint(std::unique_ptr<Part::GeomPoint>&& geo)
     : GeometryBaseT(std::move(geo))
-    , point(geometry->getPoint())
+    , point("point", geometry->getPoint())
 {
 }
 
