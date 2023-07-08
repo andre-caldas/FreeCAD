@@ -33,8 +33,10 @@
 #include "parameters/ParameterValueMapper.h"
 //#include "linear_solvers/Ldlt.h"
 //#define SOLVER LinearSolvers::Ldlt
-#include "linear_solvers/SimpleSolver.h"
-#define SOLVER LinearSolvers::SimpleSolver
+//#include "linear_solvers/SimpleSolver.h"
+//#define SOLVER LinearSolvers::SimpleSolver
+#include "linear_solvers/BiCG.h"
+#define SOLVER LinearSolvers::BiCG
 
 #include "System.h"
 
@@ -191,10 +193,11 @@ bool System::solve() const
 
     // TODO: give up criteria.
     // TODO: use the shaker!
-    for(int trials=0; trials < 10; ++trials)
+    for(int trials=0; trials < 100; ++trials)
     {
         double err2 = error2(manager);
-        if(err2 < 1.0/(1024*1024*256))
+        // TODO: decide on a good criteria.
+        if(err2 < 1.0/(1024*1024) * manager.outputSize())
         {
             manager.commitParameters();
             return true;
@@ -221,7 +224,7 @@ void System::stepIntoTargetDirection(
     // TODO: Criteria for those two magic numbers.
     // N: Should probably depend on the variation of the gradient (Wronskian).
     const int N = 16;
-    const int DEPTH = 4;
+    const int DEPTH = 2;
 
     double a = -1.0;
     double b = 1.0;
@@ -231,6 +234,9 @@ void System::stepIntoTargetDirection(
     OptimizedVector current_position = manager.getOptimizedParameterValues();
     current_position += direction;
 
+    std::cout << "Stepping into direction: ";
+    manager.print_vector(direction);
+    std::cout << std::endl;
     for(int count=0; count < DEPTH; ++count)
     {
         OptimizedVector next_position;

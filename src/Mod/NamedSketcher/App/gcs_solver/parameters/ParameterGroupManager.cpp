@@ -254,6 +254,25 @@ void ParameterGroupManager::commitParameters() const
 }
 
 
+void ParameterGroupManager::print_vector(const OptimizedVector& v) const
+{
+    std::cout << "(";
+    bool first = true;
+    for(auto& group: orderedNonConstantGroups)
+    {
+        if(!first)
+        {
+            std::cout << ", ";
+        }
+        else
+        {
+            first = false;
+        }
+        std::cout << v[group->getValuePtr()];
+    }
+    std::cout << ")";
+}
+
 void ParameterGroupManager::report_position() const
 {
     std::cout << "Current position:" << std::endl;

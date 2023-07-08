@@ -130,6 +130,7 @@ public:
     size_t outputSize() const;
     void commitParameters() const;
 
+    void print_vector(const OptimizedVector& v) const;
     void report_position() const;
     void report() const;
 

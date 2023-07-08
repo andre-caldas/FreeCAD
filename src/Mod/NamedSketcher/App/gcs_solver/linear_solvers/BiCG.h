@@ -21,34 +21,30 @@
  *                                                                          *
  ***************************************************************************/
 
-#include <Eigen/Cholesky>
 
-#include "../parameters/ParameterGroupManager.h"
+#ifndef NAMEDSKETCHER_GCS_LinearSolvers_BiCG_H
+#define NAMEDSKETCHER_GCS_LinearSolvers_BiCG_H
 
-#include "SimpleSolver.h"
+#include <Eigen/IterativeLinearSolvers>
+
+#include "SolverBase.h"
 
 namespace NamedSketcher::GCS::LinearSolvers
 {
 
-SimpleSolver::SimpleSolver(ParameterGroupManager& manager, const OptimizedMatrix& gradients)
-    : SolverBase(manager, gradients)
-    , denseMatrix(manager.outputSize(), manager.inputSize())
+class BiCG : public SolverBase
 {
-}
+public:
+    using solver_t = Eigen::BiCGSTAB<matrix_t/*, Eigen::IncompleteLUT<double>*/>;
+    BiCG(ParameterGroupManager& manager, const OptimizedMatrix& gradients);
+    void refactor() override;
+    vector_t _solve(const vector_t& out) override;
 
-void SimpleSolver::refactor()
-{
-    if(need_refactor)
-    {
-        denseMatrix = eigenMatrix;
-    }
-}
-
-SimpleSolver::vector_t SimpleSolver::_solve(const vector_t& out)
-{
-    refactor();
-    const auto& D = denseMatrix;
-    return (D.transpose() * D).ldlt().solve(D.transpose() * out).eval();
-}
+private:
+    solver_t solver;
+    matrix_t MtM;
+};
 
 } // namespace NamedSketcher::GCS::LinearSolvers
+
+#endif // NAMEDSKETCHER_GCS_LinearSolver_BiCG_H

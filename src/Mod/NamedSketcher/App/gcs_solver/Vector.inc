@@ -27,7 +27,7 @@
 
 #include "Vector.h"
 
-#define EPSILON (1. / (1024*1024))
+#define EPSILON (1. / (1024*1024*256))
 
 namespace NamedSketcher::GCS
 {

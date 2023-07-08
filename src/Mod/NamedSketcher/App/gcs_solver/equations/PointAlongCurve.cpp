@@ -48,9 +48,6 @@ double PointAlongCurve::error(const ParameterGroupManager& manager) const
     double py = manager.getValue(&point->y);
     auto c = curve->positionAtParameter(manager, parameter_t);
     double result = std::sqrt((c.x-px)*(c.x-px) + (c.y-py)*(c.y-py));
-    std::cout << "Point (" << px << ", " << py << ") along curve.";
-    std::cout << "Parameter " << *parameter_t << " --> (" << c.x << ", " << c.y << ").";
-    std::cout << std::endl;
     return result;
 }
 

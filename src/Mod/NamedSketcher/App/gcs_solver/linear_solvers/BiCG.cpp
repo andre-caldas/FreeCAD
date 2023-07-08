@@ -21,34 +21,38 @@
  *                                                                          *
  ***************************************************************************/
 
-#include <Eigen/Cholesky>
+#include <iostream>
 
-#include "../parameters/ParameterGroupManager.h"
-
-#include "SimpleSolver.h"
+#include "BiCG.h"
 
 namespace NamedSketcher::GCS::LinearSolvers
 {
 
-SimpleSolver::SimpleSolver(ParameterGroupManager& manager, const OptimizedMatrix& gradients)
+BiCG::BiCG(ParameterGroupManager& manager, const OptimizedMatrix& gradients)
     : SolverBase(manager, gradients)
-    , denseMatrix(manager.outputSize(), manager.inputSize())
 {
+    MtM = eigenMatrix.transpose() * eigenMatrix;
+    solver.analyzePattern(MtM);
 }
 
-void SimpleSolver::refactor()
+void BiCG::refactor()
 {
     if(need_refactor)
     {
-        denseMatrix = eigenMatrix;
+        std::cout << "Refactoring solver..." << std::endl;
+        MtM = eigenMatrix.transpose() * eigenMatrix;
+        solver.factorize(MtM);
+        need_refactor = false;
     }
 }
 
-SimpleSolver::vector_t SimpleSolver::_solve(const vector_t& out)
+BiCG::vector_t BiCG::_solve(const vector_t& out)
 {
+    std::cout << "Will solve using (BiCG)..." << std::endl;
+    std::cout << "Target:" << std::endl;
+    std::cout << out << std::endl;
     refactor();
-    const auto& D = denseMatrix;
-    return (D.transpose() * D).ldlt().solve(D.transpose() * out).eval();
+    return solver.solve(eigenMatrix.transpose() * out);
 }
 
 } // namespace NamedSketcher::GCS::LinearSolvers
