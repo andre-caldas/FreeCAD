@@ -96,6 +96,8 @@ SET(Constraints_SRCS
     constraints/ConstraintPointSymmetric.cpp
     constraints/ConstraintPointAlongCurve.h
     constraints/ConstraintPointAlongCurve.cpp
+    constraints/ConstraintTangentCurves.h
+    constraints/ConstraintTangentCurves.cpp
 )
 SOURCE_GROUP("Constraints" FILES ${Constraints_SRCS})
 
@@ -135,6 +137,10 @@ SET(gcs_solver_SRCS
     gcs_solver/equations/Colinear.cpp
     gcs_solver/equations/PointAlongCurve.h
     gcs_solver/equations/PointAlongCurve.cpp
+    gcs_solver/equations/ConcorrentCurves.h
+    gcs_solver/equations/ConcorrentCurves.cpp
+    gcs_solver/equations/ParallelCurves.h
+    gcs_solver/equations/ParallelCurves.cpp
 #
     gcs_solver/linear_solvers/SolverBase.h
     gcs_solver/linear_solvers/SolverBase.cpp

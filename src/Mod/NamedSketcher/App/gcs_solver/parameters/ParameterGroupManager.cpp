@@ -291,15 +291,7 @@ void ParameterGroupManager::report() const
     {
         group->report();
     }
-
     std::cout << std::endl;
-    std::cout << "Equations" << std::endl;
-    std::cout << "---------" << std::endl;
-    std::cout << std::endl;
-    for(auto& eq: orderedEquations)
-    {
-(void*)eq;//        eq->report();
-    }
 }
 
 } // namespace NamedSketcher::GCS

@@ -109,7 +109,7 @@ public:
 
     // Old python interface...
     // Document::addObject uses it. :-(
-    PyObject* getPyObject();
+    PyObject* getPyObject() override;
 
     void report() const;
 

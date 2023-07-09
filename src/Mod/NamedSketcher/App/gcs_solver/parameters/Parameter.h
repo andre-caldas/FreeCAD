@@ -25,9 +25,7 @@
 #ifndef NAMEDSKETCHER_GCS_Parameter_H
 #define NAMEDSKETCHER_GCS_Parameter_H
 
-#if FC_DEBUG
 #include <iostream>
-#endif // FC_DEBUG
 #include <Base/Vector3D.h>
 
 namespace NamedSketcher::GCS
@@ -53,22 +51,17 @@ public:
 private:
     double value;
 
-#if FC_DEBUG
 public:
+    // TODO: use this only in debug build.
     const std::string name;
-#endif // FC_DEBUG
 };
 
-#if FC_DEBUG
 inline ParameterBase::ParameterBase(std::string name, double v) : value(v), name(name) {}
 inline std::ostream& operator<<(std::ostream& out, const ParameterBase& p)
 {
     out << "(" << p.name << (p.name.empty()?"":": ") << (double)p << ")";
     return out;
 }
-#else
-ParameterBase::ParameterBase(std::string, double v) : ParameterBase(v) {}
-#endif // FC_DEBUG
 
 class Parameter : public ParameterBase
 {
@@ -100,22 +93,17 @@ public:
     Point& normalize();
     operator Base::Vector3d() const;
 
-#if FC_DEBUG
 public:
+    // TODO: use this only in debug build.
     const std::string name;
-#endif // FC_DEBUG
 };
 
-#if FC_DEBUG
 inline Point::Point(std::string name, double x, double y) : x(name + ".x",x), y(name + ".y",y), name(name) {}
 inline std::ostream& operator<<(std::ostream& out, const Point& p)
 {
     out << "(" << p.name << (p.name.empty()?"":": ") << (double)p.x << "," << (double)p.y << ")";
     return out;
 }
-#else
-Point::Point(std::string) {}
-#endif // FC_DEBUG
 
 } // namespace NamedSketcher::GCS
 
