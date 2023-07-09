@@ -18,7 +18,7 @@ include_directories(
     ${XercesC_INCLUDE_DIRS}
     ${EIGEN3_INCLUDE_DIR}
 )
-link_directories(${OCC_LIBRARY_DIR})
+link_directories(${OCC_LIBRARY_DIR} ${Boost_LIBRARY_DIRS})
 
 set(NamedSketcher_LIBS
     Part
