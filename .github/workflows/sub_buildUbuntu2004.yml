@@ -138,6 +138,7 @@ jobs:
                             qtwebengine5-dev                            \
                             shiboken2                                   \
                             swig                                        \
+                            pybind11-dev                                \
                             ccache                                      \
                             xvfb
       - name: Make needed directories, files and initializations
