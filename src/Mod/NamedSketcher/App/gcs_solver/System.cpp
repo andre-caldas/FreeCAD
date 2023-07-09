@@ -193,7 +193,7 @@ bool System::solve() const
 
     // TODO: give up criteria.
     // TODO: use the shaker!
-    for(int trials=0; trials < 100; ++trials)
+    for(int trials=0; trials < 200; ++trials)
     {
         double err2 = error2(manager);
         // TODO: decide on a good criteria.

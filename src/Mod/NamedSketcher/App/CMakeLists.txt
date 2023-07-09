@@ -144,13 +144,13 @@ SET(gcs_solver_SRCS
 #
     gcs_solver/linear_solvers/SolverBase.h
     gcs_solver/linear_solvers/SolverBase.cpp
-    gcs_solver/linear_solvers/Ldlt.h
-    gcs_solver/linear_solvers/Ldlt.cpp
+# This gives errors in old Eigens...
+#    gcs_solver/linear_solvers/Ldlt.h
+#    gcs_solver/linear_solvers/Ldlt.cpp
     gcs_solver/linear_solvers/BiCG.h
     gcs_solver/linear_solvers/BiCG.cpp
     gcs_solver/linear_solvers/SimpleSolver.h
     gcs_solver/linear_solvers/SimpleSolver.cpp
-#    gcs_solver/linear_solvers/BiCGStab.h
 )
 SOURCE_GROUP("GCS Solver" FILES ${gcs_solver_SRCS})
 
