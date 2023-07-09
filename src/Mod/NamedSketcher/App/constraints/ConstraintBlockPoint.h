@@ -22,85 +22,54 @@
  ***************************************************************************/
 
 
-#include "PreCompiled.h"
+#ifndef NAMEDSKETCHER_ConstraintBlockPoint_H
+#define NAMEDSKETCHER_ConstraintBlockPoint_H
 
-#ifndef _PreComp_
-#include <utility>
-#endif // _PreComp_
-
-#include <iostream>
-
-#include <Base/Writer.h>
-#include <Base/Exception.h>
+#include <memory>
+#include <vector>
 
 #include "../gcs_solver/equations/Constant.h"
-#include "ConstraintConstant.h"
+#include "ConstraintBase.h"
 
+namespace Base::Accessor {
+template<typename T>
+class ReferenceTo;
+}
 
 namespace NamedSketcher
 {
 
-ConstraintConstant::ConstraintConstant(ref_parameter a, double value)
-    : a(std::move(a))
-    , k(value)
+class GeometryBase;
+
+/** Deals with constraints of type BlockPoint.
+ */
+class NamedSketcherExport ConstraintBlockPoint : public ConstraintBase
 {
-}
+public:
+    ref_point point;
+    GCS::Parameter kX;
+    GCS::Parameter kY;
 
-std::vector<GCS::Equation*> ConstraintConstant::getEquations()
-{
-    if(!a.isLocked())
-    {
-        a.refreshLock();
-    }
-    if(!a.isLocked())
-    {
-        FC_THROWM(Base::NameError, "Could not resolve name (" << a.pathString() << ").");
-    }
+    ConstraintBlockPoint(ref_point point, double x, double y);
 
-    equation.set(a.get(), &k);
-    return std::vector<GCS::Equation*>{&equation};
-}
+    std::vector<GCS::Equation*> getEquations() override;
+    bool updateReferences() override;
 
-bool ConstraintConstant::updateReferences()
-{
-    a.refreshLock();
-    if(!a.hasChanged())
-    {
-        return false;
-    }
-    equation.set(a.get(), &k);
-    return true;
-}
+    std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
+    static constexpr const char* xmlTagTypeStatic() {return "BlockPoint";}
 
+    // Base::Persistence
+    unsigned int getMemSize () const override;
+    void Save (Base::Writer& writer) const override;
+    static std::unique_ptr<ConstraintBlockPoint> staticRestore(Base::XMLReader& reader);
 
-unsigned int ConstraintConstant::getMemSize () const
-{
-    return sizeof(ConstraintConstant) + 50/*a.memSize() + b.memSize()*/;
-}
+    void report() const override;
 
-void ConstraintConstant::Save (Base::Writer& /*writer*/) const
-{
-    THROW(Base::NotImplementedError);
-}
-
-std::unique_ptr<ConstraintConstant>
-ConstraintConstant::staticRestore(Base::XMLReader& /*reader*/)
-{
-    // SEE ConstraintCoincident.
-    THROW(Base::NotImplementedError);
-}
-
-
-void ConstraintConstant::report() const
-{
-    try
-    {
-        std::cout << "Constant: ";
-        std::cout << "(constant: " << k << ")";
-        std::cout << " --> ";
-        std::cout << "(" << *a.get() << ")";
-        std::cout << std::endl;
-    } catch (...) {}
-}
+private:
+    GCS::Constant equationConstantX;
+    GCS::Constant equationConstantY;
+};
 
 } // namespace NamedSketcher
+
+#endif // NAMEDSKETCHER_ConstraintBlockPoint_H

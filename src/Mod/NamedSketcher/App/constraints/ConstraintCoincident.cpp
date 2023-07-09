@@ -156,7 +156,7 @@ void ConstraintCoincident::report() const
 {
     try
     {
-        std::cout << "Coincident (" << this << "): ";
+        std::cout << "Coincident: ";
         for(auto& p: references)
         {
             std::cout << "-";

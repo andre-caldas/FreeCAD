@@ -27,78 +27,95 @@
 #ifndef _PreComp_
 #include <utility>
 #endif // _PreComp_
+#include <initializer_list>
 
 #include <iostream>
 
 #include <Base/Writer.h>
 #include <Base/Exception.h>
 
-#include "../gcs_solver/equations/Constant.h"
-#include "ConstraintConstant.h"
+#include "../geometries/GeometryPoint.h"
+#include "ConstraintYDistance.h"
 
 
 namespace NamedSketcher
 {
 
-ConstraintConstant::ConstraintConstant(ref_parameter a, double value)
-    : a(std::move(a))
-    , k(value)
+ConstraintYDistance::ConstraintYDistance(ref_point start, ref_point end, double distance)
+    : start(std::move(start))
+    , end(std::move(end))
+    , distance(distance)
 {
 }
 
-std::vector<GCS::Equation*> ConstraintConstant::getEquations()
+ConstraintYDistance::ConstraintYDistance(const Base::Accessor::PathToObject& p, double distance)
+    : ConstraintYDistance(p + "start", p + "end", distance)
 {
-    if(!a.isLocked())
+}
+
+std::vector<GCS::Equation*> ConstraintYDistance::getEquations()
+{
+    if(!start.isLocked())
     {
-        a.refreshLock();
+        start.refreshLock();
     }
-    if(!a.isLocked())
+    if(!end.isLocked())
     {
-        FC_THROWM(Base::NameError, "Could not resolve name (" << a.pathString() << ").");
+        end.refreshLock();
+    }
+    if(!start.isLocked())
+    {
+        FC_THROWM(Base::NameError, "Could not resolve name (" << start.pathString() << ").");
+    }
+    if(!end.isLocked())
+    {
+        FC_THROWM(Base::NameError, "Could not resolve name (" << end.pathString() << ").");
     }
 
-    equation.set(a.get(), &k);
+    equation.set(&start.get()->y, &end.get()->y, &distance);
     return std::vector<GCS::Equation*>{&equation};
 }
 
-bool ConstraintConstant::updateReferences()
+bool ConstraintYDistance::updateReferences()
 {
-    a.refreshLock();
-    if(!a.hasChanged())
+    start.refreshLock();
+    end.refreshLock();
+    if(!start.hasChanged() && !end.hasChanged())
     {
         return false;
     }
-    equation.set(a.get(), &k);
+    equation.set(&start.get()->y, &end.get()->y, &distance);
     return true;
 }
 
 
-unsigned int ConstraintConstant::getMemSize () const
+unsigned int ConstraintYDistance::getMemSize () const
 {
-    return sizeof(ConstraintConstant) + 50/*a.memSize() + b.memSize()*/;
+    return sizeof(ConstraintYDistance) + 100/*start.memSize() + end.memSize()*/;
 }
 
-void ConstraintConstant::Save (Base::Writer& /*writer*/) const
+void ConstraintYDistance::Save (Base::Writer& /*writer*/) const
 {
     THROW(Base::NotImplementedError);
 }
 
-std::unique_ptr<ConstraintConstant>
-ConstraintConstant::staticRestore(Base::XMLReader& /*reader*/)
+std::unique_ptr<ConstraintYDistance>
+ConstraintYDistance::staticRestore(Base::XMLReader& /*reader*/)
 {
     // SEE ConstraintCoincident.
     THROW(Base::NotImplementedError);
 }
 
 
-void ConstraintConstant::report() const
+void ConstraintYDistance::report() const
 {
     try
     {
-        std::cout << "Constant: ";
-        std::cout << "(constant: " << k << ")";
+        std::cout << "Distance Y-direction: ";
+        std::cout << *start.get();
         std::cout << " --> ";
-        std::cout << "(" << *a.get() << ")";
+        std::cout << *end.get();
+        std::cout << ", distance = " << distance;
         std::cout << std::endl;
     } catch (...) {}
 }

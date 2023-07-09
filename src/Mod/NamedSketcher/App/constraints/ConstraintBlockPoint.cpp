@@ -33,72 +33,75 @@
 #include <Base/Writer.h>
 #include <Base/Exception.h>
 
-#include "../gcs_solver/equations/Constant.h"
-#include "ConstraintConstant.h"
+#include "../geometries/GeometryPoint.h"
+#include "ConstraintBlockPoint.h"
 
 
 namespace NamedSketcher
 {
 
-ConstraintConstant::ConstraintConstant(ref_parameter a, double value)
-    : a(std::move(a))
-    , k(value)
+ConstraintBlockPoint::ConstraintBlockPoint(ref_point point, double x, double y)
+    : point(std::move(point))
+    , kX(x)
+    , kY(y)
 {
 }
 
-std::vector<GCS::Equation*> ConstraintConstant::getEquations()
+std::vector<GCS::Equation*> ConstraintBlockPoint::getEquations()
 {
-    if(!a.isLocked())
+    if(!point.isLocked())
     {
-        a.refreshLock();
+        point.refreshLock();
     }
-    if(!a.isLocked())
+    if(!point.isLocked())
     {
-        FC_THROWM(Base::NameError, "Could not resolve name (" << a.pathString() << ").");
+        FC_THROWM(Base::NameError, "Could not resolve name (" << point.pathString() << ").");
     }
 
-    equation.set(a.get(), &k);
-    return std::vector<GCS::Equation*>{&equation};
+    equationConstantX.set(&point.get()->x, &kX);
+    equationConstantY.set(&point.get()->y, &kY);
+    return std::vector<GCS::Equation*>{&equationConstantX, &equationConstantY};
 }
 
-bool ConstraintConstant::updateReferences()
+bool ConstraintBlockPoint::updateReferences()
 {
-    a.refreshLock();
-    if(!a.hasChanged())
+    point.refreshLock();
+    if(!point.hasChanged())
     {
         return false;
     }
-    equation.set(a.get(), &k);
+    equationConstantX.set(&point.get()->x, &kX);
+    equationConstantY.set(&point.get()->y, &kY);
     return true;
 }
 
 
-unsigned int ConstraintConstant::getMemSize () const
+unsigned int ConstraintBlockPoint::getMemSize () const
 {
-    return sizeof(ConstraintConstant) + 50/*a.memSize() + b.memSize()*/;
+    return sizeof(ConstraintBlockPoint) + 50/*a.memSize() + b.memSize()*/;
 }
 
-void ConstraintConstant::Save (Base::Writer& /*writer*/) const
+void ConstraintBlockPoint::Save (Base::Writer& /*writer*/) const
 {
     THROW(Base::NotImplementedError);
 }
 
-std::unique_ptr<ConstraintConstant>
-ConstraintConstant::staticRestore(Base::XMLReader& /*reader*/)
+std::unique_ptr<ConstraintBlockPoint>
+ConstraintBlockPoint::staticRestore(Base::XMLReader& /*reader*/)
 {
     // SEE ConstraintCoincident.
     THROW(Base::NotImplementedError);
 }
 
 
-void ConstraintConstant::report() const
+void ConstraintBlockPoint::report() const
 {
     try
     {
-        std::cout << "Constant: ";
-        std::cout << "(constant: " << k << ")";
+        std::cout << "BlockPoint: ";
+        std::cout << *point.get();
         std::cout << " --> ";
-        std::cout << "(" << *a.get() << ")";
+        std::cout << "(" << kX << ", " << kY << ")";
         std::cout << std::endl;
     } catch (...) {}
 }

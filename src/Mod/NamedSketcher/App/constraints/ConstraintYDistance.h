@@ -21,86 +21,53 @@
  *                                                                          *
  ***************************************************************************/
 
+#ifndef NAMEDSKETCHER_ConstraintYDistance_H
+#define NAMEDSKETCHER_ConstraintYDistance_H
 
-#include "PreCompiled.h"
+#include <type_traits>
+#include <memory>
+#include <vector>
 
-#ifndef _PreComp_
-#include <utility>
-#endif // _PreComp_
+#include "../gcs_solver/equations/Difference.h"
+#include "ConstraintBase.h"
 
-#include <iostream>
-
-#include <Base/Writer.h>
-#include <Base/Exception.h>
-
-#include "../gcs_solver/equations/Constant.h"
-#include "ConstraintConstant.h"
-
+namespace Base::Accessor {
+template<typename T>
+class ReferenceTo;
+}
 
 namespace NamedSketcher
 {
 
-ConstraintConstant::ConstraintConstant(ref_parameter a, double value)
-    : a(std::move(a))
-    , k(value)
+/** Deals with constraints of type YDistance.
+ */
+class NamedSketcherExport ConstraintYDistance : public ConstraintBase
 {
-}
+public:
+    ref_point start;
+    ref_point end;
+    GCS::Parameter distance;
 
-std::vector<GCS::Equation*> ConstraintConstant::getEquations()
-{
-    if(!a.isLocked())
-    {
-        a.refreshLock();
-    }
-    if(!a.isLocked())
-    {
-        FC_THROWM(Base::NameError, "Could not resolve name (" << a.pathString() << ").");
-    }
+    ConstraintYDistance(ref_point start, ref_point end, double distance);
+    ConstraintYDistance(const Base::Accessor::PathToObject& p, double distance);
 
-    equation.set(a.get(), &k);
-    return std::vector<GCS::Equation*>{&equation};
-}
+    std::vector<GCS::Equation*> getEquations() override;
+    bool updateReferences() override;
 
-bool ConstraintConstant::updateReferences()
-{
-    a.refreshLock();
-    if(!a.hasChanged())
-    {
-        return false;
-    }
-    equation.set(a.get(), &k);
-    return true;
-}
+    std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
+    static constexpr const char* xmlTagTypeStatic() {return "YDistance";}
 
+    // Base::Persistence
+    unsigned int getMemSize () const override;
+    void Save (Base::Writer& writer) const override;
+    static std::unique_ptr<ConstraintYDistance> staticRestore(Base::XMLReader& reader);
 
-unsigned int ConstraintConstant::getMemSize () const
-{
-    return sizeof(ConstraintConstant) + 50/*a.memSize() + b.memSize()*/;
-}
+    void report() const override;
 
-void ConstraintConstant::Save (Base::Writer& /*writer*/) const
-{
-    THROW(Base::NotImplementedError);
-}
-
-std::unique_ptr<ConstraintConstant>
-ConstraintConstant::staticRestore(Base::XMLReader& /*reader*/)
-{
-    // SEE ConstraintCoincident.
-    THROW(Base::NotImplementedError);
-}
-
-
-void ConstraintConstant::report() const
-{
-    try
-    {
-        std::cout << "Constant: ";
-        std::cout << "(constant: " << k << ")";
-        std::cout << " --> ";
-        std::cout << "(" << *a.get() << ")";
-        std::cout << std::endl;
-    } catch (...) {}
-}
+private:
+    GCS::Difference equation;
+};
 
 } // namespace NamedSketcher
+
+#endif // NAMEDSKETCHER_ConstraintYDistance_H

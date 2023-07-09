@@ -84,8 +84,14 @@ SET(Constraints_SRCS
     constraints/ConstraintEqual.cpp
     constraints/ConstraintHorizontal.h
     constraints/ConstraintHorizontal.cpp
+    constraints/ConstraintVertical.h
+    constraints/ConstraintVertical.cpp
+    constraints/ConstraintBlockPoint.h
+    constraints/ConstraintBlockPoint.cpp
     constraints/ConstraintXDistance.h
     constraints/ConstraintXDistance.cpp
+    constraints/ConstraintYDistance.h
+    constraints/ConstraintYDistance.cpp
     constraints/ConstraintPointAlongCurve.h
     constraints/ConstraintPointAlongCurve.cpp
 )

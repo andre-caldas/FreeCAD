@@ -41,10 +41,15 @@
 namespace NamedSketcher
 {
 
-ConstraintXDistance::ConstraintXDistance(ref_point start, ref_point end, ref_parameter distance)
+ConstraintXDistance::ConstraintXDistance(ref_point start, ref_point end, double distance)
     : start(std::move(start))
     , end(std::move(end))
-    , distance(std::move(distance))
+    , distance(distance)
+{
+}
+
+ConstraintXDistance::ConstraintXDistance(const Base::Accessor::PathToObject& p, double distance)
+    : ConstraintXDistance(p + "start", p + "end", distance)
 {
 }
 
@@ -58,10 +63,6 @@ std::vector<GCS::Equation*> ConstraintXDistance::getEquations()
     {
         end.refreshLock();
     }
-    if(!distance.isLocked())
-    {
-        distance.refreshLock();
-    }
     if(!start.isLocked())
     {
         FC_THROWM(Base::NameError, "Could not resolve name (" << start.pathString() << ").");
@@ -70,12 +71,8 @@ std::vector<GCS::Equation*> ConstraintXDistance::getEquations()
     {
         FC_THROWM(Base::NameError, "Could not resolve name (" << end.pathString() << ").");
     }
-    if(!distance.isLocked())
-    {
-        FC_THROWM(Base::NameError, "Could not resolve name (" << distance.pathString() << ").");
-    }
 
-    equation.set(&start.get()->x, &end.get()->x, distance.get());
+    equation.set(&start.get()->x, &end.get()->x, &distance);
     return std::vector<GCS::Equation*>{&equation};
 }
 
@@ -83,12 +80,11 @@ bool ConstraintXDistance::updateReferences()
 {
     start.refreshLock();
     end.refreshLock();
-    distance.refreshLock();
-    if(!start.hasChanged() && !end.hasChanged() && !distance.hasChanged())
+    if(!start.hasChanged() && !end.hasChanged())
     {
         return false;
     }
-    equation.set(&start.get()->x, &end.get()->x, distance.get());
+    equation.set(&start.get()->x, &end.get()->x, &distance);
     return true;
 }
 
@@ -115,11 +111,11 @@ void ConstraintXDistance::report() const
 {
     try
     {
-        std::cout << "Distance x-direction (" << this << "): ";
-        std::cout << "(" << start.get()->x << ", " << start.get()->y << ")";
+        std::cout << "Distance X-direction: ";
+        std::cout << *start.get();
         std::cout << " --> ";
-        std::cout << "(" << end.get()->x << ", " << end.get()->y << ")";
-        std::cout << ", distance = " << *distance.get();
+        std::cout << *end.get();
+        std::cout << ", distance = " << distance;
         std::cout << std::endl;
     } catch (...) {}
 }

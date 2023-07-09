@@ -30,7 +30,10 @@ namespace py = pybind11;
 #include "ConstraintConstant.h"
 #include "ConstraintCoincident.h"
 #include "ConstraintHorizontal.h"
+#include "ConstraintVertical.h"
+#include "ConstraintBlockPoint.h"
 #include "ConstraintXDistance.h"
+#include "ConstraintYDistance.h"
 #include "ConstraintPointAlongCurve.h"
 
 #include "ConstraintBase.h"
@@ -70,8 +73,23 @@ void init_Constraint(py::module& m)
         .def(py::init<const path&>())
     ;
 
+    py::class_<ConstraintVertical, std::shared_ptr<ConstraintVertical>, ConstraintBase>(m, "ConstraintVertical")
+        .def(py::init<ref_point, ref_point>())
+        .def(py::init<const path&>())
+    ;
+
+    py::class_<ConstraintBlockPoint, std::shared_ptr<ConstraintBlockPoint>, ConstraintBase>(m, "ConstraintBlockPoint")
+        .def(py::init<ref_point, double, double>())
+    ;
+
     py::class_<ConstraintXDistance, std::shared_ptr<ConstraintXDistance>, ConstraintBase>(m, "ConstraintXDistance")
-            .def(py::init<ref_point, ref_point, ref_parameter>())
+        .def(py::init<ref_point, ref_point, double>())
+        .def(py::init<const path&, double>())
+    ;
+
+    py::class_<ConstraintYDistance, std::shared_ptr<ConstraintYDistance>, ConstraintBase>(m, "ConstraintYDistance")
+        .def(py::init<ref_point, ref_point, double>())
+        .def(py::init<const path&, double>())
     ;
 
     py::class_<ConstraintPointAlongCurve, std::shared_ptr<ConstraintPointAlongCurve>, ConstraintBase>(m, "ConstraintPointAlongCurve")

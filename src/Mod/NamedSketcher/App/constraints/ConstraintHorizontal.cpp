@@ -109,7 +109,7 @@ void ConstraintHorizontal::report() const
 {
     try
     {
-        std::cout << "Horizontal (" << this << "): ";
+        std::cout << "Horizontal: ";
         std::cout << "(" << start.get()->x << ", " << start.get()->y << ")";
         std::cout << " --> ";
         std::cout << "(" << end.get()->x << ", " << end.get()->y << ")";

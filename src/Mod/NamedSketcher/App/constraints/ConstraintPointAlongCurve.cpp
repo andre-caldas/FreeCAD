@@ -104,7 +104,7 @@ void ConstraintPointAlongCurve::report() const
 {
     try
     {
-        std::cout << "(" << this << ") Point along curve: ";
+        std::cout << "Point along curve: ";
         std::cout << "candidate point " << *point.get();
         std::cout << " <-" << parameter_t << "-> ";
         std::cout << "curve (" << curve.get() << ")";

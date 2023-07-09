@@ -61,7 +61,7 @@ public:
 
 #if FC_DEBUG
 inline ParameterBase::ParameterBase(std::string name, double v) : value(v), name(name) {}
-inline std::ostream& operator<<(std::ostream& out, ParameterBase& p)
+inline std::ostream& operator<<(std::ostream& out, const ParameterBase& p)
 {
     out << "(" << p.name << (p.name.empty()?"":": ") << (double)p << ")";
     return out;
@@ -108,7 +108,7 @@ public:
 
 #if FC_DEBUG
 inline Point::Point(std::string name, double x, double y) : x(name + ".x",x), y(name + ".y",y), name(name) {}
-inline std::ostream& operator<<(std::ostream& out, Point& p)
+inline std::ostream& operator<<(std::ostream& out, const Point& p)
 {
     out << "(" << p.name << (p.name.empty()?"":": ") << (double)p.x << "," << (double)p.y << ")";
     return out;

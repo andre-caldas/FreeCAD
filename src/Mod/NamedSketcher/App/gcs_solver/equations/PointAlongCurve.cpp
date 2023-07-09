@@ -21,7 +21,6 @@
  *                                                                          *
  ***************************************************************************/
 
-#include <iostream>
 #include <cmath>
 
 #include <Base/Exception.h>
@@ -89,11 +88,6 @@ ParameterVector PointAlongCurve::differentialNonOptimized(const GCS::ParameterVa
         // Chain rule.
         double partial = vx*vector.x + vy*vector.y;
         result.set(parameter, partial);
-    }
-
-    for(const auto& [parameter,partial]: result.values)
-    {
-        std::cout << "d/d("<<parameter->name<<") --> " << partial << std::endl;
     }
     return result;
 }

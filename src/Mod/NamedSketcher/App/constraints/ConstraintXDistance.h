@@ -21,7 +21,6 @@
  *                                                                          *
  ***************************************************************************/
 
-
 #ifndef NAMEDSKETCHER_ConstraintXDistance_H
 #define NAMEDSKETCHER_ConstraintXDistance_H
 
@@ -47,9 +46,10 @@ class NamedSketcherExport ConstraintXDistance : public ConstraintBase
 public:
     ref_point start;
     ref_point end;
-    ref_parameter distance;
+    GCS::Parameter distance;
 
-    ConstraintXDistance(ref_point start, ref_point end, ref_parameter distance);
+    ConstraintXDistance(ref_point start, ref_point end, double distance);
+    ConstraintXDistance(const Base::Accessor::PathToObject& p, double distance);
 
     std::vector<GCS::Equation*> getEquations() override;
     bool updateReferences() override;

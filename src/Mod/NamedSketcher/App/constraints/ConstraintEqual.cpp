@@ -104,7 +104,7 @@ void ConstraintEqual::report() const
 {
     try
     {
-        std::cout << "Equal (" << this << "): ";
+        std::cout << "Equal: ";
         std::cout << "(" << *a.get() << ")";
         std::cout << " == ";
         std::cout << "(" << *b.get() << ")";

@@ -132,10 +132,10 @@ GCS::Point GeometryLineSegment::normalAtParameter(const GCS::ParameterValueMappe
 
 void GeometryLineSegment::report() const
 {
-    std::cout << "Line segment (" << this << "): ";
-    std::cout << "(" << start.x << ", " << start.y << ")";
+    std::cout << "Line segment: ";
+    std::cout << start;
     std::cout << " --> ";
-    std::cout << "(" << end.x << ", " << end.y << ")";
+    std::cout << end;
     std::cout << std::endl;
 }
 

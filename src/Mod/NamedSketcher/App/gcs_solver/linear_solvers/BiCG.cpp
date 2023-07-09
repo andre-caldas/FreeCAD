@@ -21,8 +21,6 @@
  *                                                                          *
  ***************************************************************************/
 
-#include <iostream>
-
 #include "BiCG.h"
 
 namespace NamedSketcher::GCS::LinearSolvers
@@ -39,7 +37,6 @@ void BiCG::refactor()
 {
     if(need_refactor)
     {
-        std::cout << "Refactoring solver..." << std::endl;
         MtM = eigenMatrix.transpose() * eigenMatrix;
         solver.factorize(MtM);
         need_refactor = false;
@@ -48,9 +45,6 @@ void BiCG::refactor()
 
 BiCG::vector_t BiCG::_solve(const vector_t& out)
 {
-    std::cout << "Will solve using (BiCG)..." << std::endl;
-    std::cout << "Target:" << std::endl;
-    std::cout << out << std::endl;
     refactor();
     return solver.solve(eigenMatrix.transpose() * out);
 }
