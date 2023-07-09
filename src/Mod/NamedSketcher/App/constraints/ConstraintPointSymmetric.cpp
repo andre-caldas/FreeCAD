@@ -30,87 +30,99 @@
 #include <Base/Writer.h>
 #include <Base/Exception.h>
 
-#include "../geometries/GeometryPoint.h"
-#include "ConstraintHorizontal.h"
-
+#include "ConstraintPointSymmetric.h"
 
 namespace NamedSketcher
 {
 
-ConstraintHorizontal::ConstraintHorizontal(ref_point start, ref_point end)
-    : start(std::move(start))
-    , end(std::move(end))
+ConstraintPointSymmetric::ConstraintPointSymmetric(ref_point a, ref_point o, ref_point b)
+    : a(std::move(a))
+    , o(std::move(o))
+    , b(std::move(b))
 {
 }
 
-ConstraintHorizontal::ConstraintHorizontal(const Base::Accessor::PathToObject& p)
-    : ConstraintHorizontal(p + "start", p + "end")
+std::vector<GCS::Equation*> ConstraintPointSymmetric::getEquations()
 {
+    if(!a.isLocked())
+    {
+        a.refreshLock();
+    }
+    if(!o.isLocked())
+    {
+        o.refreshLock();
+    }
+    if(!b.isLocked())
+    {
+        b.refreshLock();
+    }
+    if(!a.isLocked())
+    {
+        FC_THROWM(Base::NameError, "Could not resolve name (" << a.pathString() << ").");
+    }
+    if(!o.isLocked())
+    {
+        FC_THROWM(Base::NameError, "Could not resolve name (" << o.pathString() << ").");
+    }
+    if(!b.isLocked())
+    {
+        FC_THROWM(Base::NameError, "Could not resolve name (" << b.pathString() << ").");
+    }
+
+    equationX.set(&a.get()->x, &o.get()->x, &b.get()->x);
+    equationY.set(&a.get()->y, &o.get()->y, &b.get()->y);
+    return std::vector<GCS::Equation*>{&equationX, &equationY};
 }
 
-std::vector<GCS::Equation*> ConstraintHorizontal::getEquations()
+bool ConstraintPointSymmetric::updateReferences()
 {
-    if(!start.isLocked())
-    {
-        start.refreshLock();
-    }
-    if(!end.isLocked())
-    {
-        end.refreshLock();
-    }
-    if(!start.isLocked())
-    {
-        FC_THROWM(Base::NameError, "Could not resolve name (" << start.pathString() << ").");
-    }
-    if(!end.isLocked())
-    {
-        FC_THROWM(Base::NameError, "Could not resolve name (" << end.pathString() << ").");
-    }
-
-    equation.set(&start.get()->y, &end.get()->y);
-    return std::vector<GCS::Equation*>{&equation};
-}
-
-bool ConstraintHorizontal::updateReferences()
-{
-    start.refreshLock();
-    end.refreshLock();
-    if(!start.hasChanged() && !end.hasChanged())
+    a.refreshLock();
+    o.refreshLock();
+    b.refreshLock();
+    if(!a.hasChanged() && !o.hasChanged() && !b.hasChanged())
     {
         return false;
     }
-    equation.set(&start.get()->y, &end.get()->y);
+    equationX.set(&a.get()->x, &o.get()->x, &b.get()->x);
+    equationY.set(&a.get()->y, &o.get()->y, &b.get()->y);
     return true;
 }
 
 
-unsigned int ConstraintHorizontal::getMemSize () const
+unsigned int ConstraintPointSymmetric::getMemSize () const
 {
-    return sizeof(ConstraintHorizontal) + 50/*a.memSize() + b.memSize()*/;
+    return sizeof(ConstraintPointSymmetric) + 50/*a.memSize() + b.memSize()*/;
 }
 
-void ConstraintHorizontal::Save (Base::Writer& /*writer*/) const
+void ConstraintPointSymmetric::Save (Base::Writer& /*writer*/) const
 {
     THROW(Base::NotImplementedError);
 }
 
-std::unique_ptr<ConstraintHorizontal>
-ConstraintHorizontal::staticRestore(Base::XMLReader& /*reader*/)
+std::unique_ptr<ConstraintPointSymmetric>
+ConstraintPointSymmetric::staticRestore(Base::XMLReader& /*reader*/)
 {
     // SEE ConstraintCoincident.
     THROW(Base::NotImplementedError);
 }
 
 
-void ConstraintHorizontal::report() const
+void ConstraintPointSymmetric::report() const
 {
     try
     {
-        std::cout << "Horizontal: ";
-        std::cout << "(" << start.get()->x << ", " << start.get()->y << ")";
-        std::cout << " --> ";
-        std::cout << "(" << end.get()->x << ", " << end.get()->y << ")";
+        std::cout << "PointSymmetric: ";
+        std::cout << *a.get();
+        std::cout << " <<==" << *o.get() << "==>> ";
+        std::cout << *b.get();
         std::cout << std::endl;
+
+        // TODO: implement with and without manager.
+        std::cout << "\tError: (";
+        std::cout << (a.get()->x + b.get()->x - 2*o.get()->x);
+        std::cout << ", ";
+        std::cout << (a.get()->y + b.get()->y - 2*o.get()->y);
+        std::cout << ")" << std::endl;
     } catch (...) {}
 }
 

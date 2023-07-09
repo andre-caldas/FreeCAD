@@ -33,6 +33,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <iostream>
 
 // boost
 #include <boost/uuid/uuid.hpp>

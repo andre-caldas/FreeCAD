@@ -66,8 +66,8 @@ public:
     void report() const override;
 
 private:
-    GCS::Constant equationConstantX;
-    GCS::Constant equationConstantY;
+    GCS::Constant equationX;
+    GCS::Constant equationY;
 };
 
 } // namespace NamedSketcher

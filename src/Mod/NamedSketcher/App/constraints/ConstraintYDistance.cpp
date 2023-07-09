@@ -21,15 +21,11 @@
  *                                                                          *
  ***************************************************************************/
 
-
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
-#include <utility>
-#endif // _PreComp_
-#include <initializer_list>
-
 #include <iostream>
+#endif // _PreComp_
 
 #include <Base/Writer.h>
 #include <Base/Exception.h>
@@ -117,6 +113,10 @@ void ConstraintYDistance::report() const
         std::cout << *end.get();
         std::cout << ", distance = " << distance;
         std::cout << std::endl;
+
+        std::cout << "\tError: (";
+        std::cout << (start.get()->y - end.get()->y - distance);
+        std::cout << ")" << std::endl;
     } catch (...) {}
 }
 

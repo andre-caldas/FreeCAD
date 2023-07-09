@@ -92,6 +92,8 @@ SET(Constraints_SRCS
     constraints/ConstraintXDistance.cpp
     constraints/ConstraintYDistance.h
     constraints/ConstraintYDistance.cpp
+    constraints/ConstraintPointSymmetric.h
+    constraints/ConstraintPointSymmetric.cpp
     constraints/ConstraintPointAlongCurve.h
     constraints/ConstraintPointAlongCurve.cpp
 )
@@ -125,6 +127,8 @@ SET(gcs_solver_SRCS
     gcs_solver/equations/Equal.cpp
     gcs_solver/equations/Difference.h
     gcs_solver/equations/Difference.cpp
+    gcs_solver/equations/MediumParameter.h
+    gcs_solver/equations/MediumParameter.cpp
     gcs_solver/equations/Distance.h
     gcs_solver/equations/Distance.cpp
     gcs_solver/equations/Colinear.h

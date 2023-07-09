@@ -21,14 +21,11 @@
  *                                                                          *
  ***************************************************************************/
 
-
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
-#include <utility>
-#endif // _PreComp_
-
 #include <iostream>
+#endif // _PreComp_
 
 #include <Base/Writer.h>
 #include <Base/Exception.h>

@@ -25,55 +25,77 @@
 
 #include "../parameters/ParameterGroupManager.h"
 #include "../parameters/ParameterValueMapper.h"
-#include "Difference.h"
+#include "MediumParameter.h"
 
 namespace NamedSketcher::GCS
 {
 
-void Difference::set(Parameter* x, Parameter* y, Parameter* d)
+void MediumParameter::set(Parameter* x, Parameter* m, Parameter* y)
 {
-    if(x == y || x == d || y == d)
+    if(x == y || x == m || y == m)
     {
         FC_THROWM(Base::ReferenceError, "Different parameters must be passed.");
     }
     a = x;
+    o = m;
     b = y;
-    difference = d;
 }
 
-double Difference::error(const ParameterGroupManager& manager) const
+double MediumParameter::error(const ParameterGroupManager& manager) const
 {
     const double A = manager.getValue(a);
     const double B = manager.getValue(b);
-    const double DIFF = manager.getValue(difference);
-    return B - A - DIFF;
+    const double O = manager.getValue(o);
+    return B + A - 2*O;
 }
 
-ParameterVector Difference::differentialNonOptimized(const GCS::ParameterValueMapper& /*parameter_mapper*/) const
+ParameterVector MediumParameter::differentialNonOptimized(const GCS::ParameterValueMapper& /*parameter_mapper*/) const
 {
     ParameterVector result;
-    result.set(a, -1);
+    result.set(a, 1);
+    result.set(o, -2);
     result.set(b, 1);
-    result.set(difference, -1);
     return result;
 }
 
-OptimizedVector Difference::differentialOptimized(const ParameterGroupManager& manager) const
+OptimizedVector MediumParameter::differentialOptimized(const ParameterGroupManager& manager) const
 {
-    if(!manager.areParametersEqual(a, b))
+    if(manager.areParametersEqual(a, o) && manager.areParametersEqual(o, b))
     {
-        return manager.optimizeVector(differentialNonOptimized(manager));
+        return OptimizedVector();
     }
-    return OptimizedVector();
+    assert(!manager.areParametersEqual(a, b));
+    assert(!manager.areParametersEqual(a, o));
+    assert(!manager.areParametersEqual(o, b));
+    return manager.optimizeVector(differentialNonOptimized(manager));
 }
 
-void Difference::declareParameters(ParameterGroupManager& manager) const
+void MediumParameter::declareParameters(ParameterGroupManager& manager) const
 {
     manager.addParameter(a);
+    manager.addParameter(o);
     manager.addParameter(b);
-    manager.addParameter(difference);
-    // TODO: Shall this be set constant outside the gcs equation? At ConstraintDifference?
-    manager.setParameterConstant(difference);
+}
+
+bool MediumParameter::optimizeParameters(ParameterGroupManager& manager) const
+{
+    bool ab_equal = manager.areParametersEqual(a, b);
+    bool ao_equal = manager.areParametersEqual(a, o);
+    bool ob_equal = manager.areParametersEqual(o, b);
+
+    if(!ab_equal && !ao_equal && !ob_equal)
+    {
+        return false;
+    }
+
+    if(ab_equal && ao_equal && ob_equal)
+    {
+        return false;
+    }
+
+    manager.setParameterEqual(a,o);
+    manager.setParameterEqual(o,b);
+    return true;
 }
 
 } // namespace NamedSketcher::GCS

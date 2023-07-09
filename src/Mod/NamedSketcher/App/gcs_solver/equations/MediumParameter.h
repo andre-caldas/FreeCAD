@@ -21,59 +21,34 @@
  *                                                                          *
  ***************************************************************************/
 
-#include <Base/Exception.h>
 
-#include "../parameters/ParameterGroupManager.h"
-#include "../parameters/ParameterValueMapper.h"
-#include "Difference.h"
+#ifndef NAMEDSKETCHER_GCS_MediumParameter_H
+#define NAMEDSKETCHER_GCS_MediumParameter_H
+
+#include "Equation.h"
 
 namespace NamedSketcher::GCS
 {
 
-void Difference::set(Parameter* x, Parameter* y, Parameter* d)
+class NamedSketcherExport MediumParameter : public LinearEquation
 {
-    if(x == y || x == d || y == d)
-    {
-        FC_THROWM(Base::ReferenceError, "Different parameters must be passed.");
-    }
-    a = x;
-    b = y;
-    difference = d;
-}
+public:
+    MediumParameter() = default;
+    void set(Parameter* a, Parameter* o, Parameter* b);
 
-double Difference::error(const ParameterGroupManager& manager) const
-{
-    const double A = manager.getValue(a);
-    const double B = manager.getValue(b);
-    const double DIFF = manager.getValue(difference);
-    return B - A - DIFF;
-}
+    double error(const ParameterGroupManager& manager) const override;
+    ParameterVector differentialNonOptimized(const GCS::ParameterValueMapper& parameter_mapper) const override;
+    OptimizedVector differentialOptimized(const ParameterGroupManager& manager) const override;
 
-ParameterVector Difference::differentialNonOptimized(const GCS::ParameterValueMapper& /*parameter_mapper*/) const
-{
-    ParameterVector result;
-    result.set(a, -1);
-    result.set(b, 1);
-    result.set(difference, -1);
-    return result;
-}
+    void declareParameters(ParameterGroupManager& manager) const override;
+    bool optimizeParameters(ParameterGroupManager& manager) const override;
 
-OptimizedVector Difference::differentialOptimized(const ParameterGroupManager& manager) const
-{
-    if(!manager.areParametersEqual(a, b))
-    {
-        return manager.optimizeVector(differentialNonOptimized(manager));
-    }
-    return OptimizedVector();
-}
-
-void Difference::declareParameters(ParameterGroupManager& manager) const
-{
-    manager.addParameter(a);
-    manager.addParameter(b);
-    manager.addParameter(difference);
-    // TODO: Shall this be set constant outside the gcs equation? At ConstraintDifference?
-    manager.setParameterConstant(difference);
-}
+private:
+    Parameter* a;
+    Parameter* o;
+    Parameter* b;
+};
 
 } // namespace NamedSketcher::GCS
+
+#endif // NAMEDSKETCHER_GCS_MediumParameter_H

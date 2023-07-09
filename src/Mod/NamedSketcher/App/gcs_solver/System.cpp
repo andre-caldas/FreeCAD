@@ -197,7 +197,7 @@ bool System::solve() const
     {
         double err2 = error2(manager);
         // TODO: decide on a good criteria.
-        if(err2 < 1.0/(1024*1024) * manager.outputSize())
+        if(err2 < 1.0/(1024*1024*32) * manager.outputSize())
         {
             manager.commitParameters();
             return true;
@@ -224,7 +224,7 @@ void System::stepIntoTargetDirection(
     // TODO: Criteria for those two magic numbers.
     // N: Should probably depend on the variation of the gradient (Wronskian).
     const int N = 16;
-    const int DEPTH = 2;
+    const int DEPTH = 4;
 
     double a = -1.0;
     double b = 1.0;

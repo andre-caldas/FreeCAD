@@ -21,59 +21,48 @@
  *                                                                          *
  ***************************************************************************/
 
-#include <Base/Exception.h>
 
-#include "../parameters/ParameterGroupManager.h"
-#include "../parameters/ParameterValueMapper.h"
-#include "Difference.h"
+#ifndef NAMEDSKETCHER_ConstraintPointSymmetric_H
+#define NAMEDSKETCHER_ConstraintPointSymmetric_H
 
-namespace NamedSketcher::GCS
+#include <type_traits>
+#include <memory>
+
+#include "../gcs_solver/equations/MediumParameter.h"
+#include "ConstraintBase.h"
+
+namespace NamedSketcher
 {
 
-void Difference::set(Parameter* x, Parameter* y, Parameter* d)
+/** Deals with constraints of type PointSymmetric.
+ */
+class NamedSketcherExport ConstraintPointSymmetric : public ConstraintBase
 {
-    if(x == y || x == d || y == d)
-    {
-        FC_THROWM(Base::ReferenceError, "Different parameters must be passed.");
-    }
-    a = x;
-    b = y;
-    difference = d;
-}
+public:
+    ref_point a;
+    ref_point o;
+    ref_point b;
 
-double Difference::error(const ParameterGroupManager& manager) const
-{
-    const double A = manager.getValue(a);
-    const double B = manager.getValue(b);
-    const double DIFF = manager.getValue(difference);
-    return B - A - DIFF;
-}
+    ConstraintPointSymmetric(ref_point a, ref_point o, ref_point b);
 
-ParameterVector Difference::differentialNonOptimized(const GCS::ParameterValueMapper& /*parameter_mapper*/) const
-{
-    ParameterVector result;
-    result.set(a, -1);
-    result.set(b, 1);
-    result.set(difference, -1);
-    return result;
-}
+    std::vector<GCS::Equation*> getEquations() override;
+    bool updateReferences() override;
 
-OptimizedVector Difference::differentialOptimized(const ParameterGroupManager& manager) const
-{
-    if(!manager.areParametersEqual(a, b))
-    {
-        return manager.optimizeVector(differentialNonOptimized(manager));
-    }
-    return OptimizedVector();
-}
+    std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
+    static constexpr const char* xmlTagTypeStatic() {return "PointSymmetric";}
 
-void Difference::declareParameters(ParameterGroupManager& manager) const
-{
-    manager.addParameter(a);
-    manager.addParameter(b);
-    manager.addParameter(difference);
-    // TODO: Shall this be set constant outside the gcs equation? At ConstraintDifference?
-    manager.setParameterConstant(difference);
-}
+    // Base::Persistence
+    unsigned int getMemSize () const override;
+    void Save (Base::Writer& writer) const override;
+    static std::unique_ptr<ConstraintPointSymmetric> staticRestore(Base::XMLReader& reader);
 
-} // namespace NamedSketcher::GCS
+    void report() const override;
+
+private:
+    GCS::MediumParameter equationX;
+    GCS::MediumParameter equationY;
+};
+
+} // namespace NamedSketcher
+
+#endif // NAMEDSKETCHER_ConstraintPointSymmetric_H

@@ -21,14 +21,12 @@
  *                                                                          *
  ***************************************************************************/
 
-
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
-#include <utility>
-#endif // _PreComp_
-
 #include <iostream>
+#endif // _PreComp_
+#include <cmath>
 
 #include <Base/Writer.h>
 #include <Base/Exception.h>
@@ -102,13 +100,20 @@ ConstraintPointAlongCurve::staticRestore(Base::XMLReader& /*reader*/)
 
 void ConstraintPointAlongCurve::report() const
 {
+    auto pt_curve = curve.get()->positionAtParameter({}, &parameter_t);
     try
     {
         std::cout << "Point along curve: ";
         std::cout << "candidate point " << *point.get();
         std::cout << " <-" << parameter_t << "-> ";
-        std::cout << "curve (" << curve.get() << ")";
+        std::cout << "curve(t) " << pt_curve;
         std::cout << std::endl;
+
+        double diff_x = (point.get()->x - pt_curve.x);
+        double diff_y = (point.get()->y - pt_curve.y);
+        std::cout << "\tError: (";
+        std::cout << std::sqrt(diff_x*diff_x + diff_y*diff_y);
+        std::cout << ")" << std::endl;
     } catch (...) {}
 }
 

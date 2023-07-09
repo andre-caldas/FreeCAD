@@ -21,14 +21,11 @@
  *                                                                          *
  ***************************************************************************/
 
-
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
-#include <utility>
-#endif // _PreComp_
-
 #include <iostream>
+#endif // _PreComp_
 
 #include <Base/Writer.h>
 #include <Base/Exception.h>
@@ -58,9 +55,9 @@ std::vector<GCS::Equation*> ConstraintBlockPoint::getEquations()
         FC_THROWM(Base::NameError, "Could not resolve name (" << point.pathString() << ").");
     }
 
-    equationConstantX.set(&point.get()->x, &kX);
-    equationConstantY.set(&point.get()->y, &kY);
-    return std::vector<GCS::Equation*>{&equationConstantX, &equationConstantY};
+    equationX.set(&point.get()->x, &kX);
+    equationY.set(&point.get()->y, &kY);
+    return std::vector<GCS::Equation*>{&equationX, &equationY};
 }
 
 bool ConstraintBlockPoint::updateReferences()
@@ -70,8 +67,8 @@ bool ConstraintBlockPoint::updateReferences()
     {
         return false;
     }
-    equationConstantX.set(&point.get()->x, &kX);
-    equationConstantY.set(&point.get()->y, &kY);
+    equationX.set(&point.get()->x, &kX);
+    equationY.set(&point.get()->y, &kY);
     return true;
 }
 
