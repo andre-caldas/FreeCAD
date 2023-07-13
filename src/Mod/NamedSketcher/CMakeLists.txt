@@ -1,8 +1,7 @@
-
 add_subdirectory(App)
-#if(BUILD_GUI)
-#    add_subdirectory(Gui)
-#endif(BUILD_GUI)
+if(BUILD_GUI)
+    add_subdirectory(NamedSketcherGui)
+endif(BUILD_GUI)
 
 set(NamedSketcher_Scripts
     Init.py
@@ -18,12 +17,12 @@ set(NamedSketcher_TestScripts
 #     NamedSketcherTests/TestSketchExpression.py
 )
 
-#if(BUILD_GUI)
-#    list (APPEND NamedSketcher_Scripts
-#          InitGui.py
+if(BUILD_GUI)
+    list (APPEND NamedSketcher_Scripts
+          InitGui.py
 #          TestNamedSketcherGui.py
-#    )
-#endif(BUILD_GUI)
+    )
+endif(BUILD_GUI)
 
 set(NamedSketcher_Profiles
 #     ProfileLib/Hexagon.py
