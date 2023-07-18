@@ -23,18 +23,18 @@
 
 import FreeCADGui
 
-command = "NamedSketcherGui_ConstraintCreation_PointSymmetric"
+command = "NamedSketcherGui/ConstraintCreation/TangentCurves"
 
-class PointSymmetric:
+class TangentCurves:
     def GetResources(self):
-        return {'Pixmap'  : command,
-                'MenuText': 'Point symmetric',
-                'ToolTip' : 'Keeps a certain point always in the middle of other two choosen points'}
+        return {'Pixmap'  : ':/' + command,
+                'MenuText': 'Tangent curves',
+                'ToolTip' : 'Forces two curves to being tangent to each other'}
 
     def IsActive(self):
         return True;
 
-    def Activate(self):
+    def Activated(self):
         pass
 
-FreeCADGui.addCommand(command, PointSymmetric());
+FreeCADGui.addCommand(command, TangentCurves());

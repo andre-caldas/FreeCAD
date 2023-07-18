@@ -23,18 +23,18 @@
 
 import FreeCADGui
 
-command = "NamedSketcherGui_ConstraintCreation_Coincident"
+command = "NamedSketcherGui/ConstraintCreation/Coincident"
 
 class Coincident:
     def GetResources(self):
-        return {'Pixmap'  : command,
+        return {'Pixmap'  : ':/' + command,
                 'MenuText': 'Coincident points',
                 'ToolTip' : 'Glues points together'}
 
     def IsActive(self):
         return True;
 
-    def Activate(self):
+    def Activated(self):
         pass
 
 FreeCADGui.addCommand(command, Coincident());

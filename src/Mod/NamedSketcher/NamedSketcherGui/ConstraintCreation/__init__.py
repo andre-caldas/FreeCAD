@@ -22,17 +22,16 @@
 #***************************************************************************/
 
 modules = [
-    'ConstraintEqual',
-    'ConstraintConstant',
-    'ConstraintCoincident',
-    'ConstraintHorizontal',
-    'ConstraintVertical',
-    'ConstraintBlockPoint',
-    'ConstraintPointSymmetric',
-    'ConstraintXDistance',
-    'ConstraintYDistance',
-    'ConstraintPointAlongCurve',
-    'ConstraintTangentCurves',
+    'Coincident',
+    'Horizontal',
+    'Vertical',
+    'BlockPoint',
+    'PointSymmetric',
+    'Distance',
+    'XDistance',
+    'YDistance',
+    'PointAlongCurve',
+    'TangentCurves',
 ]
 
 def getCommands():

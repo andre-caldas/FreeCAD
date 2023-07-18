@@ -23,21 +23,19 @@
 
 import FreeCADGui
 
-command = "NamedSketcherGui_ConstraintCreation_YDistance"
+command = "NamedSketcherGui/ConstraintCreation/Distance"
 
-class YDistance:
+class Distance:
     def GetResources(self):
-        return {'Pixmap'  : command,
-                'MenuText': 'Vertical distance',
-                'ToolTip' :
-                    '''Specifies the difference of the y-coordinate of two points.
-                    Instead of two points, you can also specify anything that has a start and an end point.
-                    For example, a line.'''}
+        return {'Pixmap'  : ':/' + command,
+                'Accel'   : 'h',
+                'MenuText': 'Horizontal alignment',
+                'ToolTip' : 'Forces a line (or actually, any two points) to align horizontally'}
 
     def IsActive(self):
         return True;
 
-    def Activate(self):
+    def Activated(self):
         pass
 
-FreeCADGui.addCommand(command, YDistance());
+FreeCADGui.addCommand(command, Distance());

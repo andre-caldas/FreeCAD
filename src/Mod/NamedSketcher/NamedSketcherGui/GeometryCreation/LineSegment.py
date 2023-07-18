@@ -23,18 +23,18 @@
 
 import FreeCADGui
 
-command = "NamedSketcherGui_GeometryCreation_CreateLineSegment"
+command = "NamedSketcherGui/GeometryCreation/LineSegment"
 
-class CreateLineSegment:
+class LineSegment:
     def GetResources(self):
-        return {'Pixmap'  : command,
+        return {'Pixmap'  : ':/' + command,
                 'MenuText': 'Line segment',
                 'ToolTip' : 'New line segment'}
 
     def IsActive(self):
         return True;
 
-    def Activate(self):
+    def Activated(self):
         pass
 
-FreeCADGui.addCommand(command, CreateLineSegment());
+FreeCADGui.addCommand(command, LineSegment());

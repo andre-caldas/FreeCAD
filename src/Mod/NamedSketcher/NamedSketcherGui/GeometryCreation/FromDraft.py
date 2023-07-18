@@ -23,18 +23,18 @@
 
 import FreeCADGui
 
-command = "NamedSketcherGui_GeometryCreation_CreateGeometryFromDraft"
+command = "NamedSketcherGui/GeometryCreation/CreateGeometryFromDraft"
 
 class CreateGeometryFromDraft:
     def GetResources(self):
-        return {'Pixmap'  : command,
+        return {'Pixmap'  : ':/' + command,
                 'MenuText': 'From draft',
                 'ToolTip' : 'Create geometries from a draft object'}
 
     def IsActive(self):
         return True;
 
-    def Activate(self):
+    def Activated(self):
         pass
 
 FreeCADGui.addCommand(command, CreateGeometryFromDraft());

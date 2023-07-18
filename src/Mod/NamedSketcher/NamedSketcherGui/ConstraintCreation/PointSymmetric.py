@@ -23,18 +23,18 @@
 
 import FreeCADGui
 
-command = "NamedSketcherGui_ConstraintCreation_Constant"
+command = "NamedSketcherGui/ConstraintCreation/PointSymmetric"
 
-class Constant:
+class PointSymmetric:
     def GetResources(self):
-        return {'Pixmap'  : command,
-                'MenuText': 'Constant parameter',
-                'ToolTip' : 'Sets some parameter to a constant value'}
+        return {'Pixmap'  : ':/' + command,
+                'MenuText': 'Point symmetric',
+                'ToolTip' : 'Keeps a certain point always in the middle of other two choosen points'}
 
     def IsActive(self):
         return True;
 
-    def Activate(self):
+    def Activated(self):
         pass
 
-FreeCADGui.addCommand(command, Constant());
+FreeCADGui.addCommand(command, PointSymmetric());

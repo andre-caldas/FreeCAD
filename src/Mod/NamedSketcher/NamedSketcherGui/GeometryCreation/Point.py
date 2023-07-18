@@ -23,18 +23,18 @@
 
 import FreeCADGui
 
-command = "NamedSketcherGui_GeometryCreation_CreatePoint"
+command = "NamedSketcherGui/GeometryCreation/Point"
 
-class CreatePoint:
+class Point:
     def GetResources(self):
-        return {'Pixmap'  : command,
+        return {'Pixmap'  : ':/' + command,
                 'MenuText': 'Point',
                 'ToolTip' : 'New point'}
 
     def IsActive(self):
         return True;
 
-    def Activate(self):
+    def Activated(self):
         pass
 
-FreeCADGui.addCommand(command, CreatePoint());
+FreeCADGui.addCommand(command, Point());

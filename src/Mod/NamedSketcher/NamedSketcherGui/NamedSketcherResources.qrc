@@ -1,0 +1,25 @@
+<RCC>
+    <qresource prefix="/NamedSketcherGui/">
+        <file alias="NamedSketcherWorkbench">NamedSketcherWorkbench.svg</file>
+    </qresource>
+
+    <qresource prefix="/NamedSketcherGui/GeometryCreation">
+        <file alias="Point">GeometryCreation/Point.svg</file>
+        <file alias="LineSegment">GeometryCreation/LineSegment.svg</file>
+        <file alias="Circle">GeometryCreation/Circle.svg</file>
+    </qresource>
+
+    <qresource prefix="/NamedSketcherGui/ConstraintCreation">
+        <file alias="BlockPoint">ConstraintCreation/BlockPoint.svg</file>
+        <file alias="Coincident">ConstraintCreation/Coincident.svg</file>
+        <file alias="Distance">ConstraintCreation/Distance.svg</file>
+        <file alias="Horizontal">ConstraintCreation/Horizontal.svg</file>
+        <file alias="Vertical">ConstraintCreation/Vertical.svg</file>
+        <file alias="XDistance">ConstraintCreation/XDistance.svg</file>
+        <file alias="YDistance">ConstraintCreation/YDistance.svg</file>
+        <file alias="PointSymmetric">ConstraintCreation/PointSymmetric.svg</file>
+        <file alias="LineSymmetric">ConstraintCreation/LineSymmetric.svg</file>
+        <file alias="PointAlongCurve">ConstraintCreation/PointAlongCurve.svg</file>
+        <file alias="TangentCurves">ConstraintCreation/TangentCurves.svg</file>
+    </qresource>
+</RCC>

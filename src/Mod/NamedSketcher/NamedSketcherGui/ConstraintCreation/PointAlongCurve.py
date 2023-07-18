@@ -23,21 +23,18 @@
 
 import FreeCADGui
 
-command = "NamedSketcherGui_ConstraintCreation_XDistance"
+command = "NamedSketcherGui/ConstraintCreation/PointAlongCurve"
 
-class XDistance:
+class PointAlongCurve:
     def GetResources(self):
-        return {'Pixmap'  : command,
-                'MenuText': 'Horizontal distance',
-                'ToolTip' :
-                    '''Specifies the difference of the x-coordinate of two points.
-                    Instead of two points, you can also specify anything that has a start and an end point.
-                    For example, a line.'''}
+        return {'Pixmap'  : ':/' + command,
+                'MenuText': 'Point along curve',
+                'ToolTip' : 'Constrains a point to lay along a curve'}
 
     def IsActive(self):
         return True;
 
-    def Activate(self):
+    def Activated(self):
         pass
 
-FreeCADGui.addCommand(command, XDistance());
+FreeCADGui.addCommand(command, PointAlongCurve());

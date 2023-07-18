@@ -23,18 +23,18 @@
 
 import FreeCADGui
 
-command = "NamedSketcherGui_ConstraintCreation_Vertical"
+command = "NamedSketcherGui/ConstraintCreation/BlockPoint"
 
-class Vertical:
+class BlockPoint:
     def GetResources(self):
-        return {'Pixmap'  : command,
-                'MenuText': 'Vertical alignment',
-                'ToolTip' : 'Forces a line (or actually, any two points) to align vertically'}
+        return {'Pixmap'  : ':/' + command,
+                'MenuText': 'Block point',
+                'ToolTip' : 'Freezes the point in its current place'}
 
     def IsActive(self):
         return True;
 
-    def Activate(self):
+    def Activated(self):
         pass
 
-FreeCADGui.addCommand(command, Vertical());
+FreeCADGui.addCommand(command, BlockPoint());

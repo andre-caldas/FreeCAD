@@ -23,18 +23,21 @@
 
 import FreeCADGui
 
-command = "NamedSketcherGui_ConstraintCreation_Equal"
+command = "NamedSketcherGui/ConstraintCreation/YDistance"
 
-class Equal:
+class YDistance:
     def GetResources(self):
-        return {'Pixmap'  : command,
-                'MenuText': 'Equal parameters',
-                'ToolTip' : 'Makes two parameters always have the same value'}
+        return {'Pixmap'  : ':/' + command,
+                'MenuText': 'Vertical distance',
+                'ToolTip' :
+                    '''Specifies the difference of the y-coordinate of two points.
+                    Instead of two points, you can also specify anything that has a start and an end point.
+                    For example, a line.'''}
 
     def IsActive(self):
         return True;
 
-    def Activate(self):
+    def Activated(self):
         pass
 
-FreeCADGui.addCommand(command, Equal());
+FreeCADGui.addCommand(command, YDistance());

@@ -30,7 +30,8 @@
 class NamedSketcherWorkbench ( Workbench ):
     "NamedSketcher workbench object"
     def __init__(self):
-        self.__class__.Icon = FreeCAD.getResourceDir() + "Mod/NamedSketcher/Resources/icons/NamedSketcherWorkbench.svg"
+        import NamedSketcherResources
+        self.__class__.Icon = ":/NamedSketcherGui/NamedSketcherWorkbench"
         self.__class__.MenuText = "Named sketcher"
         self.__class__.ToolTip = "Named sketcher workbench"
 

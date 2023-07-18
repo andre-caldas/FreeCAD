@@ -23,18 +23,19 @@
 
 import FreeCADGui
 
-command = "NamedSketcherGui_ConstraintCreation_TangentCurves"
+command = "NamedSketcherGui/ConstraintCreation/Horizontal"
 
-class TangentCurves:
+class Horizontal:
     def GetResources(self):
-        return {'Pixmap'  : command,
-                'MenuText': 'Tangent curves',
-                'ToolTip' : 'Forces two curves to being tangent to each other'}
+        return {'Pixmap'  : ':/' + command,
+                'Accel'   : 'h',
+                'MenuText': 'Horizontal alignment',
+                'ToolTip' : 'Forces a line (or actually, any two points) to align horizontally'}
 
     def IsActive(self):
         return True;
 
-    def Activate(self):
+    def Activated(self):
         pass
 
-FreeCADGui.addCommand(command, TangentCurves());
+FreeCADGui.addCommand(command, Horizontal());

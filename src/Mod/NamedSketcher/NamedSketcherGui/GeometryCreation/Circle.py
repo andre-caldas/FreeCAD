@@ -23,18 +23,18 @@
 
 import FreeCADGui
 
-command = 'NamedSketcherGui_GeometryCreation_CreateCircle'
+command = 'NamedSketcherGui/GeometryCreation/Circle'
 
-class CreateCircle:
+class Circle:
     def GetResources(self):
-        return {'Pixmap'  : command,
+        return {'Pixmap'  : ':/' + command,
                 'MenuText': 'Circle',
                 'ToolTip' : 'New circle'}
 
     def IsActive(self):
         return True;
 
-    def Activate(self):
+    def Activated(self):
         pass
 
-FreeCADGui.addCommand(command, CreateCircle());
+FreeCADGui.addCommand(command, Circle());
