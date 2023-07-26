@@ -116,10 +116,16 @@ App::DocumentObjectExecReturn *NamedSketch::execute()
 
 // TODO: in the future, return an ObjectPath-like "reference".
 PropertyGeometryList::item_reference
-NamedSketch::addGeometry(std::unique_ptr<Part::Geometry>&& geo)
+NamedSketch::addGeometry(std::shared_ptr<GeometryBase> geo)
 {
-    auto uuid = geometryList.addElement(geometryFactory(std::move(geo)));
+    auto uuid = geometryList.addElement(std::move(geo));
     return PropertyGeometryList::item_reference(this, "geometries", uuid);
+}
+
+PropertyGeometryList::item_reference
+NamedSketch::addPart(std::unique_ptr<Part::Geometry>&& part)
+{
+    return addGeometry(geometryFactory(std::move(part)));
 }
 
 void NamedSketch::delGeometry(boost::uuids::uuid tag)

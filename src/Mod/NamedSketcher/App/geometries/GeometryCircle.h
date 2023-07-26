@@ -52,6 +52,7 @@ class NamedSketcherExport GeometryCircle
 {
 public:
     GeometryCircle(std::unique_ptr<Part::GeomCircle>&& geo);
+    GeometryCircle(double x, double y, double r);
 
     void commitChanges() const override;
 

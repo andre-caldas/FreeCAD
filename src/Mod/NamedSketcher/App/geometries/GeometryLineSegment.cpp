@@ -31,6 +31,7 @@
 
 #include <Base/Writer.h>
 #include <Base/Exception.h>
+#include <Base/Vector3D.h>
 
 #include <Mod/Part/App/Geometry.h>
 
@@ -44,6 +45,15 @@ GeometryLineSegment::GeometryLineSegment(std::unique_ptr<Part::GeomLineSegment>&
     , start("start", geometry->getStartPoint())
     , end("end", geometry->getEndPoint())
 {
+}
+
+// Unfortunately, GeomLineSegment does not have a non-default constructor. :-(
+GeometryLineSegment::GeometryLineSegment(double x1, double y1, double x2, double y2)
+    : GeometryBaseT(std::make_shared<Part::GeomLineSegment>())
+    , start("start", x1, y1)
+    , end("end", x2, y2)
+{
+    geometry->setPoints(Base::Vector3d(x1,y1,0), Base::Vector3d(x2,y2,0));
 }
 
 void GeometryLineSegment::commitChanges() const

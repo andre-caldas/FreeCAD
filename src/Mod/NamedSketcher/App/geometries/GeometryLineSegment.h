@@ -52,6 +52,7 @@ class NamedSketcherExport GeometryLineSegment
 {
 public:
     GeometryLineSegment(std::unique_ptr<Part::GeomLineSegment>&& geo);
+    GeometryLineSegment(double x1, double y1, double x2, double y2);
 
     void commitChanges() const override;
 

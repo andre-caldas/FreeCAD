@@ -31,6 +31,10 @@ namespace py = pybind11;
 
 #include "GeometryBase.h"
 #include "GeometryFactory.h"
+#include "GeometryPoint.h"
+#include "GeometryLineSegment.h"
+#include "GeometryCircle.h"
+
 #include "Geometry.pybind.h"
 
 namespace NamedSketcher
@@ -49,15 +53,29 @@ std::unique_ptr<Part::Geometry> pyObjectToPartGeometry(py::object* geo)
         return std::unique_ptr<Part::Geometry>(g->copy());
     }
     else
+    {
         throw std::invalid_argument("Argument must be a Part::Geometry.");
+    }
 }
 
 
 void init_Geometry(py::module& m)
 {
-    py::class_<GeometryBase>(m, "Geometry")
+    py::class_<GeometryBase, std::shared_ptr<GeometryBase>>(m, "Geometry")
         .def(py::init(&geometryFactoryPy))
     ;
+
+    py::class_<GeometryPoint, std::shared_ptr<GeometryPoint>, GeometryBase>(m, "Point")
+        .def(py::init<double, double>())
+        ;
+
+    py::class_<GeometryLineSegment, std::shared_ptr<GeometryLineSegment>, GeometryBase>(m, "LineSegment")
+        .def(py::init<double, double, double, double>())
+        ;
+
+    py::class_<GeometryCircle, std::shared_ptr<GeometryCircle>, GeometryBase>(m, "Circle")
+        .def(py::init<double, double, double>())
+        ;
 }
 
 } //namespace NamedSketcher

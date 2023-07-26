@@ -29,6 +29,7 @@
 #include <iostream>
 
 #include <Base/Writer.h>
+#include <Base/Vector3D.h>
 
 #include <Mod/Part/App/Geometry.h>
 
@@ -40,6 +41,13 @@ namespace NamedSketcher
 GeometryPoint::GeometryPoint(std::unique_ptr<Part::GeomPoint>&& geo)
     : GeometryBaseT(std::move(geo))
     , point("point", geometry->getPoint())
+{
+}
+
+// Unfortunately, GeomPoint does not have a construction for (x,y,z). :-(
+GeometryPoint::GeometryPoint(double x, double y)
+    : GeometryBaseT(std::make_shared<Part::GeomPoint>(Base::Vector3d(x,y,0)))
+    , point("point", x, y)
 {
 }
 

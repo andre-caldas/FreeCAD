@@ -51,6 +51,7 @@ class NamedSketcherExport GeometryPoint
 {
 public:
     GeometryPoint(std::unique_ptr<Part::GeomPoint>&& geo);
+    GeometryPoint(double x, double y);
 
     GCS::Point point{"point"};
     GCS::Parameter& x = point.x;

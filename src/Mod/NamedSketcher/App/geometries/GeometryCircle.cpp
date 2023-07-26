@@ -32,6 +32,7 @@
 
 #include <Base/Writer.h>
 #include <Base/Exception.h>
+#include <Base/Vector3D.h>
 
 #include <Mod/Part/App/Geometry.h>
 
@@ -45,6 +46,16 @@ GeometryCircle::GeometryCircle(std::unique_ptr<Part::GeomCircle>&& geo)
     , center("center", geometry->getLocation())
     , radius("radius", geometry->getRadius())
 {
+}
+
+// Unfortunately, GeomCircle does not have a non-default constructor. :-(
+GeometryCircle::GeometryCircle(double x, double y, double r)
+    : GeometryBaseT(std::make_shared<Part::GeomCircle>())
+    , center("center", x, y)
+    , radius("radius", r)
+{
+    geometry->setLocation(Base::Vector3d(x,y,0));
+    geometry->setRadius(r);
 }
 
 void GeometryCircle::commitChanges() const

@@ -36,7 +36,7 @@ namespace NamedSketcher
 class GeometryBase;
 
 void init_NamedSketch(py::module& m);
-PropertyGeometryList::item_reference addGeometry(NamedSketch& sketch, py::object* geo);
+PropertyGeometryList::item_reference addPart(NamedSketch& sketch, py::object* geo);
 
 } //namespace NamedSketcher
 

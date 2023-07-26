@@ -36,6 +36,7 @@
 #include <Mod/Part/App/Part2DObject.h>
 
 #include "gcs_solver/System.h"
+#include "geometries/GeometryBase.h"
 #include "geometries/PropertyGeometryList.h"
 #include "constraints/PropertyConstraintList.h"
 
@@ -75,7 +76,10 @@ public:
      \retval reference to the newly created GeometryBase.
      */
     PropertyGeometryList::item_reference
-    addGeometry(std::unique_ptr<Part::Geometry>&& geo);
+    addGeometry(std::shared_ptr<GeometryBase> geo);
+    // Convenience function. TODO: Remove?
+    PropertyGeometryList::item_reference
+    addPart(std::unique_ptr<Part::Geometry>&& part);
 
     /*!
      \brief Deletes indicated geometry (by tag).

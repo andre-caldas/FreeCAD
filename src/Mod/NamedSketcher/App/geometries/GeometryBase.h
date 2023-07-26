@@ -101,7 +101,7 @@ class NamedSketcherExport GeometryBaseT : public GeometryBase
 public:
     using reference_type = Base::Accessor::ReferenceTo<MySelf>;
 
-    GeometryBaseT(std::unique_ptr<GeoClass> geo);
+    GeometryBaseT(std::shared_ptr<GeoClass> geo);
     reference_type getReference() const;
 
     TopoDS_Shape toShape() override {return geometry->toShape();}

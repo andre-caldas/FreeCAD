@@ -38,7 +38,7 @@ GeometryBaseT<MySelf, GeoClass>::GeometryBaseT()
 }
 
 template<typename MySelf, typename GeoClass>
-GeometryBaseT<MySelf, GeoClass>::GeometryBaseT(std::unique_ptr<GeoClass> geo)
+GeometryBaseT<MySelf, GeoClass>::GeometryBaseT(std::shared_ptr<GeoClass> geo)
     : geometry(std::move(geo))
 {
 }
