@@ -6,8 +6,9 @@ set(NamedSketcherGui_UIC_SRCS
 #    NamedSketcherSettingsColors.ui
 #    NamedSketcherSettingsDisplay.ui
 )
+source_group("UI" FILES ${NamedSketcherGui_UIC_SRCS})
 
-SET(NamedSketcherGui_SRCS
+set(NamedSketcherCommands_SRCS
     __init__.py
     #
     GeometryCreation/__init__.py
@@ -28,9 +29,25 @@ SET(NamedSketcherGui_SRCS
     ConstraintCreation/YDistance.py
     ConstraintCreation/PointAlongCurve.py
     ConstraintCreation/TangentCurves.py
+    #
+    Draw/__init__.py
+    #
+    Draw/DrawMode/__init__.py
+)
+source_group("Commands" FILES ${NamedSketcherCommands_SRCS})
+
+set(NamedSketcherViewProviders_SRCS
+    ViewProviders/NamedSketch.py
+)
+source_group("View providers" FILES ${NamedSketcherViewProviders_SRCS})
+
+set(NamedSketcherGui_SRCS
+    ${NamedSketcherGui_UIC_SRCS}
+    ${NamedSketcherCommands_SRCS}
+    ${NamedSketcherViewProviders_SRCS}
 )
 
-SET(NamedSketcherGuiIcon_SVG
+set(NamedSketcherGuiIcon_SVG
     NamedSketcherWorkbench.svg
 )
 
@@ -48,9 +65,10 @@ fc_target_copy_resource(NamedSketcherGui
 )
 
 set(NamedSketcherResources_SRCS
-    NamedSketcherResourcesLoader.cpp
+    NamedSketcherResources.pybind.cpp
 #    xxxx.ui
 )
+source_group("Resource loader" FILES ${NamedSketcherResources_SRCS})
 qt_add_resources(NamedSketcherResources_SRCS NamedSketcherResources.qrc)
 
 include_directories(
@@ -70,5 +88,4 @@ SET_BIN_DIR(NamedSketcherGui NamedSketcherGui /Mod/NamedSketcher)
 SET_BIN_DIR(NamedSketcherResources NamedSketcherResources /Mod/NamedSketcher)
 SET_PYTHON_PREFIX_SUFFIX(NamedSketcherResources)
 
-INSTALL(TARGETS NamedSketcherResources DESTINATION ${CMAKE_INSTALL_LIBDIR})
-#INSTALL(FILES ${NamedSketcherGuiIcon_SVG} DESTINATION "${CMAKE_INSTALL_DATADIR}/Mod/Sketcher/Resources/icons")
+install(TARGETS NamedSketcherResources DESTINATION ${CMAKE_INSTALL_LIBDIR})
