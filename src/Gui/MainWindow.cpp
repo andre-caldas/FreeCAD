@@ -1170,9 +1170,12 @@ void MainWindow::onWindowActivated(QMdiSubWindow* w)
     auto view = dynamic_cast<MDIView*>(w->widget());
 
     // set active the appropriate window (it needs not to be part of mdiIds, e.g. directly after creation)
-    d->activeView = view;
-    Application::Instance->viewActivated(view);
-
+    if (view)
+    {
+        d->activeView = view;
+        Application::Instance->viewActivated(view);
+    }
+    
     ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/View");
     bool saveWB = hGrp->GetBool("SaveWBbyTab", false);
     if (saveWB) {
@@ -1448,6 +1451,9 @@ void MainWindow::delayedStartup()
         return;
     }
 
+    // TODO: Check for deprecated settings
+    Application::Instance->checkForDeprecatedSettings();
+
     // Create new document?
     ParameterGrp::handle hGrp = WindowParameter::getDefaultParameter()->GetGroup("Document");
     if (hGrp->GetBool("CreateNewDoc", false)) {
@@ -1491,7 +1497,7 @@ void MainWindow::updateActions(bool delay)
         // the whole application in a weird state
         if (d->activityTimer->thread() != QThread::currentThread()) {
             QMetaObject::invokeMethod(d->activityTimer, "start", Qt::QueuedConnection,
-                QGenericReturnArgument(), Q_ARG(int, 150));
+                Q_ARG(int, 150));
         }
         else {
             d->activityTimer->start(150);

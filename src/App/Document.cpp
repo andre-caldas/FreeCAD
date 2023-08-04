@@ -1559,7 +1559,7 @@ public:
     BackupPolicy() {
         policy = Standard;
         numberOfFiles = 1;
-        useFCBakExtension = false;
+        useFCBakExtension = true;
         saveBackupDateFormat = "%Y%m%d-%H%M%S";
     }
     ~BackupPolicy() = default;
@@ -1931,7 +1931,7 @@ bool Document::saveToFile(const char* filename) const
             count_bak = -1;
         }
         bool useFCBakExtension = App::GetApplication().GetParameterGroupByPath
-            ("User parameter:BaseApp/Preferences/Document")->GetBool("UseFCBakExtension",false);
+            ("User parameter:BaseApp/Preferences/Document")->GetBool("UseFCBakExtension",true);
         std::string saveBackupDateFormat = App::GetApplication().GetParameterGroupByPath
             ("User parameter:BaseApp/Preferences/Document")->GetASCII("SaveBackupDateFormat","%Y%m%d-%H%M%S");
 
@@ -2829,18 +2829,24 @@ int Document::recompute(const std::vector<App::DocumentObject*> &objs, bool forc
     FC_TIME_LOG(t,"Recompute total");
 
     if (!d->_RecomputeLog.empty()) {
-        d->pendingRemove.clear();
         if (!testStatus(Status::IgnoreErrorOnRecompute))
             Base::Console().Error("Recompute failed!\n");
     }
-    else {
-        for(auto &o : d->pendingRemove) {
-            auto obj = o.getObject();
-            if (obj)
-                obj->getDocument()->removeObject(obj->getNameInDocument());
+
+    for (auto doc : GetApplication().getDocuments()) {
+        decltype(doc->d->pendingRemove) objs;
+        objs.swap(doc->d->pendingRemove);
+        for(auto &o : objs) {
+            try {
+                if (auto obj = o.getObject()) {
+                    obj->getDocument()->removeObject(obj->getNameInDocument());
+                }
+            } catch (Base::Exception & e) {
+                e.ReportException();
+                FC_ERR("error when removing object " << o.getDocumentName() << '#' << o.getObjectName());
+            }
         }
     }
-
     return objectCount;
 }
 
@@ -3372,7 +3378,7 @@ void Document::removeObject(const char* sName)
 
     if (pos->second->testStatus(ObjectStatus::PendingRecompute)) {
         // TODO: shall we allow removal if there is active undo transaction?
-        FC_LOG("pending remove of " << sName << " after recomputing document " << getName());
+        FC_MSG("pending remove of " << sName << " after recomputing document " << getName());
         d->pendingRemove.emplace_back(pos->second);
         return;
     }
