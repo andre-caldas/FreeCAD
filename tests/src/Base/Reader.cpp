@@ -5,11 +5,16 @@
 #include "Base/Exception.h"
 #include "Base/Reader.h"
 #include <array>
-#include <filesystem>
+#include <boost/filesystem.hpp>
 #include <fmt/format.h>
 #include <fstream>
 
+#ifdef _MSC_VER
+#include <filesystem>
 namespace fs = std::filesystem;
+#else
+namespace fs = boost::filesystem;
+#endif
 
 class ReaderTest: public ::testing::Test
 {
@@ -24,8 +29,8 @@ protected:
 
     void TearDown() override
     {
-        if (std::filesystem::exists(_tempFile)) {
-            std::filesystem::remove(_tempFile);
+        if (fs::exists(_tempFile)) {
+            fs::remove(_tempFile);
         }
     }
 
