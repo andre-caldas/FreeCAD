@@ -51,15 +51,6 @@ class Draft2NamedSketch:
     def create_geometries(self, sketch):
         self.check_normal()
 
-        # TODO: I don't really understand what coordinate system
-        # this "normal" refers to.
-        # As a consequence, I do not understand how to properly set up sketch.Placement.
-        if normal.x || normal.y:
-            rot = App.Rotation(App.Base.Vector(0,0,1), normal)
-        else:
-            rot = App.Rotation()
-        sketch.Placement(App.Base.Vector(0,0,0), rot.inverse())
-
         for obj in self.objects_list:
             tp = utils.get_type(obj)
             geo = None
