@@ -52,7 +52,6 @@ class Draft2NamedSketch:
             tp = utils.get_type(obj)
             geo = None
             shape = obj.Shape.copy()
-            shape.rotate(rot)
             if shape.Edges:
                 curve = shape.Edges[0].Curve
             else:
