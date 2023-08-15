@@ -28,9 +28,7 @@
 from itertools import combinations, permutations, product
 
 import FreeCAD as App
-import DraftGeomUtils
 from draftutils import utils
-from draftutils import gui_utils
 
 import NamedSketcher
 from draftutils.translate import translate
@@ -51,9 +49,7 @@ class Draft2NamedSketch:
         return sketch
 
     def create_geometries(self, sketch):
-        normal = get_normal()
-        if normal is None:
-            return
+        self.check_normal()
 
         # TODO: I don't really understand what coordinate system
         # this "normal" refers to.
@@ -104,70 +100,21 @@ class Draft2NamedSketch:
             self.all_points_data += geo_data.points
 
 
-    def get_normal(self):
-        # We only use the view direction when the whole shape is contained
-        # in a straight line.
-        if App.GuiUp:
-            v_dir = gui_utils.get_3d_view().getViewDirection()
-        else:
-            v_dir = App.Base.Vector(0,0,-1)
-
-        # lists to accumulate shapes with defined normal and undefined normal
-        shape_norm_yes = list()
-        shape_norm_no = list()
-
+    def check_normal(self):
+        z_level = None
         for obj in self.object_list:
             if isinstance(obj,Part.Shape):
                 shape = obj
             elif hasattr(obj,'Shape'):
                 shape = obj.Shape
             else:
-                App.Console.PrintError(translate("draft",
-                                       "No shape found")+"\n")
-                return None
+                raise TypeError("No shape found")
 
-            if not DraftGeomUtils.is_planar(shape, self.tolerance):
-                App.Console.PrintError(translate("draft",
-                                       "All Shapes must be planar")+"\n")
-                return None
-
-            if DraftGeomUtils.get_normal(shape, self.tolerance):
-                shape_norm_yes.append(shape)
-            else:
-                shape_norm_no.append(shape)
-
-
-        shapes_list = shape_norm_yes + shape_norm_no
-
-        # test if all shapes are coplanar
-        if len(shape_norm_yes) >= 1:
-            for shape in shapes_list:
-                if not DraftGeomUtils.are_coplanar(shape_norm_yes[0], shape, self.tolerance):
-                    App.Console.PrintError(translate("draft",
-                                           "All Shapes must be coplanar")+"\n")
-                    return None
-            # define sketch normal
-            normal = DraftGeomUtils.get_normal(shape_norm_yes[0], self.tolerance)
-
-        else:
-            # suppose all geometries are straight lines or points
-            points = [vertex.Point for shape in shapes_list for vertex in shape.Vertexes]
-            if len(points) >= 2:
-                poly = Part.makePolygon(points)
-                if not DraftGeomUtils.is_planar(poly, self.tolerance):
-                    App.Console.PrintError(translate("draft",
-                                           "All Shapes must be coplanar")+"\n")
-                    return None
-                normal = DraftGeomUtils.get_normal(poly, self.tolerance)
-                if not normal:
-                    # all points aligned
-                    poly_dir = poly.Edges[0].Curve.Direction
-                    normal = (v_dir - v_dir.dot(poly_dir)*poly_dir).normalize()
-                    normal = normal.negative()
-            else:
-                # only one point
-                normal = v_dir.negative()
-        return normal
+            for v in shape.Vertexes:
+                if z_level is None:
+                    z_level = v.z
+                if z_level != v.z:
+                    raise TypeError("All shapes must have the same z-coordinate")
 
 
     def generate_constraints(self, sketch):
