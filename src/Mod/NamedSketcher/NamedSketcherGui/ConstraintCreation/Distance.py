@@ -28,9 +28,9 @@ command = "NamedSketcherGui/ConstraintCreation/Distance"
 class Distance:
     def GetResources(self):
         return {'Pixmap'  : ':/' + command,
-                'Accel'   : 'h',
-                'MenuText': 'Horizontal alignment',
-                'ToolTip' : 'Forces a line (or actually, any two points) to align horizontally'}
+#                'Accel'   : 'h',
+                'MenuText': 'Distance',
+                'ToolTip' : 'Imposes a specific value for the length of a line (or actually, the distance of two points).'}
 
     def IsActive(self):
         return True;
