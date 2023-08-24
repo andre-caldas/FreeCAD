@@ -29,8 +29,6 @@
 
 #include "Exception.h"
 
-#include <App/Document.h>
-
 #include "ReferenceToObject.h"
 
 namespace Base::Accessor {
@@ -38,7 +36,8 @@ namespace Base::Accessor {
 class ReferencedObject;
 
 template<typename X>
-typename ReferenceTo<X>::locked_resource ReferenceTo<X>::getResult() const
+typename ReferenceTo<X>::locked_resource ReferenceTo<X>::
+    resolve() const
 {
     lock_type lock = getLock();
     if(lock.remaining_tokens_start == lock.remaining_tokens_end)
@@ -82,7 +81,7 @@ template<typename X>
 bool ReferenceTo<X>::refreshLock()
 {
     old_reference = lockedResult.get();
-    lockedResult = getResult();
+    lockedResult = resolve();
     return isLocked();
 }
 

@@ -24,6 +24,7 @@
 #ifndef BASE_Accessor_Exception_H
 #define BASE_Accessor_Exception_H
 
+#include <sstream>
 #include <Base/Exception.h>
 
 namespace Base::Accessor
@@ -34,6 +35,13 @@ class BaseExport ExceptionCannotResolve : public Exception
 public:
     ExceptionCannotResolve() : ExceptionCannotResolve("Cannot resolve accessor reference.") {}
     ExceptionCannotResolve(const char * sMessage) : Exception(sMessage) {}
+};
+
+class BaseExport ExceptionNoExport: public Exception
+{
+public:
+    ExceptionNoExport() : ExceptionNoExport("Object does not export required type.") {}
+    ExceptionNoExport(const char * sMessage) : Exception(sMessage) {}
 };
 
 } //namespace Base::Accessor

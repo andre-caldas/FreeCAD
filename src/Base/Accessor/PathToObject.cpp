@@ -53,6 +53,15 @@ std::string PathToObject::pathString(token_iterator start, const token_iterator 
     return result;
 }
 
+PathToObject& PathToObject::operator+= (PathToObject extra_path)
+{
+    token_list&& tokens = std::move(extra_path.objectPath);
+    objectPath.reserve(objectPath.size() + tokens.size() + 1);
+    objectPath.push_back(NameAndTag(extra_path.rootTag));
+    objectPath.insert(objectPath.end(), tokens.begin(), tokens.end());
+    return *this;
+}
+
 PathToObject::lock_type PathToObject::getLock() const
 {
     // TODO: Implement different "cache expire" policies.

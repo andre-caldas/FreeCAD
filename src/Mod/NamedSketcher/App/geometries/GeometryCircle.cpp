@@ -70,6 +70,18 @@ unsigned int GeometryCircle::getMemSize () const
     return geometry->getMemSize() + sizeof(*this);
 }
 
+
+std::vector<Base::Accessor::ReferenceTo<GCS::Parameter>>
+GeometryCircle::getReferences(GCS::Parameter*)
+{
+    using ref = Base::Accessor::ReferenceTo<GCS::Parameter>;
+    return {
+        ref(this, "radius"),
+        ref(this, "center", "x"),
+        ref(this, "center", "y")
+    };
+}
+
 GCS::Parameter* GeometryCircle::resolve_ptr(token_iterator& start, const token_iterator& end, GCS::Parameter*)
 {
     assert(start != end);
@@ -109,6 +121,15 @@ GCS::Parameter* GeometryCircle::resolve_ptr(token_iterator& start, const token_i
         return &result->y;
     }
     return nullptr;
+}
+
+std::vector<Base::Accessor::ReferenceTo<GCS::Point>>
+GeometryCircle::getReferences(GCS::Point*)
+{
+    using ref = Base::Accessor::ReferenceTo<GCS::Point>;
+    return {
+        ref(this, "center")
+    };
 }
 
 GCS::Point* GeometryCircle::resolve_ptr(token_iterator& start, const token_iterator& end, GCS::Point*)

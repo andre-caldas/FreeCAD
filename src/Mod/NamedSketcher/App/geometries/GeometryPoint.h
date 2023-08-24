@@ -64,13 +64,18 @@ public:
     static constexpr const char* xmlTagTypeStatic(void) {return "Point";}
 
     std::vector<const GCS::Parameter*> getParameters() const override {return {&x,&y};}
+
     GCS::Point positionAtParameter(const GCS::ParameterValueMapper& value_mapper, const GCS::Parameter* t) const override;
     GCS::Point normalAtParameter(const GCS::ParameterValueMapper& value_mapper, const GCS::Parameter* t) const override;
+
+    std::vector<Base::Accessor::ReferenceTo<GCS::Point>> getReferences(GCS::Point*) override;
+    std::vector<Base::Accessor::ReferenceTo<GCS::Parameter>> getReferences(GCS::Parameter*) override;
 
     void report() const override;
 
 private:
     using token_iterator = IExport<GCS::Point>::token_iterator;
+
     GCS::Point* resolve_ptr(token_iterator& start, const token_iterator& end, GCS::Point*) override;
     GCS::Parameter* resolve_ptr(token_iterator& start, const token_iterator& end, GCS::Parameter*) override;
 };

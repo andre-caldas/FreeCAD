@@ -64,6 +64,7 @@ class BaseExport PathToObject
 {
 public:
     PathToObject(const PathToObject&) = default;
+    PathToObject(PathToObject&&) = default;
 
     /*
      * Variadic constructors! :-)
@@ -101,19 +102,6 @@ public:
                  >>* = nullptr>
     PathToObject(ReferencedObject* root, NameOrTag&&... obj_path);
 
-    /**
-     * @brief References an object whose root is the current document.
-     *
-     * @param root - shared resource (weak_ptr) where the path begins.
-     * @param obj_path - list of token items that identify
-     * the path from @root to the referenced resource.
-     */
-    template<typename... NameOrTag,
-             std::enable_if_t<std::conjunction_v<
-                     std::is_convertible<NameOrTag, NameAndTag>...
-                 >>* = nullptr>
-    PathToObject(NameOrTag&&... obj_path);
-
     PathToObject(const Tag& tag, const token_list& path)
         : rootTag(tag)
         , objectPath(path) {}
@@ -140,8 +128,12 @@ public:
                  >>* = nullptr>
     PathToObject goFurther(NameOrTag&& ...furtherPath) const;
 
-    template<typename NameOrTag>
-    PathToObject operator+ (NameOrTag&& extra_path) const {return goFurther(extra_path);}
+    PathToObject operator+ (std::string extra_path) const {return goFurther(std::move(extra_path));}
+    PathToObject operator+ (PathToObject extra_path) const {return PathToObject(*this) += extra_path;}
+    PathToObject& operator+= (PathToObject extra_path);
+
+    template<typename T>
+    std::shared_ptr<T> resolveType();
 
     /**
      * @brief The resolution mechanism resolves the token chain

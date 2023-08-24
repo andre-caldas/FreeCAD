@@ -26,10 +26,22 @@
 #include "Exception.h"
 
 #include "Types.h"
+#include "ReferenceToObject.h"
 #include "ReferencedObject.h"
 
 namespace Base::Accessor
 {
+
+template<typename X>
+std::vector<ReferenceTo<X>> ReferencedObject::getReferencesTo()
+{
+    IExport<X>* ptr = dynamic_cast<IExport<X>*>(this);
+    if(!ptr)
+    {
+        FC_THROWM(ExceptionNoExport, "Cannot getReferencesTo().");
+    }
+    return ptr->getReferences();
+}
 
 template<typename T>
 typename IExport<T>::export_type
@@ -62,6 +74,13 @@ typename IExport<T>::export_share_type
 IExport<T>::resolve_share(token_iterator& /*start*/, const token_iterator& /*end*/, T*)
 {
     return export_share_type();
+}
+
+template<typename T>
+typename std::vector<ReferenceTo<T>>
+IExport<T>::getReferences(T*)
+{
+    return std::vector<ReferenceTo<T>>();
 }
 
 } //namespace Base::Accessor

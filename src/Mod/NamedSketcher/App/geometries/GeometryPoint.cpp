@@ -62,6 +62,17 @@ unsigned int GeometryPoint::getMemSize() const
     return geometry->getMemSize() + sizeof(*this);
 }
 
+
+std::vector<Base::Accessor::ReferenceTo<GCS::Parameter>>
+GeometryPoint::getReferences(GCS::Parameter*)
+{
+    using ref = Base::Accessor::ReferenceTo<GCS::Parameter>;
+    return {
+        ref(this, "point", "x"),
+        ref(this, "point", "y")
+    };
+}
+
 GCS::Parameter* GeometryPoint::resolve_ptr(token_iterator& start, const token_iterator& end, GCS::Parameter*)
 {
     assert(start != end);
@@ -87,6 +98,15 @@ GCS::Parameter* GeometryPoint::resolve_ptr(token_iterator& start, const token_it
         return &y;
     }
     return nullptr;
+}
+
+std::vector<Base::Accessor::ReferenceTo<GCS::Point>>
+GeometryPoint::getReferences(GCS::Point*)
+{
+    using ref = Base::Accessor::ReferenceTo<GCS::Point>;
+    return {
+        ref(this, "point")
+    };
 }
 
 GCS::Point* GeometryPoint::resolve_ptr(token_iterator& start, const token_iterator& end, GCS::Point*)

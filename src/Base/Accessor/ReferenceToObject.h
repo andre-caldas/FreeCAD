@@ -88,6 +88,9 @@ public:
     ReferenceTo(ReferencedObject* root, NameOrTag&&... obj_path)
         : PathToObject(root, obj_path...) {}
 
+    friend ReferenceTo<T> operator+(PathToObject path, const ReferenceTo<T> ref)
+    {return ReferenceTo<T>(path + (const PathToObject&)ref);}
+
     using lock_type = PathToObject::lock_type;
     /**
      * @brief Locks the last object and gets a raw pointer to @class T.
@@ -112,7 +115,7 @@ public:
      * @brief Fully resolves the chain up to the last token.
      * @return A @class locked_resource holding a lock and a pointer.
      */
-    locked_resource getResult() const;
+    locked_resource resolve() const;
 
     /**
      * @brief We keep an internal @class locked_resource.

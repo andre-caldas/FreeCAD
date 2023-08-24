@@ -67,6 +67,19 @@ unsigned int GeometryLineSegment::getMemSize () const
     return geometry->getMemSize() + sizeof(*this);
 }
 
+
+std::vector<Base::Accessor::ReferenceTo<GCS::Parameter>>
+GeometryLineSegment::getReferences(GCS::Parameter*)
+{
+    using ref = Base::Accessor::ReferenceTo<GCS::Parameter>;
+    return {
+        ref(this, "start", "x"),
+        ref(this, "start", "y"),
+        ref(this, "end", "x"),
+        ref(this, "end", "y")
+    };
+}
+
 GCS::Parameter* GeometryLineSegment::resolve_ptr(token_iterator& start, const token_iterator& end, GCS::Parameter*)
 {
     assert(start != end);
@@ -105,6 +118,16 @@ GCS::Parameter* GeometryLineSegment::resolve_ptr(token_iterator& start, const to
         return &result->y;
     }
     return nullptr;
+}
+
+std::vector<Base::Accessor::ReferenceTo<GCS::Point>>
+GeometryLineSegment::getReferences(GCS::Point*)
+{
+    using ref = Base::Accessor::ReferenceTo<GCS::Point>;
+    return {
+        ref(this, "start"),
+        ref(this, "end")
+    };
 }
 
 GCS::Point* GeometryLineSegment::resolve_ptr(token_iterator& start, const token_iterator& end, GCS::Point*)

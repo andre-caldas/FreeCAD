@@ -22,6 +22,7 @@
  ***************************************************************************/
 
 #include <pybind11/pybind11.h>
+#include <pybind11/operators.h>
 namespace py = pybind11;
 
 #include <stdexcept>
@@ -61,9 +62,24 @@ std::unique_ptr<Part::Geometry> pyObjectToPartGeometry(py::object* geo)
 
 void init_Geometry(py::module& m)
 {
+    // Parameters
+    py::class_<GCS::Parameter, std::shared_ptr<GCS::Parameter>>(m, "GCS_Parameter")
+        .def(py::init<double>())
+        .def("assign", [](GCS::Parameter& p, double v){return p = v;})
+        ;
+    py::implicitly_convertible<GCS::Parameter, py::float_>();
+
+    py::class_<GCS::Point, std::shared_ptr<GCS::Point>>(m, "GCS_Point")
+        .def(py::init<double, double>())
+        .def_readwrite("x", &GCS::Point::x)
+        .def_readwrite("y", &GCS::Point::y)
+        ;
+
     py::class_<GeometryBase, std::shared_ptr<GeometryBase>>(m, "Geometry")
         .def(py::init(&geometryFactoryPy))
-    ;
+        .def("getReferencesToParameters", [](GeometryBase& self){return self.getReferencesTo<GCS::Parameter>();})
+        .def("getReferencesToPoints", [](GeometryBase& self){return self.getReferencesTo<GCS::Point>();})
+        ;
 
     py::class_<GeometryPoint, std::shared_ptr<GeometryPoint>, GeometryBase>(m, "Point")
         .def(py::init<double, double>())

@@ -23,10 +23,9 @@
 
 #include <utility>
 
-#include <App/Application.h>
-
 #include "ReferencedObject.h"
 #include "PathToObject.h"
+#include "ReferenceToObject.h"
 
 namespace Base::Accessor {
 
@@ -56,20 +55,17 @@ template<typename... NameOrTag,
          std::enable_if_t<std::conjunction_v<
                  std::is_convertible<NameOrTag, NameAndTag>...
              >>*>
-PathToObject::PathToObject(NameOrTag&&... obj_path)
-    : PathToObject(App::GetApplication().getActiveDocument(), std::forward<NameOrTag>(obj_path)...)
-{
-}
-
-template<typename... NameOrTag,
-         std::enable_if_t<std::conjunction_v<
-                 std::is_convertible<NameOrTag, NameAndTag>...
-             >>*>
 PathToObject PathToObject::goFurther(NameOrTag&& ...furtherPath) const
 {
     auto new_path = objectPath;
     new_path.insert(new_path.end(), {NameAndTag(std::forward<NameOrTag>(furtherPath))...});
     return PathToObject{rootTag, new_path};
+}
+
+template<typename T>
+std::shared_ptr<T> PathToObject::resolveType()
+{
+    return ReferenceTo<T>(*this).resolve();
 }
 
 } // namespace Base::Accessor

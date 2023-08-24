@@ -28,12 +28,13 @@ namespace py = pybind11;
 #include "constraints/Constraint.pybind.h"
 #include "Reference.pybind.h"
 #include "NamedSketch.pybind.h"
+
 #include "NamedSketch.h"
 
 namespace NamedSketcher
 {
 
-PYBIND11_MODULE(NamedSketcher, m)
+PYBIND11_MODULE(NamedSketcherCpp, m)
 {
     m.doc() = "A 2D sketcher that references objects by name";
     init_Reference(m); // Temporary hack.

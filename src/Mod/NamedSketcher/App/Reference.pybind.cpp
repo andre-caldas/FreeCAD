@@ -30,6 +30,7 @@
 #include <pybind11/operators.h>
 namespace py = pybind11;
 
+#include <Base/Accessor/Exception.h>
 #include <Base/Accessor/PathToObject.h>
 #include <Base/Accessor/ReferenceToObject.h>
 
@@ -52,29 +53,45 @@ using ref_constraint = ReferenceTo<ConstraintBase>;
 
 void init_Reference(py::module& m)
 {
+    py::register_exception<Base::Accessor::ExceptionCannotResolve>(m, "ExceptionCannotResolve", PyExc_RuntimeError);
+    py::register_exception<Base::Accessor::ExceptionNoExport>(m, "ExceptionNoExport", PyExc_RuntimeError);
+
     py::class_<PathToObject>(m, "PathToObject", py::module_local())
         .def(py::self + std::string())
+        .def(py::self + *static_cast<const PathToObject*>(nullptr))
+        .def("resolveParameter", &PathToObject::resolveType<GCS::Parameter>)
+        .def("resolvePoint", &PathToObject::resolveType<GCS::Point>)
     ;
 
     py::class_<ref_geometry_base, PathToObject>(m, "ReferenceToGeometryBase", py::module_local())
         .def(py::init<const PathToObject&>())
         .def(py::self + std::string())
+        .def(*static_cast<const PathToObject*>(nullptr) + py::self)
+        .def("resolve", &ref_geometry_base::resolve)
     ;
     py::implicitly_convertible<PathToObject, ref_geometry_base>();
 
     py::class_<ref_parameter, PathToObject>(m, "ReferenceToParameter", py::module_local())
         .def(py::init<const PathToObject&>())
         .def(py::self + std::string())
+        .def(*static_cast<const PathToObject*>(nullptr) + py::self)
+        .def("resolve", &ref_parameter::resolve)
     ;
     py::implicitly_convertible<PathToObject, ref_parameter>();
 
     py::class_<ref_point, PathToObject>(m, "ReferenceToPoint", py::module_local())
         .def(py::init<const PathToObject&>())
         .def(py::self + std::string())
+        .def(*static_cast<const PathToObject*>(nullptr) + py::self)
+        .def("resolve", &ref_point::resolve)
     ;
     py::implicitly_convertible<PathToObject, ref_point>();
 
-    py::class_<ref_constraint, PathToObject>(m, "ReferenceToConstraint", py::module_local());
+    py::class_<ref_constraint, PathToObject>(m, "ReferenceToConstraint", py::module_local())
+        .def(*static_cast<const PathToObject*>(nullptr) + py::self)
+        .def("resolve", &ref_constraint::resolve)
+    ;
+    py::implicitly_convertible<PathToObject, ref_constraint>();
 }
 
 } //namespace NamedSketcher

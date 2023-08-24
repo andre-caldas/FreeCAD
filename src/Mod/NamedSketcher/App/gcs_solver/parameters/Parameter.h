@@ -38,8 +38,10 @@ class ParameterBase
 {
 public:
     ParameterBase() = default;
+    ParameterBase(const ParameterBase&) = default;
     ParameterBase(std::string name, double v = 0);
     ParameterBase(double v) : value(v) {}
+    ParameterBase& operator= (const ParameterBase&) = default;
     ParameterBase& operator= (double v) {value = v; return *this;}
 
     operator double&() {return value;}
@@ -53,7 +55,7 @@ private:
 
 public:
     // TODO: use this only in debug build.
-    const std::string name;
+    std::string name;
 };
 
 inline ParameterBase::ParameterBase(std::string name, double v) : value(v), name(name) {}
@@ -68,6 +70,7 @@ class Parameter : public ParameterBase
 public:
     using ParameterBase::ParameterBase;
     Parameter& operator= (double v) {*(ParameterBase*)this= v; return *this;} // Cargo cult.
+    Parameter& operator= (const Parameter&) = default;
 };
 
 class OptimizedParameter : public ParameterBase
@@ -75,6 +78,7 @@ class OptimizedParameter : public ParameterBase
 public:
     using ParameterBase::ParameterBase;
     OptimizedParameter& operator= (double v) {*(ParameterBase*)this= v; return *this;} // Cargo cult.
+    OptimizedParameter& operator= (const OptimizedParameter&) = default;
 };
 
 
@@ -85,6 +89,7 @@ public:
     Parameter y = 0.0;
 
     Point() = default;
+    Point(const Point&) = default;
     Point(std::string name, double x = 0, double y = 0);
     Point(double x, double y) : x(x), y(y) {}
     Point(const Base::Vector3d& p) : Point(p.x, p.y) {}
@@ -95,7 +100,7 @@ public:
 
 public:
     // TODO: use this only in debug build.
-    const std::string name;
+    std::string name;
 };
 
 inline Point::Point(std::string name, double x, double y) : x(name + ".x",x), y(name + ".y",y), name(name) {}

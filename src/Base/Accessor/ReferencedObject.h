@@ -37,6 +37,9 @@
 namespace Base::Accessor
 {
 
+template<typename T> class ReferenceTo;
+template<typename T> class IExport;
+
 /**
  * \brief A ReferencedObject is an object that can be queried
  * to resolve the next step in a path.
@@ -46,6 +49,18 @@ class BaseExport ReferencedObject
 {
 public:
     virtual ~ReferencedObject() = default;
+
+    // Avoid static cast using this template.
+    // Use: resolveType<T>(...).
+    // TODO: use it when chain resolving.
+    template<typename X>
+    std::shared_ptr<X> resolveType(std::shared_ptr<ReferencedObject>& parent_lock, token_iterator& start, const token_iterator& end)
+    {return static_cast<IExport<X>*>(this)->resolve(parent_lock, start, end);}
+
+    // Avoid static cast using this template.
+    // Use: getReferencesTo<T>().
+    template<typename X>
+    std::vector<ReferenceTo<X>> getReferencesTo();
 
     /**
      * @brief Globally registers a Tag.
@@ -115,6 +130,7 @@ public:
 
     // TODO: Use range in C++20.
     export_type resolve(std::shared_ptr<ReferencedObject>& parent_lock, token_iterator& start, const token_iterator& end);
+    virtual std::vector<ReferenceTo<T>> getReferences(T* = nullptr);
 
 protected:
     /*
