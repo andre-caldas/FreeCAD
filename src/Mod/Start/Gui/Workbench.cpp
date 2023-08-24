@@ -42,13 +42,9 @@ using namespace StartGui;
 
 TYPESYSTEM_SOURCE(StartGui::Workbench, Gui::StdWorkbench)
 
-StartGui::Workbench::Workbench()
-{
-}
+StartGui::Workbench::Workbench() = default;
 
-StartGui::Workbench::~Workbench()
-{
-}
+StartGui::Workbench::~Workbench() = default;
 
 void StartGui::Workbench::activated()
 {
@@ -118,8 +114,7 @@ void StartGui::Workbench::loadStartPage()
 
 void StartGui::Workbench::setupContextMenu(const char* recipient, Gui::MenuItem* item) const
 {
-    Q_UNUSED(recipient);
-    Q_UNUSED(item);
+    Gui::StdWorkbench::setupContextMenu(recipient, item);
 }
 
 Gui::MenuItem* StartGui::Workbench::setupMenuBar() const

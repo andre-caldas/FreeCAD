@@ -81,9 +81,7 @@ public:
     // -----------------------------------------------------------------------
     //  Constructors and Destructor
     // -----------------------------------------------------------------------
-    DOMTreeErrorReporter() :
-            fSawErrors(false) {
-    }
+    DOMTreeErrorReporter() = default;
 
     ~DOMTreeErrorReporter() override = default;
 
@@ -109,7 +107,7 @@ public:
     //      method. Its used by the main code to suppress output if there are
     //      errors.
     // -----------------------------------------------------------------------
-    bool    fSawErrors;
+    bool    fSawErrors{false};
 };
 
 
@@ -151,7 +149,7 @@ public:
     void resetErrors() {}
 
     /* Unimplemented constructors and operators */
-    DOMPrintErrorHandler(const DOMErrorHandler&) = delete;
+    explicit DOMPrintErrorHandler(const DOMErrorHandler&) = delete;
     void operator=(const DOMErrorHandler&) = delete;
 
 };
@@ -980,16 +978,14 @@ std::string ParameterGrp::GetASCII(const char* Name, const char * pPreset) const
     // if not return preset
     if (!pcElem) {
         if (!pPreset)
-            return std::string("");
-        else
-            return std::string(pPreset);
+            return {};
+        return {pPreset};
     }
     // if yes check the value and return
     DOMNode *pcElem2 = pcElem->getFirstChild();
     if (pcElem2)
-        return std::string(StrXUTF8(pcElem2->getNodeValue()).c_str());
-    else
-        return std::string("");
+        return {StrXUTF8(pcElem2->getNodeValue()).c_str()};
+    return {};
 }
 
 std::vector<std::string> ParameterGrp::GetASCIIs(const char * sFilter) const
@@ -1443,7 +1439,6 @@ static XercesDOMParser::ValSchemes    gValScheme       = XercesDOMParser::Val_Au
 /** Default construction
   */
 ParameterManager::ParameterManager()
-  : ParameterGrp(), _pDocument(nullptr), paramSerializer(nullptr)
 {
     _Manager = this;
 
@@ -1517,7 +1512,7 @@ ParameterManager::~ParameterManager()
 
 Base::Reference<ParameterManager> ParameterManager::Create()
 {
-    return Base::Reference<ParameterManager>(new ParameterManager());
+    return {new ParameterManager()};
 }
 
 void ParameterManager::Init()

@@ -47,6 +47,7 @@
 #include "MainWindow.h"
 #include "MDIView.h"
 #include "SelectionFilter.h"
+#include "SelectionFilterPy.h"
 #include "SelectionObserverPython.h"
 #include "Tree.h"
 #include "ViewProviderDocumentObject.h"
@@ -517,7 +518,7 @@ std::vector<App::DocumentObject*> SelectionSingleton::getObjectsOfType(const cha
 {
     Base::Type typeId = Base::Type::fromName(typeName);
     if (typeId == Base::Type::badType())
-        return std::vector<App::DocumentObject*>();
+        return {};
     return getObjectsOfType(typeId, pDocName, resolve);
 }
 
@@ -1607,7 +1608,6 @@ void SelectionSingleton::slotDeletedObject(const App::DocumentObject& Obj)
  */
 SelectionSingleton::SelectionSingleton()
     :CurrentPreselection(SelectionChanges::ClrSelection)
-    ,_needPickedList(false)
 {
     hx = 0;
     hy = 0;
@@ -1624,9 +1624,7 @@ SelectionSingleton::SelectionSingleton()
  * A destructor.
  * A more elaborate description of the destructor.
  */
-SelectionSingleton::~SelectionSingleton()
-{
-}
+SelectionSingleton::~SelectionSingleton() = default;
 
 SelectionSingleton* SelectionSingleton::_pcSingleton = nullptr;
 

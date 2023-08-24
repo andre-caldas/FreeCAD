@@ -3802,7 +3802,7 @@ const char * Document::getObjectName(DocumentObject *pFeat) const
 std::string Document::getUniqueObjectName(const char *Name) const
 {
     if (!Name || *Name == '\0')
-        return std::string();
+        return {};
     std::string CleanName = Base::Tools::getIdentifier(Name);
 
     // name in use?

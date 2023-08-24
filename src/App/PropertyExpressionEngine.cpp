@@ -87,8 +87,7 @@ TYPESYSTEM_SOURCE(App::PropertyExpressionEngine , App::PropertyExpressionContain
  */
 
 PropertyExpressionEngine::PropertyExpressionEngine()
-    : running(false)
-    , validator(0)
+    : validator(0)
 {
 }
 
@@ -811,7 +810,7 @@ std::string PropertyExpressionEngine::validateExpression(const ObjectIdentifier 
         return e.what();
     }
 
-    return std::string();
+    return {};
 }
 
 /**

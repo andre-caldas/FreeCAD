@@ -237,14 +237,10 @@ int SoFCSelectionContextEx::merge(int status, SoFCSelectionContextBasePtr &outpu
 ///////////////////////////////////////////////////////////////////////
 
 SoFCSelectionCounter::SoFCSelectionCounter()
-    :counter(std::make_shared<int>(0))
-    ,hasSelection(false)
-    ,hasPreselection(false)
+  : counter(std::make_shared<int>(0))
 {}
 
-
-SoFCSelectionCounter::~SoFCSelectionCounter()
-{}
+SoFCSelectionCounter::~SoFCSelectionCounter() = default;
 
 
 bool SoFCSelectionCounter::checkRenderCache(SoState *state) {

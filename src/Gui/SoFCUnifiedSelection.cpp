@@ -102,7 +102,7 @@ SO_NODE_SOURCE(SoFCUnifiedSelection)
 /*!
   Constructor.
 */
-SoFCUnifiedSelection::SoFCUnifiedSelection() : pcDocument(nullptr)
+SoFCUnifiedSelection::SoFCUnifiedSelection()
 {
     SO_NODE_CONSTRUCTOR(SoFCUnifiedSelection);
 
@@ -794,14 +794,12 @@ void SoHighlightElementAction::initClass()
     SO_ACTION_ADD_METHOD(SoPointSet,callDoAction);
 }
 
-SoHighlightElementAction::SoHighlightElementAction () : _highlight(false), _det(nullptr)
+SoHighlightElementAction::SoHighlightElementAction ()
 {
     SO_ACTION_CONSTRUCTOR(SoHighlightElementAction);
 }
 
-SoHighlightElementAction::~SoHighlightElementAction()
-{
-}
+SoHighlightElementAction::~SoHighlightElementAction() = default;
 
 void SoHighlightElementAction::beginTraversal(SoNode *node)
 {
@@ -865,14 +863,12 @@ void SoSelectionElementAction::initClass()
 }
 
 SoSelectionElementAction::SoSelectionElementAction (Type t, bool secondary)
-    : _type(t), _det(nullptr), _secondary(secondary)
+    : _type(t), _secondary(secondary)
 {
     SO_ACTION_CONSTRUCTOR(SoSelectionElementAction);
 }
 
-SoSelectionElementAction::~SoSelectionElementAction()
-{
-}
+SoSelectionElementAction::~SoSelectionElementAction() = default;
 
 void SoSelectionElementAction::beginTraversal(SoNode *node)
 {
@@ -937,14 +933,12 @@ void SoVRMLAction::initClass()
     SO_ACTION_ADD_METHOD(SoPointSet,callDoAction);
 }
 
-SoVRMLAction::SoVRMLAction() : overrideMode(true)
+SoVRMLAction::SoVRMLAction()
 {
     SO_ACTION_CONSTRUCTOR(SoVRMLAction);
 }
 
-SoVRMLAction::~SoVRMLAction()
-{
-}
+SoVRMLAction::~SoVRMLAction() = default;
 
 void SoVRMLAction::setOverrideMode(SbBool on)
 {
@@ -1082,9 +1076,7 @@ SoFCSelectionRoot::SoFCSelectionRoot(bool trackCacheMode)
     SO_NODE_SET_SF_ENUM_TYPE(selectionStyle, SelectStyles);
 }
 
-SoFCSelectionRoot::~SoFCSelectionRoot()
-{
-}
+SoFCSelectionRoot::~SoFCSelectionRoot() = default;
 
 void SoFCSelectionRoot::initClass()
 {
@@ -1125,7 +1117,7 @@ SoFCSelectionContextBasePtr SoFCSelectionRoot::getNodeContext(
     stack.front() = front;
     if(it!=front->contextMap.end())
         return it->second;
-    return SoFCSelectionContextBasePtr();
+    return {};
 }
 
 SoFCSelectionContextBasePtr

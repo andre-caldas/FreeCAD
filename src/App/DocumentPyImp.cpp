@@ -40,14 +40,17 @@
 using namespace App;
 
 
-PyObject*  DocumentPy::addProperty(PyObject *args)
+PyObject*  DocumentPy::addProperty(PyObject *args, PyObject *kwd)
 {
     char *sType,*sName=nullptr,*sGroup=nullptr,*sDoc=nullptr;
     short attr=0;
     std::string sDocStr;
     PyObject *ro = Py_False, *hd = Py_False;
-    if (!PyArg_ParseTuple(args, "s|ssethO!O!", &sType,&sName,&sGroup,"utf-8",&sDoc,&attr,
-        &PyBool_Type, &ro, &PyBool_Type, &hd))
+    PyObject* enumVals = nullptr;
+    static char *kwlist[] = {"type","name","group","doc","attr","read_only","hidden","enum_vals",nullptr};
+    if (!PyArg_ParseTupleAndKeywords(
+            args, kwd, "ss|sethO!O!O", kwlist, &sType, &sName, &sGroup, "utf-8",
+            &sDoc, &attr, &PyBool_Type, &ro, &PyBool_Type, &hd, &enumVals))
         return nullptr;
 
     if (sDoc) {
@@ -55,8 +58,21 @@ PyObject*  DocumentPy::addProperty(PyObject *args)
         PyMem_Free(sDoc);
     }
 
-    getDocumentPtr()->addDynamicProperty(sType,sName,sGroup,sDocStr.c_str(),attr,
-            Base::asBoolean(ro), Base::asBoolean(hd));
+    Property *prop = getDocumentPtr()->
+        addDynamicProperty(sType,sName,sGroup,sDocStr.c_str(),attr,
+                           Base::asBoolean(ro), Base::asBoolean(hd));
+
+    // enum support
+    auto* propEnum = dynamic_cast<App::PropertyEnumeration*>(prop);
+    if (propEnum) {
+        if (PySequence_Check(enumVals)) {
+            std::vector<std::string> enumValsAsVector;
+            for (Py_ssize_t i = 0; i < PySequence_Length(enumVals); ++i) {
+                enumValsAsVector.emplace_back(PyUnicode_AsUTF8(PySequence_GetItem(enumVals,i)));
+            }
+            propEnum->setEnums(enumValsAsVector);
+        }
+    }
 
     return Py::new_reference_to(this);
 }
@@ -472,7 +488,7 @@ PyObject*  DocumentPy::commitTransaction(PyObject * args)
 }
 
 Py::Boolean DocumentPy::getHasPendingTransaction() const {
-    return Py::Boolean(getDocumentPtr()->hasPendingTransaction());
+    return {getDocumentPtr()->hasPendingTransaction()};
 }
 
 PyObject*  DocumentPy::undo(PyObject * args)
@@ -780,17 +796,17 @@ Py::String  DocumentPy::getDependencyGraph() const
 {
     std::stringstream out;
     getDocumentPtr()->exportGraphviz(out);
-    return Py::String(out.str());
+    return {out.str()};
 }
 
 Py::String DocumentPy::getName() const
 {
-    return Py::String(getDocumentPtr()->getName());
+    return {getDocumentPtr()->getName()};
 }
 
 Py::Boolean DocumentPy::getRecomputesFrozen() const
 {
-    return Py::Boolean(getDocumentPtr()->testStatus(Document::Status::SkipRecompute));
+    return {getDocumentPtr()->testStatus(Document::Status::SkipRecompute)};
 }
 
 void DocumentPy::setRecomputesFrozen(Py::Boolean arg)
@@ -942,35 +958,35 @@ PyObject *DocumentPy::getDependentDocuments(PyObject *args) {
 
 Py::Boolean DocumentPy::getRestoring() const
 {
-    return Py::Boolean(getDocumentPtr()->testStatus(Document::Status::Restoring));
+    return {getDocumentPtr()->testStatus(Document::Status::Restoring)};
 }
 
 Py::Boolean DocumentPy::getPartial() const
 {
-    return Py::Boolean(getDocumentPtr()->testStatus(Document::Status::PartialDoc));
+    return {getDocumentPtr()->testStatus(Document::Status::PartialDoc)};
 }
 
 Py::Boolean DocumentPy::getImporting() const
 {
-    return Py::Boolean(getDocumentPtr()->testStatus(Document::Status::Importing));
+    return {getDocumentPtr()->testStatus(Document::Status::Importing)};
 }
 
 Py::Boolean DocumentPy::getRecomputing() const
 {
-    return Py::Boolean(getDocumentPtr()->testStatus(Document::Status::Recomputing));
+    return {getDocumentPtr()->testStatus(Document::Status::Recomputing)};
 }
 
 Py::Boolean DocumentPy::getTransacting() const
 {
-    return Py::Boolean(getDocumentPtr()->isPerformingTransaction());
+    return {getDocumentPtr()->isPerformingTransaction()};
 }
 
 Py::String DocumentPy::getOldLabel() const
 {
-    return Py::String(getDocumentPtr()->getOldLabel());
+    return {getDocumentPtr()->getOldLabel()};
 }
 
 Py::Boolean DocumentPy::getTemporary() const
 {
-    return Py::Boolean(getDocumentPtr()->testStatus(Document::TempDoc));
+    return {getDocumentPtr()->testStatus(Document::TempDoc)};
 }

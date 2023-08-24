@@ -67,9 +67,7 @@ InspectActualMesh::InspectActualMesh(const Mesh::MeshObject& rMesh) : _mesh(rMes
     _bApply = _clTrf != tmp;
 }
 
-InspectActualMesh::~InspectActualMesh()
-{
-}
+InspectActualMesh::~InspectActualMesh() = default;
 
 unsigned long InspectActualMesh::countPoints() const
 {
@@ -461,7 +459,6 @@ float InspectNominalPoints::getDistance(const Base::Vector3f& point) const
 
 InspectNominalShape::InspectNominalShape(const TopoDS_Shape& shape, float /*radius*/)
     : _rShape(shape)
-    , isSolid(false)
 {
     distss = new BRepExtrema_DistShapeShape();
     distss->LoadS1(_rShape);
@@ -545,15 +542,9 @@ bool InspectNominalShape::isBelowFace(const gp_Pnt& pnt3d) const
 
 TYPESYSTEM_SOURCE(Inspection::PropertyDistanceList, App::PropertyLists)
 
-PropertyDistanceList::PropertyDistanceList()
-{
+PropertyDistanceList::PropertyDistanceList() = default;
 
-}
-
-PropertyDistanceList::~PropertyDistanceList()
-{
-
-}
+PropertyDistanceList::~PropertyDistanceList() = default;
 
 void PropertyDistanceList::setSize(int newSize)
 {
@@ -725,7 +716,7 @@ struct DistanceInspection
 // Helper internal class for QtConcurrent map operation. Holds sums-of-squares and counts for RMS calculation
 class DistanceInspectionRMS {
 public:
-    DistanceInspectionRMS() : m_numv(0), m_sumsq(0.0) {}
+    DistanceInspectionRMS() = default;
     DistanceInspectionRMS& operator += (const DistanceInspectionRMS& rhs)
     {
         this->m_numv += rhs.m_numv;
@@ -738,8 +729,8 @@ public:
             return 0.0;
         return sqrt(this->m_sumsq / (double)this->m_numv);
     }
-    int m_numv;
-    double m_sumsq;
+    int m_numv{0};
+    double m_sumsq{0.0};
 };
 }
 
@@ -754,9 +745,7 @@ Feature::Feature()
     ADD_PROPERTY(Distances,(0.0));
 }
 
-Feature::~Feature()
-{
-}
+Feature::~Feature() = default;
 
 short Feature::mustExecute() const
 {
@@ -953,10 +942,6 @@ App::DocumentObjectExecReturn* Feature::execute()
 PROPERTY_SOURCE(Inspection::Group, App::DocumentObjectGroup)
 
 
-Group::Group()
-{
-}
+Group::Group() = default;
 
-Group::~Group()
-{
-}
+Group::~Group() = default;

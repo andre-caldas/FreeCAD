@@ -96,7 +96,7 @@ public:
     }
     std::vector<std::string> getDisplayModes() const override
     {
-        return std::vector<std::string>();
+        return {};
     }
     void setCoords(const std::vector<Base::Vector3f>& v)
     {
@@ -611,11 +611,6 @@ TaskCrossSections::TaskCrossSections(const Base::BoundBox3d& bb)
         widget->windowTitle(), true, nullptr);
     taskbox->groupLayout()->addWidget(widget);
     Content.push_back(taskbox);
-}
-
-TaskCrossSections::~TaskCrossSections()
-{
-    // automatically deleted in the sub-class
 }
 
 bool TaskCrossSections::accept()

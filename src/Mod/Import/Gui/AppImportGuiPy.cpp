@@ -372,8 +372,6 @@ public:
         initialize("This module is the ImportGui module."); // register with Python
     }
 
-    ~Module() override {}
-
 private:
     Py::Object insert(const Py::Tuple& args, const Py::Dict &kwds)
     {
@@ -534,7 +532,7 @@ private:
         auto vp = Gui::Application::Instance->getViewProvider(obj);
         if(vp)
             return vp->getElementColors(subname);
-        return std::map<std::string,App::Color>();
+        return {};
     }
 
     Py::Object exportOptions(const Py::Tuple& args)
