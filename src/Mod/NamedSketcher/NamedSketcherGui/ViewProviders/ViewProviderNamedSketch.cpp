@@ -21,29 +21,35 @@
  *                                                                          *
  ***************************************************************************/
 
-#include <pybind11/pybind11.h>
-namespace py = pybind11;
+#include <Gui/Application.h>
+#include <Gui/Command.h>
 
-#include <qglobal.h>
+#include "ViewProviderNamedSketch.h"
 
-#include "ViewProviders/ViewProviderNamedSketch.h"
-
-static void q_init_resource()
-{
-    // This cannot be called from a namespace.
-    Q_INIT_RESOURCE(NamedSketcherResources);
-}
+FC_LOG_LEVEL_INIT("NamedSketcher", true, true)
+PROPERTY_SOURCE(NamedSketcherGui::ViewProviderNamedSketch, PartGui::ViewProvider2DObject)
 
 namespace NamedSketcherGui
 {
 
-PYBIND11_MODULE(NamedSketcherResources, m)
+ViewProviderNamedSketch::ViewProviderNamedSketch()
 {
-    m.doc() = "Compiled resources and other bindings for NamedSketcher";
-    //init_ViewProviderPart(m);
-    q_init_resource();
-
-    ViewProviderNamedSketch::init();
+    sPixmap = ":/NamedSketcherGui/NamedSketcherWorkbench";
 }
 
-} //namespace NamedSketcher
+bool ViewProviderNamedSketch::doubleClicked()
+{
+    Gui::Application::Instance->commandManager().runCommandByName("NamedSketcherGui/ConstraintCreation/DrawMode");
+    return true;
+}
+
+bool ViewProviderNamedSketch::setEdit(int /*ModNum*/)
+{
+    return true;
+}
+
+void ViewProviderNamedSketch::unsetEdit(int /*ModNum*/)
+{
+}
+
+}// namespace NamedSketcherGui

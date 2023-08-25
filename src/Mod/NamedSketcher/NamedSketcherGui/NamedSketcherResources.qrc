@@ -1,14 +1,13 @@
 <RCC>
-    <qresource prefix="/NamedSketcherGui/">
+    <qresource prefix="/NamedSketcherGui">
         <file alias="NamedSketcherWorkbench">NamedSketcherWorkbench.svg</file>
     </qresource>
-
     <qresource prefix="/NamedSketcherGui/GeometryCreation">
         <file alias="Point">GeometryCreation/Point.svg</file>
         <file alias="LineSegment">GeometryCreation/LineSegment.svg</file>
         <file alias="Circle">GeometryCreation/Circle.svg</file>
+        <file>GeometryCreation/FromDraft.svg</file>
     </qresource>
-
     <qresource prefix="/NamedSketcherGui/ConstraintCreation">
         <file alias="BlockPoint">ConstraintCreation/BlockPoint.svg</file>
         <file alias="Coincident">ConstraintCreation/Coincident.svg</file>

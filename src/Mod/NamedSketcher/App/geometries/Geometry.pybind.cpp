@@ -67,7 +67,7 @@ void init_Geometry(py::module& m)
         .def(py::init<double>())
         .def("assign", [](GCS::Parameter& p, double v){return p = v;})
         ;
-    py::implicitly_convertible<GCS::Parameter, py::float_>();
+//    py::implicitly_convertible<GCS::Parameter, py::float_>();
 
     py::class_<GCS::Point, std::shared_ptr<GCS::Point>>(m, "GCS_Point")
         .def(py::init<double, double>())

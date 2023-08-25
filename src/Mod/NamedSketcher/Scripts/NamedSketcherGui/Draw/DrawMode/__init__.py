@@ -21,24 +21,43 @@
 #*                                                                          *
 #***************************************************************************/
 
-modules = [
-    'Coincident',
-    'Horizontal',
-    'Vertical',
-    'BlockPoint',
-    'PointSymmetric',
-    'Distance',
-    'XDistance',
-    'YDistance',
-    'PointAlongCurve',
-    'TangentCurves',
-]
+import FreeCADGui
 
-def getCommands():
-    return [__import__(m, globals(), locals(), [], level=1).command for m in modules]
+command = "NamedSketcherGui/ConstraintCreation/DrawMode"
 
-def generateToolbar(wb):
-    wb.appendToolbar("Constraints", getCommands())
+class DrawMode:
+    def GetResources(self):
+        return {'Pixmap'  : ':/' + command,
+                'Accel'   : 'Ctrl+Shift+d',
+                'MenuText': 'Draw mode',
+                'ToolTip' : 'Efficient way to specify basic geometries and basic constraints with ease.'}
 
-def generateMenus(wb):
-    wb.appendMenu("Constraints", getCommands())
+    def __init__(self):
+        import LineController
+        import NoDrawController
+        # Button becomes gray and accelerator does not work when not clickable.
+        self.is_clickable = True
+        # List of points objects used.
+        self.points = []
+        # Controllers are passed an index to self.points,
+        # so we can change the controller on the fly.
+        self.current_point_index
+        # Index of points that still need to be visited by a geometry.
+        # See the "T" command or the "(S)plit" command.
+        self.points_left_behind = []
+        self.next_controller_pkg = LineController
+        self.geometry_controller = NoDrawController.Controller(self)
+
+    def IsActive(self):
+        print('Draw mode!!!')
+        return self.is_clickable
+
+    def Activated(self):
+        self.is_clickable = False
+        FreeCADGui.
+
+    def processKeys(self, info):
+        pass
+
+command_instance = DrawMode()
+FreeCADGui.addCommand(command, command_instance)

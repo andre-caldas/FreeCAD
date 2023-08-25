@@ -43,7 +43,7 @@ SOURCE_GROUP("Features" FILES ${Features_SRCS})
 
 
 include_directories(${pybind11_INCLUDE_DIR})
-SET(Python_SRCS
+SET(PythonBindings_SRCS
     Module.pybind.cpp
     NamedSketch.pybind.h
     NamedSketch.pybind.cpp
@@ -54,7 +54,7 @@ SET(Python_SRCS
     constraints/Constraint.pybind.h
     constraints/Constraint.pybind.cpp
 )
-SOURCE_GROUP("Python" FILES ${Python_SRCS})
+SOURCE_GROUP("Python bindings" FILES ${PythonBindings_SRCS})
 
 SET(Geometries_SRCS
     geometries/GeometryBase.h
@@ -167,13 +167,13 @@ SET(NamedSketcher_SRCS
     ${Geometries_SRCS}
     ${Constraints_SRCS}
     ${gcs_solver_SRCS}
-    ${Python_SRCS}
+    ${PythonBindings_SRCS}
     ${Properties_SRCS}
 #     ${Datatypes_SRCS}
 )
 
-add_library(NamedSketcher SHARED ${NamedSketcher_SRCS})
-target_link_libraries(NamedSketcher ${NamedSketcher_LIBS})
+add_library(NamedSketcherCpp SHARED ${NamedSketcher_SRCS})
+target_link_libraries(NamedSketcherCpp ${NamedSketcher_LIBS})
 
 if(FREECAD_USE_PCH)
     add_definitions(-D_PreComp_)
@@ -181,8 +181,7 @@ if(FREECAD_USE_PCH)
     ADD_MSVC_PRECOMPILED_HEADER(NamedSketcher PreCompiled.h PreCompiled.cpp NamedSketcher_CPP_SRCS)
 endif(FREECAD_USE_PCH)
 
+SET_BIN_DIR(NamedSketcherCpp NamedSketcherCpp /Mod/NamedSketcher)
+SET_PYTHON_PREFIX_SUFFIX(NamedSketcherCpp)
 
-SET_BIN_DIR(NamedSketcher NamedSketcher /Mod/NamedSketcher)
-SET_PYTHON_PREFIX_SUFFIX(NamedSketcher)
-
-INSTALL(TARGETS NamedSketcher DESTINATION ${CMAKE_INSTALL_LIBDIR})
+INSTALL(TARGETS NamedSketcherCpp DESTINATION ${CMAKE_INSTALL_LIBDIR})

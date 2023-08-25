@@ -21,29 +21,31 @@
  *                                                                          *
  ***************************************************************************/
 
-#include <pybind11/pybind11.h>
-namespace py = pybind11;
+#ifndef NAMEDSKETCHERGUI_VIEWPROVIDERNAMEDSKETCH_H
+#define NAMEDSKETCHERGUI_VIEWPROVIDERNAMEDSKETCH_H
 
-#include <qglobal.h>
+#include <Mod/Part/Gui/ViewProvider2DObject.h>
 
-#include "ViewProviders/ViewProviderNamedSketch.h"
-
-static void q_init_resource()
-{
-    // This cannot be called from a namespace.
-    Q_INIT_RESOURCE(NamedSketcherResources);
-}
+#include "NamedSketcherGlobal.h"
 
 namespace NamedSketcherGui
 {
 
-PYBIND11_MODULE(NamedSketcherResources, m)
+/** @brief The NamedSketch ViewProvider for non-edit mode.
+ *  Just for double-clicks.
+ */
+class NamedSketcherGuiExport ViewProviderNamedSketch
+    : public PartGui::ViewProvider2DObject
 {
-    m.doc() = "Compiled resources and other bindings for NamedSketcher";
-    //init_ViewProviderPart(m);
-    q_init_resource();
+    PROPERTY_HEADER_WITH_OVERRIDE(NamedSketcherGui::ViewProviderNamedSketch);
+private:
+    ViewProviderNamedSketch();
 
-    ViewProviderNamedSketch::init();
-}
+    bool doubleClicked(void) override;
+    bool setEdit(int ModNum) override;
+    void unsetEdit(int ModNum) override;
+};
 
-} //namespace NamedSketcher
+}// namespace NamedSketcherGui
+
+#endif// NAMEDSKETCHERGUI_VIEWPROVIDERNAMEDSKETCH_H

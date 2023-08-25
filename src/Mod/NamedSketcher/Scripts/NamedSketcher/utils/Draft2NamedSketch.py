@@ -30,6 +30,7 @@ from draftutils import utils
 import NamedSketcher
 from draftutils.translate import translate
 
+from .Tolerance import Tolerance
 
 class Draft2NamedSketch:
     def __init__(self, objects_list, tolerance = Tolerance()):
@@ -40,8 +41,8 @@ class Draft2NamedSketch:
         self.geometries_data = []
         self.all_points_data = []
         sketch = NamedSketcher.NamedSketch();
-        create_geometries(sketch)
-        generate_constraints(sketch)
+        self.create_geometries(sketch)
+        self.generate_constraints(sketch)
         return sketch
 
     def create_geometries(self, sketch):
@@ -60,10 +61,10 @@ class Draft2NamedSketch:
                 geo = create_point(point)
 
             elif tp == "Circle":
-                geo = create_circle(curve):
+                geo = create_circle(curve)
 
             elif tp == "Ellipse":
-                geo = create_ellipse(curve):
+                geo = create_ellipse(curve)
 
             elif tp in ["Wire", "Rectangle", "Polygon"] and obj.FilletRadius.Value == 0:
                 for edge in shape.Edges:
@@ -122,14 +123,12 @@ class Draft2NamedSketch:
         coincident_groups = {p: set() for p in self.all_points_data}
         for p1, p2 in combinations(self.all_points_data, 2):
             if self.tolerance.are_coincident(p1.obj, p2.obj):
-                coincident_groups[p1] add(p2)
-        processed_points = set()
-        partition = set()
+                coincident_groups[p1].add(p2)
 
         processed_points = set()
         def get_equivalent_class(p, result=set()):
             if p in processed_points:
-                continue
+                return
             processed_points.add(p)
             result.add(p)
             for n in coincident_groups[p]:
@@ -152,33 +151,33 @@ class Draft2NamedSketch:
     def generate_horizontal_constraints(self, sketch):
         for g in self.geometries_data:
             if self.tolerance.is_horizontal(g.ref):
-                sketch.addConstraint(NamedCurve.ConstraintHorizontal(g.ref))
+                sketch.addConstraint(NamedSketcher.ConstraintHorizontal(g.ref))
 
     def generate_vertical_constraints(self, sketch):
         for g in self.geometries_data:
             if self.tolerance.is_vertical(g.ref):
-                sketch.addConstraint(NamedCurve.ConstraintVertical(g.ref))
+                sketch.addConstraint(NamedSketcher.ConstraintVertical(g.ref))
 
     def generate_point_over_curve_constraints(self, sketch):
         for g1, g2 in permutations(self.geometries_data):
             for p in g1.points:
-                self.tolerance.is_point_over_curve(p.obj, g2.obj):
-                    sketch.addConstraint(NamedCurve.ConstraintPointOverCurve(p.ref, g2.ref))
+                if self.tolerance.is_point_over_curve(p.obj, g2.obj):
+                    sketch.addConstraint(NamedSketcher.ConstraintPointOverCurve(p.ref, g2.ref))
 
     def generate_tangent_curve_constraints(self, sketch):
         for g1, g2 in combinations(self.geometries_data, 2):
             if self.tolerance.are_curves_tangent(g1.obj, g2.obj):
-                sketch.addConstraint(NamedCurve.ConstraintTangent(g1.ref, g2.ref))
+                sketch.addConstraint(NamedSketcher.ConstraintTangent(g1.ref, g2.ref))
 
     def generate_normal_curve_constraints(self, sketch):
         for g1, g2 in combinations(self.geometries_data, 2):
             if self.tolerance.are_curves_normal(g1.obj, g2.obj):
-                sketch.addConstraint(NamedCurve.ConstraintNormal(g1.ref, g2.ref))
+                sketch.addConstraint(NamedSketcher.ConstraintNormal(g1.ref, g2.ref))
 
     def generate_circle_radius_constraints(self, sketch):
         for g in self.geometries_data:
             if self.tolerance.is_radius_underconstrained(g.ref):
-                sketch.addConstraint(NamedCurve.ConstraintConstant(g.ref + "radius"))
+                sketch.addConstraint(NamedSketcher.ConstraintConstant(g.ref + "radius"))
 
 
 #
@@ -186,12 +185,12 @@ class Draft2NamedSketch:
 #
 
 class PointData:
-    def __init__(ref, obj):
+    def __init__(self, ref, obj):
         self.ref = ref
         self.obj = obj
 
 class GeometryData:
-    def __init__(ref, obj):
+    def __init__(self, ref, obj):
         self.ref = ref
         self.obj = obj
         self.points = []
@@ -220,53 +219,3 @@ def create_bspline(curve):
 
 def create_bezcurve(curve):
     return None
-
-
-#
-# Geometric constraints check.
-#
-class Tolerance:
-    # TODO: set distance_tolerance according to situation. For example:
-    # - Size of the geometries.
-    # - GUI zoom.
-    def __init__(distance_tolerance=10):
-        self.distance_tolerance = distance_tolerance
-
-    def are_equal(a, b):
-        return abs(a - b) < self.distance_tolerance
-
-    def are_coincident(p1, p2):
-        return self.are_equal(p1.x, p2.x) && self.are_equal(p1.x, p2.x)
-
-    def is_horizontal(geo):
-        try:
-            start = (geo + "start").resolvePoint()
-            end = (geo + "end").resolvePoint()
-        except NamedSketcher.ExceptionCannotResolve:
-            return false
-        return self.are_equal(start.y, end.y)
-
-    def is_vertical(geo):
-        try:
-            start = (geo + "start").resolvePoint()
-            end = (geo + "end").resolvePoint()
-        except NamedSketcher.ExceptionCannotResolve:
-            return false
-        return self.are_equal(start.x, end.x)
-
-    def is_point_over_curve(p, geo):
-        return false
-
-    def are_curves_tangent(geo1, geo2):
-        return false
-
-    def are_curves_normal(geo1, geo2):
-        return false
-
-    def is_radius_underconstrained(geo):
-        try:
-            radius = (geo + "radius").resolveParameter()
-        except NamedSketcher.ExceptionCannotResolve:
-            return false
-        return true # TODO: implement underconstrainment check.
-
