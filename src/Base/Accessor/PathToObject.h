@@ -63,9 +63,6 @@ namespace Base::Accessor
 class BaseExport PathToObject
 {
 public:
-    PathToObject(const PathToObject&) = default;
-    PathToObject(PathToObject&&) = default;
-
     /*
      * Variadic constructors! :-)
      * Thanks to @Artyer:

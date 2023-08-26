@@ -6,7 +6,7 @@
         <file alias="Point">GeometryCreation/Point.svg</file>
         <file alias="LineSegment">GeometryCreation/LineSegment.svg</file>
         <file alias="Circle">GeometryCreation/Circle.svg</file>
-        <file>GeometryCreation/FromDraft.svg</file>
+        <file alias="FromDraft">GeometryCreation/FromDraft.svg</file>
     </qresource>
     <qresource prefix="/NamedSketcherGui/ConstraintCreation">
         <file alias="BlockPoint">ConstraintCreation/BlockPoint.svg</file>

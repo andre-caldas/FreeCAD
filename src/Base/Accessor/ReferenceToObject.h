@@ -60,8 +60,12 @@ class BaseExport ReferenceTo
         : public PathToObject
 {
 public:
+    ReferenceTo(const ReferenceTo<T>&) = default;
+    ReferenceTo<T>& operator=(const ReferenceTo<T>&) = default;
+
     ReferenceTo(PathToObject&& path) : PathToObject(path) {}
     ReferenceTo(const PathToObject& path) : PathToObject(path) {}
+
     /**
      * @brief References an object through an initial @a root
      * and a chain of strings/tags. The ownership of root

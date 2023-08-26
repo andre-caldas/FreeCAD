@@ -23,6 +23,7 @@
 
 #include <pybind11/pybind11.h>
 #include <pybind11/operators.h>
+#include <pybind11/stl_bind.h>
 namespace py = pybind11;
 
 #include <stdexcept>
@@ -36,7 +37,13 @@ namespace py = pybind11;
 #include "GeometryLineSegment.h"
 #include "GeometryCircle.h"
 
+#include "Reference.pybind.h"
 #include "Geometry.pybind.h"
+
+using vparam = std::vector<Base::Accessor::ReferenceTo<NamedSketcher::GCS::Parameter>>;
+using vpoint = std::vector<Base::Accessor::ReferenceTo<NamedSketcher::GCS::Point>>;
+PYBIND11_MAKE_OPAQUE(vparam);
+PYBIND11_MAKE_OPAQUE(vpoint);
 
 namespace NamedSketcher
 {
@@ -59,20 +66,25 @@ std::unique_ptr<Part::Geometry> pyObjectToPartGeometry(py::object* geo)
     }
 }
 
-
 void init_Geometry(py::module& m)
 {
+    py::bind_vector<vparam>(m, "VectorReferenceToParameter");
+    py::bind_vector<vpoint>(m, "VectorReferenceToPoint");
+
     // Parameters
     py::class_<GCS::Parameter, std::shared_ptr<GCS::Parameter>>(m, "GCS_Parameter")
         .def(py::init<double>())
         .def("assign", [](GCS::Parameter& p, double v){return p = v;})
+        // TOOD: automatica implicit conversion to float!
+        .def_property("value", [](GCS::Parameter& p) -> double{return p;}, [](GCS::Parameter& p, double v){return p = v;})
         ;
 //    py::implicitly_convertible<GCS::Parameter, py::float_>();
 
     py::class_<GCS::Point, std::shared_ptr<GCS::Point>>(m, "GCS_Point")
         .def(py::init<double, double>())
-        .def_readwrite("x", &GCS::Point::x)
-        .def_readwrite("y", &GCS::Point::y)
+        // TODO: just use GCS::Parameter when above implicit conversion starts working.
+        .def_property("x", [](GCS::Point& p) -> double{return p.x;}, [](GCS::Point& p, double v){return p.x = v;})
+        .def_property("y", [](GCS::Point& p) -> double{return p.y;}, [](GCS::Point& p, double v){return p.y = v;})
         ;
 
     py::class_<GeometryBase, std::shared_ptr<GeometryBase>>(m, "Geometry")

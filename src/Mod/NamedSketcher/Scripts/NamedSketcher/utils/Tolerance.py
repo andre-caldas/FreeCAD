@@ -32,6 +32,9 @@ class Tolerance:
     def __init__(self, distance_tolerance=10):
         self.distance_tolerance = distance_tolerance
 
+    def are_very_equal(self, a, b):
+        return abs(a - b) < 1e-9
+
     def are_equal(self, a, b):
         return abs(a - b) < self.distance_tolerance
 
@@ -62,10 +65,3 @@ class Tolerance:
 
     def are_curves_normal(self, geo1, geo2):
         return False
-
-    def is_radius_underconstrained(self, geo):
-        try:
-            radius = (geo + "radius").resolveParameter()
-        except NamedSketcher.ExceptionCannotResolve:
-            return False
-        return True # TODO: implement underconstrainment check.
