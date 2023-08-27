@@ -61,7 +61,15 @@ GeometryCircle::GeometryCircle(double x, double y, double r)
 void GeometryCircle::commitChanges() const
 {
     geometry->setLocation(center);
-    geometry->setRadius(radius);
+    try
+    {
+        geometry->setRadius(radius);
+    } catch(Base::ValueError&) {
+        GCS::Parameter new_radius = radius;
+        new_radius += .000001;
+        geometry->setRadius(new_radius);
+        // Ignore when things are to small...
+    }
 }
 
 

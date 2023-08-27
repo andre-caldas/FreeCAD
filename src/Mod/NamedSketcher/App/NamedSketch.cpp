@@ -158,6 +158,10 @@ void NamedSketch::delConstraint(boost::uuids::uuid tag)
 
 void NamedSketch::solve() {
     gcs.solve();
+    for (auto& geometry: geometryList)
+    {
+        geometry->commitChanges();
+    }
 }
 
 Base::Accessor::ReferencedObject*

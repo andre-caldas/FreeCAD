@@ -58,7 +58,16 @@ GeometryLineSegment::GeometryLineSegment(double x1, double y1, double x2, double
 
 void GeometryLineSegment::commitChanges() const
 {
-    geometry->setPoints(start, end);
+    try
+    {
+        geometry->setPoints(start, end);
+    } catch(Base::ValueError&) {
+        GCS::Point new_end = end;
+        new_end.x += .000001;
+        new_end.y += .000001;
+        geometry->setPoints(start, new_end);
+        // Ignore when things are to small...
+    }
 }
 
 
