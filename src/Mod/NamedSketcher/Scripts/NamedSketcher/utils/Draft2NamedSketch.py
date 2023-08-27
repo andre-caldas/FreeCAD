@@ -113,7 +113,7 @@ class Draft2NamedSketch:
         self.generate_coincident_constraints(sketch)
         self.generate_horizontal_constraints(sketch)
         self.generate_vertical_constraints(sketch)
-        self.generate_point_over_curve_constraints(sketch)
+        self.generate_point_along_curve_constraints(sketch)
         self.generate_tangent_curve_constraints(sketch)
         self.generate_normal_curve_constraints(sketch)
         self.generate_circle_radius_constraints(sketch)
@@ -128,10 +128,13 @@ class Draft2NamedSketch:
         coincident_groups = {p: set() for p in self.all_points_data}
         for p1, p2 in combinations(self.all_points_data, 2):
             if self.tolerance.are_coincident(p1.obj, p2.obj):
+                print('Coincident!', p1.obj, p2.obj)
                 coincident_groups[p1].add(p2)
 
         processed_points = set()
-        def get_equivalent_class(p, result=set()):
+        def get_equivalent_class(p, result=None):
+            if result is None:
+                result = set()
             if p in processed_points:
                 return result
             processed_points.add(p)
@@ -150,7 +153,9 @@ class Draft2NamedSketch:
                 continue
 
             constraint = NamedSketcher.ConstraintCoincident()
+            print('Coincident points...')
             for a in equivalent_class:
+                print('Adding point:', a.obj)
                 constraint.addPoint(a.ref)
             sketch.addConstraint(constraint)
 
@@ -164,21 +169,22 @@ class Draft2NamedSketch:
             if self.tolerance.is_vertical(g.ref):
                 sketch.addConstraint(NamedSketcher.ConstraintVertical(g.ref))
 
-    def generate_point_over_curve_constraints(self, sketch):
+    def generate_point_along_curve_constraints(self, sketch):
         for g1, g2 in permutations(self.geometries_data, 2):
             for p in g1.points.values():
-                if self.tolerance.is_point_over_curve(p.obj, g2.obj):
-                    sketch.addConstraint(NamedSketcher.ConstraintPointOverCurve(p.ref, g2.ref))
+                if self.tolerance.is_point_along_curve(p.obj, g2.obj):
+                    sketch.addConstraint(NamedSketcher.ConstraintPointAlongCurve(p.ref, g2.ref))
 
     def generate_tangent_curve_constraints(self, sketch):
         for g1, g2 in combinations(self.geometries_data, 2):
             if self.tolerance.are_curves_tangent(g1.obj, g2.obj):
-                sketch.addConstraint(NamedSketcher.ConstraintTangent(g1.ref, g2.ref))
+                sketch.addConstraint(NamedSketcher.ConstraintTangentCurves(g1.ref, g2.ref))
 
     def generate_normal_curve_constraints(self, sketch):
         for g1, g2 in combinations(self.geometries_data, 2):
             if self.tolerance.are_curves_normal(g1.obj, g2.obj):
-                sketch.addConstraint(NamedSketcher.ConstraintNormal(g1.ref, g2.ref))
+                #sketch.addConstraint(NamedSketcher.ConstraintNormal(g1.ref, g2.ref))
+                print('Implement ConstraintOrthogonalCurves.')
 
     def generate_circle_radius_constraints(self, sketch):
         for g in self.geometries_data:

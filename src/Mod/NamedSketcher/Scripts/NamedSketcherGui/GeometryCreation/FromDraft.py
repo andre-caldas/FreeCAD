@@ -74,6 +74,7 @@ class FromDraft(gui_base_original.Modifier):
         _cmd += "FreeCADGui.Selection.getSelection(), "
         _cmd += ").generate_sketch()"
         _cmd_list = ['sk = ' + _cmd,
+                     'sk.report()',
                      'sk.addToCurrentDocument("Draft2NamedSketch_generated")',
                      'FreeCAD.ActiveDocument.recompute()']
         self.commit(translate("draft", "Convert to Sketch"), _cmd_list)

@@ -31,17 +31,17 @@ class Tolerance:
     # TODO: set distance_tolerance according to situation. For example:
     # - Size of the geometries.
     # - GUI zoom.
-    def __init__(self, distance_tolerance=1):
+    def __init__(self, distance_tolerance=.2):
         self.distance_tolerance = distance_tolerance
 
     def are_very_equal(self, a, b):
-        return abs(a - b) < 1e-9
+        return abs(a - b) < 1e-6
 
     def are_equal(self, a, b):
         return abs(a - b) < self.distance_tolerance
 
     def are_coincident(self, p1, p2):
-        return self.are_equal(p1.x, p2.x) and self.are_equal(p1.x, p2.x)
+        return self.are_equal(p1.x, p2.x) and self.are_equal(p1.y, p2.y)
 
     def is_horizontal(self, geo):
         try:
@@ -59,7 +59,7 @@ class Tolerance:
             return False
         return self.are_equal(start.x, end.x)
 
-    def is_point_over_curve(self, p, geo):
+    def is_point_along_curve(self, p, geo):
         return False
 
     def are_curves_tangent(self, geo1, geo2):
