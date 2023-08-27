@@ -682,6 +682,11 @@ void DocumentObject::releaseDocumentLock(std::shared_ptr<DocumentObject>& holder
     holder.swap(selfDocumentLock);
 }
 
+void DocumentObject::releaseDocumentLock()
+{
+    selfDocumentLock.reset();
+}
+
 bool DocumentObject::removeDynamicProperty(const char* name)
 {
     if (!_pDoc || testStatus(ObjectStatus::Destroy)) 

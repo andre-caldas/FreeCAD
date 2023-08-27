@@ -88,7 +88,8 @@ Transaction::~Transaction()
                     const DocumentObject* obj = static_cast<const DocumentObject*>(It.first);
                     const_cast<DocumentObject*>(obj)->setStatus(ObjectStatus::Destroy, true);
                 }
-                delete It.first;
+                const DocumentObject* first_obj = static_cast<const DocumentObject*>(It.first);
+                const_cast<DocumentObject*>(first_obj)->releaseDocumentLock();
             }
         }
         delete It.second;

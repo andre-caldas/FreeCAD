@@ -637,6 +637,7 @@ protected: // attributes
 public:
     // Called by Document::removeObject in order to release this object.
     void releaseDocumentLock(std::shared_ptr<DocumentObject>& holder);
+    void releaseDocumentLock();
 
 private:
     // A DocumentObject associated to a Document is managed by a shared_ptr.
