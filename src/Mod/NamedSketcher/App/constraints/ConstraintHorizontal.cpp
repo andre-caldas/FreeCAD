@@ -106,11 +106,11 @@ void ConstraintHorizontal::report() const
 {
     try
     {
-        std::cout << "Horizontal: ";
-        std::cout << "(" << start.get()->x << ", " << start.get()->y << ")";
-        std::cout << " --> ";
-        std::cout << "(" << end.get()->x << ", " << end.get()->y << ")";
-        std::cout << std::endl;
+        std::cerr << "Horizontal: ";
+        std::cerr << "(" << start.get()->x << ", " << start.get()->y << ")";
+        std::cerr << " --> ";
+        std::cerr << "(" << end.get()->x << ", " << end.get()->y << ")";
+        std::cerr << std::endl;
     } catch (...) {}
 }
 

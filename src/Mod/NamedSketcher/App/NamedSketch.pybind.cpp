@@ -24,6 +24,9 @@
 #include <pybind11/pybind11.h>
 namespace py = pybind11;
 
+#include <App/Application.h>
+#include <App/Document.h>
+
 #include <Mod/Part/App/Geometry.h>
 #include "geometries/Geometry.pybind.h"
 
@@ -39,10 +42,20 @@ addPart(NamedSketch& sketch, py::object* geo)
     return sketch.addPart(pyObjectToPartGeometry(geo));
 }
 
+void addToCurrentDocument(NamedSketch& sketch, std::string name)
+{
+    App::Document* doc = App::GetApplication().getActiveDocument();
+    if (doc)
+    {
+        doc->addObject(&sketch, name.c_str());
+    }
+}
+
 void init_NamedSketch(py::module& m)
 {
-    py::class_<NamedSketch>(m, "NamedSketch")
+    py::class_<NamedSketch, std::shared_ptr<NamedSketch>>(m, "NamedSketch")
         .def(py::init<>())
+        .def("addToCurrentDocument", &addToCurrentDocument, py::arg("name")=std::string())
         .def("addPart", &addPart)
         .def("addGeometry", &NamedSketch::addGeometry)
         .def("delGeometry", &NamedSketch::delGeometry)

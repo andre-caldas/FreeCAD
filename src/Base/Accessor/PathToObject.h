@@ -63,6 +63,11 @@ namespace Base::Accessor
 class BaseExport PathToObject
 {
 public:
+    PathToObject(PathToObject&&) = default;
+    PathToObject(const PathToObject&) = default;
+    PathToObject& operator= (const PathToObject&) = default;
+    PathToObject& operator= (PathToObject&&) = default;
+
     /*
      * Variadic constructors! :-)
      * Thanks to @Artyer:
@@ -102,6 +107,8 @@ public:
     PathToObject(const Tag& tag, const token_list& path)
         : rootTag(tag)
         , objectPath(path) {}
+
+    PathToObject(std::shared_ptr<ReferencedObject> root, const token_list& path);
 
     std::string pathString() const;
     static std::string pathString(token_iterator first, const token_iterator end);
@@ -161,6 +168,7 @@ public:
 protected:
     std::string documentUrl; // Not used yet!
     Tag rootTag;
+    std::weak_ptr<ReferencedObject> rootWeakPtr;
     token_list objectPath;
 };
 

@@ -173,10 +173,10 @@ GCS::Point GeometryCircle::normalAtParameter(const GCS::ParameterValueMapper& _,
 
 void GeometryCircle::report() const
 {
-    std::cout << "Circle: center ";
-    std::cout << center;
-    std::cout << ", radius = " << radius;
-    std::cout << std::endl;
+    std::cerr << "Circle: center ";
+    std::cerr << center;
+    std::cerr << ", radius = " << radius;
+    std::cerr << std::endl;
 }
 
 } // namespace NamedSketcher

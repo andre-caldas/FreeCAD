@@ -51,6 +51,11 @@ void ReferencedObject::registerTag(const std::shared_ptr<ReferencedObject>& shar
 
 Tag::tag_type ReferencedObject::registerTag(std::string deprecated)
 {
+    if(!weak_from_this().expired())
+    {
+        return getTag();
+    }
+
     if(deprecated != "I know it is deprecated")
     {
         FC_THROWM(Base::RuntimeError, "All registeredTags must reference a shared_ptr'd resource.");

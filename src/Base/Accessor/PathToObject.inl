@@ -37,6 +37,7 @@ template<typename... NameOrTag,
              >>*>
 PathToObject::PathToObject(std::shared_ptr<ReferencedObject> root, NameOrTag&&... obj_path)
     : rootTag(root->getTag())
+    , rootWeakPtr(root)
     , objectPath(std::initializer_list<NameAndTag>{std::forward(obj_path)...})
 {
 }
@@ -47,6 +48,7 @@ template<typename... NameOrTag,
              >>*>
 PathToObject::PathToObject(ReferencedObject* root, NameOrTag&&... obj_path)
     : rootTag(root->registerTag("I know it is deprecated"))
+    , rootWeakPtr(root->weak_from_this())
     , objectPath({NameAndTag(std::forward<NameOrTag>(obj_path))...})
 {
 }
@@ -59,7 +61,12 @@ PathToObject PathToObject::goFurther(NameOrTag&& ...furtherPath) const
 {
     auto new_path = objectPath;
     new_path.insert(new_path.end(), {NameAndTag(std::forward<NameOrTag>(furtherPath))...});
-    return PathToObject{rootTag, new_path};
+    auto lock = rootWeakPtr.lock();
+    if(lock)
+    {
+        return PathToObject(lock, new_path);
+    }
+    return PathToObject(rootTag, new_path);
 }
 
 template<typename T>

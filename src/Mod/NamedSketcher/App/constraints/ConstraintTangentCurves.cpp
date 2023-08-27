@@ -106,10 +106,10 @@ void ConstraintTangentCurves::report() const
     auto pt_curve2 = curve2.get()->positionAtParameter({}, &parameter_t2);
     try
     {
-        std::cout << "Tangent curves: ";
-        std::cout << "Curve 1 " << parameter_t1 << " -> " << pt_curve1 << ". ";
-        std::cout << "Curve 2 " << parameter_t2 << " -> " << pt_curve2;
-        std::cout << std::endl;
+        std::cerr << "Tangent curves: ";
+        std::cerr << "Curve 1 " << parameter_t1 << " -> " << pt_curve1 << ". ";
+        std::cerr << "Curve 2 " << parameter_t2 << " -> " << pt_curve2;
+        std::cerr << std::endl;
     } catch (...) {}
 }
 

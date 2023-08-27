@@ -42,6 +42,7 @@ public:
     Tag(tag_type tag) : tag(tag) {}
     Tag(const std::string& tag);
     Tag(std::string_view tag) : Tag(std::string(tag)){}
+    virtual ~Tag() = default;
 
     tag_type getTag () const {return tag;}
     void setTag(const std::string& tag);

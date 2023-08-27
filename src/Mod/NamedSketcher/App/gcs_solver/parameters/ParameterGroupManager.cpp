@@ -256,26 +256,26 @@ void ParameterGroupManager::commitParameters() const
 
 void ParameterGroupManager::print_vector(const OptimizedVector& v) const
 {
-    std::cout << "(";
+    std::cerr << "(";
     bool first = true;
     for(auto& group: orderedNonConstantGroups)
     {
         if(!first)
         {
-            std::cout << ", ";
+            std::cerr << ", ";
         }
         else
         {
             first = false;
         }
-        std::cout << v[group->getValuePtr()];
+        std::cerr << v[group->getValuePtr()];
     }
-    std::cout << ")";
+    std::cerr << ")";
 }
 
 void ParameterGroupManager::report_position() const
 {
-    std::cout << "Current position:" << std::endl;
+    std::cerr << "Current position:" << std::endl;
     for(auto& group: orderedNonConstantGroups)
     {
         group->report();
@@ -284,14 +284,14 @@ void ParameterGroupManager::report_position() const
 
 void ParameterGroupManager::report() const
 {
-    std::cout << "Groups" << std::endl;
-    std::cout << "------" << std::endl;
-    std::cout << std::endl;
+    std::cerr << "Groups" << std::endl;
+    std::cerr << "------" << std::endl;
+    std::cerr << std::endl;
     for(auto& group: parameterGroups)
     {
         group->report();
     }
-    std::cout << std::endl;
+    std::cerr << std::endl;
 }
 
 } // namespace NamedSketcher::GCS

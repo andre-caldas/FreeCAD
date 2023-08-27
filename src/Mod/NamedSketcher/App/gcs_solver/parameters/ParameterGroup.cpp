@@ -112,7 +112,7 @@ void ParameterGroup::commit() const
 {
     for(auto parameter: parameters)
     {
-        std::cout << "Group (" << this << ") commit: " << value << std::endl;
+        std::cerr << "Group (" << this << ") commit: " << value << std::endl;
         *parameter = (double)value;
     }
 }
@@ -163,16 +163,16 @@ void ParameterGroup::setAsMean()
 
 void ParameterGroup::report() const
 {
-    std::cout << "(" << this << " = " << value << "): ";
+    std::cerr << "(" << this << " = " << value << "): ";
     for(auto& p: parameters)
     {
-        std::cout << "(" << *p << ") ";
+        std::cerr << "(" << *p << ") ";
     }
     if(isConstant())
     {
-        std::cout << "-->constant<--";
+        std::cerr << "-->constant<--";
     }
-    std::cout << std::endl;
+    std::cerr << std::endl;
 }
 
 } // namespace NamedSketcher::GCS

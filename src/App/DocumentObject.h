@@ -634,7 +634,18 @@ protected: // attributes
     // pointer to the document name string (for performance)
     const std::string *pcNameInDocument{nullptr};
 
+public:
+    // Called by Document::removeObject in order to release this object.
+    void releaseDocumentLock(std::shared_ptr<DocumentObject>& holder);
+
 private:
+    // A DocumentObject associated to a Document is managed by a shared_ptr.
+    // This is a hack, because Document manages raw pointers.
+    // When DocumentP::objectMap changes from raw pointer to shared_ptr,
+    // this can be removed.
+    // Document::removeObject is responsible for releasing this shared_ptr.
+    std::shared_ptr<DocumentObject> selfDocumentLock;
+
     // accessed by App::Document to record and restore the correct view provider type
     std::string _pcViewProviderName;
 

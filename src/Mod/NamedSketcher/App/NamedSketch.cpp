@@ -221,21 +221,21 @@ PyObject* NamedSketch::getPyObject()
 
 void NamedSketch::report() const
 {
-    std::cout << "Geometries" << std::endl;
-    std::cout << "==========" << std::endl;
+    std::cerr << "Geometries" << std::endl;
+    std::cerr << "==========" << std::endl;
     for (auto& geometry: geometryList)
     {
         geometry->report();
     }
-    std::cout << std::endl;
+    std::cerr << std::endl;
 
-    std::cout << "Constraints" << std::endl;
-    std::cout << "===========" << std::endl;
+    std::cerr << "Constraints" << std::endl;
+    std::cerr << "===========" << std::endl;
     for (auto& constraint: constraintList)
     {
         constraint->report();
     }
-    std::cout << std::endl;
+    std::cerr << std::endl;
 }
 
 } // namespace NamedSketcher

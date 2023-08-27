@@ -95,11 +95,11 @@ void ConstraintBlockPoint::report() const
 {
     try
     {
-        std::cout << "BlockPoint: ";
-        std::cout << *point.get();
-        std::cout << " --> ";
-        std::cout << "(" << kX << ", " << kY << ")";
-        std::cout << std::endl;
+        std::cerr << "BlockPoint: ";
+        std::cerr << *point.get();
+        std::cerr << " --> ";
+        std::cerr << "(" << kX << ", " << kY << ")";
+        std::cerr << std::endl;
     } catch (...) {}
 }
 

@@ -132,9 +132,9 @@ GCS::Point GeometryPoint::normalAtParameter(const GCS::ParameterValueMapper& /*v
 
 void GeometryPoint::report() const
 {
-    std::cout << "Point: ";
-    std::cout << point;
-    std::cout << std::endl;
+    std::cerr << "Point: ";
+    std::cerr << point;
+    std::cerr << std::endl;
 }
 
 } // namespace NamedSketcher

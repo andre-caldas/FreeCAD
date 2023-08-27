@@ -3457,7 +3457,7 @@ void Document::removeObject(const char* sName)
     pos->second->setStatus(ObjectStatus::Remove, false);
 
     // do no transactions if we do a rollback!
-    std::unique_ptr<DocumentObject> tobedestroyed;
+    std::shared_ptr<DocumentObject> tobedestroyed;
     if (!d->rollback) {
         // Undo stuff
         if (d->activeUndoTransaction) {
@@ -3466,8 +3466,7 @@ void Document::removeObject(const char* sName)
         }
         else {
             // if not saved in undo -> delete object later
-            std::unique_ptr<DocumentObject> delobj(pos->second);
-            tobedestroyed.swap(delobj);
+            pos->second->releaseDocumentLock(tobedestroyed);
             tobedestroyed->setStatus(ObjectStatus::Destroy, true);
         }
     }

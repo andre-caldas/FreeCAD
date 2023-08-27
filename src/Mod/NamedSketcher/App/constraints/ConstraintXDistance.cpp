@@ -107,16 +107,16 @@ void ConstraintXDistance::report() const
 {
     try
     {
-        std::cout << "Distance X-direction: ";
-        std::cout << *start.get();
-        std::cout << " --> ";
-        std::cout << *end.get();
-        std::cout << ", distance = " << distance;
-        std::cout << std::endl;
+        std::cerr << "Distance X-direction: ";
+        std::cerr << *start.get();
+        std::cerr << " --> ";
+        std::cerr << *end.get();
+        std::cerr << ", distance = " << distance;
+        std::cerr << std::endl;
 
-        std::cout << "\tError: (";
-        std::cout << (start.get()->x - end.get()->x - distance);
-        std::cout << ")" << std::endl;
+        std::cerr << "\tError: (";
+        std::cerr << (start.get()->x - end.get()->x - distance);
+        std::cerr << ")" << std::endl;
     } catch (...) {}
 }
 

@@ -107,16 +107,16 @@ void ConstraintYDistance::report() const
 {
     try
     {
-        std::cout << "Distance Y-direction: ";
-        std::cout << *start.get();
-        std::cout << " --> ";
-        std::cout << *end.get();
-        std::cout << ", distance = " << distance;
-        std::cout << std::endl;
+        std::cerr << "Distance Y-direction: ";
+        std::cerr << *start.get();
+        std::cerr << " --> ";
+        std::cerr << *end.get();
+        std::cerr << ", distance = " << distance;
+        std::cerr << std::endl;
 
-        std::cout << "\tError: (";
-        std::cout << (start.get()->y - end.get()->y - distance);
-        std::cout << ")" << std::endl;
+        std::cerr << "\tError: (";
+        std::cerr << (start.get()->y - end.get()->y - distance);
+        std::cerr << ")" << std::endl;
     } catch (...) {}
 }
 

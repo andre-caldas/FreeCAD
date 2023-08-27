@@ -165,11 +165,11 @@ GCS::Point GeometryLineSegment::normalAtParameter(const GCS::ParameterValueMappe
 
 void GeometryLineSegment::report() const
 {
-    std::cout << "Line segment: ";
-    std::cout << start;
-    std::cout << " --> ";
-    std::cout << end;
-    std::cout << std::endl;
+    std::cerr << "Line segment: ";
+    std::cerr << start;
+    std::cerr << " --> ";
+    std::cerr << end;
+    std::cerr << std::endl;
 }
 
 } // namespace NamedSketcher

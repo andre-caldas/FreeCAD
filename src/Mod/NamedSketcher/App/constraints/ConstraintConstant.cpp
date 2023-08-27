@@ -92,11 +92,11 @@ void ConstraintConstant::report() const
 {
     try
     {
-        std::cout << "Constant: ";
-        std::cout << "(constant: " << k << ")";
-        std::cout << " --> ";
-        std::cout << "(" << *a.get() << ")";
-        std::cout << std::endl;
+        std::cerr << "Constant: ";
+        std::cerr << "(constant: " << k << ")";
+        std::cerr << " --> ";
+        std::cerr << "(" << *a.get() << ")";
+        std::cerr << std::endl;
     } catch (...) {}
 }
 

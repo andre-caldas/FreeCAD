@@ -41,7 +41,7 @@ void Ldlt::refactor()
 {
     if(need_refactor)
     {
-        std::cout << "Refactoring solver..." << std::endl;
+        std::cerr << "Refactoring solver..." << std::endl;
         const auto& D = eigenMatrix;
         solver.factorize(D.transpose() * D);
         need_refactor = false;
@@ -51,18 +51,18 @@ void Ldlt::refactor()
 Ldlt::vector_t Ldlt::_solve(const vector_t& out)
 {
     const auto& D = eigenMatrix;
-    std::cout << "Will solve using (Ldlt)..." << std::endl;
-    std::cout << "Matrix:" << std::endl;
-    std::cout << eigenMatrix << std::endl;
-    std::cout << "M^t M:" << std::endl;
-    std::cout << (D.transpose() * D) << std::endl;
-    std::cout << "Target:" << std::endl;
-    std::cout << out << std::endl;
-    std::cout << "M^t Target:" << std::endl;
-    std::cout << (D.transpose() * out) << std::endl;
+    std::cerr << "Will solve using (Ldlt)..." << std::endl;
+    std::cerr << "Matrix:" << std::endl;
+    std::cerr << eigenMatrix << std::endl;
+    std::cerr << "M^t M:" << std::endl;
+    std::cerr << (D.transpose() * D) << std::endl;
+    std::cerr << "Target:" << std::endl;
+    std::cerr << out << std::endl;
+    std::cerr << "M^t Target:" << std::endl;
+    std::cerr << (D.transpose() * out) << std::endl;
     refactor();
-    std::cout << "Solution:" << std::endl;
-    std::cout << solver.solve(D.transpose() * out) << std::endl;
+    std::cerr << "Solution:" << std::endl;
+    std::cerr << solver.solve(D.transpose() * out) << std::endl;
     return solver.solve(D.transpose() * out).eval();
 }
 

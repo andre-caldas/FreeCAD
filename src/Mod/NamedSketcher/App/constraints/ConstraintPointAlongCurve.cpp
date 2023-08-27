@@ -103,17 +103,17 @@ void ConstraintPointAlongCurve::report() const
     auto pt_curve = curve.get()->positionAtParameter({}, &parameter_t);
     try
     {
-        std::cout << "Point along curve: ";
-        std::cout << "candidate point " << *point.get();
-        std::cout << " <-" << parameter_t << "-> ";
-        std::cout << "curve(t) " << pt_curve;
-        std::cout << std::endl;
+        std::cerr << "Point along curve: ";
+        std::cerr << "candidate point " << *point.get();
+        std::cerr << " <-" << parameter_t << "-> ";
+        std::cerr << "curve(t) " << pt_curve;
+        std::cerr << std::endl;
 
         double diff_x = (point.get()->x - pt_curve.x);
         double diff_y = (point.get()->y - pt_curve.y);
-        std::cout << "\tError: (";
-        std::cout << std::sqrt(diff_x*diff_x + diff_y*diff_y);
-        std::cout << ")" << std::endl;
+        std::cerr << "\tError: (";
+        std::cerr << std::sqrt(diff_x*diff_x + diff_y*diff_y);
+        std::cerr << ")" << std::endl;
     } catch (...) {}
 }
 

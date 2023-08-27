@@ -45,7 +45,8 @@ template<typename T> class IExport;
  * to resolve the next step in a path.
  */
 class BaseExport ReferencedObject
-        : public NameAndTag
+    : public NameAndTag
+    , public std::enable_shared_from_this<ReferencedObject>
 {
 public:
     virtual ~ReferencedObject() = default;

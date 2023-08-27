@@ -234,9 +234,9 @@ void System::stepIntoTargetDirection(
     OptimizedVector current_position = manager.getOptimizedParameterValues();
     current_position += direction;
 
-    std::cout << "Stepping into direction: ";
+    std::cerr << "Stepping into direction: ";
     manager.print_vector(direction);
-    std::cout << std::endl;
+    std::cerr << std::endl;
     for(int count=0; count < DEPTH; ++count)
     {
         OptimizedVector next_position;

@@ -41,7 +41,7 @@ class Draft2NamedSketch:
     def generate_sketch(self):
         self.geometries_data = []
         self.all_points_data = []
-        sketch = App.ActiveDocument.addObject("NamedSketcher::NamedSketch", "Draft2NamedSketch_generated")
+        sketch = NamedSketcher.NamedSketch()
         self.create_geometries(sketch)
         self.generate_constraints(sketch)
         return sketch
@@ -49,9 +49,10 @@ class Draft2NamedSketch:
     def create_geometries(self, sketch):
         self.check_normal()
 
+        geo = []
         for obj in self.object_list:
             tp = utils.get_type(obj)
-            geo = None
+            print(f'New object of type {tp}')
             shape = obj.Shape.copy()
             if shape.Edges:
                 edge = shape.Edges[0]
@@ -59,31 +60,33 @@ class Draft2NamedSketch:
                 point = shape.Point
 
             if  tp == "Point":
-                geo = create_point(point)
+                geo.append(create_point(point))
 
             elif tp == "Circle":
-                geo = create_circle(edge)
+                geo.append(create_circle(edge))
 
             elif tp == "Ellipse":
-                geo = create_ellipse(edge)
+                geo.append(create_ellipse(edge))
 
             elif tp in ["Wire", "Rectangle", "Polygon"] and obj.FilletRadius.Value == 0:
                 for edge in shape.Edges:
-                    geo = create_linesegment(edge)
+                    geo.append(create_linesegment(edge))
 
             elif tp == "BSpline":
-                geo = create_bspline(edge)
+                geo.append(create_bspline(edge))
 
             elif tp == "BezCurve":
-                geo = create_bezcurve(edge)
+                geo.append(create_bezcurve(edge))
 
             else:
                 App.Console.PrintError(translate("draft",
                                        "Cannot convert curve of type {}").format(tp)+"\n")
 
-        if geo is not None:
-            geo_ref = sketch.addGeometry(geo)
-            geo_data = GeometryData(geo_ref, geo)
+        for g in geo:
+            if g is None:
+                continue
+            geo_ref = sketch.addGeometry(g)
+            geo_data = GeometryData(geo_ref, g)
             self.geometries_data.append(geo_data)
             self.all_points_data += geo_data.points.values()
 
@@ -163,7 +166,7 @@ class Draft2NamedSketch:
 
     def generate_point_over_curve_constraints(self, sketch):
         for g1, g2 in permutations(self.geometries_data, 2):
-            for p in g1.points:
+            for p in g1.points.values():
                 if self.tolerance.is_point_over_curve(p.obj, g2.obj):
                     sketch.addConstraint(NamedSketcher.ConstraintPointOverCurve(p.ref, g2.ref))
 
@@ -180,7 +183,9 @@ class Draft2NamedSketch:
     def generate_circle_radius_constraints(self, sketch):
         for g in self.geometries_data:
             if self.is_radius_underconstrained(g.ref):
-                sketch.addConstraint(NamedSketcher.ConstraintConstant(g.ref + "radius"))
+                # TODO: do not use geometryFactory, so we can access parameters directly.
+                radius = (g.ref + "radius").resolveParameter().value
+                sketch.addConstraint(NamedSketcher.ConstraintConstant(g.ref + "radius", radius))
 
     def is_radius_underconstrained(self, geo):
         try:
@@ -217,6 +222,7 @@ def create_point(point):
 
 def create_circle(edge):
     part = Part.Circle(edge.Curve)
+    print('Created circle?', part)
     return NamedSketcher.Geometry(part)
 
 def create_ellipse(edge):
@@ -224,6 +230,7 @@ def create_ellipse(edge):
 
 def create_linesegment(edge):
     part = Part.LineSegment(edge.Curve, edge.FirstParameter, edge.LastParameter)
+    print('New line segment created')
     return NamedSketcher.Geometry(part)
 
 def create_bspline(edge):

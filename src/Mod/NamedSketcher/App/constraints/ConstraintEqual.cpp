@@ -101,11 +101,11 @@ void ConstraintEqual::report() const
 {
     try
     {
-        std::cout << "Equal: ";
-        std::cout << "(" << *a.get() << ")";
-        std::cout << " == ";
-        std::cout << "(" << *b.get() << ")";
-        std::cout << std::endl;
+        std::cerr << "Equal: ";
+        std::cerr << "(" << *a.get() << ")";
+        std::cerr << " == ";
+        std::cerr << "(" << *b.get() << ")";
+        std::cerr << std::endl;
     } catch (...) {}
 }
 

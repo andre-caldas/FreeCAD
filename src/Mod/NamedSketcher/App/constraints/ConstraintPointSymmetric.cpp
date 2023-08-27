@@ -111,18 +111,18 @@ void ConstraintPointSymmetric::report() const
 {
     try
     {
-        std::cout << "PointSymmetric: ";
-        std::cout << *a.get();
-        std::cout << " <<==" << *o.get() << "==>> ";
-        std::cout << *b.get();
-        std::cout << std::endl;
+        std::cerr << "PointSymmetric: ";
+        std::cerr << *a.get();
+        std::cerr << " <<==" << *o.get() << "==>> ";
+        std::cerr << *b.get();
+        std::cerr << std::endl;
 
         // TODO: implement with and without manager.
-        std::cout << "\tError: (";
-        std::cout << (a.get()->x + b.get()->x - 2*o.get()->x);
-        std::cout << ", ";
-        std::cout << (a.get()->y + b.get()->y - 2*o.get()->y);
-        std::cout << ")" << std::endl;
+        std::cerr << "\tError: (";
+        std::cerr << (a.get()->x + b.get()->x - 2*o.get()->x);
+        std::cerr << ", ";
+        std::cerr << (a.get()->y + b.get()->y - 2*o.get()->y);
+        std::cerr << ")" << std::endl;
     } catch (...) {}
 }
 

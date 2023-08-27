@@ -657,8 +657,29 @@ App::Document *DocumentObject::getDocument() const
 
 void DocumentObject::setDocument(App::Document* doc)
 {
+    // This is a hack. FreeCAD does not use std::shared_ptr.
+    // In order to avoid deletion, we keep a shared_ptr
+    // while we have a document associated to this object.
+    if(_pDoc == nullptr && doc != nullptr)
+    {
+        assert(!selfDocumentLock);
+        selfDocumentLock = std::dynamic_pointer_cast<DocumentObject>(weak_from_this().lock());
+        if(!selfDocumentLock)
+        {
+            // Not managed by a std::shared_ptr, yet.
+            // Owned as a raw pointer. (I think!)
+            // Release is done at App::Document::removeObject().
+            selfDocumentLock.reset(this);
+        }
+    }
     _pDoc=doc;
     onSettingDocument();
+}
+
+void DocumentObject::releaseDocumentLock(std::shared_ptr<DocumentObject>& holder)
+{
+    assert(!holder);
+    holder.swap(selfDocumentLock);
 }
 
 bool DocumentObject::removeDynamicProperty(const char* name)

@@ -158,14 +158,14 @@ void ConstraintCoincident::report() const
 {
     try
     {
-        std::cout << "Coincident: ";
+        std::cerr << "Coincident: ";
         for(auto& p: references)
         {
-            std::cout << "-";
-            std::cout << "(" << p.get()->x << ", " << p.get()->y << ")";
-            std::cout << "-";
+            std::cerr << "-";
+            std::cerr << "(" << p.get()->x << ", " << p.get()->y << ")";
+            std::cerr << "-";
         }
-        std::cout << std::endl;
+        std::cerr << std::endl;
     } catch (...) {}
 }
 

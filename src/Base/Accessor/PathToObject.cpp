@@ -38,6 +38,13 @@
 
 namespace Base::Accessor {
 
+PathToObject::PathToObject(std::shared_ptr<ReferencedObject> root, const token_list& path)
+    : rootTag(root->getTag())
+    , rootWeakPtr(root)
+    , objectPath(path)
+{
+}
+
 std::string PathToObject::pathString() const
 {
     return pathString(objectPath.cbegin(), objectPath.cend());
@@ -66,10 +73,18 @@ PathToObject::lock_type PathToObject::getLock() const
 {
     // TODO: Implement different "cache expire" policies.
     lock_type lock;
-    lock.last_object = ReferencedObject::getWeakPtr(rootTag).lock();
+
+    // First we try the rootWeakPtr.
+    lock.last_object = rootWeakPtr.lock();
+    // If it is not valid, we try to find the tag in the global dictionary.
     if(!lock.last_object)
     {
-        FC_THROWM(ExceptionCannotResolve, "Root object is not available. Path: '" << pathString() << "'.");
+        lock.last_object = ReferencedObject::getWeakPtr(rootTag).lock();
+    }
+
+    if(!lock.last_object)
+    {
+        FC_THROWM(ExceptionCannotResolve, "Root object (" << rootTag.toString() << ") is not available. Path: '" << pathString() << "'.");
     }
 
     lock.remaining_tokens_start = objectPath.cbegin();

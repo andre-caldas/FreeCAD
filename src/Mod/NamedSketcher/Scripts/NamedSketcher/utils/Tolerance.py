@@ -22,6 +22,8 @@
 # **************************************************************************/
 """Provides functions to create NamedSketch objects from Draft objects."""
 
+import NamedSketcher # For exception, while Base::Accessor does not use pybind.
+
 #
 # Geometric tolerance check.
 #
@@ -29,7 +31,7 @@ class Tolerance:
     # TODO: set distance_tolerance according to situation. For example:
     # - Size of the geometries.
     # - GUI zoom.
-    def __init__(self, distance_tolerance=10):
+    def __init__(self, distance_tolerance=1):
         self.distance_tolerance = distance_tolerance
 
     def are_very_equal(self, a, b):
