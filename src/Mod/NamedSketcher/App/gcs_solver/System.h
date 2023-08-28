@@ -51,6 +51,7 @@ public:
 
     void addEquation(Equation* equation);
     void removeEquation(Equation* equation);
+    int checkDependentEquations(const std::vector<Equation*>& equations) const;
     void updateGradients();
 
     void addUserRedundantEquation(Equation* equation);

@@ -102,6 +102,14 @@ public:
      */
     void delConstraint(boost::uuids::uuid tag);
 
+    /*!
+     \brief Checks if all equations in a constraint can be added
+     without adding any redundancies.
+     \param constraint - std::unique_ptr to constraint to add
+     \retval Are all equations independent from existent ones?
+     */
+    bool isConstraintIndependent(std::shared_ptr<ConstraintBase> constraint) const;
+
     void solve();
 
     ReferencedObject* resolve_ptr(Base::Accessor::token_iterator& start, const Base::Accessor::token_iterator& end, ReferencedObject*) override;

@@ -3,7 +3,7 @@
 # *                                                                         *
 # *  Copyright (c) 2023 André Caldas <andre.em.caldas@gmail.com>            *
 # *                                                                         *
-# *  This file is part of App.                                          *
+# *  This file is part of FreeCAD.                                          *
 # *                                                                         *
 # *  FreeCAD is free software: you can redistribute it and/or modify it     *
 # *  under the terms of the GNU Lesser General Public License as            *
@@ -16,12 +16,13 @@
 # *  Lesser General Public License for more details.                        *
 # *                                                                         *
 # *  You should have received a copy of the GNU Lesser General Public       *
-# *  License along with App. If not, see                                *
+# *  License along with FreeCAD. If not, see                                *
 # *  <https://www.gnu.org/licenses/>.                                       *
 # *                                                                         *
 # **************************************************************************/
 """Provides functions to create NamedSketch objects from Draft objects."""
 
+from math import sqrt
 from itertools import combinations, permutations, product
 
 import FreeCAD as App
@@ -120,7 +121,7 @@ class Draft2NamedSketch:
         self.generate_point_along_curve_constraints(sketch)
         self.generate_tangent_curve_constraints(sketch)
         self.generate_normal_curve_constraints(sketch)
-        self.generate_circle_radius_constraints(sketch)
+        self.generate_extra_constraints(sketch)
 
     def pin_first_point(self, sketch):
         if self.all_points_data:
@@ -167,11 +168,15 @@ class Draft2NamedSketch:
     def generate_horizontal_constraints(self, sketch):
         for g in self.geometries_data:
             if self.tolerance.is_horizontal(g.ref):
+                g.is_horizontal = True
                 sketch.addConstraint(NamedSketcher.ConstraintHorizontal(g.ref))
 
     def generate_vertical_constraints(self, sketch):
         for g in self.geometries_data:
+            if(g.is_horizontal):
+                continue
             if self.tolerance.is_vertical(g.ref):
+                g.is_vertical = True
                 sketch.addConstraint(NamedSketcher.ConstraintVertical(g.ref))
 
     def generate_point_along_curve_constraints(self, sketch):
@@ -192,19 +197,10 @@ class Draft2NamedSketch:
                 #sketch.addConstraint(NamedSketcher.ConstraintNormal(g1.ref, g2.ref))
                 print('Implement ConstraintOrthogonalCurves.')
 
-    def generate_circle_radius_constraints(self, sketch):
+    def generate_extra_constraints(self, sketch):
+        # TODO: separate in different lists according to priority.
         for g in self.geometries_data:
-            if self.is_radius_underconstrained(g.ref):
-                # TODO: do not use geometryFactory, so we can access parameters directly.
-                radius = (g.ref + "radius").resolveParameter().value
-                sketch.addConstraint(NamedSketcher.ConstraintConstant(g.ref + "radius", radius))
-
-    def is_radius_underconstrained(self, geo):
-        try:
-            radius = (geo + "radius").resolveParameter()
-        except NamedSketcher.ExceptionCannotResolve:
-            return False
-        return True # TODO: implement underconstrainment check.
+            g.generate_extra_constraints(sketch)
 
 
 #
@@ -219,34 +215,62 @@ class PointData:
         self.y = gcs_point.y
 
 class GeometryData:
-    def __init__(self, obj, shape):
+    is_vertical = False
+    is_horizontal = False
+    def __init__(self, obj, shape, extra_constraints_fabric):
         self.obj = obj
         self.shape = shape
         self.points = {}
+        self.extra_constraints_fabric = extra_constraints_fabric
         for p_ref in obj.getReferencesToPoints():
             gcs_point = p_ref.resolve()
             self.points[p_ref] = PointData(p_ref, gcs_point)
+
+    def generate_extra_constraints(self, sketch):
+        for constraint in self.extra_constraints_fabric(self):
+            if sketch.isConstraintIndependent(constraint):
+                sketch.addConstraint(constraint)
 
 #
 # Geometry creation.
 #
 
 def create_point(point):
+    def extra_constraint_fabric(data):
+        return []
     g = NamedSketcher.Point(point)
-    return GeometryData(g, point.toShape())
+    return GeometryData(g, point.toShape(), extra_constraint_fabric)
 
 def create_circle(edge):
+    def extra_constraint_fabric(data):
+        radius = (data.ref + "radius").resolveParameter().value
+        return [NamedSketcher.ConstraintConstant(data.ref + "radius", radius)]
+
     part = Part.Circle(edge.Curve)
     g = NamedSketcher.Geometry(part)
-    return GeometryData(g, part.toShape())
+    return GeometryData(g, part.toShape(), extra_constraint_fabric)
 
 def create_ellipse(edge):
     return None
 
 def create_linesegment(edge):
+    def extra_constraint_fabric(data):
+        start = (data.ref + "start").resolvePoint()
+        end = (data.ref + "end").resolvePoint()
+        result = []
+        if data.is_horizontal:
+            result.append(NamedSketcher.ConstraintXDistance(data.ref, end.x-start.x))
+        elif data.is_vertical:
+            result.append(NamedSketcher.ConstraintYDistance(data.ref, end.y-start.y))
+        else:
+            print("Implement ConstraintDistance!")
+            #length = sqrt((start.x-end.x)**2 + (start.y-end.y)**2)
+            #sketch.addConstraint(NamedSketcher.ConstraintDistance(data.ref, length))
+        return result
+
     part = Part.LineSegment(edge.Curve, edge.FirstParameter, edge.LastParameter)
     g = NamedSketcher.Geometry(part)
-    return GeometryData(g, part.toShape())
+    return GeometryData(g, part.toShape(), extra_constraint_fabric)
 
 def create_bspline(edge):
     return None

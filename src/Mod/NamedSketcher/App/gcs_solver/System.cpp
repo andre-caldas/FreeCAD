@@ -60,6 +60,23 @@ void System::removeEquation(Equation* equation)
     gradients.remove(equation);
 }
 
+int System::checkDependentEquations(const std::vector<Equation*>& equations) const
+{
+    int result = 0;
+    Orthonormalization orthogonalComponents;
+    for(auto eq: equations)
+    {
+        auto remainings = gradients.normalizedOrthogonalComponent(eq->differentialNonOptimized({}));
+        orthogonalComponents.pushBack(eq, std::move(remainings));
+        if(orthogonalComponents.isRedundant(eq))
+        {
+            ++result;
+        }
+    }
+    return result;
+}
+
+
 void System::updateGradients()
 {
     auto equations = gradients.reset();

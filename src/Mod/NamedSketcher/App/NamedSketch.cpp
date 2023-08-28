@@ -156,6 +156,12 @@ void NamedSketch::delConstraint(boost::uuids::uuid tag)
     constraintList.removeElement(tag);
 }
 
+bool NamedSketch::isConstraintIndependent(std::shared_ptr<ConstraintBase> constraint) const
+{
+    auto equations = constraint->getEquations();
+    return gcs.checkDependentEquations(equations) == 0;
+}
+
 void NamedSketch::solve() {
     gcs.solve();
     for (auto& geometry: geometryList)

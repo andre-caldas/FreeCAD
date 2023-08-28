@@ -67,17 +67,17 @@ void Orthonormalization::moveBackward(Functional* functional)
 }
 
 
-ParameterVector Orthonormalization::projection(const ParameterVector& vec)
+ParameterVector Orthonormalization::projection(const ParameterVector& vec) const
 {
     return dualsQ.project(vec);
 }
 
-ParameterVector Orthonormalization::orthogonalComponent(const ParameterVector& vec)
+ParameterVector Orthonormalization::orthogonalComponent(const ParameterVector& vec) const
 {
     return ParameterVector().setAsLinearCombination(1, vec, -1, projection(vec));
 }
 
-ParameterVector Orthonormalization::normalizedOrthogonalComponent(const ParameterVector& vecs)
+ParameterVector Orthonormalization::normalizedOrthogonalComponent(const ParameterVector& vecs) const
 {
     auto result = orthogonalComponent(vecs);
     double norm = result.norm();
@@ -153,6 +153,11 @@ void Orthonormalization::moveBackward(const size_t index)
 
     functionals[index] = eq2;
     functionals[index+1] = eq1;
+}
+
+bool Orthonormalization::isRedundant(Functional* functional) const
+{
+    return dualsQ[functional].isZero();
 }
 
 Orthonormalization::functionals_t

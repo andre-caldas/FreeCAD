@@ -53,14 +53,15 @@ public:
     void moveForward(Functional* functional);
     void moveBackward(Functional* functional);
 
-    ParameterVector projection(const ParameterVector& vector);
-    ParameterVector orthogonalComponent(const ParameterVector& vector);
-    ParameterVector normalizedOrthogonalComponent(const ParameterVector& vector);
+    ParameterVector projection(const ParameterVector& vector) const;
+    ParameterVector orthogonalComponent(const ParameterVector& vector) const;
+    ParameterVector normalizedOrthogonalComponent(const ParameterVector& vector) const;
 
     size_t size() const {return duals.size();}
 
     functionals_t::const_iterator begin() const {return functionals.cbegin();}
     functionals_t::const_iterator end() const {return functionals.cend();}
+    bool isRedundant(Functional* functional) const;
     functionals_t getRedundants() const;
     functionals_t getNonRedundants() const;
 

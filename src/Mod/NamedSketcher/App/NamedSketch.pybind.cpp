@@ -55,6 +55,7 @@ void init_NamedSketch(py::module& m)
 {
     py::class_<NamedSketch, std::shared_ptr<NamedSketch>>(m, "NamedSketch")
         .def(py::init<>())
+        .def("isConstraintIndependent", &NamedSketch::isConstraintIndependent)
         .def("addToCurrentDocument", &addToCurrentDocument, py::arg("name")=std::string())
         .def("addPart", &addPart)
         .def("addGeometry", &NamedSketch::addGeometry)

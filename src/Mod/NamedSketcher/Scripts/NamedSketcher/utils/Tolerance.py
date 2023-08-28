@@ -37,6 +37,9 @@ class Tolerance:
     def distance_tolerance(self):
         return self.scale * self.scale_tolerance
 
+    def round(self, value):
+        return round(value, self.distance_tolerance)
+
     def are_very_equal(self, a, b):
         return abs(a - b) < 1e-6
 
