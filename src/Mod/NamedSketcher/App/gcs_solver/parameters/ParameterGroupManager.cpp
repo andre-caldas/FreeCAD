@@ -199,11 +199,7 @@ OptimizedVector ParameterGroupManager::optimizeVector(const ParameterVector& v) 
             continue;
         }
 
-        if(result.hasKey(group->getValuePtr()))
-        {
-            FC_THROWM(Base::RuntimeError, "Cannot optimize vector. This is a bug!");
-        }
-        result.set(group->getValuePtr(), value);
+        result.set(group->getValuePtr(), value + result[group->getValuePtr()]);
     }
     return result;
 }
