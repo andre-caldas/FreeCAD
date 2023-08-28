@@ -3,7 +3,7 @@
 # *                                                                         *
 # *  Copyright (c) 2023 André Caldas <andre.em.caldas@gmail.com>            *
 # *                                                                         *
-# *  This file is part of FreeCAD.                                          *
+# *  This file is part of App.                                          *
 # *                                                                         *
 # *  FreeCAD is free software: you can redistribute it and/or modify it     *
 # *  under the terms of the GNU Lesser General Public License as            *
@@ -16,7 +16,7 @@
 # *  Lesser General Public License for more details.                        *
 # *                                                                         *
 # *  You should have received a copy of the GNU Lesser General Public       *
-# *  License along with FreeCAD. If not, see                                *
+# *  License along with App. If not, see                                *
 # *  <https://www.gnu.org/licenses/>.                                       *
 # *                                                                         *
 # **************************************************************************/
@@ -49,12 +49,16 @@ class Draft2NamedSketch:
     def create_geometries(self, sketch):
         self.check_normal()
 
+        # The greatest length of all edges.
+        reference_length = 1.
+
         geo = []
         for obj in self.object_list:
             tp = utils.get_type(obj)
             print(f'New object of type {tp}')
             shape = obj.Shape.copy()
             if shape.Edges:
+                reference_length = max(max([e.Length for e in shape.Edges]), reference_length)
                 edge = shape.Edges[0]
             else:
                 point = shape.Point
@@ -82,17 +86,17 @@ class Draft2NamedSketch:
                 App.Console.PrintError(translate("draft",
                                        "Cannot convert curve of type {}").format(tp)+"\n")
 
-        for g in geo:
-            if g is None:
+        self.tolerance.scale = reference_length
+        for geo_data in geo:
+            if geo_data is None:
                 continue
-            geo_ref = sketch.addGeometry(g)
-            geo_data = GeometryData(geo_ref, g)
+            geo_data.ref = sketch.addGeometry(geo_data.obj)
             self.geometries_data.append(geo_data)
             self.all_points_data += geo_data.points.values()
 
 
     def check_normal(self):
-        z_level = None
+        self.z_level = None
         for obj in self.object_list:
             if isinstance(obj,Part.Shape):
                 shape = obj
@@ -102,9 +106,9 @@ class Draft2NamedSketch:
                 raise TypeError("No shape found")
 
             for v in shape.Vertexes:
-                if z_level is None:
-                    z_level = v.Z
-                if not self.tolerance.are_very_equal(z_level, v.Z):
+                if self.z_level is None:
+                    self.z_level = v.Z
+                if not self.tolerance.are_very_equal(self.z_level, v.Z):
                     raise TypeError("All shapes must have the same z-coordinate")
 
 
@@ -121,14 +125,15 @@ class Draft2NamedSketch:
     def pin_first_point(self, sketch):
         if self.all_points_data:
             pt_ref = self.all_points_data[0].ref
-            pt_obj = self.all_points_data[0].obj
-            sketch.addConstraint(NamedSketcher.ConstraintBlockPoint(pt_ref, pt_obj.x, pt_obj.y))
+            pt_x = self.all_points_data[0].x
+            pt_y = self.all_points_data[0].y
+            sketch.addConstraint(NamedSketcher.ConstraintBlockPoint(pt_ref, pt_x, pt_y))
 
     def generate_coincident_constraints(self, sketch):
         coincident_groups = {p: set() for p in self.all_points_data}
         for p1, p2 in combinations(self.all_points_data, 2):
-            if self.tolerance.are_coincident(p1.obj, p2.obj):
-                print('Coincident!', p1.obj, p2.obj)
+            if self.tolerance.are_coincident(p1.gcs_point, p2.gcs_point):
+                print('Coincident!', p1.gcs_point, p2.gcs_point)
                 coincident_groups[p1].add(p2)
 
         processed_points = set()
@@ -155,7 +160,7 @@ class Draft2NamedSketch:
             constraint = NamedSketcher.ConstraintCoincident()
             print('Coincident points...')
             for a in equivalent_class:
-                print('Adding point:', a.obj)
+                print('Adding point:', a.gcs_point)
                 constraint.addPoint(a.ref)
             sketch.addConstraint(constraint)
 
@@ -172,17 +177,18 @@ class Draft2NamedSketch:
     def generate_point_along_curve_constraints(self, sketch):
         for g1, g2 in permutations(self.geometries_data, 2):
             for p in g1.points.values():
-                if self.tolerance.is_point_along_curve(p.obj, g2.obj):
+                v = Part.Vertex(App.Vector(p.x, p.y, self.z_level))
+                if self.tolerance.is_point_along_curve(v, g2.shape):
                     sketch.addConstraint(NamedSketcher.ConstraintPointAlongCurve(p.ref, g2.ref))
 
     def generate_tangent_curve_constraints(self, sketch):
         for g1, g2 in combinations(self.geometries_data, 2):
-            if self.tolerance.are_curves_tangent(g1.obj, g2.obj):
+            if self.tolerance.are_curves_tangent(g1.shape, g2.shape):
                 sketch.addConstraint(NamedSketcher.ConstraintTangentCurves(g1.ref, g2.ref))
 
     def generate_normal_curve_constraints(self, sketch):
         for g1, g2 in combinations(self.geometries_data, 2):
-            if self.tolerance.are_curves_normal(g1.obj, g2.obj):
+            if self.tolerance.are_curves_normal(g1.shape, g2.shape):
                 #sketch.addConstraint(NamedSketcher.ConstraintNormal(g1.ref, g2.ref))
                 print('Implement ConstraintOrthogonalCurves.')
 
@@ -206,38 +212,41 @@ class Draft2NamedSketch:
 #
 
 class PointData:
-    def __init__(self, ref, obj):
+    def __init__(self, ref, gcs_point):
         self.ref = ref
-        self.obj = obj
+        self.gcs_point = gcs_point
+        self.x = gcs_point.x
+        self.y = gcs_point.y
 
 class GeometryData:
-    def __init__(self, ref, obj):
-        self.ref = ref
+    def __init__(self, obj, shape):
         self.obj = obj
+        self.shape = shape
         self.points = {}
         for p_ref in obj.getReferencesToPoints():
-            p_obj = p_ref.resolve()
-            self.points[p_ref] = PointData(p_ref, p_obj)
+            gcs_point = p_ref.resolve()
+            self.points[p_ref] = PointData(p_ref, gcs_point)
 
 #
 # Geometry creation.
 #
 
 def create_point(point):
-    return NamedSketcher.Point(point)
+    g = NamedSketcher.Point(point)
+    return GeometryData(g, point.toShape())
 
 def create_circle(edge):
     part = Part.Circle(edge.Curve)
-    print('Created circle?', part)
-    return NamedSketcher.Geometry(part)
+    g = NamedSketcher.Geometry(part)
+    return GeometryData(g, part.toShape())
 
 def create_ellipse(edge):
     return None
 
 def create_linesegment(edge):
     part = Part.LineSegment(edge.Curve, edge.FirstParameter, edge.LastParameter)
-    print('New line segment created')
-    return NamedSketcher.Geometry(part)
+    g = NamedSketcher.Geometry(part)
+    return GeometryData(g, part.toShape())
 
 def create_bspline(edge):
     return None

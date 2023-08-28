@@ -27,6 +27,7 @@
 """
 
 import FreeCADGui
+import DraftGui
 import Draft_rc
 import draftguitools.gui_base_original as gui_base_original
 import draftguitools.gui_tool_utils as gui_tool_utils
