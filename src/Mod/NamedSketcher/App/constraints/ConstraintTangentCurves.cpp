@@ -63,9 +63,10 @@ std::vector<GCS::Equation*> ConstraintTangentCurves::getEquations()
         FC_THROWM(Base::NameError, "Could not resolve name (" << curve2.pathString() << ").");
     }
 
-    equationConcorrent.set(curve1.get(), &parameter_t1, curve2.get(), &parameter_t2);
+    preprocessParameters();
+    equationConcurrent.set(curve1.get(), &parameter_t1, curve2.get(), &parameter_t2);
     equationParallel.set(curve1.get(), &parameter_t1, curve2.get(), &parameter_t2);
-    return std::vector<GCS::Equation*>{&equationConcorrent, &equationParallel};
+    return std::vector<GCS::Equation*>{&equationConcurrent, &equationParallel};
 }
 
 bool ConstraintTangentCurves::updateReferences()
@@ -76,9 +77,32 @@ bool ConstraintTangentCurves::updateReferences()
     {
         return false;
     }
-    equationConcorrent.set(curve1.get(), &parameter_t1, curve2.get(), &parameter_t2);
+
+    preprocessParameters();
+    equationConcurrent.set(curve1.get(), &parameter_t1, curve2.get(), &parameter_t2);
     equationParallel.set(curve1.get(), &parameter_t1, curve2.get(), &parameter_t2);
     return true;
+}
+
+void ConstraintTangentCurves::preprocessParameters()
+{
+    // TODO: improve this search.
+    double min_det = 100000000.;
+    for(GCS::Parameter p1(0); p1 <= 1.0; p1 += 0x1p-4)
+    {
+        for(GCS::Parameter p2(0); p2 <= 1.0; p2 += 0x1p-4)
+        {
+            auto n1 = curve1.get()->normalAtParameter({}, &p1);
+            auto n2 = curve2.get()->normalAtParameter({}, &p2);
+            double det = std::abs(n1.x*n2.y - n1.y*n2.x);
+            if(det <= min_det)
+            {
+                min_det = det;
+                parameter_t1 = p1;
+                parameter_t2 = p2;
+            }
+        }
+    }
 }
 
 
@@ -104,11 +128,17 @@ void ConstraintTangentCurves::report() const
 {
     auto pt_curve1 = curve1.get()->positionAtParameter({}, &parameter_t1);
     auto pt_curve2 = curve2.get()->positionAtParameter({}, &parameter_t2);
+    auto n1 = curve1.get()->normalAtParameter({}, &parameter_t1);
+    auto n2 = curve2.get()->normalAtParameter({}, &parameter_t2);
     try
     {
         std::cerr << "Tangent curves: ";
-        std::cerr << "Curve 1 " << parameter_t1 << " -> " << pt_curve1 << ". ";
-        std::cerr << "Curve 2 " << parameter_t2 << " -> " << pt_curve2;
+        std::cerr << "* Curve 1 " << parameter_t1 << " -> " << pt_curve1 << ". ";
+        std::cerr << "Normal 1 " << n1 << ".";
+        std::cerr << std::endl;
+
+        std::cerr << "* Curve 2 " << parameter_t2 << " -> " << pt_curve2 << ". ";
+        std::cerr << "Normal 2 " << n2 << ".";
         std::cerr << std::endl;
     } catch (...) {}
 }

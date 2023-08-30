@@ -71,7 +71,7 @@ std::vector<GCS::Parameter*> GeometryBase::getParameters()
 GCS::Point GeometryBase::normalAtParameter(const GCS::ParameterValueMapper& value_mapper, const GCS::Parameter* t) const
 {
     // TODO: move this magic number somewhere else.
-    const double delta = 1.0 / (1024*1024*128*8);
+    const double delta = 0x1p-28;
 
     auto c0 = positionAtParameter({value_mapper, t, -delta/2}, t);
     auto c1 = positionAtParameter({value_mapper, t, -delta/2}, t);
@@ -79,16 +79,13 @@ GCS::Point GeometryBase::normalAtParameter(const GCS::ParameterValueMapper& valu
     // Non-normalized tangent vector (speed).
     double dx = (c1.x - c0.x) / delta;
     double dy = (c1.y - c0.y) / delta;
-    // Rotate clockwise.
-    return GCS::Point(dy,-dx).normalize();
+    // Rotate clockwise. Do not normalize. Good decision?
+    return GCS::Point(dy,-dx);
 }
 
 template<decltype(&GeometryBase::positionAtParameter) func>
-void GeometryBase::partialDerivatives(const GCS::ParameterValueMapper& value_mapper, derivative_map& map, const GCS::Parameter* t) const
+void GeometryBase::partialDerivatives(const GCS::ParameterValueMapper& value_mapper, derivative_map& map, const GCS::Parameter* t, double delta) const
 {
-    // TODO: move this magic number somewhere else.
-    const double delta = 1.0 / (1024*1024*128);
-
     auto parameters = getParameters();
     parameters.push_back(t);
     for(auto parameter: parameters)
@@ -106,12 +103,13 @@ void GeometryBase::partialDerivatives(const GCS::ParameterValueMapper& value_map
 
 void GeometryBase::partialDerivativesPoint(const GCS::ParameterValueMapper& value_mapper, derivative_map& map, const GCS::Parameter* t) const
 {
+    // TODO: move this magic number somewhere else.
     partialDerivatives<&GeometryBase::positionAtParameter>(value_mapper, map, t);
 }
 
 void GeometryBase::partialDerivativesNormal(const GCS::ParameterValueMapper& value_mapper, derivative_map& map, const GCS::Parameter* t) const
 {
-    partialDerivatives<&GeometryBase::normalAtParameter>(value_mapper, map, t);
+    partialDerivatives<&GeometryBase::normalAtParameter>(value_mapper, map, t, 0x1p-24);
 }
 
 } // namespace NamedSketcher

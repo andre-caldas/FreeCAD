@@ -89,7 +89,7 @@ public:
 
 private:
     template<decltype(&GeometryBase::positionAtParameter) func>
-    void partialDerivatives(const GCS::ParameterValueMapper& value_mapper, derivative_map& map, const GCS::Parameter* t) const;
+    void partialDerivatives(const GCS::ParameterValueMapper& value_mapper, derivative_map& map, const GCS::Parameter* t, double delta = 0x1p-27) const;
 };
 
 /**

@@ -21,6 +21,7 @@
  *                                                                          *
  ***************************************************************************/
 
+#include <random>
 #include <iostream>
 
 #include <Base/Exception.h>
@@ -108,7 +109,7 @@ bool ParameterGroupManager::setParameterConstant(Parameter* k)
     return getParameterGroup(k)->setConstant(k);
 }
 
-bool ParameterGroupManager::isParameterConstant(const Parameter* p)
+bool ParameterGroupManager::isParameterConstant(const Parameter* p) const
 {
     return getParameterGroup(p)->isConstant();
 }
@@ -145,14 +146,22 @@ size_t ParameterGroupManager::getNonConstantGroupIndex(const ParameterGroup* gro
     return nonConstantGroupIndexes.at(group);
 }
 
-OptimizedParameter* ParameterGroupManager::getOptimizedParameter(const Parameter* parameter) const
+OptimizedParameter* ParameterGroupManager::getOptimizedParameter(const Parameter* parameter, bool finished_optimization) const
 {
-    // Did you call finishOptimization()?
-    assert(called_finish_optimization);
+    if(finished_optimization)
+    {
+        // Did you call finishOptimization()?
+        assert(called_finish_optimization);
+    }
 
     ParameterGroup* group = getParameterGroup(parameter);
-    assert(!group->isConstant());
-    return group->getValuePtr();
+    if(finished_optimization)
+    {
+        // If it is constant you might need the value when optimizing.
+        // But not when solving!
+        assert(!group->isConstant());
+    }
+    return group->getValuePtr(!finished_optimization);
 }
 
 double ParameterGroupManager::getOptimizedParameterValue(const Parameter* parameter) const
@@ -250,11 +259,26 @@ void ParameterGroupManager::commitParameters() const
 }
 
 
+OptimizedVector ParameterGroupManager::noise() const
+{
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution dis(-.2, .2);
+
+    OptimizedVector result;
+    for(auto group: orderedNonConstantGroups)
+    {
+        result.set(group->getValuePtr(), dis(gen));
+    }
+    return result;
+}
+
+
 void ParameterGroupManager::print_vector(const OptimizedVector& v) const
 {
     std::cerr << "(";
     bool first = true;
-    for(auto& group: orderedNonConstantGroups)
+    for(auto group: orderedNonConstantGroups)
     {
         if(!first)
         {

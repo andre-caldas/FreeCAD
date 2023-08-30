@@ -38,6 +38,11 @@
 
 #include "GeometryCircle.h"
 
+// A shame we had to wait C++20 for std::numeric::pi. :-(
+#ifndef M_PI
+#define M_PI       3.14159265358979323846
+#endif
+
 namespace NamedSketcher
 {
 
@@ -52,10 +57,10 @@ GeometryCircle::GeometryCircle(std::unique_ptr<Part::GeomCircle>&& geo)
 GeometryCircle::GeometryCircle(double x, double y, double r)
     : GeometryBaseT(std::make_shared<Part::GeomCircle>())
     , center("center", x, y)
-    , radius("radius", r)
+    , radius("radius", std::abs(r))
 {
     geometry->setLocation(Base::Vector3d(x,y,0));
-    geometry->setRadius(r);
+    geometry->setRadius(radius);
 }
 
 void GeometryCircle::commitChanges() const
@@ -63,7 +68,7 @@ void GeometryCircle::commitChanges() const
     geometry->setLocation(center);
     try
     {
-        geometry->setRadius(radius);
+        geometry->setRadius(std::abs(radius));
     } catch(Base::ValueError&) {
         GCS::Parameter new_radius = radius;
         new_radius += .000001;
@@ -156,11 +161,7 @@ GCS::Point* GeometryCircle::resolve_ptr(token_iterator& start, const token_itera
 GCS::Point GeometryCircle::positionAtParameter(const GCS::ParameterValueMapper& _, const GCS::Parameter* t) const
 {
     double r = _(radius);
-    double _t = _(t);
-    if(r == 0)
-    {
-        _t /= r;
-    }
+    double _t = (2 * M_PI) * _(t);
     double x = _(center.x) + r * std::cos(_t);
     double y = _(center.y) + r * std::sin(_t);
     return GCS::Point{x,y};
@@ -168,15 +169,37 @@ GCS::Point GeometryCircle::positionAtParameter(const GCS::ParameterValueMapper& 
 
 GCS::Point GeometryCircle::normalAtParameter(const GCS::ParameterValueMapper& _, const GCS::Parameter* t) const
 {
-    double r = _(radius);
-    double _t = _(t);
-    if(r == 0)
-    {
-        _t /= r;
-    }
+    double _t = (2 * M_PI) * _(t);
     double x = std::cos(_t);
     double y = std::sin(_t);
     return GCS::Point{x,y};
+}
+
+void GeometryCircle::partialDerivativesPoint(const GCS::ParameterValueMapper& _, derivative_map& map, const GCS::Parameter* t) const
+{
+    map.try_emplace(&center.x, 1, 0);
+    map.try_emplace(&center.y, 0, 1);
+
+    double r = _(radius);
+    double _t = (2 * M_PI) * _(t);
+    map.try_emplace(&radius, std::cos(_t), std::sin(_t));
+
+    double dx = -(2 * M_PI) * r * std::sin(_t);
+    double dy = +(2 * M_PI) * r * std::cos(_t);
+    map.try_emplace(t, dx, dy);
+}
+
+void GeometryCircle::partialDerivativesNormal(const GCS::ParameterValueMapper& _, derivative_map& map, const GCS::Parameter* t) const
+{
+    map.try_emplace(&center.x, 0, 0);
+    map.try_emplace(&center.y, 0, 0);
+
+    double _t = (2 * M_PI) * _(t);
+    map.try_emplace(&radius, std::cos(_t), std::sin(_t));
+
+    double dx = -(2 * M_PI) * std::sin(_t);
+    double dy = +(2 * M_PI) * std::cos(_t);
+    map.try_emplace(t, dx, dy);
 }
 
 void GeometryCircle::report() const

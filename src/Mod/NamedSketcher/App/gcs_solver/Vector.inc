@@ -49,6 +49,12 @@ void Vector<Index>::set(const Index parameter, double value)
 }
 
 template<typename Index>
+void Vector<Index>::add(const Index parameter, double value)
+{
+    values[parameter] += value;
+}
+
+template<typename Index>
 Vector<Index>&
 Vector<Index>::operator*=(double val)
 {

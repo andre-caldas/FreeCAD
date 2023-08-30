@@ -55,6 +55,7 @@ SolverBase::SolverBase(ParameterGroupManager& manager, const OptimizedMatrix& op
     eigenMatrix.makeCompressed();
 }
 
+#include <iostream>
 void SolverBase::updateGradient(Equation* equation)
 {
     auto eq_index = manager.getEquationIndex(equation);
@@ -69,11 +70,14 @@ void SolverBase::updateGradient(Equation* equation)
 
 OptimizedVector SolverBase::solve()
 {
+std::cerr << eigenMatrix << std::endl;
     vector_t eigen_target(manager.outputSize());
     for(size_t i=0; i < manager.outputSize(); ++i)
     {
         Equation* eq = manager.getEquation(i);
         eigen_target[i] = -eq->error(manager);
+std::cerr << "Index [" << i << "] (target " << eigen_target[i] << ")--> ";
+eq->report();
     }
     vector_t solution = _solve(eigen_target);
     assert((size_t)solution.rows() == manager.inputSize());

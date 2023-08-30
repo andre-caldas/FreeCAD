@@ -58,9 +58,9 @@ void ParameterGroup::setValue(double val)
     value = val;
 }
 
-OptimizedParameter* ParameterGroup::getValuePtr()
+OptimizedParameter* ParameterGroup::getValuePtr(bool allow_const)
 {
-    if(isConstant())
+    if(!allow_const && isConstant())
     {
         FC_THROWM(Base::RuntimeError, "Attempt to get pointer for constant parameter. This is a bug!");
     }

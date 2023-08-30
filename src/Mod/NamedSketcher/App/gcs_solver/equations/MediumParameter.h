@@ -43,6 +43,8 @@ public:
     void declareParameters(ParameterGroupManager& manager) const override;
     bool optimizeParameters(ParameterGroupManager& manager) const override;
 
+    void report() const;
+
 private:
     Parameter* a;
     Parameter* o;

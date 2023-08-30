@@ -60,6 +60,14 @@ ParameterVector MediumParameter::differentialNonOptimized(const GCS::ParameterVa
 
 OptimizedVector MediumParameter::differentialOptimized(const ParameterGroupManager& manager) const
 {
+    bool a_const = manager.isParameterConstant(a);
+    bool b_const = manager.isParameterConstant(b);
+    bool o_const = manager.isParameterConstant(o);
+    if(a_const && b_const && o_const)
+    {
+        return OptimizedVector();
+    }
+
     if(manager.areParametersEqual(a, o) && manager.areParametersEqual(o, b))
     {
         return OptimizedVector();
@@ -83,19 +91,64 @@ bool MediumParameter::optimizeParameters(ParameterGroupManager& manager) const
     bool ao_equal = manager.areParametersEqual(a, o);
     bool ob_equal = manager.areParametersEqual(o, b);
 
-    if(!ab_equal && !ao_equal && !ob_equal)
-    {
-        return false;
-    }
-
     if(ab_equal && ao_equal && ob_equal)
     {
         return false;
     }
 
-    manager.setParameterEqual(a,o);
-    manager.setParameterEqual(o,b);
-    return true;
+    if(ab_equal || ao_equal || ob_equal)
+    {
+        manager.setParameterEqual(a,o);
+        manager.setParameterEqual(o,b);
+        return true;
+    }
+
+    bool a_const = manager.isParameterConstant(a);
+    bool b_const = manager.isParameterConstant(b);
+    bool o_const = manager.isParameterConstant(o);
+
+    double val_a = *manager.getOptimizedParameter(a, false);
+    double val_b = *manager.getOptimizedParameter(b, false);
+    double val_o = *manager.getOptimizedParameter(o, false);
+
+    if(a_const && b_const && o_const)
+    {
+        return false;
+    }
+
+    if(a_const && b_const)
+    {
+        *o = (val_a + val_b)/2;
+        manager.setParameterConstant(o);
+        return true;
+    }
+
+    if(a_const && o_const)
+    {
+        *b = val_a + 2.0 * val_o;
+        manager.setParameterConstant(b);
+        return true;
+    }
+
+    if(b_const && o_const)
+    {
+        *a = val_b - 2.0 * val_o;
+        manager.setParameterConstant(b);
+        return true;
+    }
+
+    // TODO: Optimize when only one is const.
+    // Doesn't make much difference, because it is already linear.
+
+    return false;
+}
+
+
+void MediumParameter::report() const
+{
+    std::cerr << "Medium point";
+    //    std::cerr << "PointAlongCurve: " << *point << " along " << *curve;
+    std::cerr << std::endl;
 }
 
 } // namespace NamedSketcher::GCS

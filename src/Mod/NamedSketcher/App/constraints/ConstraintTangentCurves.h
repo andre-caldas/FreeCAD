@@ -28,7 +28,7 @@
 #include <memory>
 #include <vector>
 
-#include "../gcs_solver/equations/ConcorrentCurves.h"
+#include "../gcs_solver/equations/ConcurrentCurves.h"
 #include "../gcs_solver/equations/ParallelCurves.h"
 #include "ConstraintBase.h"
 
@@ -67,10 +67,12 @@ public:
 
 private:
     // TODO: Use colinear for line segments.
-    GCS::ConcorrentCurves equationConcorrent;
+    GCS::ConcurrentCurves equationConcurrent;
     GCS::ParallelCurves equationParallel;
     GCS::Parameter parameter_t1{"t1", 0}; // parametrization: t --> c(t).
     GCS::Parameter parameter_t2{"t2", 0}; // parametrization: t --> c(t).
+
+    void preprocessParameters();
 };
 
 } // namespace NamedSketcher

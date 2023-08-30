@@ -88,6 +88,10 @@ inline double ParameterValueMapper::operator()(const Parameter* p) const
     else if(manager)
     {
         parent_value = manager->getValue(p);
+        if(manager->isParameterConstant(p))
+        {
+            return parent_value;
+        }
     }
     return (p != direction) ? parent_value : (parent_value + delta);
 }

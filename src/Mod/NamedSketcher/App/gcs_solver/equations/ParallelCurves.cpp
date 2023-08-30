@@ -21,6 +21,7 @@
  *                                                                          *
  ***************************************************************************/
 
+#include <iostream>
 #include <cmath>
 
 #include <Base/Exception.h>
@@ -41,12 +42,13 @@ void ParallelCurves::set(GeometryBase* c1, Parameter* t1, GeometryBase* c2, Para
     parameter_t2 = t2;
 }
 
-// sqrt(det(normal1(t), normal2(t)))
+// cbrt(det(normal1(t), normal2(t)))
 double ParallelCurves::error(const ParameterGroupManager& manager) const
 {
     auto n1 = curve1->normalAtParameter(manager, parameter_t1);
     auto n2 = curve2->normalAtParameter(manager, parameter_t2);
-    double result = std::sqrt(n1.x*n2.y - n1.y*n2.x);
+    double det = n1.x*n2.y - n1.y*n2.x;
+    double result = det;//std::sqrt(det);
     return result;
 }
 
@@ -58,29 +60,30 @@ ParameterVector ParallelCurves::differentialNonOptimized(const GCS::ParameterVal
     auto n1 = curve1->normalAtParameter(_, parameter_t1);
     auto n2 = curve2->normalAtParameter(_, parameter_t2);
 
-    double denominator = std::sqrt(n1.x*n2.y - n1.y*n2.x);
+//    double det = n1.x*n2.y - n1.y*n2.x;
+//    double denominator = std::copysign(std::sqrt(std::abs(det)), det);
 
+    /*
+     * For the curve parameter h, the derivative is:
+     * (dn1/dh) dot_product (n2.y, -n2.x)/denominator
+     * +
+     * (dn2/dh) dot_product (-n1.y, n1.x)/denominator.
+     */
     double v1x = n2.y;
     double v1y = -n2.x;
     double v2x = -n1.y;
     double v2y = n1.x;
-    if(denominator != 0)
-    {
-        v1x /= denominator;
-        v1y /= denominator;
-        v2x /= denominator;
-        v2y /= denominator;
-    }
+//    if(denominator != 0)
+//    {
+//        v1x /= denominator;
+//        v1y /= denominator;
+//        v2x /= denominator;
+//        v2y /= denominator;
+//    }
 
     ParameterVector result;
-
-    /*
-     * For the curve parameter h, the derivative is:
-     * +(dc1/dh) dot_product (c1(t) - c2(t)) / ||c1(t) - c2(t)||.
-     * -(dc2/dh) dot_product (c1(t) - c2(t)) / ||c1(t) - c2(t)||.
-     */
     GeometryBase::derivative_map partial_derivatives1;
-    curve1->partialDerivativesPoint(_, partial_derivatives1, parameter_t1);
+    curve1->partialDerivativesNormal(_, partial_derivatives1, parameter_t1);
     for(const auto& [parameter, vector]: partial_derivatives1)
     {
         // Chain rule.
@@ -89,12 +92,12 @@ ParameterVector ParallelCurves::differentialNonOptimized(const GCS::ParameterVal
     }
 
     GeometryBase::derivative_map partial_derivatives2;
-    curve2->partialDerivativesPoint(_, partial_derivatives2, parameter_t2);
+    curve2->partialDerivativesNormal(_, partial_derivatives2, parameter_t2);
     for(const auto& [parameter, vector]: partial_derivatives2)
     {
         // Chain rule.
-        double partial = -(v2x*vector.x + v2y*vector.y);
-        result.set(parameter, partial);
+        double partial = v2x*vector.x + v2y*vector.y;
+        result.add(parameter, partial);
     }
     return result;
 }
@@ -116,6 +119,14 @@ void ParallelCurves::declareParameters(ParameterGroupManager& manager) const
     {
         manager.addParameter(p);
     }
+}
+
+
+void ParallelCurves::report() const
+{
+    std::cerr << "Parallel Curves";
+    //    std::cerr << "PointAlongCurve: " << *point << " along " << *curve;
+    std::cerr << std::endl;
 }
 
 } // namespace NamedSketcher::GCS

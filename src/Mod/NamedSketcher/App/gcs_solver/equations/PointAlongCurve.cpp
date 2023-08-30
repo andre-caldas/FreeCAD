@@ -21,6 +21,7 @@
  *                                                                          *
  ***************************************************************************/
 
+#include <iostream>
 #include <cmath>
 
 #include <Base/Exception.h>
@@ -70,19 +71,18 @@ ParameterVector PointAlongCurve::differentialNonOptimized(const GCS::ParameterVa
 
     ParameterVector result;
     /*
-     * For the x and y coordinate of point,
+     * For the x and y coordinate of point p,
      * it is the x and y coordinates of -(c(t) - p) / ||c(t) - p||.
      */
     result.set(&point->x, -vx);
     result.set(&point->y, -vy);
 
-    GeometryBase::derivative_map partial_derivatives;
-    curve->partialDerivativesPoint(_, partial_derivatives, parameter_t);
-
     /*
      * For the curve parameter h, the derivative is:
      * (dc/dh) dot_product (c(t) - p) / ||c(t) - p||.
      */
+    GeometryBase::derivative_map partial_derivatives;
+    curve->partialDerivativesPoint(_, partial_derivatives, parameter_t);
     for(const auto& [parameter, vector]: partial_derivatives)
     {
         // Chain rule.
@@ -106,6 +106,14 @@ void PointAlongCurve::declareParameters(ParameterGroupManager& manager) const
     {
         manager.addParameter(p);
     }
+}
+
+
+void PointAlongCurve::report() const
+{
+    std::cerr << "Point Along Curve";
+//    std::cerr << "PointAlongCurve: " << *point << " along " << *curve;
+    std::cerr << std::endl;
 }
 
 } // namespace NamedSketcher::GCS

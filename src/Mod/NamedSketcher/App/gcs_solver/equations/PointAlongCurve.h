@@ -49,6 +49,8 @@ public:
 
     void declareParameters(ParameterGroupManager& manager) const override;
 
+    void report () const;
+
 private:
     Point* point;
     Parameter* parameter_t; // parametrization: t --> c(t).

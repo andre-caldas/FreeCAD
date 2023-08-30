@@ -38,6 +38,7 @@ public:
 
     double operator[](const Index parameter) const;
     void set(const Index parameter, double value);
+    void add(const Index parameter, double value);
     bool hasKey(const Index parameter) const {return values.count(parameter);}
 
     Vector<Index>& operator+=(const Vector<Index>& other);

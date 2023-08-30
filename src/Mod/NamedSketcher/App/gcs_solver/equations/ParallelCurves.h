@@ -49,6 +49,8 @@ public:
 
     void declareParameters(ParameterGroupManager& manager) const override;
 
+    void report() const;
+
 private:
     Parameter* parameter_t1; // parametrization: t --> c(t).
     GeometryBase* curve1;

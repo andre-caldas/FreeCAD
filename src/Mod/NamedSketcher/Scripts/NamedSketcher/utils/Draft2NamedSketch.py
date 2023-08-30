@@ -230,6 +230,8 @@ class GeometryData:
         for constraint in self.extra_constraints_fabric(self):
             if sketch.isConstraintIndependent(constraint):
                 sketch.addConstraint(constraint)
+            else:
+                print('Constraint not independent.', constraint)
 
 #
 # Geometry creation.

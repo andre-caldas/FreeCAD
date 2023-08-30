@@ -63,6 +63,7 @@ std::vector<GCS::Equation*> ConstraintPointAlongCurve::getEquations()
         FC_THROWM(Base::NameError, "Could not resolve name (" << curve.pathString() << ").");
     }
 
+    preprocessParameters();
     equation.set(point.get(), curve.get(), &parameter_t);
     return std::vector<GCS::Equation*>{&equation};
 }
@@ -75,8 +76,29 @@ bool ConstraintPointAlongCurve::updateReferences()
     {
         return false;
     }
+
+    preprocessParameters();
     equation.set(point.get(), curve.get(), &parameter_t);
     return true;
+}
+
+void ConstraintPointAlongCurve::preprocessParameters()
+{
+    // TODO: improve this search.
+    double min_dist = 100000000.;
+    auto& pt1 = *point.get();
+    for(GCS::Parameter p(0); p <= 1.0; p += 0x1p-4)
+    {
+        auto pt2 = curve.get()->positionAtParameter({}, &p);
+        double x = pt1.x - pt2.x;
+        double y = pt1.y - pt2.y;
+        double dist = x*x + y*y;
+        if(dist <= min_dist)
+        {
+            min_dist = dist;
+            parameter_t = p;
+        }
+    }
 }
 
 

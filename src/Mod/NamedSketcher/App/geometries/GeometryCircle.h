@@ -65,6 +65,9 @@ public:
     GCS::Point positionAtParameter(const GCS::ParameterValueMapper& value_mapper, const GCS::Parameter* t) const override;
     GCS::Point normalAtParameter(const GCS::ParameterValueMapper& value_mapper, const GCS::Parameter* t) const override;
 
+    void partialDerivativesPoint(const GCS::ParameterValueMapper& value_mapper, derivative_map& map, const GCS::Parameter* t) const override;
+    void partialDerivativesNormal(const GCS::ParameterValueMapper& value_mapper, derivative_map& map, const GCS::Parameter* t) const override;
+
     std::vector<Base::Accessor::ReferenceTo<GCS::Point>> getReferences(GCS::Point*) override;
     std::vector<Base::Accessor::ReferenceTo<GCS::Parameter>> getReferences(GCS::Parameter*) override;
 

@@ -115,7 +115,7 @@ void ConstraintYDistance::report() const
         std::cerr << std::endl;
 
         std::cerr << "\tError: (";
-        std::cerr << (start.get()->y - end.get()->y - distance);
+        std::cerr << (end.get()->y - start.get()->y - distance);
         std::cerr << ")" << std::endl;
     } catch (...) {}
 }

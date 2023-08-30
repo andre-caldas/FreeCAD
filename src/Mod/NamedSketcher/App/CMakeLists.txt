@@ -137,8 +137,8 @@ SET(gcs_solver_SRCS
     gcs_solver/equations/Colinear.cpp
     gcs_solver/equations/PointAlongCurve.h
     gcs_solver/equations/PointAlongCurve.cpp
-    gcs_solver/equations/ConcorrentCurves.h
-    gcs_solver/equations/ConcorrentCurves.cpp
+    gcs_solver/equations/ConcurrentCurves.h
+    gcs_solver/equations/ConcurrentCurves.cpp
     gcs_solver/equations/ParallelCurves.h
     gcs_solver/equations/ParallelCurves.cpp
 #

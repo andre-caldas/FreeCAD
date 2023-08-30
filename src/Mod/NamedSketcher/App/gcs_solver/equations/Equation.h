@@ -41,7 +41,7 @@ class ParameterValueMapper;
 class NamedSketcherExport Equation
 {
 public:
-    virtual double error(const ParameterGroupManager& manager) const = 0;
+    virtual double error(const GCS::ParameterGroupManager& manager) const = 0;
     virtual ParameterVector differentialNonOptimized(const GCS::ParameterValueMapper& parameter_mapper) const = 0;
     virtual OptimizedVector differentialOptimized(const ParameterGroupManager& manager) const = 0;
     virtual bool isLinear() const = 0;
@@ -58,6 +58,8 @@ public:
      * @return Returns true when some new proxy was optimized and false otherwise.
      */
     virtual bool optimizeParameters(ParameterGroupManager& /*manager*/) const {return false;}
+
+    virtual void report() const {}
 };
 
 class NamedSketcherExport LinearEquation : public Equation

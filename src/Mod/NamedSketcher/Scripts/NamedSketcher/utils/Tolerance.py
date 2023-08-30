@@ -76,18 +76,13 @@ class Tolerance:
         return self.is_zero(dist)
 
     def are_curves_tangent(self, shape1, shape2):
-        print('Are curves tangent???')
-        print(shape1, shape2)
         dist, points, infos = shape1.distToShape(shape2)
-        print('Info...', dist, points, infos)
-        print(dist, points, infos)
         if self.is_zero(dist):
             for info in infos:
                 if info[0] == 'Vertex' or info[3] == 'Vertex':
                     # Point along curve or coincident points.
                     # TODO: treat all at once! And also allow tangent point along curve.
                     continue
-                print(info)
                 tg1 = shape1.tangentAt(info[2])
                 tg2 = shape2.tangentAt(info[5])
                 if self.is_zero(tg1.cross(tg2).Length):

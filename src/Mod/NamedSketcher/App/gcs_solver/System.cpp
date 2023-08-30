@@ -89,6 +89,13 @@ void System::updateGradients()
 double
 System::error2(const ParameterGroupManager& manager) const
 {
+    // Eigen does not like zero dimensional vectors. :-(
+    // I do believe that the norm of a zero dimensional vector is zero.
+    // The only element is the zero vector!
+    if(manager.inputSize() == 0)
+    {
+        return 0;
+    }
     return minus_error(manager).squaredNorm();
 }
 
@@ -210,12 +217,14 @@ bool System::solve() const
 
     // TODO: give up criteria.
     // TODO: use the shaker!
-    for(int trials=0; trials < 200; ++trials)
+    for(int trials=0; trials < 100; ++trials)
     {
+manager.report();
         double err2 = error2(manager);
         // TODO: decide on a good criteria.
-        if(err2 < 1.0/(1024*1024*32) * manager.outputSize())
+        if(err2 <= 1e-3 * manager.outputSize())
         {
+std::cerr << "Success after " << trials + 1 << " trials." << std::endl;
             manager.commitParameters();
             return true;
         }
@@ -226,7 +235,12 @@ bool System::solve() const
         }
 
         OptimizedVector target = linear_solver.solve();
-        stepIntoTargetDirection(manager, target);
+        if(!target.isZero())
+        {
+            stepIntoTargetDirection(manager, target);
+        } else {
+            stepIntoTargetDirection(manager, manager.noise());
+        }
     }
 manager.commitParameters();
 
@@ -241,14 +255,17 @@ void System::stepIntoTargetDirection(
     // TODO: Criteria for those two magic numbers.
     // N: Should probably depend on the variation of the gradient (Wronskian).
     const int N = 16;
-    const int DEPTH = 4;
+    int DEPTH = 4;
 
     double a = -1.0;
     double b = 1.0;
+double acc = 1.0;
 
     double best_err2 = 1000000000;
 
     OptimizedVector current_position = manager.getOptimizedParameterValues();
+std::cerr << "Current position: ";
+manager.print_vector(current_position);std::cerr << std::endl;
     current_position += direction;
 
     std::cerr << "Stepping into direction: ";
@@ -268,10 +285,14 @@ void System::stepIntoTargetDirection(
             }
             if(best_err2 < err2 && n != 0)
             {
+                // Don't go deep if already advanced "enough".
+                DEPTH -= n + 1;
                 // To avoid "flipping", we do not allow the error
                 // to increase.
                 // Use position just before the error started increasing.
                 next_position.setAsLinearCombination(1.0, current_position, (a*(N-(n-1)) + b*(n-1))/N, direction);
+acc += (a*(N-(n-1)) + b*(n-1))/N;
+std::cerr << "Accmulated = " << acc << " times direction." << std::endl;
                 break;
             }
             best_err2 = err2;
@@ -279,6 +300,8 @@ void System::stepIntoTargetDirection(
         a /= N;
         b /= N;
         current_position = std::move(next_position);
+std::cerr << "New position: ";
+manager.print_vector(current_position);std::cerr << std::endl;
     }
     manager.setOptimizedParameterValues(std::move(current_position));
 }

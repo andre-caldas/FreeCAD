@@ -166,8 +166,8 @@ GCS::Point GeometryLineSegment::positionAtParameter(const GCS::ParameterValueMap
 
 GCS::Point GeometryLineSegment::normalAtParameter(const GCS::ParameterValueMapper& _, const GCS::Parameter* /*t*/) const
 {
-    double x = _(start.x) + _(end.x);
-    double y = _(start.y) + _(end.y);
+    double x = _(end.x) - _(start.x);
+    double y = _(end.y) - _(start.y);
     // Rotate clockwise.
     return GCS::Point{y,-x}.normalize();
 }

@@ -101,7 +101,7 @@ public:
      * @param p: @class Parameter to check.
      * @return Iis constant?
      */
-    bool isParameterConstant(const Parameter* p);
+    bool isParameterConstant(const Parameter* p) const;
 
     ParameterGroup* getParameterGroup(const Parameter* parameter) const;
 
@@ -113,7 +113,7 @@ public:
     void finishOptimization();
     size_t getOptimizedParameterIndex(const OptimizedParameter* parameter) const;
     size_t getNonConstantGroupIndex(const ParameterGroup* group) const;
-    OptimizedParameter* getOptimizedParameter(const Parameter* parameter) const;
+    OptimizedParameter* getOptimizedParameter(const Parameter* parameter, bool finished_optimization=true) const;
     double getOptimizedParameterValue(const Parameter* parameter) const;
     OptimizedVector getOptimizedParameterValues() const;
     void setOptimizedParameterValues(const OptimizedVector& vals) const;
@@ -129,6 +129,8 @@ public:
     size_t inputSize() const;
     size_t outputSize() const;
     void commitParameters() const;
+
+    OptimizedVector noise() const;
 
     void print_vector(const OptimizedVector& v) const;
     void report_position() const;

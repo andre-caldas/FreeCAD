@@ -42,7 +42,7 @@ public:
 
     double getValue() const;
     void setValue(double val);
-    OptimizedParameter* getValuePtr();
+    OptimizedParameter* getValuePtr(bool allow_const=false);
 
     bool hasParameter(Parameter* parameter) const;
     void append(Parameter* p, bool set_as_mean = true);

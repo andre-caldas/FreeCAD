@@ -81,7 +81,7 @@ short NamedSketch::mustExecute() const
     if (ExternalGeometry.isTouched())
         return 1;
 */
-    return Part2DObject::mustExecute();
+    return 1;Part2DObject::mustExecute();
 }
 
 App::DocumentObjectExecReturn *NamedSketch::execute()
