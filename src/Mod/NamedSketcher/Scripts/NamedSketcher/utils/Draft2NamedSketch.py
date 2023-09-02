@@ -129,8 +129,12 @@ class Draft2NamedSketch:
             pt_x = self.all_points_data[0].x
             pt_y = self.all_points_data[0].y
             sketch.addConstraint(NamedSketcher.ConstraintBlockPoint(pt_ref, pt_x, pt_y))
+            sketch.solve()
 
     def generate_coincident_constraints(self, sketch):
+        # Coincident points no not need "along the curve" constraint.
+        # point: [geo1, geo2, ...]
+        self.not_along_curve = {}
         coincident_groups = {p: set() for p in self.all_points_data}
         for p1, p2 in combinations(self.all_points_data, 2):
             if self.tolerance.are_coincident(p1.gcs_point, p2.gcs_point):
@@ -151,6 +155,9 @@ class Draft2NamedSketch:
             return result
 
         for p in self.all_points_data:
+            self.not_along_curve[p.ref] = []
+
+        for p in self.all_points_data:
             if p in processed_points:
                 continue
             equivalent_class = get_equivalent_class(p)
@@ -163,13 +170,17 @@ class Draft2NamedSketch:
             for a in equivalent_class:
                 print('Adding point:', a.gcs_point)
                 constraint.addPoint(a.ref)
+                for b in equivalent_class:
+                    self.not_along_curve[a.ref].append(b.geo_obj)
             sketch.addConstraint(constraint)
+            sketch.solve()
 
     def generate_horizontal_constraints(self, sketch):
         for g in self.geometries_data:
             if self.tolerance.is_horizontal(g.ref):
                 g.is_horizontal = True
                 sketch.addConstraint(NamedSketcher.ConstraintHorizontal(g.ref))
+                sketch.solve()
 
     def generate_vertical_constraints(self, sketch):
         for g in self.geometries_data:
@@ -178,23 +189,29 @@ class Draft2NamedSketch:
             if self.tolerance.is_vertical(g.ref):
                 g.is_vertical = True
                 sketch.addConstraint(NamedSketcher.ConstraintVertical(g.ref))
+                sketch.solve()
 
     def generate_point_along_curve_constraints(self, sketch):
         for g1, g2 in permutations(self.geometries_data, 2):
             for p in g1.points.values():
+                if g2.obj in self.not_along_curve[p.ref]:
+                    continue
                 v = Part.Vertex(App.Vector(p.x, p.y, self.z_level))
                 if self.tolerance.is_point_along_curve(v, g2.shape):
                     sketch.addConstraint(NamedSketcher.ConstraintPointAlongCurve(p.ref, g2.ref))
+                    sketch.solve()
 
     def generate_tangent_curve_constraints(self, sketch):
         for g1, g2 in combinations(self.geometries_data, 2):
             if self.tolerance.are_curves_tangent(g1.shape, g2.shape):
                 sketch.addConstraint(NamedSketcher.ConstraintTangentCurves(g1.ref, g2.ref))
+                sketch.solve()
 
     def generate_normal_curve_constraints(self, sketch):
         for g1, g2 in combinations(self.geometries_data, 2):
             if self.tolerance.are_curves_normal(g1.shape, g2.shape):
                 #sketch.addConstraint(NamedSketcher.ConstraintNormal(g1.ref, g2.ref))
+                #sketch.solve()
                 print('Implement ConstraintOrthogonalCurves.')
 
     def generate_extra_constraints(self, sketch):
@@ -208,11 +225,12 @@ class Draft2NamedSketch:
 #
 
 class PointData:
-    def __init__(self, ref, gcs_point):
+    def __init__(self, ref, gcs_point, geo_obj):
         self.ref = ref
         self.gcs_point = gcs_point
         self.x = gcs_point.x
         self.y = gcs_point.y
+        self.geo_obj = geo_obj
 
 class GeometryData:
     is_vertical = False
@@ -224,12 +242,13 @@ class GeometryData:
         self.extra_constraints_fabric = extra_constraints_fabric
         for p_ref in obj.getReferencesToPoints():
             gcs_point = p_ref.resolve()
-            self.points[p_ref] = PointData(p_ref, gcs_point)
+            self.points[p_ref] = PointData(p_ref, gcs_point, obj)
 
     def generate_extra_constraints(self, sketch):
         for constraint in self.extra_constraints_fabric(self):
             if sketch.isConstraintIndependent(constraint):
                 sketch.addConstraint(constraint)
+                sketch.solve()
             else:
                 print('Constraint not independent.', constraint)
 
@@ -245,8 +264,9 @@ def create_point(point):
 
 def create_circle(edge):
     def extra_constraint_fabric(data):
-        radius = (data.ref + "radius").resolveParameter().value
-        return [NamedSketcher.ConstraintConstant(data.ref + "radius", radius)]
+        return []
+#        radius = (data.ref + "radius").resolveParameter().value
+#        return [NamedSketcher.ConstraintConstant(data.ref + "radius", radius)]
 
     part = Part.Circle(edge.Curve)
     g = NamedSketcher.Geometry(part)
@@ -268,6 +288,7 @@ def create_linesegment(edge):
             print("Implement ConstraintDistance!")
             #length = sqrt((start.x-end.x)**2 + (start.y-end.y)**2)
             #sketch.addConstraint(NamedSketcher.ConstraintDistance(data.ref, length))
+            #sketch.solve()
         return result
 
     part = Part.LineSegment(edge.Curve, edge.FirstParameter, edge.LastParameter)

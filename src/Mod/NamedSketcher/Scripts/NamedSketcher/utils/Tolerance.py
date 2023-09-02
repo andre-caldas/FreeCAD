@@ -85,7 +85,9 @@ class Tolerance:
                     continue
                 tg1 = shape1.tangentAt(info[2])
                 tg2 = shape2.tangentAt(info[5])
-                if self.is_zero(tg1.cross(tg2).Length):
+                print('TG1 ', tg1, ' TG2 ', tg2)
+                print('Cross ', tg1.cross(tg2))
+                if tg1.cross(tg2).Length <= self.scale_tolerance:
                     return True
         return False
 

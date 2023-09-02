@@ -97,9 +97,11 @@ ParameterVector Distance::differentialNonOptimized(const GCS::ParameterValueMapp
     result.set(&a->y, 2.0*(a2-b2));
     result.set(&b->x, 2.0*(b1-a1));
     result.set(&b->y, 2.0*(b2-a2));
+    // It can happen that parameters are equal in this combination.
+    // So, instead of setting them, we add.
     for(auto& p: distance_combinations)
     {
-        result.set(p.second, -2.0 * p.first * d);
+        result.add(p.second, -2.0 * p.first * d);
     }
     return result;
 }
@@ -129,9 +131,11 @@ OptimizedVector Distance::differentialOptimized(const ParameterGroupManager& man
             result.set(manager.getOptimizedParameter(&a->y), +2.0 * diff);
             result.set(manager.getOptimizedParameter(&b->y), -2.0 * diff);
         }
+        // It can happen that parameters are equal in this combination.
+        // So, instead of setting them, we add.
         for(auto& p: distance_combinations)
         {
-            result.set(manager.getOptimizedParameter(p.second), -2.0 * p.first * d);
+            result.add(manager.getOptimizedParameter(p.second), -2.0 * p.first * d);
         }
         return result;
     }

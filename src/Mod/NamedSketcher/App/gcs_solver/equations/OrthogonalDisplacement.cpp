@@ -209,12 +209,7 @@ void OrthogonalDisplacement::setDisplacementDifferentials(const ParameterGroupMa
     double d = totalDisplacement(manager);
 
     // It can happen that parameters are equal in this combination.
-    // So, instead of setting them, we first make them zero, and then
-    // add the value.
-    for(auto& p: displacement_combinations)
-    {
-        result.set(manager.getOptimizedParameter(p.second), 0);
-    }
+    // So, instead of setting them, we add.
     for(auto& p: displacement_combinations)
     {
         double value = -2.0 * p.first * d * factor;
@@ -227,12 +222,7 @@ void OrthogonalDisplacement::setDisplacementDifferentials(const ParameterValueMa
     double d = totalDisplacement(_);
 
     // It can happen that parameters are equal in this combination.
-    // So, instead of setting them, we first make them zero, and then
-    // add the value.
-    for(auto& p: displacement_combinations)
-    {
-        result.set(p.second, 0);
-    }
+    // So, instead of setting them, we add.
     for(auto& p: displacement_combinations)
     {
         double value = -2.0 * p.first * d * factor;
