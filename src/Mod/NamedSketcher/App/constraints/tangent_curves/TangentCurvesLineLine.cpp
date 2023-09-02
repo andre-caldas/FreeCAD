@@ -21,43 +21,50 @@
  *                                                                          *
  ***************************************************************************/
 
+#include "PreCompiled.h"
 
-#ifndef NAMEDSKETCHER_GCS_ParallelCurves_H
-#define NAMEDSKETCHER_GCS_ParallelCurves_H
+#ifndef _PreComp_
+#include <iostream>
+#endif // _PreComp_
+#include <cmath>
 
-#include <set>
+#include "../../geometries/GeometryLineSegment.h"
 
-#include "../Types.h"
-#include "Equation.h"
+#include "../../gcs_solver/equations/EquationProxy.h"
 
-namespace NamedSketcher {
-class GeometryBase;
+#include "TangentCurvesLineLine.h"
+
+namespace NamedSketcher::Specialization
+{
+
+TangentCurvesLineLine::TangentCurvesLineLine(
+    GCS::EquationProxy& proxy1, GCS::EquationProxy& proxy2,
+    GeometryLineSegment* l1, GeometryLineSegment* l2)
+    : line1(l1)
+    , line2(l2)
+{
+    proxy1.set(&equationColinearPoints1);
+    proxy2.set(&equationColinearPoints2);
 }
 
-namespace NamedSketcher::GCS
+void TangentCurvesLineLine::preprocessParameters()
 {
+}
 
-class NamedSketcherExport ParallelCurves : public NonLinearEquation
+void TangentCurvesLineLine::setEquations()
 {
-public:
-    ParallelCurves() = default;
-    void set(GeometryBase* curve1, Parameter* t1, GeometryBase* curve2, Parameter* t2);
+    equationColinearPoints1.set(&line1->start, &line1->end, &line2->start);
+    equationColinearPoints1.set(&line1->start, &line1->end, &line2->end);
+}
 
-    double error(const ParameterGroupManager& manager) const override;
-    ParameterVector differentialNonOptimized(const GCS::ParameterValueMapper& parameter_mapper) const override;
-    OptimizedVector differentialOptimized(const ParameterGroupManager& manager) const override;
 
-    void declareParameters(ParameterGroupManager& manager) const override;
+void TangentCurvesLineLine::report() const
+{
+    std::cerr << "Line to line tangent curves: " << std::endl;
+    std::cerr << "* ";
+    line1->report();
+    std::cerr << "* ";
+    line2->report();
+}
 
-    void report() const override;
-
-private:
-    Parameter* parameter_t1; // parametrization: t --> c(t).
-    GeometryBase* curve1;
-    Parameter* parameter_t2; // parametrization: t --> c(t).
-    GeometryBase* curve2;
-};
-
-} // namespace NamedSketcher::GCS
-
-#endif // NAMEDSKETCHER_GCS_ParallelCurves_H
+} // namespace NamedSketcher

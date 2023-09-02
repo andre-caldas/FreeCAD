@@ -159,7 +159,10 @@ OptimizedParameter* ParameterGroupManager::getOptimizedParameter(const Parameter
     {
         // If it is constant you might need the value when optimizing.
         // But not when solving!
-        assert(!group->isConstant());
+        if(group->isConstant())
+        {
+            return nullptr;
+        }
     }
     return group->getValuePtr(!finished_optimization);
 }

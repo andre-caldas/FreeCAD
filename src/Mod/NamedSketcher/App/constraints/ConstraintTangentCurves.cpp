@@ -25,13 +25,21 @@
 
 #ifndef _PreComp_
 #include <iostream>
+#include <memory>
 #endif // _PreComp_
 #include <cmath>
 
 #include <Base/Writer.h>
 #include <Base/Exception.h>
 
-#include "../geometries/GeometryPoint.h"
+#include "../geometries/GeometryLineSegment.h"
+#include "../geometries/GeometryCircle.h"
+
+#include "tangent_curves/TangentCurvesGeneric.h"
+#include "tangent_curves/TangentCurvesLineLine.h"
+#include "tangent_curves/TangentCurvesLineCircle.h"
+#include "tangent_curves/TangentCurvesCircleCircle.h"
+
 #include "ConstraintTangentCurves.h"
 
 
@@ -46,14 +54,7 @@ ConstraintTangentCurves::ConstraintTangentCurves(ref_geometry curve1, ref_geomet
 
 std::vector<GCS::Equation*> ConstraintTangentCurves::getEquations()
 {
-    if(!curve1.isLocked())
-    {
-        curve1.refreshLock();
-    }
-    if(!curve2.isLocked())
-    {
-        curve2.refreshLock();
-    }
+    updateReferences(true);
     if(!curve1.isLocked())
     {
         FC_THROWM(Base::NameError, "Could not resolve name (" << curve1.pathString() << ").");
@@ -63,48 +64,89 @@ std::vector<GCS::Equation*> ConstraintTangentCurves::getEquations()
         FC_THROWM(Base::NameError, "Could not resolve name (" << curve2.pathString() << ").");
     }
 
-    preprocessParameters();
-    equationConcurrent.set(curve1.get(), &parameter_t1, curve2.get(), &parameter_t2);
-    equationParallel.set(curve1.get(), &parameter_t1, curve2.get(), &parameter_t2);
-    return std::vector<GCS::Equation*>{&equationConcurrent, &equationParallel};
+    return std::vector<GCS::Equation*>{&equation1, &equation2};
 }
 
 bool ConstraintTangentCurves::updateReferences()
 {
-    curve1.refreshLock();
-    curve2.refreshLock();
+    return updateReferences(false);
+}
+
+bool ConstraintTangentCurves::updateReferences(bool only_unlocked)
+{
+    if(!only_unlocked || !curve1.isLocked())
+    {
+        curve1.refreshLock();
+    }
+    if(!only_unlocked || !curve2.isLocked())
+    {
+        curve2.refreshLock();
+    }
     if(!curve1.hasChanged() && !curve2.hasChanged())
     {
         return false;
     }
 
-    preprocessParameters();
-    equationConcurrent.set(curve1.get(), &parameter_t1, curve2.get(), &parameter_t2);
-    equationParallel.set(curve1.get(), &parameter_t1, curve2.get(), &parameter_t2);
+    pickImplementation();
+    assert(implementation);
+    implementation->preprocessParameters();
+    implementation->setEquations();
     return true;
 }
 
-void ConstraintTangentCurves::preprocessParameters()
+void ConstraintTangentCurves::pickImplementation()
 {
-    // TODO: improve this search.
-    double min_det = 100000000.;
-    for(GCS::Parameter p1(0); p1 <= 1.0; p1 += 0x1p-4)
-    {
-        for(GCS::Parameter p2(0); p2 <= 1.0; p2 += 0x1p-4)
-        {
-            auto n1 = curve1.get()->normalAtParameter({}, &p1);
-            auto n2 = curve2.get()->normalAtParameter({}, &p2);
-            double det = std::abs(n1.x*n2.y - n1.y*n2.x);
-            if(det <= min_det)
-            {
-                min_det = det;
-                parameter_t1 = p1;
-                parameter_t2 = p2;
-            }
-        }
-    }
-}
+    // This method is private.
+    // We assume all curves are locked.
+    GeometryCircle* c1 = dynamic_cast<GeometryCircle*>(curve1.get());
+    GeometryCircle* c2 = dynamic_cast<GeometryCircle*>(curve2.get());
+    GeometryLineSegment* l1 = dynamic_cast<GeometryLineSegment*>(curve1.get());
+    GeometryLineSegment* l2 = dynamic_cast<GeometryLineSegment*>(curve2.get());
 
+    if(c1 && c2)
+    {
+        double in_limit = std::max(c1->radius, c2->radius);
+        double in_limit_2 = in_limit * in_limit;
+        double dx = (c2->center.x - c1->center.x);
+        double dy = (c2->center.y - c1->center.y);
+        double d_2 = dx*dx + dy*dy;
+
+        implementation = std::make_unique<Specialization::TangentCurvesCircleCircle>(equation1, equation2, c1, c2, d_2 <= in_limit_2);
+        return;
+    }
+
+    if(c1 && l2)
+    {
+        double px = (c1->center.x - l2->start.x);
+        double py = (c1->center.y - l2->start.y);
+        double vx = (l2->end.x - l2->start.x);
+        double vy = (l2->end.y - l2->start.y);
+        double det = px*vy - py*vx;
+
+        implementation = std::make_unique<Specialization::TangentCurvesLineCircle>(equation1, equation2, c1, l2, det >= 0);
+        return;
+    }
+
+    if(l1 && c2)
+    {
+        double px = (c2->center.x - l1->start.x);
+        double py = (c2->center.y - l1->start.y);
+        double vx = (l1->end.x - l1->start.x);
+        double vy = (l1->end.y - l1->start.y);
+        double det = px*vy - py*vx;
+
+        implementation = std::make_unique<Specialization::TangentCurvesLineCircle>(equation1, equation2, l1, c2, det >= 0);
+        return;
+    }
+
+    if(l1 && l2)
+    {
+        implementation = std::make_unique<Specialization::TangentCurvesLineLine>(equation1, equation2, l1, l2);
+        return;
+    }
+
+    implementation = std::make_unique<Specialization::TangentCurvesGeneric>(equation1, equation2, curve1.get(), curve2.get(), &parameter_t1, &parameter_t2);
+}
 
 unsigned int ConstraintTangentCurves::getMemSize () const
 {
@@ -126,21 +168,8 @@ ConstraintTangentCurves::staticRestore(Base::XMLReader& /*reader*/)
 
 void ConstraintTangentCurves::report() const
 {
-    auto pt_curve1 = curve1.get()->positionAtParameter({}, &parameter_t1);
-    auto pt_curve2 = curve2.get()->positionAtParameter({}, &parameter_t2);
-    auto n1 = curve1.get()->normalAtParameter({}, &parameter_t1);
-    auto n2 = curve2.get()->normalAtParameter({}, &parameter_t2);
-    try
-    {
-        std::cerr << "Tangent curves: ";
-        std::cerr << "* Curve 1 " << parameter_t1 << " -> " << pt_curve1 << ". ";
-        std::cerr << "Normal 1 " << n1 << ".";
-        std::cerr << std::endl;
-
-        std::cerr << "* Curve 2 " << parameter_t2 << " -> " << pt_curve2 << ". ";
-        std::cerr << "Normal 2 " << n2 << ".";
-        std::cerr << std::endl;
-    } catch (...) {}
+    std::cerr << "Tangent curves - ";
+    implementation->report();
 }
 
 } // namespace NamedSketcher

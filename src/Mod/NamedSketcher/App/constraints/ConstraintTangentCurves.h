@@ -28,8 +28,8 @@
 #include <memory>
 #include <vector>
 
-#include "../gcs_solver/equations/ConcurrentCurves.h"
-#include "../gcs_solver/equations/ParallelCurves.h"
+#include "../gcs_solver/equations/EquationProxy.h"
+#include "tangent_curves/TangentCurvesBase.h"
 #include "ConstraintBase.h"
 
 namespace Base::Accessor {
@@ -39,6 +39,10 @@ class ReferenceTo;
 
 namespace NamedSketcher
 {
+
+namespace Specialization {
+class TangentCurvesBase;
+}
 
 class GeometryBase;
 
@@ -54,6 +58,7 @@ public:
 
     std::vector<GCS::Equation*> getEquations() override;
     bool updateReferences() override;
+    bool updateReferences(bool only_unlocked);
 
     std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
     static constexpr const char* xmlTagTypeStatic() {return "TangentCurves";}
@@ -66,13 +71,13 @@ public:
     void report() const override;
 
 private:
-    // TODO: Use colinear for line segments.
-    GCS::ConcurrentCurves equationConcurrent;
-    GCS::ParallelCurves equationParallel;
+    GCS::EquationProxy equation1;
+    GCS::EquationProxy equation2;
     GCS::Parameter parameter_t1{"t1", 0}; // parametrization: t --> c(t).
     GCS::Parameter parameter_t2{"t2", 0}; // parametrization: t --> c(t).
+    std::unique_ptr<Specialization::TangentCurvesBase> implementation;
 
-    void preprocessParameters();
+    void pickImplementation();
 };
 
 } // namespace NamedSketcher

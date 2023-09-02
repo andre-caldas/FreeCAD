@@ -28,7 +28,8 @@
 #include <memory>
 #include <vector>
 
-#include "../gcs_solver/equations/PointAlongCurve.h"
+#include "../gcs_solver/equations/EquationProxy.h"
+#include "point_along_curve/PointAlongCurveBase.h"
 #include "ConstraintBase.h"
 
 namespace Base::Accessor {
@@ -53,6 +54,7 @@ public:
 
     std::vector<GCS::Equation*> getEquations() override;
     bool updateReferences() override;
+    bool updateReferences(bool only_unlocked);
 
     std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
     static constexpr const char* xmlTagTypeStatic() {return "PointAlongCurve";}
@@ -66,9 +68,11 @@ public:
 
 private:
     // TODO: Use colinear for line segments.
-    GCS::PointAlongCurve equation;
+    GCS::EquationProxy equation;
     GCS::Parameter parameter_t{"t", 0}; // parametrization: t --> c(t).
+    std::unique_ptr<Specialization::PointAlongCurveBase> implementation;
 
+    void pickImplementation();
     void preprocessParameters();
 };
 

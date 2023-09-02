@@ -22,42 +22,47 @@
  ***************************************************************************/
 
 
-#ifndef NAMEDSKETCHER_GCS_ParallelCurves_H
-#define NAMEDSKETCHER_GCS_ParallelCurves_H
+#ifndef NAMEDSKETCHER_TangentCurves_LineCircle_H
+#define NAMEDSKETCHER_TangentCurves_LineCircle_H
 
-#include <set>
+#include <memory>
+#include <vector>
 
-#include "../Types.h"
-#include "Equation.h"
+#include "../../gcs_solver/equations/OrthogonalDisplacement.h"
+
+#include "TangentCurvesBase.h"
 
 namespace NamedSketcher {
-class GeometryBase;
+class GeometryLineSegment;
+class GeometryCircle;
+}
+namespace NamedSketcher::GCS {
+class EquationProxy;
 }
 
-namespace NamedSketcher::GCS
+namespace NamedSketcher::Specialization
 {
 
-class NamedSketcherExport ParallelCurves : public NonLinearEquation
+/** This is the line-to-line specialization for TangentCurves.
+ */
+class TangentCurvesLineCircle
+    : public TangentCurvesBase
 {
 public:
-    ParallelCurves() = default;
-    void set(GeometryBase* curve1, Parameter* t1, GeometryBase* curve2, Parameter* t2);
+    TangentCurvesLineCircle(GCS::EquationProxy& proxy1, GCS::EquationProxy& proxy2, GeometryLineSegment* line, GeometryCircle* circle, bool right_side);
+    TangentCurvesLineCircle(GCS::EquationProxy& proxy1, GCS::EquationProxy& proxy2, GeometryCircle* circle, GeometryLineSegment* line, bool right_side);
 
-    double error(const ParameterGroupManager& manager) const override;
-    ParameterVector differentialNonOptimized(const GCS::ParameterValueMapper& parameter_mapper) const override;
-    OptimizedVector differentialOptimized(const ParameterGroupManager& manager) const override;
-
-    void declareParameters(ParameterGroupManager& manager) const override;
-
+    void preprocessParameters() override;
+    void setEquations() override;
     void report() const override;
 
 private:
-    Parameter* parameter_t1; // parametrization: t --> c(t).
-    GeometryBase* curve1;
-    Parameter* parameter_t2; // parametrization: t --> c(t).
-    GeometryBase* curve2;
+    GeometryLineSegment* line;
+    GeometryCircle* circle;
+    GCS::OrthogonalDisplacement equation;
+    bool right_side;
 };
 
-} // namespace NamedSketcher::GCS
+} // namespace NamedSketcher
 
-#endif // NAMEDSKETCHER_GCS_ParallelCurves_H
+#endif // NAMEDSKETCHER_TangentCurves_LineCircle_H

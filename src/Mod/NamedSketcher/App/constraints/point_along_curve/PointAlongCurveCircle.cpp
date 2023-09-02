@@ -21,43 +21,47 @@
  *                                                                          *
  ***************************************************************************/
 
+#include "PreCompiled.h"
 
-#ifndef NAMEDSKETCHER_GCS_ParallelCurves_H
-#define NAMEDSKETCHER_GCS_ParallelCurves_H
+#ifndef _PreComp_
+#include <iostream>
+#endif // _PreComp_
+#include <cmath>
 
-#include <set>
+#include "../../geometries/GeometryCircle.h"
 
-#include "../Types.h"
-#include "Equation.h"
+#include "../../gcs_solver/equations/EquationProxy.h"
 
-namespace NamedSketcher {
-class GeometryBase;
+#include "PointAlongCurveCircle.h"
+
+namespace NamedSketcher::Specialization
+{
+
+PointAlongCurveCircle::PointAlongCurveCircle(
+    GCS::EquationProxy& proxy,
+    GCS::Point* point, GeometryCircle* circle)
+    : point(point)
+    , circle(circle)
+{
+    proxy.set(&equation);
 }
 
-namespace NamedSketcher::GCS
+void PointAlongCurveCircle::preprocessParameters()
 {
+}
 
-class NamedSketcherExport ParallelCurves : public NonLinearEquation
+void PointAlongCurveCircle::setEquations()
 {
-public:
-    ParallelCurves() = default;
-    void set(GeometryBase* curve1, Parameter* t1, GeometryBase* curve2, Parameter* t2);
+    equation.set(&circle->center, point, &circle->radius);
+}
 
-    double error(const ParameterGroupManager& manager) const override;
-    ParameterVector differentialNonOptimized(const GCS::ParameterValueMapper& parameter_mapper) const override;
-    OptimizedVector differentialOptimized(const ParameterGroupManager& manager) const override;
 
-    void declareParameters(ParameterGroupManager& manager) const override;
+void PointAlongCurveCircle::report() const
+{
+    std::cerr << "Point along circle: " << std::endl;
+    std::cerr << "* " << *point << std::endl;
+    std::cerr << "* ";
+    circle->report();
+}
 
-    void report() const override;
-
-private:
-    Parameter* parameter_t1; // parametrization: t --> c(t).
-    GeometryBase* curve1;
-    Parameter* parameter_t2; // parametrization: t --> c(t).
-    GeometryBase* curve2;
-};
-
-} // namespace NamedSketcher::GCS
-
-#endif // NAMEDSKETCHER_GCS_ParallelCurves_H
+} // namespace NamedSketcher

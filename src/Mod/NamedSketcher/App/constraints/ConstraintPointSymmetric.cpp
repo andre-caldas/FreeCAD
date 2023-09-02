@@ -119,9 +119,9 @@ void ConstraintPointSymmetric::report() const
 
         // TODO: implement with and without manager.
         std::cerr << "\tError: (";
-        std::cerr << (a.get()->x + b.get()->x - 2*o.get()->x);
+        std::cerr << (a.get()->x + b.get()->x - 2.0*o.get()->x);
         std::cerr << ", ";
-        std::cerr << (a.get()->y + b.get()->y - 2*o.get()->y);
+        std::cerr << (a.get()->y + b.get()->y - 2.0*o.get()->y);
         std::cerr << ")" << std::endl;
     } catch (...) {}
 }

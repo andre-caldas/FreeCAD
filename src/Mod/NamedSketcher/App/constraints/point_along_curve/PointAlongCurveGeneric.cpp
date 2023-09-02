@@ -21,43 +21,72 @@
  *                                                                          *
  ***************************************************************************/
 
+#include "PreCompiled.h"
 
-#ifndef NAMEDSKETCHER_GCS_ParallelCurves_H
-#define NAMEDSKETCHER_GCS_ParallelCurves_H
+#ifndef _PreComp_
+#include <iostream>
+#endif // _PreComp_
+#include <cmath>
 
-#include <set>
+#include "../../geometries/GeometryBase.h"
+#include "../../gcs_solver/equations/EquationProxy.h"
 
-#include "../Types.h"
-#include "Equation.h"
+#include "PointAlongCurveGeneric.h"
 
-namespace NamedSketcher {
-class GeometryBase;
+namespace NamedSketcher::Specialization
+{
+
+PointAlongCurveGeneric::PointAlongCurveGeneric(
+    GCS::EquationProxy& proxy,
+    GCS::Point* point, GeometryBase* curve,
+    GCS::Parameter* parameter_t)
+    : point(point)
+    , curve(curve)
+    , parameter_t(parameter_t)
+{
+    proxy.set(&equation);
 }
 
-namespace NamedSketcher::GCS
+void PointAlongCurveGeneric::preprocessParameters()
 {
+    // TODO: improve this search.
+    double min_dist = 100000000.;
+    auto& pt1 = *point;
+    for(GCS::Parameter p(0); p <= 1.0; p += 0x1p-4)
+    {
+        auto pt2 = curve->positionAtParameter({}, &p);
+        double x = pt1.x - pt2.x;
+        double y = pt1.y - pt2.y;
+        double dist = x*x + y*y;
+        if(dist <= min_dist)
+        {
+            min_dist = dist;
+            *parameter_t = p;
+        }
+    }
+}
 
-class NamedSketcherExport ParallelCurves : public NonLinearEquation
+void PointAlongCurveGeneric::setEquations()
 {
-public:
-    ParallelCurves() = default;
-    void set(GeometryBase* curve1, Parameter* t1, GeometryBase* curve2, Parameter* t2);
+    equation.set(point, curve, parameter_t);
+}
 
-    double error(const ParameterGroupManager& manager) const override;
-    ParameterVector differentialNonOptimized(const GCS::ParameterValueMapper& parameter_mapper) const override;
-    OptimizedVector differentialOptimized(const ParameterGroupManager& manager) const override;
 
-    void declareParameters(ParameterGroupManager& manager) const override;
+void PointAlongCurveGeneric::report() const
+{
+    auto pt_curve = curve->positionAtParameter({}, parameter_t);
 
-    void report() const override;
+    std::cerr << "Point along curve (generic): ";
+    std::cerr << "candidate point " << *point;
+    std::cerr << " <-" << parameter_t << "-> ";
+    std::cerr << "curve(t) " << pt_curve;
+    std::cerr << std::endl;
 
-private:
-    Parameter* parameter_t1; // parametrization: t --> c(t).
-    GeometryBase* curve1;
-    Parameter* parameter_t2; // parametrization: t --> c(t).
-    GeometryBase* curve2;
-};
+    double diff_x = (point->x - pt_curve.x);
+    double diff_y = (point->y - pt_curve.y);
+    std::cerr << "\tError: (";
+    std::cerr << std::sqrt(diff_x*diff_x + diff_y*diff_y);
+    std::cerr << ")" << std::endl;
+}
 
-} // namespace NamedSketcher::GCS
-
-#endif // NAMEDSKETCHER_GCS_ParallelCurves_H
+} // namespace NamedSketcher

@@ -26,6 +26,7 @@
 #define NAMEDSKETCHER_GCS_Distance_H
 
 #include <set>
+#include <vector>
 
 #include "Equation.h"
 
@@ -37,6 +38,7 @@ class NamedSketcherExport Distance : public NonLinearEquation
 public:
     Distance() = default;
     void set (Point* a, Point* b, Parameter* distance);
+    void set (Point* a, Point* b, std::vector<std::pair<double,Parameter*>> distance_combinations);
 
     double error(const ParameterGroupManager& manager) const override;
     ParameterVector differentialNonOptimized(const GCS::ParameterValueMapper& parameter_mapper) const override;
@@ -44,14 +46,19 @@ public:
 
     void declareParameters(ParameterGroupManager& manager) const override;
 
+    void report() const override;
+
 private:
     Point* a;
     Point* b;
-    Parameter* distance;
+    // Distance is the linear combination: x1 d1 + ... + xn dn.
+    std::vector<std::pair<double,Parameter*>> distance_combinations;
 
     bool isCoincident(const ParameterGroupManager& manager) const;
     bool isHorizontal(const ParameterGroupManager& manager) const;
     bool isVertical(const ParameterGroupManager& manager) const;
+
+    double totalDistance(const ParameterValueMapper& parameter_mapper) const;
 };
 
 } // namespace NamedSketcher::GCS

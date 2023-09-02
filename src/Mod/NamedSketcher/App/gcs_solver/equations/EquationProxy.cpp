@@ -21,43 +21,76 @@
  *                                                                          *
  ***************************************************************************/
 
+#include "EquationProxy.h"
 
-#ifndef NAMEDSKETCHER_GCS_ParallelCurves_H
-#define NAMEDSKETCHER_GCS_ParallelCurves_H
+namespace NamedSketcher::GCS {
 
-#include <set>
-
-#include "../Types.h"
-#include "Equation.h"
-
-namespace NamedSketcher {
-class GeometryBase;
+void EquationProxy::set(Equation* eq)
+{
+    proxied_equation = eq;
 }
 
-namespace NamedSketcher::GCS
+void EquationProxy::reset()
 {
+    proxied_equation = nullptr;
+}
 
-class NamedSketcherExport ParallelCurves : public NonLinearEquation
+double EquationProxy::error(const GCS::ParameterGroupManager& manager) const
 {
-public:
-    ParallelCurves() = default;
-    void set(GeometryBase* curve1, Parameter* t1, GeometryBase* curve2, Parameter* t2);
+    if(proxied_equation == nullptr)
+    {
+        return 0;
+    }
+    return proxied_equation->error(manager);
+}
 
-    double error(const ParameterGroupManager& manager) const override;
-    ParameterVector differentialNonOptimized(const GCS::ParameterValueMapper& parameter_mapper) const override;
-    OptimizedVector differentialOptimized(const ParameterGroupManager& manager) const override;
+ParameterVector EquationProxy::differentialNonOptimized(const GCS::ParameterValueMapper& parameter_mapper) const
+{
+    if(proxied_equation == nullptr)
+    {
+        return ParameterVector();
+    }
+    return proxied_equation->differentialNonOptimized(parameter_mapper);
+}
 
-    void declareParameters(ParameterGroupManager& manager) const override;
+OptimizedVector EquationProxy::differentialOptimized(const ParameterGroupManager& manager) const
+{
+    if(proxied_equation == nullptr)
+    {
+        return OptimizedVector();
+    }
+    return proxied_equation->differentialOptimized(manager);
+}
 
-    void report() const override;
 
-private:
-    Parameter* parameter_t1; // parametrization: t --> c(t).
-    GeometryBase* curve1;
-    Parameter* parameter_t2; // parametrization: t --> c(t).
-    GeometryBase* curve2;
-};
+void EquationProxy::declareParameters(ParameterGroupManager& manager) const
+{
+    if(proxied_equation == nullptr)
+    {
+        return;
+    }
+    proxied_equation->declareParameters(manager);
+}
 
-} // namespace NamedSketcher::GCS
+bool EquationProxy::optimizeParameters(ParameterGroupManager& manager) const
+{
+    if(proxied_equation == nullptr)
+    {
+        return false;
+    }
+    return proxied_equation->optimizeParameters(manager);
+}
 
-#endif // NAMEDSKETCHER_GCS_ParallelCurves_H
+void EquationProxy::report() const
+{
+    if(proxied_equation == nullptr)
+    {
+        std::cerr << "Proxy not set!" << std::endl;
+        return;
+    }
+    std::cerr << "Proxied - ";
+    proxied_equation->report();
+}
+
+
+} // namespace NamedSketcher

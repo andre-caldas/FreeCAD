@@ -76,4 +76,11 @@ void Difference::declareParameters(ParameterGroupManager& manager) const
     manager.setParameterConstant(difference);
 }
 
+
+void Difference::report() const
+{
+    std::cerr << "Difference";
+    std::cerr << std::endl;
+}
+
 } // namespace NamedSketcher::GCS

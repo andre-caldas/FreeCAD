@@ -31,7 +31,13 @@
 #include <Base/Writer.h>
 #include <Base/Exception.h>
 
-#include "../geometries/GeometryPoint.h"
+#include "../geometries/GeometryLineSegment.h"
+#include "../geometries/GeometryCircle.h"
+
+#include "point_along_curve/PointAlongCurveLine.h"
+#include "point_along_curve/PointAlongCurveCircle.h"
+#include "point_along_curve/PointAlongCurveGeneric.h"
+
 #include "ConstraintPointAlongCurve.h"
 
 
@@ -46,6 +52,7 @@ ConstraintPointAlongCurve::ConstraintPointAlongCurve(ref_point point, ref_geomet
 
 std::vector<GCS::Equation*> ConstraintPointAlongCurve::getEquations()
 {
+    updateReferences(true);
     if(!point.isLocked())
     {
         point.refreshLock();
@@ -63,42 +70,56 @@ std::vector<GCS::Equation*> ConstraintPointAlongCurve::getEquations()
         FC_THROWM(Base::NameError, "Could not resolve name (" << curve.pathString() << ").");
     }
 
-    preprocessParameters();
-    equation.set(point.get(), curve.get(), &parameter_t);
     return std::vector<GCS::Equation*>{&equation};
 }
 
 bool ConstraintPointAlongCurve::updateReferences()
 {
-    point.refreshLock();
-    curve.refreshLock();
+    return updateReferences(false);
+}
+
+bool ConstraintPointAlongCurve::updateReferences(bool only_unlocked)
+{
+    if(!only_unlocked || !point.isLocked())
+    {
+        point.refreshLock();
+    }
+    if(!only_unlocked || !curve.isLocked())
+    {
+        curve.refreshLock();
+    }
     if(!point.hasChanged() && !curve.hasChanged())
     {
         return false;
     }
 
-    preprocessParameters();
-    equation.set(point.get(), curve.get(), &parameter_t);
+    pickImplementation();
+    assert(implementation);
+    implementation->preprocessParameters();
+    implementation->setEquations();
     return true;
 }
 
-void ConstraintPointAlongCurve::preprocessParameters()
+void ConstraintPointAlongCurve::pickImplementation()
 {
-    // TODO: improve this search.
-    double min_dist = 100000000.;
-    auto& pt1 = *point.get();
-    for(GCS::Parameter p(0); p <= 1.0; p += 0x1p-4)
+    // This method is private.
+    // We assume all curves are locked.
+    GeometryLineSegment* line = dynamic_cast<GeometryLineSegment*>(curve.get());
+    GeometryCircle* circle = dynamic_cast<GeometryCircle*>(curve.get());
+
+    if(line)
     {
-        auto pt2 = curve.get()->positionAtParameter({}, &p);
-        double x = pt1.x - pt2.x;
-        double y = pt1.y - pt2.y;
-        double dist = x*x + y*y;
-        if(dist <= min_dist)
-        {
-            min_dist = dist;
-            parameter_t = p;
-        }
+        implementation = std::make_unique<Specialization::PointAlongCurveLine>(equation, point.get(), line);
+        return;
     }
+
+    if(circle)
+    {
+        implementation = std::make_unique<Specialization::PointAlongCurveCircle>(equation, point.get(), circle);
+        return;
+    }
+
+    implementation = std::make_unique<Specialization::PointAlongCurveGeneric>(equation, point.get(), curve.get(), &parameter_t);
 }
 
 
@@ -122,21 +143,8 @@ ConstraintPointAlongCurve::staticRestore(Base::XMLReader& /*reader*/)
 
 void ConstraintPointAlongCurve::report() const
 {
-    auto pt_curve = curve.get()->positionAtParameter({}, &parameter_t);
-    try
-    {
-        std::cerr << "Point along curve: ";
-        std::cerr << "candidate point " << *point.get();
-        std::cerr << " <-" << parameter_t << "-> ";
-        std::cerr << "curve(t) " << pt_curve;
-        std::cerr << std::endl;
-
-        double diff_x = (point.get()->x - pt_curve.x);
-        double diff_y = (point.get()->y - pt_curve.y);
-        std::cerr << "\tError: (";
-        std::cerr << std::sqrt(diff_x*diff_x + diff_y*diff_y);
-        std::cerr << ")" << std::endl;
-    } catch (...) {}
+    std::cerr << "Point along curve - ";
+    implementation->report();
 }
 
 } // namespace NamedSketcher

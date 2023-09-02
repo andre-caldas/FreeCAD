@@ -98,6 +98,22 @@ SET(Constraints_SRCS
     constraints/ConstraintPointAlongCurve.cpp
     constraints/ConstraintTangentCurves.h
     constraints/ConstraintTangentCurves.cpp
+    constraints/tangent_curves/TangentCurvesBase.h
+    constraints/tangent_curves/TangentCurvesGeneric.h
+    constraints/tangent_curves/TangentCurvesGeneric.cpp
+    constraints/tangent_curves/TangentCurvesLineLine.h
+    constraints/tangent_curves/TangentCurvesLineLine.cpp
+    constraints/tangent_curves/TangentCurvesLineCircle.h
+    constraints/tangent_curves/TangentCurvesLineCircle.cpp
+    constraints/tangent_curves/TangentCurvesCircleCircle.h
+    constraints/tangent_curves/TangentCurvesCircleCircle.cpp
+    constraints/point_along_curve/PointAlongCurveBase.h
+    constraints/point_along_curve/PointAlongCurveGeneric.h
+    constraints/point_along_curve/PointAlongCurveGeneric.cpp
+    constraints/point_along_curve/PointAlongCurveLine.h
+    constraints/point_along_curve/PointAlongCurveLine.cpp
+    constraints/point_along_curve/PointAlongCurveCircle.h
+    constraints/point_along_curve/PointAlongCurveCircle.cpp
 )
 SOURCE_GROUP("Constraints" FILES ${Constraints_SRCS})
 
@@ -123,12 +139,16 @@ SET(gcs_solver_SRCS
 #
     gcs_solver/equations/Equation.h
     gcs_solver/equations/Equation.cpp
+    gcs_solver/equations/EquationProxy.h
+    gcs_solver/equations/EquationProxy.cpp
     gcs_solver/equations/Constant.h
     gcs_solver/equations/Constant.cpp
     gcs_solver/equations/Equal.h
     gcs_solver/equations/Equal.cpp
     gcs_solver/equations/Difference.h
     gcs_solver/equations/Difference.cpp
+    gcs_solver/equations/OrthogonalDisplacement.h
+    gcs_solver/equations/OrthogonalDisplacement.cpp
     gcs_solver/equations/MediumParameter.h
     gcs_solver/equations/MediumParameter.cpp
     gcs_solver/equations/Distance.h

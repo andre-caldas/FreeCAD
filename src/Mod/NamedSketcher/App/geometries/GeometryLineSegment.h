@@ -70,10 +70,10 @@ public:
 
     void report() const override;
 
-private:
     GCS::Point start{"start"};
     GCS::Point end{"end"};
 
+private:
     using token_iterator = IExport<GCS::Point>::token_iterator;
 
     GCS::Point* resolve_ptr(token_iterator& start, const token_iterator& end, GCS::Point*) override;

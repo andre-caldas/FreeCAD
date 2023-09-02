@@ -22,26 +22,20 @@
  ***************************************************************************/
 
 
-#ifndef NAMEDSKETCHER_GCS_ParallelCurves_H
-#define NAMEDSKETCHER_GCS_ParallelCurves_H
+#ifndef NAMEDSKETCHER_GCS_OrthogonalDisplacement_H
+#define NAMEDSKETCHER_GCS_OrthogonalDisplacement_H
 
-#include <set>
-
-#include "../Types.h"
 #include "Equation.h"
-
-namespace NamedSketcher {
-class GeometryBase;
-}
 
 namespace NamedSketcher::GCS
 {
 
-class NamedSketcherExport ParallelCurves : public NonLinearEquation
+class NamedSketcherExport OrthogonalDisplacement : public NonLinearEquation
 {
 public:
-    ParallelCurves() = default;
-    void set(GeometryBase* curve1, Parameter* t1, GeometryBase* curve2, Parameter* t2);
+    OrthogonalDisplacement() = default;
+    void set(Point* start, Point* end, Point* displaced_point, std::vector<std::pair<double,Parameter*>> displacement_combinations);
+    void set(Point* start, Point* end, Point* displaced_point, Parameter* displacement);
 
     double error(const ParameterGroupManager& manager) const override;
     ParameterVector differentialNonOptimized(const GCS::ParameterValueMapper& parameter_mapper) const override;
@@ -52,12 +46,21 @@ public:
     void report() const override;
 
 private:
-    Parameter* parameter_t1; // parametrization: t --> c(t).
-    GeometryBase* curve1;
-    Parameter* parameter_t2; // parametrization: t --> c(t).
-    GeometryBase* curve2;
+    Point* start;
+    Point* end;
+    Point* displaced_point;
+    // Distance is the linear combination: x1 d1 + ... + xn dn.
+    std::vector<std::pair<double,Parameter*>> displacement_combinations;
+
+    bool isCoincident(const ParameterGroupManager& manager) const;
+    bool isHorizontal(const ParameterGroupManager& manager) const;
+    bool isVertical(const ParameterGroupManager& manager) const;
+
+    double totalDisplacement(const ParameterValueMapper& parameter_mapper) const;
+    void setDisplacementDifferentials(const ParameterGroupManager& manager, OptimizedVector& result, double factor=1.0) const;
+    void setDisplacementDifferentials(const ParameterValueMapper& parameter_mapper, ParameterVector& result, double factor=1.0) const;
 };
 
 } // namespace NamedSketcher::GCS
 
-#endif // NAMEDSKETCHER_GCS_ParallelCurves_H
+#endif // NAMEDSKETCHER_GCS_OrthogonalDisplacement_H

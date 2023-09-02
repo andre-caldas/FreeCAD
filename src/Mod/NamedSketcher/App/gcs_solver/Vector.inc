@@ -45,12 +45,26 @@ double Vector<Index>::operator[](const Index parameter) const
 template<typename Index>
 void Vector<Index>::set(const Index parameter, double value)
 {
+    if constexpr(std::is_pointer<Index>::value)
+    {
+        if(!parameter)
+        {
+            return;
+        }
+    }
     values[parameter] = value;
 }
 
 template<typename Index>
 void Vector<Index>::add(const Index parameter, double value)
 {
+    if constexpr(std::is_pointer<Index>::value)
+    {
+        if(!parameter)
+        {
+            return;
+        }
+    }
     values[parameter] += value;
 }
 

@@ -207,4 +207,11 @@ bool Colinear::optimizeParameters(ParameterGroupManager& manager) const
     return result;
 }
 
+
+void Colinear::report() const
+{
+    std::cerr << "Colinear";
+    std::cerr << std::endl;
+}
+
 } // namespace NamedSketcher::GCS

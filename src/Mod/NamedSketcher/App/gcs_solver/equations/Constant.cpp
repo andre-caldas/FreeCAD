@@ -66,4 +66,11 @@ void Constant::declareParameters(ParameterGroupManager& manager) const
     manager.setParameterConstant(k);
 }
 
+
+void Constant::report() const
+{
+    std::cerr << "Constant";
+    std::cerr << std::endl;
+}
+
 } // namespace NamedSketcher::GCS

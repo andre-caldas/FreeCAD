@@ -71,4 +71,12 @@ void Equal::declareParameters(ParameterGroupManager& manager) const
     manager.setParameterEqual(a,b);
 }
 
+
+void Equal::report() const
+{
+    std::cerr << "Equal";
+    //    std::cerr << "PointAlongCurve: " << *point << " along " << *curve;
+    std::cerr << std::endl;
+}
+
 } // namespace NamedSketcher::GCS

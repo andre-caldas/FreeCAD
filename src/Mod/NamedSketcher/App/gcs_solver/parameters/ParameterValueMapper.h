@@ -71,6 +71,8 @@ public:
     inline double operator()(const Parameter* p) const;
     double operator()(const Parameter& p) const {return (*this)(&p);}
 
+    const ParameterGroupManager* getManager() const {return manager;}
+
 private:
     const ParameterValueMapper* parent_mapper = nullptr;
     const ParameterGroupManager* manager = nullptr;

@@ -46,7 +46,7 @@ double MediumParameter::error(const ParameterGroupManager& manager) const
     const double A = manager.getValue(a);
     const double B = manager.getValue(b);
     const double O = manager.getValue(o);
-    return B + A - 2*O;
+    return B + A - 2.0*O;
 }
 
 ParameterVector MediumParameter::differentialNonOptimized(const GCS::ParameterValueMapper& /*parameter_mapper*/) const

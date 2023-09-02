@@ -22,8 +22,8 @@
  ***************************************************************************/
 
 
-#ifndef NAMEDSKETCHER_GCS_ParallelCurves_H
-#define NAMEDSKETCHER_GCS_ParallelCurves_H
+#ifndef NAMEDSKETCHER_GCS_ConcurrentCurves_H
+#define NAMEDSKETCHER_GCS_ConcurrentCurves_H
 
 #include <set>
 
@@ -37,10 +37,10 @@ class GeometryBase;
 namespace NamedSketcher::GCS
 {
 
-class NamedSketcherExport ParallelCurves : public NonLinearEquation
+class NamedSketcherExport ConcurrentCurves : public NonLinearEquation
 {
 public:
-    ParallelCurves() = default;
+    ConcurrentCurves() = default;
     void set(GeometryBase* curve1, Parameter* t1, GeometryBase* curve2, Parameter* t2);
 
     double error(const ParameterGroupManager& manager) const override;
@@ -52,12 +52,12 @@ public:
     void report() const override;
 
 private:
-    Parameter* parameter_t1; // parametrization: t --> c(t).
+    Parameter* parameter_t1; // parametrization: t --> c1(t, p1, ..., pn).
     GeometryBase* curve1;
-    Parameter* parameter_t2; // parametrization: t --> c(t).
+    Parameter* parameter_t2; // parametrization: t --> c2(t, q1, ..., qm).
     GeometryBase* curve2;
 };
 
 } // namespace NamedSketcher::GCS
 
-#endif // NAMEDSKETCHER_GCS_ParallelCurves_H
+#endif // NAMEDSKETCHER_GCS_ConcurrentCurves_H

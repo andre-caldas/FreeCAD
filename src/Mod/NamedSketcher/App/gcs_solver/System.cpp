@@ -33,10 +33,10 @@
 #include "parameters/ParameterValueMapper.h"
 //#include "linear_solvers/Ldlt.h"
 //#define SOLVER LinearSolvers::Ldlt
-//#include "linear_solvers/SimpleSolver.h"
-//#define SOLVER LinearSolvers::SimpleSolver
-#include "linear_solvers/BiCG.h"
-#define SOLVER LinearSolvers::BiCG
+#include "linear_solvers/SimpleSolver.h"
+#define SOLVER LinearSolvers::SimpleSolver
+//#include "linear_solvers/BiCG.h"
+//#define SOLVER LinearSolvers::BiCG
 
 #include "System.h"
 
@@ -217,12 +217,12 @@ bool System::solve() const
 
     // TODO: give up criteria.
     // TODO: use the shaker!
-    for(int trials=0; trials < 100; ++trials)
+    for(int trials=0; trials < 200; ++trials)
     {
 manager.report();
         double err2 = error2(manager);
         // TODO: decide on a good criteria.
-        if(err2 <= 1e-3 * manager.outputSize())
+        if(err2 <= 1e-4 * manager.outputSize())
         {
 std::cerr << "Success after " << trials + 1 << " trials." << std::endl;
             manager.commitParameters();
@@ -259,7 +259,7 @@ void System::stepIntoTargetDirection(
 
     double a = -1.0;
     double b = 1.0;
-double acc = 1.0;
+    double accumulated = 1.0;
 
     double best_err2 = 1000000000;
 
@@ -285,14 +285,12 @@ manager.print_vector(current_position);std::cerr << std::endl;
             }
             if(best_err2 < err2 && n != 0)
             {
-                // Don't go deep if already advanced "enough".
-                DEPTH -= n + 1;
                 // To avoid "flipping", we do not allow the error
                 // to increase.
                 // Use position just before the error started increasing.
+                accumulated += (a*(N-(n-1)) + b*(n-1))/N;
                 next_position.setAsLinearCombination(1.0, current_position, (a*(N-(n-1)) + b*(n-1))/N, direction);
-acc += (a*(N-(n-1)) + b*(n-1))/N;
-std::cerr << "Accmulated = " << acc << " times direction." << std::endl;
+std::cerr << "Accmulated = " << accumulated << " times direction." << std::endl;
                 break;
             }
             best_err2 = err2;
@@ -302,6 +300,11 @@ std::cerr << "Accmulated = " << acc << " times direction." << std::endl;
         current_position = std::move(next_position);
 std::cerr << "New position: ";
 manager.print_vector(current_position);std::cerr << std::endl;
+    }
+    if(accumulated == 0.0)
+    {
+        // Or, maybe we should move backwards.
+        current_position.setAsLinearCombination(1.0, current_position, 0x1p-8, direction);
     }
     manager.setOptimizedParameterValues(std::move(current_position));
 }

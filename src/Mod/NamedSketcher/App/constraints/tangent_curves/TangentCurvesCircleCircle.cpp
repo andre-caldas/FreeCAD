@@ -21,43 +21,55 @@
  *                                                                          *
  ***************************************************************************/
 
+#include "PreCompiled.h"
 
-#ifndef NAMEDSKETCHER_GCS_ParallelCurves_H
-#define NAMEDSKETCHER_GCS_ParallelCurves_H
+#ifndef _PreComp_
+#include <iostream>
+#endif // _PreComp_
+#include <cmath>
 
-#include <set>
+#include "../../geometries/GeometryCircle.h"
 
-#include "../Types.h"
-#include "Equation.h"
+#include "../../gcs_solver/equations/EquationProxy.h"
 
-namespace NamedSketcher {
-class GeometryBase;
+#include "TangentCurvesCircleCircle.h"
+
+namespace NamedSketcher::Specialization
+{
+
+TangentCurvesCircleCircle::TangentCurvesCircleCircle(
+    GCS::EquationProxy& proxy1, GCS::EquationProxy& proxy2,
+    GeometryCircle* circle1, GeometryCircle* circle2, bool in)
+    : circle1(circle1)
+    , circle2(circle2)
+    , in(in)
+{
+    proxy1.set(&equation);
+    proxy2.reset();
 }
 
-namespace NamedSketcher::GCS
+void TangentCurvesCircleCircle::preprocessParameters()
 {
+}
 
-class NamedSketcherExport ParallelCurves : public NonLinearEquation
+void TangentCurvesCircleCircle::setEquations()
 {
-public:
-    ParallelCurves() = default;
-    void set(GeometryBase* curve1, Parameter* t1, GeometryBase* curve2, Parameter* t2);
+    if(in)
+    {
+        equation.set(&circle1->center, &circle2->center, {{1.0,&circle1->radius}, {-1.0,&circle2->radius}});
+    } else {
+        equation.set(&circle1->center, &circle2->center, {{1.0,&circle1->radius}, {+1.0,&circle2->radius}});
+    }
+}
 
-    double error(const ParameterGroupManager& manager) const override;
-    ParameterVector differentialNonOptimized(const GCS::ParameterValueMapper& parameter_mapper) const override;
-    OptimizedVector differentialOptimized(const ParameterGroupManager& manager) const override;
 
-    void declareParameters(ParameterGroupManager& manager) const override;
+void TangentCurvesCircleCircle::report() const
+{
+    std::cerr << "Circle to circle tangent curves: " << std::endl;
+    std::cerr << "* ";
+    circle1->report();
+    std::cerr << "* ";
+    circle2->report();
+}
 
-    void report() const override;
-
-private:
-    Parameter* parameter_t1; // parametrization: t --> c(t).
-    GeometryBase* curve1;
-    Parameter* parameter_t2; // parametrization: t --> c(t).
-    GeometryBase* curve2;
-};
-
-} // namespace NamedSketcher::GCS
-
-#endif // NAMEDSKETCHER_GCS_ParallelCurves_H
+} // namespace NamedSketcher

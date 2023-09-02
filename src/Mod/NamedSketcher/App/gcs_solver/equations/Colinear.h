@@ -46,6 +46,8 @@ public:
     void declareParameters(ParameterGroupManager& manager) const override;
     bool optimizeParameters(ParameterGroupManager& manager) const override;
 
+    void report() const override;
+
 private:
     Point* a;
     Point* b;

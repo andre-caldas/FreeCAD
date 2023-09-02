@@ -22,42 +22,34 @@
  ***************************************************************************/
 
 
-#ifndef NAMEDSKETCHER_GCS_ParallelCurves_H
-#define NAMEDSKETCHER_GCS_ParallelCurves_H
+#ifndef NAMEDSKETCHER_GCS_EquationProxy_H
+#define NAMEDSKETCHER_GCS_EquationProxy_H
 
-#include <set>
-
-#include "../Types.h"
 #include "Equation.h"
-
-namespace NamedSketcher {
-class GeometryBase;
-}
 
 namespace NamedSketcher::GCS
 {
 
-class NamedSketcherExport ParallelCurves : public NonLinearEquation
+class NamedSketcherExport EquationProxy
+    : public NonLinearEquation
 {
 public:
-    ParallelCurves() = default;
-    void set(GeometryBase* curve1, Parameter* t1, GeometryBase* curve2, Parameter* t2);
+    void set(Equation* eq);
+    void reset();
 
-    double error(const ParameterGroupManager& manager) const override;
+    double error(const GCS::ParameterGroupManager& manager) const override;
     ParameterVector differentialNonOptimized(const GCS::ParameterValueMapper& parameter_mapper) const override;
     OptimizedVector differentialOptimized(const ParameterGroupManager& manager) const override;
 
     void declareParameters(ParameterGroupManager& manager) const override;
+    bool optimizeParameters(ParameterGroupManager& manager) const override;
 
     void report() const override;
 
 private:
-    Parameter* parameter_t1; // parametrization: t --> c(t).
-    GeometryBase* curve1;
-    Parameter* parameter_t2; // parametrization: t --> c(t).
-    GeometryBase* curve2;
+    Equation* proxied_equation = nullptr;
 };
 
 } // namespace NamedSketcher::GCS
 
-#endif // NAMEDSKETCHER_GCS_ParallelCurves_H
+#endif // NAMEDSKETCHER_GCS_EquationProxy_H

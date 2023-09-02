@@ -22,42 +22,46 @@
  ***************************************************************************/
 
 
-#ifndef NAMEDSKETCHER_GCS_ParallelCurves_H
-#define NAMEDSKETCHER_GCS_ParallelCurves_H
+#ifndef NAMEDSKETCHER_TangentCurves_LineLine_H
+#define NAMEDSKETCHER_TangentCurves_LineLine_H
 
-#include <set>
+#include <memory>
+#include <vector>
 
-#include "../Types.h"
-#include "Equation.h"
+#include "../../gcs_solver/equations/Colinear.h"
+
+#include "TangentCurvesBase.h"
 
 namespace NamedSketcher {
-class GeometryBase;
+class GeometryLineSegment;
+}
+namespace NamedSketcher::GCS {
+class EquationProxy;
 }
 
-namespace NamedSketcher::GCS
+namespace NamedSketcher::Specialization
 {
 
-class NamedSketcherExport ParallelCurves : public NonLinearEquation
+/** This is the line-to-line specialization for TangentCurves.
+ */
+class TangentCurvesLineLine
+    : public TangentCurvesBase
 {
 public:
-    ParallelCurves() = default;
-    void set(GeometryBase* curve1, Parameter* t1, GeometryBase* curve2, Parameter* t2);
+    // We could simply subclass the "generic" class and make the parameters constant.
+    TangentCurvesLineLine(GCS::EquationProxy& proxy1, GCS::EquationProxy& proxy2, GeometryLineSegment* l1, GeometryLineSegment* l2);
 
-    double error(const ParameterGroupManager& manager) const override;
-    ParameterVector differentialNonOptimized(const GCS::ParameterValueMapper& parameter_mapper) const override;
-    OptimizedVector differentialOptimized(const ParameterGroupManager& manager) const override;
-
-    void declareParameters(ParameterGroupManager& manager) const override;
-
+    void preprocessParameters() override;
+    void setEquations() override;
     void report() const override;
 
 private:
-    Parameter* parameter_t1; // parametrization: t --> c(t).
-    GeometryBase* curve1;
-    Parameter* parameter_t2; // parametrization: t --> c(t).
-    GeometryBase* curve2;
+    GeometryLineSegment* line1;
+    GeometryLineSegment* line2;
+    GCS::Colinear equationColinearPoints1;
+    GCS::Colinear equationColinearPoints2;
 };
 
-} // namespace NamedSketcher::GCS
+} // namespace NamedSketcher
 
-#endif // NAMEDSKETCHER_GCS_ParallelCurves_H
+#endif // NAMEDSKETCHER_TangentCurves_LineLine_H

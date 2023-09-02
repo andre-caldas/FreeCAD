@@ -59,7 +59,7 @@ public:
      */
     virtual bool optimizeParameters(ParameterGroupManager& /*manager*/) const {return false;}
 
-    virtual void report() const {}
+    virtual void report() const = 0;
 };
 
 class NamedSketcherExport LinearEquation : public Equation

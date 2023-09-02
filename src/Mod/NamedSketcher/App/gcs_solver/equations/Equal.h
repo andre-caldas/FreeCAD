@@ -41,6 +41,8 @@ public:
 
     void declareParameters(ParameterGroupManager& manager) const override;
 
+    void report() const override;
+
 private:
     Parameter* a = nullptr;
     Parameter* b = nullptr;
