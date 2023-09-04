@@ -33,10 +33,10 @@
 #include "parameters/ParameterValueMapper.h"
 //#include "linear_solvers/Ldlt.h"
 //#define SOLVER LinearSolvers::Ldlt
-#include "linear_solvers/SimpleSolver.h"
-#define SOLVER LinearSolvers::SimpleSolver
-//#include "linear_solvers/BiCG.h"
-//#define SOLVER LinearSolvers::BiCG
+//#include "linear_solvers/SimpleSolver.h"
+//#define SOLVER LinearSolvers::SimpleSolver
+#include "linear_solvers/BiCG.h"
+#define SOLVER LinearSolvers::BiCG
 
 #include "System.h"
 
@@ -217,7 +217,7 @@ bool System::solve() const
 
     // TODO: give up criteria.
     // TODO: use the shaker!
-    for(int trials=0; trials < 200; ++trials)
+    for(int trials=0; trials < 10; ++trials)
     {
 manager.report();
         double err2 = error2(manager);
@@ -235,11 +235,26 @@ std::cerr << "Success after " << trials + 1 << " trials." << std::endl;
         }
 
         OptimizedVector target = linear_solver.solve();
+        bool step_result = false;
         if(!target.isZero())
         {
-            stepIntoTargetDirection(manager, target);
-        } else {
-            stepIntoTargetDirection(manager, manager.noise());
+            double max_step = 1.0;
+            for(Equation* eq: non_redundant_equations)
+            {
+                max_step = std::min(max_step, eq->limitStep(manager, target));
+            }
+            if(max_step != 1.0)
+            {
+                target *= max_step;
+            }
+            step_result = stepIntoTargetDirection(manager, target);
+        }
+        if(!step_result)
+        {
+            // Do something! Change solver? Look for other solution?
+            // Determine kernel?
+            std::cerr << "Failed to step closer to solution." << std::endl;
+            break;
         }
     }
 manager.commitParameters();
@@ -247,66 +262,71 @@ manager.commitParameters();
     return false;
 }
 
-void System::stepIntoTargetDirection(
-        ParameterGroupManager& manager,
-        const OptimizedVector& direction
-        ) const
+bool System::stepIntoTargetDirection(
+    ParameterGroupManager& manager,
+    const OptimizedVector& direction
+    ) const
 {
-    // TODO: Criteria for those two magic numbers.
-    // N: Should probably depend on the variation of the gradient (Wronskian).
-    const int N = 16;
-    int DEPTH = 4;
+    const OptimizedVector current_position = manager.getOptimizedParameterValues();
+    std::cerr << "Current position: ";
+    manager.print_vector(current_position);std::cerr << std::endl;
 
-    double a = -1.0;
-    double b = 1.0;
-    double accumulated = 1.0;
-
-    double best_err2 = 1000000000;
-
-    OptimizedVector current_position = manager.getOptimizedParameterValues();
-std::cerr << "Current position: ";
-manager.print_vector(current_position);std::cerr << std::endl;
-    current_position += direction;
+    manager.setOptimizedParameterValues(current_position);
+    double start_err2 = error2(manager);
+    double best_err2 = start_err2;
 
     std::cerr << "Stepping into direction: ";
     manager.print_vector(direction);
     std::cerr << std::endl;
+
+    // TODO: Criteria for those two magic numbers.
+    // N: Should probably depend on the variation of the gradient (Wronskian).
+    int N = 16;
+    int DEPTH = 4;
+
+    // Search from [current_factor, current_factor + b]
+    double increment = 1.0;
+    double current_factor = 0.0;
+    double best_factor = current_factor;
+
     for(int count=0; count < DEPTH; ++count)
     {
+        increment /= N;
         OptimizedVector next_position;
-        for(int n=0; n <= N; ++n)
+        while(current_factor < 1.0)
         {
-            next_position.setAsLinearCombination(1.0, current_position, (a*(N-n) + b*n)/N, direction);
+            current_factor += increment;
+            next_position.setAsLinearCombination(1.0, current_position, current_factor, direction);
             manager.setOptimizedParameterValues(next_position);
             double err2 = error2(manager);
             if(err2 == 0)
             {
-                return;
+                return true;
             }
-            if(best_err2 < err2 && n != 0)
+
+            // To avoid "flipping", we do not allow the error
+            // to increase.
+            // Use position just before the error started increasing.
+            if(best_err2 < err2)
             {
-                // To avoid "flipping", we do not allow the error
-                // to increase.
-                // Use position just before the error started increasing.
-                accumulated += (a*(N-(n-1)) + b*(n-1))/N;
-                next_position.setAsLinearCombination(1.0, current_position, (a*(N-(n-1)) + b*(n-1))/N, direction);
-std::cerr << "Accmulated = " << accumulated << " times direction." << std::endl;
+                current_factor = std::max(0.0, best_factor - increment);
                 break;
             }
             best_err2 = err2;
+            best_factor = current_factor;
         }
-        a /= N;
-        b /= N;
-        current_position = std::move(next_position);
-std::cerr << "New position: ";
-manager.print_vector(current_position);std::cerr << std::endl;
+std::cerr << "New factor: " << current_factor << std::endl;
     }
-    if(accumulated == 0.0)
+std::cerr << "Start error: " << start_err2 << ". Best: " << best_err2 << std::endl;
+    if(best_err2 == start_err2)
     {
-        // Or, maybe we should move backwards.
-        current_position.setAsLinearCombination(1.0, current_position, 0x1p-8, direction);
+        return false;
     }
-    manager.setOptimizedParameterValues(std::move(current_position));
+    assert(best_factor > 0.0);
+    OptimizedVector result;
+    result.setAsLinearCombination(1.0, current_position, best_factor, direction);
+    manager.setOptimizedParameterValues(std::move(result));
+    return true;
 }
 
 } // namespace NamedSketcher::GCS

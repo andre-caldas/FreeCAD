@@ -21,34 +21,53 @@
  *                                                                          *
  ***************************************************************************/
 
-#include "BiCG.h"
+#ifndef NAMEDSKETCHER_ConstraintDistance_H
+#define NAMEDSKETCHER_ConstraintDistance_H
 
-namespace NamedSketcher::GCS::LinearSolvers
-{
+#include <type_traits>
+#include <memory>
+#include <vector>
 
-BiCG::BiCG(ParameterGroupManager& manager, const OptimizedMatrix& gradients)
-    : SolverBase(manager, gradients)
-{
-    solver.setTolerance(0x1p-16);
-    MtM = eigenMatrix.transpose() * eigenMatrix;
-    solver.analyzePattern(MtM);
-std::cerr << "Solver tolerance: " << solver.tolerance() << std::endl;
+#include "../gcs_solver/equations/Distance.h"
+#include "ConstraintBase.h"
+
+namespace Base::Accessor {
+template<typename T>
+class ReferenceTo;
 }
 
-void BiCG::refactor()
+namespace NamedSketcher
 {
-    if(need_refactor)
-    {
-        MtM = eigenMatrix.transpose() * eigenMatrix;
-        solver.factorize(MtM);
-        need_refactor = false;
-    }
-}
 
-BiCG::vector_t BiCG::_solve(const vector_t& out)
+/** Deals with constraints of type XDistance.
+ */
+class NamedSketcherExport ConstraintDistance : public ConstraintBase
 {
-    refactor();
-    return solver.solve(eigenMatrix.transpose() * out);
-}
+public:
+    ref_point start;
+    ref_point end;
+    double distance;
 
-} // namespace NamedSketcher::GCS::LinearSolvers
+    ConstraintDistance(ref_point start, ref_point end, double distance);
+    ConstraintDistance(const Base::Accessor::PathToObject& p, double distance);
+
+    std::vector<GCS::Equation*> getEquations() override;
+    bool updateReferences() override;
+
+    std::string_view xmlTagType() const override {return xmlTagTypeStatic();}
+    static constexpr const char* xmlTagTypeStatic() {return "XDistance";}
+
+    // Base::Persistence
+    unsigned int getMemSize () const override;
+    void Save (Base::Writer& writer) const override;
+    static std::unique_ptr<ConstraintDistance> staticRestore(Base::XMLReader& reader);
+
+    void report() const override;
+
+private:
+    GCS::Distance equation;
+};
+
+} // namespace NamedSketcher
+
+#endif // NAMEDSKETCHER_ConstraintDistance_H

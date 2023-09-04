@@ -57,8 +57,8 @@ private:
     bool isVertical(const ParameterGroupManager& manager) const;
 
     double totalDisplacement(const ParameterValueMapper& parameter_mapper) const;
-    void setDisplacementDifferentials(const ParameterGroupManager& manager, OptimizedVector& result, double factor=1.0) const;
-    void setDisplacementDifferentials(const ParameterValueMapper& parameter_mapper, ParameterVector& result, double factor=1.0) const;
+    void setDisplacementDifferentials(const ParameterGroupManager& manager, OptimizedVector& result) const;
+    void setDisplacementDifferentials(const ParameterValueMapper& parameter_mapper, ParameterVector& result) const;
 };
 
 } // namespace NamedSketcher::GCS

@@ -43,9 +43,10 @@ void Colinear::set(Point* x, Point* y, Point* z)
     c = z;
 }
 
-// det((a1, a2, 1),
-//     (b1, b2, 1),
-//     (c1, c2, 1))
+// SQRT of:
+// det((ax, ay, 1),
+//     (bx, by, 1),
+//     (cx, cy, 1))^2 / (||a||^2 * ||b||^2 * ||c||^2)
 double Colinear::error(const ParameterGroupManager& manager) const
 {
     if(isAlreadyColinear(manager))
@@ -58,15 +59,15 @@ double Colinear::error(const ParameterGroupManager& manager) const
         if(manager.areParametersEqual(&a->y, &b->y))
         {
             // ay - cy = 0.
-            double a2 = manager.getValue(&a->y);
-            double c2 = manager.getValue(&c->y);
-            return a2 - c2;
+            double ay = manager.getValue(&a->y);
+            double cy = manager.getValue(&c->y);
+            return ay - cy;
         }
 
         // ay - by = 0.
-        double a2 = manager.getValue(&a->y);
-        double b2 = manager.getValue(&b->y);
-        return a2 - b2;
+        double ay = manager.getValue(&a->y);
+        double by = manager.getValue(&b->y);
+        return ay - by;
     }
 
     if(isVertical(manager))
@@ -74,42 +75,78 @@ double Colinear::error(const ParameterGroupManager& manager) const
         if(manager.areParametersEqual(&a->x, &b->x))
         {
             // ax - cx = 0.
-            double a1 = manager.getValue(&a->x);
-            double c1 = manager.getValue(&c->x);
-            return a1 - c1;
+            double ax = manager.getValue(&a->x);
+            double cx = manager.getValue(&c->x);
+            return ax - cx;
         }
 
         // ax - bx = 0.
-        double a1 = manager.getValue(&a->x);
-        double b1 = manager.getValue(&b->x);
-        return a1 - b1;
+        double ax = manager.getValue(&a->x);
+        double bx = manager.getValue(&b->x);
+        return ax - bx;
     }
 
-    double a1 = manager.getValue(&a->x);
-    double a2 = manager.getValue(&a->y);
-    double b1 = manager.getValue(&b->x);
-    double b2 = manager.getValue(&b->y);
-    double c1 = manager.getValue(&c->x);
-    double c2 = manager.getValue(&c->y);
-    return (b1*c2 - b2*c1) + (a2*c1 - a1*c2) + (a1*b2 - a2*b1);
+    double ax = manager.getValue(&a->x);
+    double ay = manager.getValue(&a->y);
+    double bx = manager.getValue(&b->x);
+    double by = manager.getValue(&b->y);
+    double cx = manager.getValue(&c->x);
+    double cy = manager.getValue(&c->y);
+
+    double det = (bx*cy - by*cx) + (ay*cx - ax*cy) + (ax*by - ay*bx);
+    double norms_2 = (3.0 + ax*ax + ay*ay + bx*bx + by*by + cx*cx + cy*cy);
+    return std::sqrt(det * det / norms_2);
 }
 
 ParameterVector Colinear::differentialNonOptimized(const GCS::ParameterValueMapper& _) const
 {
-    double a1 = _(a->x);
-    double a2 = _(a->y);
-    double b1 = _(b->x);
-    double b2 = _(b->y);
-    double c1 = _(c->x);
-    double c2 = _(c->y);
+    double ax = _(a->x);
+    double ay = _(a->y);
+    double bx = _(b->x);
+    double by = _(b->y);
+    double cx = _(c->x);
+    double cy = _(c->y);
+
+    double det = (bx*cy - by*cx) + (ay*cx - ax*cy) + (ax*by - ay*bx);
+    double det2 = det * det;
+    double norms2 = (3.0 + ax*ax + ay*ay + bx*bx + by*by + cx*cx + cy*cy);
+    double sqrt = std::sqrt(det2 / norms2);
 
     ParameterVector result;
-    result.set(&a->x, b2-c2);
-    result.set(&a->y, c1-b1);
-    result.set(&b->x, c2-a2);
-    result.set(&b->y, a1-c1);
-    result.set(&c->x, a2-b2);
-    result.set(&c->y, b1-a1);
+    double dax_det2 = (by-cy) * 2.0 * det;
+    double day_det2 = (cx-bx) * 2.0 * det;
+    double dbx_det2 = (cy-ay) * 2.0 * det;
+    double dby_det2 = (ax-cx) * 2.0 * det;
+    double dcx_det2 = (ay-by) * 2.0 * det;
+    double dcy_det2 = (bx-ax) * 2.0 * det;
+
+    double dax_norms2 = ax;
+    double day_norms2 = ay;
+    double dbx_norms2 = bx;
+    double dby_norms2 = by;
+    double dcx_norms2 = cx;
+    double dcy_norms2 = cy;
+
+    double dax_quocient = (dax_det2 * norms2 - det2 * dax_norms2) / (norms2*norms2);
+    double day_quocient = (day_det2 * norms2 - det2 * day_norms2) / (norms2*norms2);
+    double dbx_quocient = (dbx_det2 * norms2 - det2 * dbx_norms2) / (norms2*norms2);
+    double dby_quocient = (dby_det2 * norms2 - det2 * dby_norms2) / (norms2*norms2);
+    double dcx_quocient = (dcx_det2 * norms2 - det2 * dcx_norms2) / (norms2*norms2);
+    double dcy_quocient = (dcy_det2 * norms2 - det2 * dcy_norms2) / (norms2*norms2);
+
+    double dax_sqrt = dax_quocient / (2.0 * sqrt);
+    double day_sqrt = day_quocient / (2.0 * sqrt);
+    double dbx_sqrt = dbx_quocient / (2.0 * sqrt);
+    double dby_sqrt = dby_quocient / (2.0 * sqrt);
+    double dcx_sqrt = dcx_quocient / (2.0 * sqrt);
+    double dcy_sqrt = dcy_quocient / (2.0 * sqrt);
+
+    result.set(&a->x, dax_sqrt);
+    result.set(&a->y, day_sqrt);
+    result.set(&b->x, dbx_sqrt);
+    result.set(&b->y, dby_sqrt);
+    result.set(&c->x, dcx_sqrt);
+    result.set(&c->y, dcy_sqrt);
     return result;
 }
 
@@ -125,11 +162,11 @@ OptimizedVector Colinear::differentialOptimized(const ParameterGroupManager& man
         OptimizedVector result;
         if(manager.areParametersEqual(&a->y, &b->y))
         {
-            // a2 - c2 = 0.
+            // ay - cy = 0.
             result.set(manager.getOptimizedParameter(&a->y), 1);
             result.set(manager.getOptimizedParameter(&c->y), -1);
         } else {
-            // a2 - b2 = 0.
+            // ay - by = 0.
             result.set(manager.getOptimizedParameter(&a->y), 1);
             result.set(manager.getOptimizedParameter(&b->y), -1);
         }
@@ -141,11 +178,11 @@ OptimizedVector Colinear::differentialOptimized(const ParameterGroupManager& man
         OptimizedVector result;
         if(manager.areParametersEqual(&a->x, &b->x))
         {
-            // a1 - c1 = 0.
+            // ax - cx = 0.
             result.set(manager.getOptimizedParameter(&a->x), 1);
             result.set(manager.getOptimizedParameter(&c->x), -1);
         } else {
-            // a1 - b1 = 0.
+            // ax - bx = 0.
             result.set(manager.getOptimizedParameter(&a->x), 1);
             result.set(manager.getOptimizedParameter(&b->x), -1);
         }

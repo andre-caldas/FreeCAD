@@ -57,10 +57,10 @@ GeometryCircle::GeometryCircle(std::unique_ptr<Part::GeomCircle>&& geo)
 GeometryCircle::GeometryCircle(double x, double y, double r)
     : GeometryBaseT(std::make_shared<Part::GeomCircle>())
     , center("center", x, y)
-    , radius("radius", std::abs(r))
+    , radius("radius", r)
 {
     geometry->setLocation(Base::Vector3d(x,y,0));
-    geometry->setRadius(radius);
+    geometry->setRadius(std::abs(radius));
 }
 
 void GeometryCircle::commitChanges() const

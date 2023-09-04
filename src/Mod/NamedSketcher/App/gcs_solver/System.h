@@ -92,10 +92,11 @@ private:
      * and the approximate next step point determined by getStepTarget.
      * @param manager: @class ParameterGroupManager to translate coordinates.
      * @param target: where to aim.
+     * @return True on success.
      */
-    void stepIntoTargetDirection(
-            ParameterGroupManager& manager,
-            const OptimizedVector& target) const;
+    bool stepIntoTargetDirection(
+        ParameterGroupManager& manager,
+        const OptimizedVector& target) const;
 };
 
 } // namespace NamedSketcher::GCS

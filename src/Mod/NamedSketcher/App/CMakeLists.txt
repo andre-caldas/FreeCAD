@@ -92,6 +92,8 @@ SET(Constraints_SRCS
     constraints/ConstraintXDistance.cpp
     constraints/ConstraintYDistance.h
     constraints/ConstraintYDistance.cpp
+    constraints/ConstraintDistance.h
+    constraints/ConstraintDistance.cpp
     constraints/ConstraintPointSymmetric.h
     constraints/ConstraintPointSymmetric.cpp
     constraints/ConstraintPointAlongCurve.h

@@ -25,6 +25,7 @@
 #ifndef NAMEDSKETCHER_GCS_Distance_H
 #define NAMEDSKETCHER_GCS_Distance_H
 
+#include <memory>
 #include <set>
 #include <vector>
 
@@ -37,6 +38,7 @@ class NamedSketcherExport Distance : public NonLinearEquation
 {
 public:
     Distance() = default;
+    void set (Point* a, Point* b, double distance);
     void set (Point* a, Point* b, Parameter* distance);
     void set (Point* a, Point* b, std::vector<std::pair<double,Parameter*>> distance_combinations);
 
@@ -45,12 +47,14 @@ public:
     OptimizedVector differentialOptimized(const ParameterGroupManager& manager) const override;
 
     void declareParameters(ParameterGroupManager& manager) const override;
+    double limitStep(const ParameterGroupManager& manager, const OptimizedVector& step) const override;
 
     void report() const override;
 
 private:
     Point* a;
     Point* b;
+    std::unique_ptr<Parameter> constant_distance;
     // Distance is the linear combination: x1 d1 + ... + xn dn.
     std::vector<std::pair<double,Parameter*>> distance_combinations;
 

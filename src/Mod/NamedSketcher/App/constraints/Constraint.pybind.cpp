@@ -35,6 +35,7 @@ namespace py = pybind11;
 #include "ConstraintPointSymmetric.h"
 #include "ConstraintXDistance.h"
 #include "ConstraintYDistance.h"
+#include "ConstraintDistance.h"
 #include "ConstraintPointAlongCurve.h"
 #include "ConstraintTangentCurves.h"
 
@@ -94,6 +95,11 @@ void init_Constraint(py::module& m)
     ;
 
     py::class_<ConstraintYDistance, std::shared_ptr<ConstraintYDistance>, ConstraintBase>(m, "ConstraintYDistance")
+        .def(py::init<ref_point, ref_point, double>())
+        .def(py::init<const path&, double>())
+    ;
+
+    py::class_<ConstraintDistance, std::shared_ptr<ConstraintDistance>, ConstraintBase>(m, "ConstraintDistance")
         .def(py::init<ref_point, ref_point, double>())
         .def(py::init<const path&, double>())
     ;

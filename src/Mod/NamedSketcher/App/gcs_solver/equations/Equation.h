@@ -59,6 +59,17 @@ public:
      */
     virtual bool optimizeParameters(ParameterGroupManager& /*manager*/) const {return false;}
 
+    /**
+     * @brief When searching for a solution, the system "suggests" a step.
+     * That is, a vector with the suggested changes in the OprimizedParameters.
+     * The suggestion is a not very precise "long shot".
+     * This function indicates how much the step needs to be reduced
+     * in order to avoid "harmful changes".
+     * @param step: the suggested step.
+     * @return A number "a" in (0,1] such that "step *= a" will be a better step.
+     */
+    virtual double limitStep(const ParameterGroupManager& /*manager*/, const OptimizedVector& /*step*/) const {return 1.0;}
+
     virtual void report() const = 0;
 };
 

@@ -33,8 +33,16 @@
 namespace NamedSketcher::GCS
 {
 
+void Distance::set(Point* x, Point* y, double distance)
+{
+    auto const_dist = std::make_unique<Parameter>(distance);
+    set(x, y, const_dist.get());
+    constant_distance = std::move(const_dist);
+}
+
 void Distance::set(Point* x, Point* y, std::vector<std::pair<double,Parameter*>> distance_combs)
 {
+    constant_distance.reset();
     if(x == y)
     {
         FC_THROWM(Base::ReferenceError, "Different parameters must be passed.");
@@ -49,102 +57,67 @@ void Distance::set(Point* x, Point* y, Parameter* d)
     set(x, y, {{1.0, d}});
 }
 
-// |a-b|^2 - distance^2 = 0
+// |a-b| - |distance| = 0
 double Distance::error(const ParameterGroupManager& manager) const
 {
-    if(isCoincident(manager))
-    {
-        // -distance^2 = 0
-        double d = totalDistance(manager);
-        return - d*d;
-    }
-
-    if(isHorizontal(manager))
-    {
-        // (ax - bx)^2 - distance^2 = 0.
-        double dif = manager.getValue(&a->x) - manager.getValue(&b->x);
-        double d = totalDistance(manager);
-        return dif*dif - d*d;
-    }
-
-    if(isVertical(manager))
-    {
-        // (ay - by)^2 - distance^2 = 0.
-        double dif = manager.getValue(&a->y) - manager.getValue(&b->y);
-        double d = totalDistance(manager);
-        return dif*dif - d*d;
-    }
-
-    double a1 = manager.getValue(&a->x);
-
-    double a2 = manager.getValue(&a->y);
-    double b1 = manager.getValue(&b->x);
-    double b2 = manager.getValue(&b->y);
+    double ax = manager.getValue(&a->x);
+    double ay = manager.getValue(&a->y);
+    double bx = manager.getValue(&b->x);
+    double by = manager.getValue(&b->y);
     double d = totalDistance(manager);
-    return (a1-b1)*(a1-b1) + (a2-b2)*(a2-b2) - d*d;
+    return std::sqrt((ax-bx)*(ax-bx) + (ay-by)*(ay-by)) - std::abs(d);
 }
 
 ParameterVector Distance::differentialNonOptimized(const GCS::ParameterValueMapper& parameter_mapper) const
 {
-    double a1 = parameter_mapper(&a->x);
-    double a2 = parameter_mapper(&a->y);
-    double b1 = parameter_mapper(&b->x);
-    double b2 = parameter_mapper(&b->y);
-    double d = totalDistance(parameter_mapper);
+    double ax = parameter_mapper(&a->x);
+    double ay = parameter_mapper(&a->y);
+    double bx = parameter_mapper(&b->x);
+    double by = parameter_mapper(&b->y);
+    double norm2 = (ax-bx)*(ax-bx) + (ay-by)*(ay-by);
+    double sqrt = std::sqrt(norm2);
 
     ParameterVector result;
-    result.set(&a->x, 2.0*(a1-b1));
-    result.set(&a->y, 2.0*(a2-b2));
-    result.set(&b->x, 2.0*(b1-a1));
-    result.set(&b->y, 2.0*(b2-a2));
+    double dax_norm2 = 2.0 * (ax-bx);
+    double day_norm2 = 2.0 * (ay-by);
+    double dbx_norm2 = 2.0 * (bx-ax);
+    double dby_norm2 = 2.0 * (by-ay);
+
+    double dax_sqrt = dax_norm2 / (2.0 * sqrt);
+    double day_sqrt = day_norm2 / (2.0 * sqrt);
+    double dbx_sqrt = dbx_norm2 / (2.0 * sqrt);
+    double dby_sqrt = dby_norm2 / (2.0 * sqrt);
+
+    result.set(&a->x, dax_sqrt);
+    result.set(&a->y, day_sqrt);
+    result.set(&b->x, dbx_sqrt);
+    result.set(&b->y, dby_sqrt);
+
     // It can happen that parameters are equal in this combination.
     // So, instead of setting them, we add.
+    double d = totalDistance(parameter_mapper);
     for(auto& p: distance_combinations)
     {
-        result.add(p.second, -2.0 * p.first * d);
+        // -|d|
+        double sign = (d > 0.0)?1.0:-1.0;
+        result.add(p.second, -sign * p.first);
     }
     return result;
 }
 
 OptimizedVector Distance::differentialOptimized(const ParameterGroupManager& manager) const
 {
-    if(isCoincident(manager))
-    {
-        return OptimizedVector();
-    }
-
-    double d = totalDistance(manager);
-    if(isHorizontal(manager) || isVertical(manager))
-    {
-        OptimizedVector result;
-        if(isHorizontal(manager))
-        {
-            // (ax - bx)^2 - distance^2 = 0.
-            double diff = manager.getValue(&a->x) - manager.getValue(&b->x);
-            result.set(manager.getOptimizedParameter(&a->x), +2.0 * diff);
-            result.set(manager.getOptimizedParameter(&b->x), -2.0 * diff);
-        }
-        else if(isVertical(manager))
-        {
-            // (ay - by)^2 - distance^2 = 0.
-            double diff = manager.getValue(&a->y) - manager.getValue(&b->y);
-            result.set(manager.getOptimizedParameter(&a->y), +2.0 * diff);
-            result.set(manager.getOptimizedParameter(&b->y), -2.0 * diff);
-        }
-        // It can happen that parameters are equal in this combination.
-        // So, instead of setting them, we add.
-        for(auto& p: distance_combinations)
-        {
-            result.add(manager.getOptimizedParameter(p.second), -2.0 * p.first * d);
-        }
-        return result;
-    }
-
+    // There is no need to optimize.
     return manager.optimizeVector(differentialNonOptimized(manager));
 }
 
 void Distance::declareParameters(ParameterGroupManager& manager) const
 {
+    if(constant_distance)
+    {
+        manager.addParameter(constant_distance.get());
+        manager.setParameterConstant(constant_distance.get());
+    }
     manager.addParameter(&a->x);
     manager.addParameter(&a->y);
     manager.addParameter(&b->x);
@@ -155,20 +128,44 @@ void Distance::declareParameters(ParameterGroupManager& manager) const
     }
 }
 
-bool Distance::isCoincident(const ParameterGroupManager& manager) const
+double Distance::limitStep(const ParameterGroupManager& manager, const OptimizedVector& step) const
 {
-    return (isHorizontal(manager) && isVertical(manager));
+    double limit = 1.0;
+    // Do not change distance sign.
+    double required_distance_before = totalDistance(manager);
+    double required_distance_change = 0.0;
+    for(auto& [coef, param]: distance_combinations)
+    {
+        required_distance_change += coef * step[manager.getOptimizedParameter(param)];
+    }
+    double required_distance_after = required_distance_before + required_distance_change;
+    if(std::signbit(required_distance_before) != std::signbit(required_distance_after))
+    {
+        limit = std::min(limit, std::abs(required_distance_before) / std::abs(required_distance_change));
+    }
+
+    double ax = manager.getOptimizedParameterValue(&a->x);
+    double ay = manager.getOptimizedParameterValue(&a->y);
+    double bx = manager.getOptimizedParameterValue(&b->x);
+    double by = manager.getOptimizedParameterValue(&b->y);
+
+    double cdx = ax - bx;
+    double cdy = ay - by;
+    double current_distance = std::sqrt(cdx*cdx + cdy*cdy);
+
+    double step_ax = step[manager.getOptimizedParameter(&a->x)];
+    double step_ay = step[manager.getOptimizedParameter(&a->y)];
+    double step_bx = step[manager.getOptimizedParameter(&b->x)];
+    double step_by = step[manager.getOptimizedParameter(&b->y)];
+
+    double sdx = step_ax - step_bx;
+    double sdy = step_ay - step_by;
+    double step_distance = std::sqrt(sdx*sdx + sdy*sdy);
+
+    return std::min(limit,
+                    std::max(current_distance,std::abs(required_distance_before)) / step_distance);
 }
 
-bool Distance::isHorizontal(const ParameterGroupManager& manager) const
-{
-    return manager.areParametersEqual(&a->y, &b->y);
-}
-
-bool Distance::isVertical(const ParameterGroupManager& manager) const
-{
-    return manager.areParametersEqual(&a->x, &b->x);
-}
 
 double Distance::totalDistance(const ParameterValueMapper& _) const
 {

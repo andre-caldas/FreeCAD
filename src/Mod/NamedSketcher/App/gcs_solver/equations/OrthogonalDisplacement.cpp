@@ -50,7 +50,7 @@ void OrthogonalDisplacement::set(Point* _start, Point* _end, Point* _displaced_p
     set(_start, _end, _displaced_point, {{1.0, d}});
 }
 
-// det((end - start), (displaced_point - start))^2 - totalDisplacement^2 * ||end-start||^2 = 0
+// sqrt(det((end - start), (displaced_point - start))^2/||end-start||^2) - ||totalDisplacement|| = 0
 double OrthogonalDisplacement::error(const ParameterGroupManager& manager) const
 {
     double sx = manager.getValue(&start->x);
@@ -60,33 +60,41 @@ double OrthogonalDisplacement::error(const ParameterGroupManager& manager) const
     double dx = manager.getValue(&displaced_point->x);
     double dy = manager.getValue(&displaced_point->y);
 
-    double vx = ex - sx;
-    double vy = ey - sy;
-    double wx = dx - sx;
-    double wy = dy - sy;
+    double esx = ex - sx;
+    double esy = ey - sy;
+    double dsx = dx - sx;
+    double dsy = dy - sy;
 
     double d = totalDisplacement(manager);
 
     if(isCoincident(manager))
     {
-        // ||displaced_point - start||^2 - distance^2 = 0
-        return wx*wx + wy*wy - d*d;
+        // ||displaced_point - start|| - |distance| = 0
+        return std::sqrt(dsx*dsx + dsy*dsy) - std::abs(d);
     }
 
     if(isHorizontal(manager))
     {
-        // (end_x - start_x)^2 - distance^2 = 0.
-        return vx*vx - d*d;
+        // |displaced_point_y - start_y)| - |distance| = 0.
+        return std::abs(dsy) - std::abs(d);
     }
 
     if(isVertical(manager))
     {
-        // (end_y - start_y)^2 - distance^2 = 0.
-        return vy*vy - d*d;
+        // |displaced_point_x - start_x)| - |distance| = 0.
+        return std::abs(dsx) - std::abs(d);
     }
 
-    double det = vx*wy - vy*wx;
-    return det*det - d*d*(vx*vx + vy*vy);
+    double det = esx*dsy - esy*dsx;
+    double det2 = det * det;
+    double norm2 = esx*esx + esy*esy;
+    if(norm2 == 0.0)
+    {
+        norm2 = 1.0;
+    }
+
+std::cout << "Error: " << std::sqrt(det2/norm2) - std::abs(d) << std::endl;
+    return std::sqrt(det2/norm2) - std::abs(d);
 }
 
 ParameterVector OrthogonalDisplacement::differentialNonOptimized(const GCS::ParameterValueMapper& _) const
@@ -98,73 +106,127 @@ ParameterVector OrthogonalDisplacement::differentialNonOptimized(const GCS::Para
     double dx = _(&displaced_point->x);
     double dy = _(&displaced_point->y);
 
-    double vx = ex - sx;
-    double vy = ey - sy;
-    double wx = dx - sx;
-    double wy = dy - sy;
-    double norm_v2 = vx*vx + vy*vy;
-    double det = vx*wy - vy*wx;
+    double esx = ex - sx;
+    double esy = ey - sy;
+    double dsx = dx - sx;
+    double dsy = dy - sy;
 
-    double d = totalDisplacement(_);
+    double det = esx*dsy - esy*dsx;
+    double det2 = det * det;
+    double norm2 = esx*esx + esy*esy;
+    if(norm2 == 0.0)
+    {
+        norm2 = 1.0;
+    }
+    double sqrt = std::sqrt(det2 / norm2);
+    if(sqrt == 0.0)
+    {
+        sqrt = 1.0;
+    }
 
     /*
      * Differentiate
-     * (vx*wy - vywx)^2 - d*d*(vx*vx + vy*vy)
+     * sqrt(|esx*dsy - esydsx|^2/||end - start||^2) - |d|
      */
+    double dex_det2 = +dsy * (2.0 * det);
+    double dey_det2 = -dsx * (2.0 * det);
+    double dsx_det2 = (-dsy + esy) * (2.0 * det);
+    double dsy_det2 = (-esx + dsx) * (2.0 * det);
+    double ddx_det2 = -esy * (2.0 * det);
+    double ddy_det2 = +esx * (2.0 * det);
+
+    double dex_norm2 = +esx;
+    double dey_norm2 = +esy;
+    double dsx_norm2 = -esx;
+    double dsy_norm2 = -esy;
+
+    double dex_quocient = (dex_det2 * norm2 - det2 * dex_norm2) / (norm2 * norm2);
+    double dey_quocient = (dey_det2 * norm2 - det2 * dey_norm2) / (norm2 * norm2);
+    double dsx_quocient = (dsx_det2 * norm2 - det2 * dsx_norm2) / (norm2 * norm2);
+    double dsy_quocient = (dsy_det2 * norm2 - det2 * dsy_norm2) / (norm2 * norm2);
+    double ddx_quocient = ddx_det2 / norm2;
+    double ddy_quocient = ddy_det2 / norm2;
+
+    double dex_sqrt = dex_quocient / (2.0 * sqrt);
+    double dey_sqrt = dey_quocient / (2.0 * sqrt);
+    double dsx_sqrt = dsx_quocient / (2.0 * sqrt);
+    double dsy_sqrt = dsy_quocient / (2.0 * sqrt);
+    double ddx_sqrt = ddx_quocient / (2.0 * sqrt);
+    double ddy_sqrt = ddy_quocient / (2.0 * sqrt);
+
     ParameterVector result;
-    result.set(&displaced_point->x, -vy * 2.0 * det);
-    result.set(&displaced_point->y, +vx * 2.0 * det);
-    setDisplacementDifferentials(_, result, norm_v2);
-    result.set(&end->x  , +wy - d * d * 2.0 * vx);
-    result.set(&end->y  , -wx - d * d * 2.0 * vy);
-    result.set(&start->x, -wy + d * d * 2.0 * vx);
-    result.set(&start->y, +wx + d * d * 2.0 * vy);
+    setDisplacementDifferentials(_, result);
+
+    result.set(&end->x  , dex_sqrt);
+    result.set(&end->y  , dey_sqrt);
+    result.set(&start->x, dsx_sqrt);
+    result.set(&start->y, dsy_sqrt);
+    result.set(&displaced_point->x, ddx_sqrt);
+    result.set(&displaced_point->y, ddy_sqrt);
     return result;
 }
 
 OptimizedVector OrthogonalDisplacement::differentialOptimized(const ParameterGroupManager& manager) const
 {
-    double sx = manager.getValue(&start->x);
-    double sy = manager.getValue(&start->y);
-    double ex = manager.getValue(&end->x);
-    double ey = manager.getValue(&end->y);
-    double dx = manager.getValue(&displaced_point->x);
-    double dy = manager.getValue(&displaced_point->y);
-
-    double vx = ex - sx;
-    double vy = ey - sy;
-    double wx = dx - sx;
-    double wy = dy - sy;
-
-    if(isCoincident(manager))
+    if(isHorizontal(manager) || isVertical(manager) || isCoincident(manager))
     {
-        // wx*wx + wy*wy - d*d
         OptimizedVector result;
-        result.set(manager.getOptimizedParameter(&start->x), -2.0 * wx);
-        result.set(manager.getOptimizedParameter(&start->y), -2.0 * wy);
-        result.set(manager.getOptimizedParameter(&displaced_point->x), 2.0 * wx);
-        result.set(manager.getOptimizedParameter(&displaced_point->y), 2.0 * wy);
         setDisplacementDifferentials(manager, result);
-        return result;
-    }
 
-    if(isHorizontal(manager) || isVertical(manager))
-    {
-        OptimizedVector result;
+        double sx = manager.getValue(&start->x);
+        double sy = manager.getValue(&start->y);
+        double dx = manager.getValue(&displaced_point->x);
+        double dy = manager.getValue(&displaced_point->y);
+
+        double dsx = dx - sx;
+        double dsy = dy - sy;
+
+        if(isCoincident(manager))
+        {
+            // ||displaced_point - start|| - |distance| = 0
+            // std::sqrt(dsx*dsx + dsy*dsy) - std::abs(d);
+            double dsx_norm2 = -dsx;
+            double dsy_norm2 = -dsy;
+            double ddx_norm2 = +dsx;
+            double ddy_norm2 = +dsy;
+
+            double sqrt = std::sqrt(dsx*dsx + dsy*dsy);
+            if(sqrt == 0.0)
+            {
+                sqrt = 1.0;
+            }
+
+            double dsx_sqrt = dsx_norm2 / (2.0 * sqrt);
+            double dsy_sqrt = dsy_norm2 / (2.0 * sqrt);
+            double ddx_sqrt = ddx_norm2 / (2.0 * sqrt);
+            double ddy_sqrt = ddy_norm2 / (2.0 * sqrt);
+
+            result.set(manager.getOptimizedParameter(&start->x), dsx_sqrt);
+            result.set(manager.getOptimizedParameter(&start->y), dsy_sqrt);
+            result.set(manager.getOptimizedParameter(&displaced_point->x), ddx_sqrt);
+            result.set(manager.getOptimizedParameter(&displaced_point->y), ddy_sqrt);
+            return result;
+        }
+
         if(isHorizontal(manager))
         {
-            // (end_x - start_x)^2 - distance^2 = 0.
-            result.set(manager.getOptimizedParameter(&end->x), 2.0 * vx);
-            result.set(manager.getOptimizedParameter(&start->x), -2.0 * vx);
+            // |displaced_point_y - start_y)| - |distance| = 0.
+            // std::abs(dsy) - std::abs(d);
+            double sign = (dsy >= 0)?1.0:-1.0;
+            result.set(manager.getOptimizedParameter(&start->x), -sign*sy);
+            result.set(manager.getOptimizedParameter(&displaced_point->x), sign*dy);
+            return result;
         }
-        else if(isVertical(manager))
+
+        if(isVertical(manager))
         {
-            // (end_y - start_y)^2 - distance^2 = 0.
-            result.set(manager.getOptimizedParameter(&end->y), 2.0 * vy);
-            result.set(manager.getOptimizedParameter(&start->y), -2.0 * vy);
+            // |displaced_point_x - start_x)| - |distance| = 0.
+            // std::abs(dsx) - std::abs(d);
+            double sign = (dsx >= 0)?1.0:-1.0;
+            result.set(manager.getOptimizedParameter(&start->x), -sign*sx);
+            result.set(manager.getOptimizedParameter(&displaced_point->x), sign*dx);
+            return result;
         }
-        setDisplacementDifferentials(manager, result);
-        return result;
     }
 
     return manager.optimizeVector(differentialNonOptimized(manager));
@@ -204,29 +266,29 @@ double OrthogonalDisplacement::totalDisplacement(const ParameterValueMapper& _) 
     return std::accumulate(displacement_combinations.cbegin(), displacement_combinations.cend(), 0, [_](double t, const std::pair<double,Parameter*>& a){return t += a.first * _(a.second);});
 }
 
-void OrthogonalDisplacement::setDisplacementDifferentials(const ParameterGroupManager& manager, OptimizedVector& result, double factor) const
+void OrthogonalDisplacement::setDisplacementDifferentials(const ParameterGroupManager& manager, OptimizedVector& result) const
 {
     double d = totalDisplacement(manager);
+    double sign = (d >= 0.0)?1.0:-1.0;
 
     // It can happen that parameters are equal in this combination.
     // So, instead of setting them, we add.
     for(auto& p: displacement_combinations)
     {
-        double value = -2.0 * p.first * d * factor;
-        result.add(manager.getOptimizedParameter(p.second), value);
+        result.add(manager.getOptimizedParameter(p.second), -sign * p.first);
     }
 }
 
-void OrthogonalDisplacement::setDisplacementDifferentials(const ParameterValueMapper& _, ParameterVector& result, double factor) const
+void OrthogonalDisplacement::setDisplacementDifferentials(const ParameterValueMapper& _, ParameterVector& result) const
 {
     double d = totalDisplacement(_);
+    double sign = (d >= 0.0)?1.0:-1.0;
 
     // It can happen that parameters are equal in this combination.
     // So, instead of setting them, we add.
     for(auto& p: displacement_combinations)
     {
-        double value = -2.0 * p.first * d * factor;
-        result.add(p.second, value);
+        result.add(p.second, -sign * p.first);
     }
 }
 
