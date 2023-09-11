@@ -32,12 +32,13 @@
 #include <memory>
 
 #include "../Types.h"
-#include "NamedSketcherGlobal.h"
+#include "ParameterValueMapper.h"
 
 namespace NamedSketcher::GCS
 {
 
-class NamedSketcherExport ParameterGroupManager
+class ParameterGroupManager
+    : public ParameterValueMapper
 {
 public:
     /**
@@ -45,7 +46,7 @@ public:
      * @param parameter
      * @return The value attributed to @a parameter.
      */
-    double getValue(const Parameter* parameter) const {return getOptimizedParameterValue(parameter);}
+    double getValue(const Parameter* parameter) const override {return getOptimizedParameterValue(parameter);}
 
     /**
      * @brief Checks if @a parameter is already managed.

@@ -57,8 +57,8 @@ void TangentCurvesGeneric::preprocessParameters()
     {
         for(GCS::Parameter p2(0); p2 <= 1.0; p2 += 0x1p-4)
         {
-            auto n1 = curve1->normalAtParameter({}, &p1);
-            auto n2 = curve2->normalAtParameter({}, &p2);
+            auto n1 = curve1->normalAtParameter(GCS::ParameterValueMapperDumb(), &p1);
+            auto n2 = curve2->normalAtParameter(GCS::ParameterValueMapperDumb(), &p2);
             double det = std::abs(n1.x*n2.y - n1.y*n2.x);
             if(det <= min_det)
             {
@@ -79,10 +79,10 @@ void TangentCurvesGeneric::setEquations()
 
 void TangentCurvesGeneric::report() const
 {
-    auto pt_curve1 = curve1->positionAtParameter({}, parameter_t1);
-    auto pt_curve2 = curve2->positionAtParameter({}, parameter_t2);
-    auto n1 = curve1->normalAtParameter({}, parameter_t1);
-    auto n2 = curve2->normalAtParameter({}, parameter_t2);
+    auto pt_curve1 = curve1->positionAtParameter(GCS::ParameterValueMapperDumb(), parameter_t1);
+    auto pt_curve2 = curve2->positionAtParameter(GCS::ParameterValueMapperDumb(), parameter_t2);
+    auto n1 = curve1->normalAtParameter(GCS::ParameterValueMapperDumb(), parameter_t1);
+    auto n2 = curve2->normalAtParameter(GCS::ParameterValueMapperDumb(), parameter_t2);
 
     std::cerr << "Generic tangent curves: " << std::endl;
     std::cerr << "* Curve 1 " << *parameter_t1 << " -> " << pt_curve1 << ". ";

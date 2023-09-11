@@ -47,7 +47,9 @@ namespace NamedSketcher::GCS
 
 void System::addEquation(Equation* equation)
 {
-    gradients.pushBack(equation, equation->differentialNonOptimized({}));
+    std::cerr << "Adding equation... ";
+    gradients.report();
+    gradients.pushBack(equation, equation->differentialNonOptimized(shaker));
 }
 
 void System::addUserRedundantEquation(Equation* equation)
@@ -66,7 +68,7 @@ int System::checkDependentEquations(const std::vector<Equation*>& equations) con
     Orthonormalization orthogonalComponents;
     for(auto eq: equations)
     {
-        auto remainings = gradients.normalizedOrthogonalComponent(eq->differentialNonOptimized({}));
+        auto remainings = gradients.normalizedOrthogonalComponent(eq->differentialNonOptimized(shaker));
         orthogonalComponents.pushBack(eq, std::move(remainings));
         if(orthogonalComponents.isRedundant(eq))
         {
@@ -217,12 +219,12 @@ bool System::solve() const
 
     // TODO: give up criteria.
     // TODO: use the shaker!
-    for(int trials=0; trials < 10; ++trials)
+    for(int trials=0; trials < 30; ++trials)
     {
 manager.report();
         double err2 = error2(manager);
         // TODO: decide on a good criteria.
-        if(err2 <= 1e-4 * manager.outputSize())
+        if(err2 <= 1e-9)
         {
 std::cerr << "Success after " << trials + 1 << " trials." << std::endl;
             manager.commitParameters();
@@ -299,6 +301,7 @@ bool System::stepIntoTargetDirection(
             next_position.setAsLinearCombination(1.0, current_position, current_factor, direction);
             manager.setOptimizedParameterValues(next_position);
             double err2 = error2(manager);
+std::cerr << "COMPUTED ERROR: " << err2 << std::endl;
             if(err2 == 0)
             {
                 return true;

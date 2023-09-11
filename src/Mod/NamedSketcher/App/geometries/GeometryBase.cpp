@@ -24,6 +24,8 @@
 #include <Base/Exception.h>
 #include <Base/Writer.h>
 
+#include "gcs_solver/parameters/ParameterDeltaMapper.h"
+
 #include "GeometryBase.h"
 
 namespace NamedSketcher {
@@ -73,8 +75,8 @@ GCS::Point GeometryBase::normalAtParameter(const GCS::ParameterValueMapper& valu
     // TODO: move this magic number somewhere else.
     const double delta = 0x1p-28;
 
-    auto c0 = positionAtParameter({value_mapper, t, -delta/2}, t);
-    auto c1 = positionAtParameter({value_mapper, t, -delta/2}, t);
+    auto c0 = positionAtParameter(GCS::ParameterDeltaMapper(value_mapper, t, -delta/2), t);
+    auto c1 = positionAtParameter(GCS::ParameterDeltaMapper(value_mapper, t, -delta/2), t);
 
     // Non-normalized tangent vector (speed).
     double dx = (c1.x - c0.x) / delta;
@@ -92,8 +94,8 @@ void GeometryBase::partialDerivatives(const GCS::ParameterValueMapper& value_map
     {
         if(map.count(parameter) == 0)
         {
-            auto c0 = (this->*func)({value_mapper, parameter, -delta/2}, t);
-            auto c1 = (this->*func)({value_mapper, parameter, delta/2}, t);
+            auto c0 = (this->*func)(GCS::ParameterDeltaMapper(value_mapper, parameter, -delta/2), t);
+            auto c1 = (this->*func)(GCS::ParameterDeltaMapper(value_mapper, parameter, delta/2), t);
             double dx = (c1.x - c0.x) / delta;
             double dy = (c1.y - c0.y) / delta;
             map.try_emplace(parameter, dx, dy);

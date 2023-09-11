@@ -32,7 +32,7 @@
 #include <Eigen/SparseCore>
 
 #include "Types.h"
-#include "Shaker.h"
+#include "parameters/ParameterShaker.h"
 #include "Orthonormalization.h"
 
 namespace NamedSketcher::GCS
@@ -62,6 +62,8 @@ public:
     equation_value_t minus_error(const ParameterGroupManager& manager) const;
 
 private:
+    ParameterShaker shaker{0.001};
+
     /**
      * @brief Each equation generates a gradient.
      * Each row of this matrix is the gradient of an equation (function)

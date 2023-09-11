@@ -121,7 +121,6 @@ SOURCE_GROUP("Constraints" FILES ${Constraints_SRCS})
 
 SET(gcs_solver_SRCS
     gcs_solver/Types.h
-    gcs_solver/Shaker.h
     gcs_solver/System.h
     gcs_solver/System.cpp
     gcs_solver/Vector.h
@@ -135,9 +134,11 @@ SET(gcs_solver_SRCS
     gcs_solver/parameters/Parameter.cpp
     gcs_solver/parameters/ParameterGroup.h
     gcs_solver/parameters/ParameterGroup.cpp
+    gcs_solver/parameters/ParameterValueMapper.h
     gcs_solver/parameters/ParameterGroupManager.h
     gcs_solver/parameters/ParameterGroupManager.cpp
-    gcs_solver/parameters/ParameterValueMapper.h
+    gcs_solver/parameters/ParameterDeltaMapper.h
+    gcs_solver/parameters/ParameterShaker.h
 #
     gcs_solver/equations/Equation.h
     gcs_solver/equations/Equation.cpp

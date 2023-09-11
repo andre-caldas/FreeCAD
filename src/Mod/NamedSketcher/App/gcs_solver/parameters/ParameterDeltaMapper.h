@@ -22,37 +22,55 @@
  ***************************************************************************/
 
 
-#if 0
-#ifndef NAMEDSKETCHER_GCS_Shaker_H
-#define NAMEDSKETCHER_GCS_Shaker_H
+#ifndef NAMEDSKETCHER_GCS_ParameterDeltaMapper_H
+#define NAMEDSKETCHER_GCS_ParameterDeltaMapper_H
 
-#include <random>
-
-#include "../NamedSketcherGlobal.h"
+#include "ParameterValueMapper.h"
 
 namespace NamedSketcher::GCS
 {
 
-class NamedSketcherExport Shaker
+class Parameter;
+
+/**
+ * @brief Sometimes we have a @class ParameterGroupManager active.
+ * That is, when we are solving the GCS.
+ * Sometimes we do not have any of those.
+ * In order to avoid having two versions of some methods that need
+ * to access the GCS::Parameter value, we wrapped those two concepts here.
+ *
+ * Also,
+ * when calculating partial derivatives, we need to disturb a little
+ * (delta) just one "direction".
+ * This class also helps with this task.
+ */
+class ParameterDeltaMapper
+    : public ParameterValueMapper
 {
 public:
-    Shaker(double epsilon)
-        : random_generator(std::random_device()())
-        , epsilon(epsilon)
-    {}
+    /**
+     * @brief Used for partial derivatives.
+     * When parameter == @a direction, it adds @a delta to the computed value.
+     * @param direction: corresponds to the dimension where we want
+     * to calculate the partial derivative.
+     * @param delta: the "delta" ammout to add to *direction.
+     */
+    ParameterDeltaMapper(const ParameterValueMapper& pvm, const Parameter* direction, double delta)
+        : ParameterValueMapper(pvm), direction(direction), delta(delta) {}
 
-    double operator()(double value) {return value + (max?distribution(max):0.);}
-    void reset() {max = 0.;}
-    void operator++() {max += (max?max:epsilon);}
+    double getValue(const Parameter* p) const override;
 
 private:
-    double max = 0.;
-    double epsilon;
-    std::mt19937 random_generator;
-    std::uniform_real_distribution<> distribution;
+    const Parameter* direction;
+    double delta;
 };
+
+inline double ParameterDeltaMapper::getValue(const Parameter* p) const
+{
+    double current_value = _getValue(p);
+    return (p != direction) ? current_value : (current_value + delta);
+}
 
 } // namespace NamedSketcher::GCS
 
-#endif // NAMEDSKETCHER_GCS_Shaker_H
-#endif // 0
+#endif // NAMEDSKETCHER_GCS_ParameterDeltaMapper_H

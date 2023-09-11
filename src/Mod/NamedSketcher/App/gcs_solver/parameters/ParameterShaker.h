@@ -22,65 +22,52 @@
  ***************************************************************************/
 
 
-#ifndef NAMEDSKETCHER_GCS_ParameterValueMapper_H
-#define NAMEDSKETCHER_GCS_ParameterValueMapper_H
+#ifndef NAMEDSKETCHER_GCS_ParameterShaker_H
+#define NAMEDSKETCHER_GCS_ParameterShaker_H
 
-#include "Parameter.h"
+#include <random>
+#include <unordered_map>
+
+#include "ParameterValueMapper.h"
 
 namespace NamedSketcher::GCS
 {
 
-class Parameter;
-
-/**
- * @brief Sometimes we have a @class ParameterGroupManager active.
- * That is, when we are solving the GCS.
- * Sometimes we do not have any of those.
- * In order to avoid having two versions of some methods that need
- * to access the GCS::Parameter value, we wrapped those two concepts here.
- *
- * Also,
- * when calculating partial derivatives, we need to disturb a little
- * (delta) just one "direction".
- * This class also helps with this task.
- */
-class ParameterValueMapper
-{
-public:
-    /**
-     * @brief Maps a parameter to *parameter.
-     */
-    ParameterValueMapper() {}
-
-    ParameterValueMapper(const ParameterValueMapper& pvm)
-        : parent_mapper(&pvm) {}
-
-    virtual double getValue(const Parameter* p) const = 0;
-    double operator()(const Parameter* p) const {return getValue(p);}
-    double operator()(const Parameter& p) const {return (*this)(&p);}
-
-protected:
-    double _getValue(const Parameter* p) const;
-
-private:
-    const ParameterValueMapper* parent_mapper = nullptr;
-};
-
-inline double ParameterValueMapper::_getValue(const Parameter* p) const
-{
-    if(parent_mapper)
-    {
-        return (*parent_mapper)(p);
-    }
-    return *p;
-}
-
-class ParameterValueMapperDumb
+class ParameterShaker
     : public ParameterValueMapper
 {
-    double getValue(const Parameter* p) const override {return _getValue(p);}
+public:
+    ParameterShaker(double epsilon)
+        : data(std::make_unique<RandomData>(epsilon))
+    {}
+
+    double getValue(const Parameter* p) const override;
+
+private:
+    // We use a pointer to a structure, because "getValue()" is const.
+    struct RandomData
+    {
+        RandomData(double epsilon)
+            : random_generator(std::random_device()())
+            , distribution(0.0, epsilon)
+        {}
+        std::mt19937 random_generator;
+        std::uniform_real_distribution<> distribution;
+        std::unordered_map<const Parameter*, double> choosen_random;
+    };
+    std::unique_ptr<RandomData> data;
 };
+
+inline double ParameterShaker::getValue(const Parameter* p) const
+{
+    if(!data->choosen_random.count(p))
+    {
+        data->choosen_random[p] = data->distribution(data->random_generator);
+    }
+    double current_value = _getValue(p);
+    return current_value + data->choosen_random[p];
+}
 
 } // namespace NamedSketcher::GCS
 
-#endif // NAMEDSKETCHER_GCS_ParameterValueMapper_H
+#endif // NAMEDSKETCHER_GCS_ParameterShaker_H

@@ -54,7 +54,7 @@ void PointAlongCurveGeneric::preprocessParameters()
     auto& pt1 = *point;
     for(GCS::Parameter p(0); p <= 1.0; p += 0x1p-4)
     {
-        auto pt2 = curve->positionAtParameter({}, &p);
+        auto pt2 = curve->positionAtParameter(GCS::ParameterValueMapperDumb(), &p);
         double x = pt1.x - pt2.x;
         double y = pt1.y - pt2.y;
         double dist = x*x + y*y;
@@ -74,7 +74,7 @@ void PointAlongCurveGeneric::setEquations()
 
 void PointAlongCurveGeneric::report() const
 {
-    auto pt_curve = curve->positionAtParameter({}, parameter_t);
+    auto pt_curve = curve->positionAtParameter(GCS::ParameterValueMapperDumb(), parameter_t);
 
     std::cerr << "Point along curve (generic): ";
     std::cerr << "candidate point " << *point;

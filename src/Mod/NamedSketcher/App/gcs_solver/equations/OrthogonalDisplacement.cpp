@@ -62,36 +62,32 @@ double OrthogonalDisplacement::error(const ParameterGroupManager& manager) const
 
     double esx = ex - sx;
     double esy = ey - sy;
-    double dsx = dx - sx;
-    double dsy = dy - sy;
+    double dmx = dx - (0.5*sx + 0.5*ex);
+    double dmy = dy - (0.5*sy + 0.5*ey);
 
     double d = totalDisplacement(manager);
 
     if(isCoincident(manager))
     {
         // ||displaced_point - start|| - |distance| = 0
-        return std::sqrt(dsx*dsx + dsy*dsy) - std::abs(d);
+        return std::sqrt(dmx*dmx + dmy*dmy) - std::abs(d);
     }
 
     if(isHorizontal(manager))
     {
         // |displaced_point_y - start_y)| - |distance| = 0.
-        return std::abs(dsy) - std::abs(d);
+        return std::abs(dmy) - std::abs(d);
     }
 
     if(isVertical(manager))
     {
         // |displaced_point_x - start_x)| - |distance| = 0.
-        return std::abs(dsx) - std::abs(d);
+        return std::abs(dmx) - std::abs(d);
     }
 
-    double det = esx*dsy - esy*dsx;
+    double det = esx*dmy - esy*dmx;
     double det2 = det * det;
     double norm2 = esx*esx + esy*esy;
-    if(norm2 == 0.0)
-    {
-        norm2 = 1.0;
-    }
 
 std::cout << "Error: " << std::sqrt(det2/norm2) - std::abs(d) << std::endl;
     return std::sqrt(det2/norm2) - std::abs(d);
@@ -108,30 +104,22 @@ ParameterVector OrthogonalDisplacement::differentialNonOptimized(const GCS::Para
 
     double esx = ex - sx;
     double esy = ey - sy;
-    double dsx = dx - sx;
-    double dsy = dy - sy;
+    double dmx = dx - (0.5*sx + 0.5*ex);
+    double dmy = dy - (0.5*sy + 0.5*ey);
 
-    double det = esx*dsy - esy*dsx;
+    double det = esx*dmy - esy*dmx;
     double det2 = det * det;
     double norm2 = esx*esx + esy*esy;
-    if(norm2 == 0.0)
-    {
-        norm2 = 1.0;
-    }
     double sqrt = std::sqrt(det2 / norm2);
-    if(sqrt == 0.0)
-    {
-        sqrt = 1.0;
-    }
 
     /*
      * Differentiate
-     * sqrt(|esx*dsy - esydsx|^2/||end - start||^2) - |d|
+     * sqrt(det^2/||end - start||^2) - |d|
      */
-    double dex_det2 = +dsy * (2.0 * det);
-    double dey_det2 = -dsx * (2.0 * det);
-    double dsx_det2 = (-dsy + esy) * (2.0 * det);
-    double dsy_det2 = (-esx + dsx) * (2.0 * det);
+    double dex_det2 = (+dmy + 0.5*esy) * (2.0 * det);
+    double dey_det2 = (-dmx - 0.5*esx) * (2.0 * det);
+    double dsx_det2 = (-dmy + 0.5*esy) * (2.0 * det);
+    double dsy_det2 = (+dmx - 0.5*esx) * (2.0 * det);
     double ddx_det2 = -esy * (2.0 * det);
     double ddy_det2 = +esx * (2.0 * det);
 
@@ -263,7 +251,7 @@ bool OrthogonalDisplacement::isVertical(const ParameterGroupManager& manager) co
 
 double OrthogonalDisplacement::totalDisplacement(const ParameterValueMapper& _) const
 {
-    return std::accumulate(displacement_combinations.cbegin(), displacement_combinations.cend(), 0, [_](double t, const std::pair<double,Parameter*>& a){return t += a.first * _(a.second);});
+    return std::accumulate(displacement_combinations.cbegin(), displacement_combinations.cend(), 0, [&_](double t, const std::pair<double,Parameter*>& a){return t += a.first * _(a.second);});
 }
 
 void OrthogonalDisplacement::setDisplacementDifferentials(const ParameterGroupManager& manager, OptimizedVector& result) const

@@ -189,4 +189,21 @@ std::vector<Orthonormalization::Functional*> Orthonormalization::reset()
     return std::move(functionals);
 }
 
+void Orthonormalization::report() const
+{
+    std::cerr << "Gradients..." << std::endl;
+    for(Equation* f: functionals)
+    {
+        std::cerr << "(";
+        std::cerr << f << " -> " << std::endl;
+        for(auto [i,v]: duals[f].values)
+        {
+            std::cerr << "\t" << i << " : " << v << "," << std::endl;
+        }
+        std::cerr << ")";
+        std::cerr << std::endl;
+    }
+    std::cerr << std::endl;
+}
+
 } // namespace NamedSketcher::GCS

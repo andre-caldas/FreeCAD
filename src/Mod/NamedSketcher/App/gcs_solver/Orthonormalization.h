@@ -74,6 +74,8 @@ public:
 
     std::vector<Functional*> reset();
 
+    void report() const;
+
 private:
     /**
      * @brief Each vector in "duals" is a dual vector
