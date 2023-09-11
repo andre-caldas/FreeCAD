@@ -22,6 +22,8 @@
 # **************************************************************************/
 """Provides functions to create NamedSketch objects from Draft objects."""
 
+from itertools import combinations
+
 import NamedSketcher # For exception, while Base::Accessor does not use pybind.
 
 #
@@ -42,6 +44,9 @@ class Tolerance:
 
     def are_very_equal(self, a, b):
         return abs(a - b) < 1e-6
+
+    def is_very_zero(self, a):
+        return abs(a) < 1e-6
 
     def is_zero(self, v):
         return abs(v) < self.distance_tolerance
@@ -77,6 +82,10 @@ class Tolerance:
 
     def are_curves_tangent(self, shape1, shape2):
         dist, points, infos = shape1.distToShape(shape2)
+        if self.is_very_zero(dist):
+            for p1, p2 in combinations(points, 2):
+                if self.isZero((p1-p2).Length):
+                    return True
         if self.is_zero(dist):
             for info in infos:
                 if info[0] == 'Vertex' or info[3] == 'Vertex':
