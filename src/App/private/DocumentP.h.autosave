@@ -27,6 +27,7 @@
 #include <App/DocumentObserver.h>
 #include <CXX/Objects.hxx>
 #include <boost/graph/adjacency_list.hpp>
+#include <memory>
 #include <unordered_map>
 #include <unordered_set>
 
