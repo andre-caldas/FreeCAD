@@ -510,8 +510,8 @@ protected:
     /// Construction
     explicit Document(const char *documentName = "");
 
-    void _removeObject(DocumentObject* pcObject);
-    void _addObject(DocumentObject* pcObject, const char* pObjectName);
+    std::shared_ptr<DocumentObject> _removeObject(DocumentObject* pcObject);
+    void _addObject(std::shared_ptr<DocumentObject> pcObject, const char* pObjectName);
     /// checks if a valid transaction is open
     void _checkTransaction(DocumentObject* pcDelObj, const Property *What, int line);
     void breakDependency(DocumentObject* pcObject, bool clear);
@@ -551,6 +551,13 @@ protected:
     void _commitTransaction(bool notify=false);
     /// Internally called by App::Application to abort the running transaction.
     void _abortTransaction();
+
+    DocumentObject* _createDocumentObject(const char* sType);
+    DocumentObject* _createDocumentObject(Base::Type type);
+    void _assumeOwnership(DocumentObject* pcObject);
+    void _assumeOwnership(std::shared_ptr<DocumentObject> sharedObject);
+    std::shared_ptr<DocumentObject> _releaseOwnership(DocumentObject* pcObject);
+    const std::shared_ptr<DocumentObject>& _getSharedPtr(DocumentObject* pcObject) const;
 
 private:
     // # Data Member of the document +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

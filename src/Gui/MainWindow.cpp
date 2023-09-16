@@ -2243,14 +2243,9 @@ void MainWindow::customEvent(QEvent* e)
             if (msg.startsWith(QLatin1String("#Inventor V2.1 ascii "))) {
                 Gui::Document *d = Application::Instance->activeDocument();
                 if (d) {
-                    auto view = new ViewProviderExtern();
-                    try {
-                        view->setModeByString("1",msg.toLatin1().constData());
-                        d->setAnnotationViewProvider("Vdbg",view);
-                    }
-                    catch (...) {
-                        delete view;
-                    }
+                    auto view = std::make_shared<ViewProviderExtern>();
+                    view->setModeByString("1",msg.toLatin1().constData());
+                    d->setAnnotationViewProvider("Vdbg",std::move(view));
                 }
             }
             break;

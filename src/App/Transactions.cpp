@@ -88,7 +88,7 @@ Transaction::~Transaction()
                     const DocumentObject* obj = static_cast<const DocumentObject*>(It.first);
                     const_cast<DocumentObject*>(obj)->setStatus(ObjectStatus::Destroy, true);
                 }
-                delete It.first;
+                assert(ownedObjects.count(It.first));
             }
         }
         delete It.second;
@@ -139,9 +139,17 @@ bool Transaction::hasObject(const TransactionalObject *Obj) const
     return !!_Objects.get<1>().count(Obj);
 }
 
-void Transaction::addOrRemoveProperty(TransactionalObject *Obj,
-                                    const Property* pcProp, bool add)
+void Transaction::addOrRemoveProperty(TransactionalObject* Obj,
+                                      const Property* pcProp, bool add)
 {
+    addOrRemoveProperty(_prepareToAssumeOwnership(Obj), pcProp, add);
+}
+
+void Transaction::addOrRemoveProperty(std::shared_ptr<TransactionalObject> sharedObj,
+                                      const Property* pcProp, bool add)
+{
+    TransactionalObject* Obj = sharedObj.get();
+
     auto &index = _Objects.get<1>();
     auto pos = index.find(Obj);
 
@@ -153,6 +161,8 @@ void Transaction::addOrRemoveProperty(TransactionalObject *Obj,
     else {
         To = TransactionFactory::instance().createTransaction(Obj->getTypeId());
         To->status = TransactionObject::Chn;
+        assert(!ownedObjects.count(Obj));
+        ownedObjects.emplace(Obj, std::move(sharedObj));
         index.emplace(Obj,To);
     }
 
@@ -188,22 +198,57 @@ void Transaction::apply(Document &Doc, bool forward)
     }
 }
 
+std::shared_ptr<TransactionalObject>
+Transaction::_prepareToAssumeOwnership(TransactionalObject* Obj)
+{
+    try {
+        return Obj->shared_from_this();
+    }
+    catch (std::bad_weak_ptr&) {
+        assert(!ownedObjects.count(Obj));
+        // We assume ownership.
+        // There is a small race condition here,
+        // but I don't know how to solve it in a simple way.
+        return std::shared_ptr<TransactionalObject>{Obj};
+    }
+}
+
+std::shared_ptr<const TransactionalObject>
+Transaction::_prepareToAssumeOwnership(const TransactionalObject* Obj)
+{
+    try {
+        return Obj->shared_from_this();
+    }
+    catch (std::bad_weak_ptr&) {
+        assert(false);
+    }
+    return nullptr;
+}
+
 void Transaction::addObjectNew(TransactionalObject *Obj)
 {
+    addObjectNew(_prepareToAssumeOwnership(Obj));
+}
+
+void Transaction::addObjectNew(std::shared_ptr<TransactionalObject> sharedObj)
+{
+    TransactionalObject* Obj = sharedObj.get();
+
     auto &index = _Objects.get<1>();
     auto pos = index.find(Obj);
     if (pos != index.end()) {
-        if (pos->second->status == TransactionObject::Del) {
+        assert(ownedObjects.count(Obj));
+
+        TransactionObject* transaction = pos->second;
+        if (transaction->status == TransactionObject::Del) {
             // first remove the item from the container before deleting it
-            auto second = pos->second;
-            auto first = pos->first;
             index.erase(pos);
-            delete second;
-            delete first;
+            delete transaction;
+            ownedObjects.erase(Obj);
         }
         else {
-            pos->second->status = TransactionObject::New;
-            pos->second->_NameInDocument = Obj->detachFromDocument();
+            transaction->status = TransactionObject::New;
+            transaction->_NameInDocument = Obj->detachFromDocument();
             // move item at the end to make sure the order of removal is kept
             auto &seq = _Objects.get<0>();
             seq.relocate(seq.end(),_Objects.project<0>(pos));
@@ -213,33 +258,58 @@ void Transaction::addObjectNew(TransactionalObject *Obj)
         TransactionObject *To = TransactionFactory::instance().createTransaction(Obj->getTypeId());
         To->status = TransactionObject::New;
         To->_NameInDocument = Obj->detachFromDocument();
+        assert(!ownedObjects.count(Obj));
+        ownedObjects.emplace(Obj, std::move(sharedObj));
         index.emplace(Obj,To);
     }
 }
 
 void Transaction::addObjectDel(const TransactionalObject *Obj)
 {
+    addObjectDel(_prepareToAssumeOwnership(Obj));
+}
+
+void Transaction::addObjectDel(std::shared_ptr<const TransactionalObject> sharedObj)
+{
+    const TransactionalObject* Obj = sharedObj.get();
+
     auto &index = _Objects.get<1>();
     auto pos = index.find(Obj);
 
-    // is it created in this transaction ?
-    if (pos != index.end() && pos->second->status == TransactionObject::New) {
-        // remove completely from transaction
-        delete pos->second;
-        index.erase(pos);
-    }
-    else if (pos != index.end() && pos->second->status == TransactionObject::Chn) {
-        pos->second->status = TransactionObject::Del;
+    if(pos != index.end()) {
+        assert(ownedObjects.count(Obj));
+        TransactionObject* transaction = pos->second;
+
+        // is it created in this transaction ?
+        if (transaction->status == TransactionObject::New) {
+            // remove completely from transaction
+            delete transaction;
+            index.erase(pos);
+            // TODO: memory leak?
+            // ownedObjects.erase(Obj);
+        }
+        else if (transaction->status == TransactionObject::Chn) {
+            transaction->status = TransactionObject::Del;
+        }
     }
     else {
         TransactionObject *To = TransactionFactory::instance().createTransaction(Obj->getTypeId());
         To->status = TransactionObject::Del;
+        assert(!ownedObjects.count(Obj));
+        ownedObjects.emplace(Obj, std::move(sharedObj));
         index.emplace(Obj,To);
     }
 }
 
-void Transaction::addObjectChange(const TransactionalObject *Obj, const Property *Prop)
+void Transaction::addObjectChange(const TransactionalObject* Obj, const Property* Prop)
 {
+    addObjectChange(_prepareToAssumeOwnership(Obj), Prop);
+}
+
+void Transaction::addObjectChange(std::shared_ptr<const TransactionalObject> sharedObj, const Property *Prop)
+{
+    const TransactionalObject* Obj = sharedObj.get();
+
     auto &index = _Objects.get<1>();
     auto pos = index.find(Obj);
 
@@ -252,6 +322,8 @@ void Transaction::addObjectChange(const TransactionalObject *Obj, const Property
         To = TransactionFactory::instance().createTransaction(Obj->getTypeId());
         To->status = TransactionObject::Chn;
         index.emplace(Obj,To);
+        assert(!ownedObjects.count(Obj));
+        ownedObjects.emplace(Obj, std::move(sharedObj));
     }
 
     To->setProperty(Prop);
@@ -463,14 +535,14 @@ void TransactionDocumentObject::applyDel(Document &Doc, TransactionalObject *pcO
 void TransactionDocumentObject::applyNew(Document &Doc, TransactionalObject *pcObj)
 {
     if (status == New) {
-        DocumentObject* obj = static_cast<DocumentObject*>(pcObj);
+        std::shared_ptr<DocumentObject> obj = static_pointer_cast<DocumentObject>(pcObj->shared_from_this());
         Doc._addObject(obj, _NameInDocument.c_str());
 
 #ifndef USE_OLD_DAG
         //make sure the backlinks of all linked objects are updated
         auto list = obj->getOutList();
         for (auto link : list)
-            link->_addBackLink(obj);
+            link->_addBackLink(obj.get());
 #endif
     }
 }

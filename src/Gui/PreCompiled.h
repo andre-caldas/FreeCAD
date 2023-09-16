@@ -64,6 +64,7 @@
 #include <iomanip>
 
 // STL
+#include <memory>
 #include <atomic>
 #include <vector>
 #include <map>

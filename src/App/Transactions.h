@@ -25,6 +25,7 @@
 #ifndef APP_TRANSACTION_H
 #define APP_TRANSACTION_H
 
+#include <memory>
 #include <unordered_map>
 #include <Base/Factory.h>
 #include <Base/Persistence.h>
@@ -81,15 +82,20 @@ public:
     bool isEmpty() const;
     /// check if this object is used in a transaction
     bool hasObject(const TransactionalObject *Obj) const;
-    void addOrRemoveProperty(TransactionalObject *Obj, const Property* pcProp, bool add);
 
-    void addObjectNew(TransactionalObject *Obj);
-    void addObjectDel(const TransactionalObject *Obj);
-    void addObjectChange(const TransactionalObject *Obj, const Property *Prop);
+    void addOrRemoveProperty(TransactionalObject* Obj, const Property* pcProp, bool add);
+    void addOrRemoveProperty(std::shared_ptr<TransactionalObject> sharedObj, const Property* pcProp, bool add);
+    void addObjectNew(TransactionalObject* Obj);
+    void addObjectNew(std::shared_ptr<TransactionalObject> sharedObj);
+    void addObjectDel(const TransactionalObject* Obj);
+    void addObjectDel(std::shared_ptr<const TransactionalObject> sharedObj);
+    void addObjectChange(const TransactionalObject* Obj, const Property* Prop);
+    void addObjectChange(std::shared_ptr<const TransactionalObject> sharedObj, const Property* Prop);
 
 private:
     int transID;
     using Info = std::pair<const TransactionalObject*, TransactionObject*>;
+    std::unordered_map<const TransactionalObject*, std::shared_ptr<const TransactionalObject>> ownedObjects;
     bmi::multi_index_container<
         Info,
         bmi::indexed_by<
@@ -99,6 +105,11 @@ private:
             >
         >
     > _Objects;
+
+    std::shared_ptr<TransactionalObject>
+    _prepareToAssumeOwnership(TransactionalObject* Obj);
+    std::shared_ptr<const TransactionalObject>
+    _prepareToAssumeOwnership(const TransactionalObject* Obj);
 };
 
 /** Represents an entry for an object in a Transaction
