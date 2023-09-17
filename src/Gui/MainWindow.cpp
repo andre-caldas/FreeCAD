@@ -2244,8 +2244,17 @@ void MainWindow::customEvent(QEvent* e)
                 Gui::Document *d = Application::Instance->activeDocument();
                 if (d) {
                     auto view = std::make_shared<ViewProviderExtern>();
-                    view->setModeByString("1",msg.toLatin1().constData());
-                    d->setAnnotationViewProvider("Vdbg",std::move(view));
+                    try {
+                        view->setModeByString("1",msg.toLatin1().constData());
+                        d->setAnnotationViewProvider("Vdbg",std::move(view));
+                    }
+                    catch(...) {
+                        // This try/catch was originally here for at least one reason.
+                        // That was the deletion of the view variable.
+                        // With std::shared_ptr, we do not need to delete the view anymore.
+                        // Nonetheless, originally the exceptions were not rethrown.
+                        // So, I kept the catch block.
+                    }
                 }
             }
             break;
