@@ -33,6 +33,31 @@ namespace Base::Accessor
 {
 
 template<typename X>
+std::shared_ptr<X> ReferencedObject::SharedFromThis()
+{
+    return std::dynamic_pointer_cast<X>(shared_from_this());
+}
+
+template<typename X>
+std::shared_ptr<const X> ReferencedObject::SharedFromThis() const
+{
+    return std::dynamic_pointer_cast<const X>(shared_from_this());
+}
+
+template<typename X>
+std::weak_ptr<X> ReferencedObject::WeakFromThis() noexcept
+{
+    return std::weak_ptr<X>{weak_from_this()};
+}
+
+template<typename X>
+std::weak_ptr<const X> ReferencedObject::WeakFromThis() const noexcept
+{
+    return std::weak_ptr<const X>{weak_from_this()};
+}
+
+
+template<typename X>
 std::vector<ReferenceTo<X>> ReferencedObject::getReferencesTo()
 {
     IExport<X>* ptr = dynamic_cast<IExport<X>*>(this);

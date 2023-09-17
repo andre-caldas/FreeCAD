@@ -37,7 +37,6 @@ class TransactionObject;
  */
 class AppExport TransactionalObject
     : public App::ExtensionContainer
-    , public std::enable_shared_from_this<TransactionalObject>
 {
     PROPERTY_HEADER_WITH_OVERRIDE(App::TransactionalObject);
 

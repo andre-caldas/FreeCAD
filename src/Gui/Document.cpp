@@ -548,7 +548,7 @@ void Document::_assumeOwnership(ViewProviderDocumentObject* pcProvider)
 {
     std::shared_ptr<ViewProviderDocumentObject> sharedProvider;
     try {
-        sharedProvider = std::static_pointer_cast<ViewProviderDocumentObject>(pcProvider->shared_from_this());
+        sharedProvider = pcProvider->SharedFromThis<ViewProviderDocumentObject>();
         if(d->_ViewProviderMap.count(sharedProvider->getObject()))
         {
             // Already owned.
@@ -900,7 +900,7 @@ void Document::slotTransactionAppend(const App::DocumentObject& obj, App::Transa
     ViewProvider* viewProvider = getViewProvider(&obj);
     if (viewProvider && viewProvider->isDerivedFrom(ViewProviderDocumentObject::getClassTypeId())) {
         assert(viewProvider->weak_from_this().lock());
-        transaction->addObjectDel(viewProvider->shared_from_this());
+        transaction->addObjectDel(viewProvider->SharedFromThis<App::TransactionalObject>());
     }
 }
 
