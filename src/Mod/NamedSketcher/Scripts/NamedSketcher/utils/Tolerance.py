@@ -83,8 +83,10 @@ class Tolerance:
     def are_curves_tangent(self, shape1, shape2):
         dist, points, infos = shape1.distToShape(shape2)
         if self.is_very_zero(dist):
+            print('Ponts!', points)
             for p1, p2 in combinations(points, 2):
-                if self.isZero((p1-p2).Length):
+                print(p1, p2)
+                if self.is_zero((p1-p2).Length):
                     return True
         if self.is_zero(dist):
             for info in infos:

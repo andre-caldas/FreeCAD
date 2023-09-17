@@ -219,6 +219,17 @@ bool System::solve() const
 
     // TODO: give up criteria.
     // TODO: use the shaker!
+    /*
+     * TODO: list of things to try when we get stuck.
+     * 1. For underconstrained sketcher, pick up a start search point for the
+     * linear solver.
+     *
+     * 2. Allow flipping.
+     *
+     * 3. Try different norms (L^\infty) for error evaluation.
+     *
+     * 4. Check random directions.
+     */
     for(int trials=0; trials < 30; ++trials)
     {
 manager.report();
