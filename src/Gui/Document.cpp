@@ -23,6 +23,7 @@
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
+# include <memory>
 # include <cctype>
 # include <mutex>
 # include <QApplication>
@@ -101,9 +102,9 @@ struct DocumentP
     std::list<Gui::BaseView*> baseViews;
     /// List of all registered views
     std::list<Gui::BaseView*> passiveViews;
-    std::map<const App::DocumentObject*,ViewProviderDocumentObject*> _ViewProviderMap;
+    std::map<const App::DocumentObject*, std::shared_ptr<ViewProviderDocumentObject>> _ViewProviderMap;
     std::map<SoSeparator *,ViewProviderDocumentObject*> _CoinMap;
-    std::map<std::string,ViewProvider*> _ViewProviderMapAnnotation;
+    std::map<std::string, std::shared_ptr<ViewProvider>> _ViewProviderMapAnnotation;
     std::list<ViewProviderDocumentObject*> _redoViewProviders;
 
     using Connection = boost::signals2::connection;
@@ -267,13 +268,15 @@ Document::~Document()
     for(auto & it : temp)
         it->deleteSelf();
 
-    std::map<const App::DocumentObject*,ViewProviderDocumentObject*>::iterator jt;
-    for (jt = d->_ViewProviderMap.begin();jt != d->_ViewProviderMap.end(); ++jt)
-        delete jt->second;
-    std::map<std::string,ViewProvider*>::iterator it2;
-    for (it2 = d->_ViewProviderMapAnnotation.begin();it2 != d->_ViewProviderMapAnnotation.end(); ++it2)
-        delete it2->second;
+    // TODO: this might be unnecessary.
+    // I put it before the "lock", so we don't hold the lock when we don't need.
+    // And I put it beofre _pcDocPy->xxx() because I don't know
+    // if they those methods need the ViewProviders to be already destructed.
+    d->_ViewProviderMap.clear();
+    d->_ViewProviderMapAnnotation.clear();
 
+    // TODO: maybe this lock should be restricted to a smaller context.
+    // Unless we need the lock in order to call "delete d"?
     // remove the reference from the object
     Base::PyGILStateLocker lock;
     _pcDocPy->setInvalid();
@@ -345,7 +348,7 @@ bool Document::setEdit(Gui::ViewProvider* p, int ModNum, const char *subname)
         }
     }
 
-    if (d->_ViewProviderMap.find(obj) == d->_ViewProviderMap.end()) {
+    if (!d->_ViewProviderMap.count(obj)) {
         // We can actually support editing external object, by calling
         // View3DInventViewer::setupEditingRoot() before exiting from
         // ViewProvider::setEditViewer(), which transfer all child node of the view
@@ -529,87 +532,133 @@ void Document::setInEdit(ViewProviderDocumentObject *parentVp, const char *subna
     }
 }
 
-void Document::setAnnotationViewProvider(const char* name, ViewProvider *pcProvider)
+void Document::_assumeOwnership(std::shared_ptr<ViewProviderDocumentObject> sharedProvider, const App::DocumentObject* obj)
 {
-    std::list<Gui::BaseView*>::iterator vIt;
+    if(!obj)
+    {
+        obj = sharedProvider->getObject();
+    }
+    assert(!d->_ViewProviderMap.count(nullptr));
+    assert(obj);
+    assert(!d->_ViewProviderMap.count(obj));
+    d->_ViewProviderMap.emplace(obj, std::move(sharedProvider));
+}
 
+void Document::_assumeOwnership(ViewProviderDocumentObject* pcProvider)
+{
+    std::shared_ptr<ViewProviderDocumentObject> sharedProvider;
+    try {
+        sharedProvider = std::static_pointer_cast<ViewProviderDocumentObject>(pcProvider->shared_from_this());
+        if(d->_ViewProviderMap.count(sharedProvider->getObject()))
+        {
+            // Already owned.
+            return;
+        }
+    }
+    catch(std::bad_weak_ptr&) {
+        // Assuming pcProvider is owned by us.
+        sharedProvider = std::shared_ptr<ViewProviderDocumentObject>{pcProvider};
+    }
+    _assumeOwnership(sharedProvider);
+}
+
+void Document::_assumeOwnership(const char* name, std::shared_ptr<ViewProvider> sharedProvider)
+{
+    d->_ViewProviderMapAnnotation.emplace(std::string{name}, std::move(sharedProvider));
+}
+
+void Document::_assumeOwnership(const char* name, ViewProvider *pcProvider)
+{
+    assert(!d->_ViewProviderMapAnnotation.count(name));
+    assert(!pcProvider->weak_from_this().lock());
+    // Assuming pcProvider is owned by us.
+    _assumeOwnership(name, std::shared_ptr<ViewProvider>{pcProvider});
+}
+
+const std::shared_ptr<ViewProviderDocumentObject>&
+Document::_getSharedPtr(const App::DocumentObject* pcObject) const
+{
+    return d->_ViewProviderMap.at(pcObject);
+}
+
+void Document::setAnnotationViewProvider(const char* name, std::shared_ptr<ViewProvider> sharedProvider)
+{
     // already in ?
-    std::map<std::string,ViewProvider*>::iterator it = d->_ViewProviderMapAnnotation.find(name);
-    if (it != d->_ViewProviderMapAnnotation.end())
+    if (d->_ViewProviderMapAnnotation.count(name))
+    {
         removeAnnotationViewProvider(name);
+    }
 
     // add
-    d->_ViewProviderMapAnnotation[name] = pcProvider;
+    ViewProvider* pcProvider = sharedProvider.get();
+    _assumeOwnership(name, std::move(sharedProvider));
 
     // cycling to all views of the document
-    for (vIt = d->baseViews.begin();vIt != d->baseViews.end();++vIt) {
-        auto activeView = dynamic_cast<View3DInventor *>(*vIt);
-        if (activeView)
+    for (auto v: d->baseViews) {
+        auto activeView = dynamic_cast<View3DInventor*>(v);
+        if (activeView) {
             activeView->getViewer()->addViewProvider(pcProvider);
+        }
     }
 }
 
 ViewProvider * Document::getAnnotationViewProvider(const char* name) const
 {
-    std::map<std::string,ViewProvider*>::const_iterator it = d->_ViewProviderMapAnnotation.find(name);
-    return ( (it != d->_ViewProviderMapAnnotation.end()) ? it->second : 0 );
+    try {
+        return d->_ViewProviderMapAnnotation.at(name).get();
+    }
+    catch(std::out_of_range&) {}
+    return nullptr;
 }
 
 void Document::removeAnnotationViewProvider(const char* name)
 {
-    std::map<std::string,ViewProvider*>::iterator it = d->_ViewProviderMapAnnotation.find(name);
-    std::list<Gui::BaseView*>::iterator vIt;
+    ViewProvider* view_provider = d->_ViewProviderMapAnnotation.at(name).get();
 
     // cycling to all views of the document
-    for (vIt = d->baseViews.begin();vIt != d->baseViews.end();++vIt) {
-        auto activeView = dynamic_cast<View3DInventor *>(*vIt);
-        if (activeView)
-            activeView->getViewer()->removeViewProvider(it->second);
+    for (auto v: d->baseViews) {
+        auto activeView = dynamic_cast<View3DInventor*>(v);
+        if (activeView) {
+            activeView->getViewer()->removeViewProvider(view_provider);
+        }
     }
-
-    delete it->second;
-    d->_ViewProviderMapAnnotation.erase(it);
+    d->_ViewProviderMapAnnotation.erase(name);
 }
 
 
 ViewProvider* Document::getViewProvider(const App::DocumentObject* Feat) const
 {
-    std::map<const App::DocumentObject*,ViewProviderDocumentObject*>::const_iterator
-    it = d->_ViewProviderMap.find( Feat );
-    return ( (it != d->_ViewProviderMap.end()) ? it->second : 0 );
+    try {
+        return d->_ViewProviderMap.at(Feat).get();
+    }
+    catch(std::out_of_range&) {}
+    return nullptr;
 }
 
 std::vector<ViewProvider*> Document::getViewProvidersOfType(const Base::Type& typeId) const
 {
     std::vector<ViewProvider*> Objects;
-    for (std::map<const App::DocumentObject*,ViewProviderDocumentObject*>::const_iterator it =
-         d->_ViewProviderMap.begin(); it != d->_ViewProviderMap.end(); ++it ) {
-        if (it->second->getTypeId().isDerivedFrom(typeId))
-            Objects.push_back(it->second);
+    for (auto [k,v]: d->_ViewProviderMap) {
+        if (v->getTypeId().isDerivedFrom(typeId))
+            Objects.push_back(v.get());
     }
     return Objects;
 }
 
-ViewProvider *Document::getViewProviderByName(const char* name) const
+ViewProvider* Document::getViewProviderByName(const char* name) const
 {
     // first check on feature name
-    App::DocumentObject *pcFeat = getDocument()->getObject(name);
-
-    if (pcFeat)
-    {
-        std::map<const App::DocumentObject*,ViewProviderDocumentObject*>::const_iterator
-        it = d->_ViewProviderMap.find( pcFeat );
-
-        if (it != d->_ViewProviderMap.end())
-            return it->second;
-    } else {
-        // then try annotation name
-        std::map<std::string,ViewProvider*>::const_iterator it2 = d->_ViewProviderMapAnnotation.find( name );
-
-        if (it2 != d->_ViewProviderMapAnnotation.end())
-            return it2->second;
+    App::DocumentObject* pcFeat = getDocument()->getObject(name);
+    try {
+        if (pcFeat)
+        {
+            return d->_ViewProviderMap.at(pcFeat).get();
+        } else {
+            // then try annotation name
+            return d->_ViewProviderMapAnnotation.at(name).get();
+        }
     }
-
+    catch(std::out_of_range&) {}
     return nullptr;
 }
 
@@ -657,6 +706,7 @@ void Document::slotNewObject(const App::DocumentObject& Obj)
     if (!pcProvider) {
         //Base::Console().Log("Document::slotNewObject() called\n");
         std::string cName = Obj.getViewProviderNameStored();
+        std::shared_ptr<ViewProviderDocumentObject> sharedProvider;
         for(;;) {
             if (cName.empty()) {
                 // handle document object with no view provider specified
@@ -673,16 +723,18 @@ void Document::slotNewObject(const App::DocumentObject& Obj)
             }
             else if (cName!=Obj.getViewProviderName() && !pcProvider->allowOverride(Obj)) {
                 FC_WARN("View provider type '" << cName << "' does not support " << Obj.getFullName());
+                delete pcProvider;
                 pcProvider = nullptr;
                 cName = Obj.getViewProviderName();
             }
              else {
+                sharedProvider.reset(pcProvider);
                 break;
             }
         }
 
         setModified(true);
-        d->_ViewProviderMap[&Obj] = pcProvider;
+        _assumeOwnership(sharedProvider, &Obj);
         d->_CoinMap[pcProvider->getRoot()] = pcProvider;
         pcProvider->setStatus(Gui::ViewStatus::TouchDocument, d->_changeViewTouchDocument);
 
@@ -713,10 +765,8 @@ void Document::slotNewObject(const App::DocumentObject& Obj)
     }
 
     if (pcProvider) {
-        std::list<Gui::BaseView*>::iterator vIt;
-        // cycling to all views of the document
-        for (vIt = d->baseViews.begin();vIt != d->baseViews.end();++vIt) {
-            auto activeView = dynamic_cast<View3DInventor *>(*vIt);
+        for (auto v: d->baseViews) {
+            auto activeView = dynamic_cast<View3DInventor*>(v);
             if (activeView)
                 activeView->getViewer()->addViewProvider(pcProvider);
         }
@@ -735,7 +785,6 @@ void Document::slotNewObject(const App::DocumentObject& Obj)
 
 void Document::slotDeletedObject(const App::DocumentObject& Obj)
 {
-    std::list<Gui::BaseView*>::iterator vIt;
     setModified(true);
     //Base::Console().Log("Document::slotDeleteObject() called\n");
 
@@ -758,8 +807,8 @@ void Document::slotDeletedObject(const App::DocumentObject& Obj)
     if (viewProvider && viewProvider->getTypeId().isDerivedFrom
         (ViewProviderDocumentObject::getClassTypeId())) {
         // go through the views
-        for (vIt = d->baseViews.begin();vIt != d->baseViews.end();++vIt) {
-            auto activeView = dynamic_cast<View3DInventor *>(*vIt);
+        for (auto v: d->baseViews) {
+            auto activeView = dynamic_cast<View3DInventor*>(v);
             if (activeView)
                 activeView->getViewer()->removeViewProvider(viewProvider);
         }
@@ -783,8 +832,8 @@ void Document::beforeDelete() {
             Application::Instance->setEditDocument(nullptr);
         }
     }
-    for(auto &v : d->_ViewProviderMap)
-        v.second->beforeDelete();
+    for(auto& [k,v]: d->_ViewProviderMap)
+        v->beforeDelete();
 }
 
 void Document::slotChangedObject(const App::DocumentObject& Obj, const App::Property& Prop)
@@ -850,29 +899,22 @@ void Document::slotTransactionAppend(const App::DocumentObject& obj, App::Transa
 {
     ViewProvider* viewProvider = getViewProvider(&obj);
     if (viewProvider && viewProvider->isDerivedFrom(ViewProviderDocumentObject::getClassTypeId())) {
-        transaction->addObjectDel(viewProvider);
+        assert(viewProvider->weak_from_this().lock());
+        transaction->addObjectDel(viewProvider->shared_from_this());
     }
 }
 
 void Document::slotTransactionRemove(const App::DocumentObject& obj, App::Transaction* transaction)
 {
-    std::map<const App::DocumentObject*,ViewProviderDocumentObject*>::const_iterator
-    it = d->_ViewProviderMap.find(&obj);
-    if (it != d->_ViewProviderMap.end()) {
-        ViewProvider* viewProvider = it->second;
+    try {
+        ViewProvider* viewProvider = d->_ViewProviderMap.at(&obj).get();
+        d->_CoinMap.erase(viewProvider->getRoot());
 
-        auto itC = d->_CoinMap.find(viewProvider->getRoot());
-        if(itC != d->_CoinMap.end())
-            d->_CoinMap.erase(itC);
-
-        d->_ViewProviderMap.erase(&obj);
-        // transaction being a nullptr indicates that undo/redo is off and the object
-        // can be safely deleted
         if (transaction)
-            transaction->addObjectNew(viewProvider);
-        else
-            delete viewProvider;
+            transaction->addObjectNew(std::move(d->_ViewProviderMap.at(&obj)));
+        d->_ViewProviderMap.erase(&obj);
     }
+    catch(std::out_of_range&) {}
 }
 
 void Document::slotActivatedObject(const App::DocumentObject& Obj)
@@ -949,13 +991,9 @@ void Document::addViewProvider(Gui::ViewProviderDocumentObject* vp)
 {
     // Hint: The undo/redo first adds the view provider to the Gui
     // document before adding the objects to the App document.
-
-    // the view provider is added by TransactionViewProvider and an
-    // object can be there only once
-    assert(d->_ViewProviderMap.find(vp->getObject()) == d->_ViewProviderMap.end());
-    vp->setStatus(Detach, false);
-    d->_ViewProviderMap[vp->getObject()] = vp;
+    _assumeOwnership(vp);
     d->_CoinMap[vp->getRoot()] = vp;
+    vp->setStatus(Detach, false);
 }
 
 void Document::setModified(bool b)
@@ -1337,8 +1375,8 @@ unsigned int Document::getMemSize () const
 
     // size of the view providers in the document
     std::map<const App::DocumentObject*,ViewProviderDocumentObject*>::const_iterator it;
-    for (it = d->_ViewProviderMap.begin(); it != d->_ViewProviderMap.end(); ++it)
-        size += it->second->getMemSize();
+    for (auto const& [k,v]: d->_ViewProviderMap)
+        size += v->getMemSize();
     return size;
 }
 
@@ -1379,9 +1417,9 @@ void Document::Restore(Base::XMLReader &reader)
     // hide all elements to avoid to update the 3d view when loading data files
     // RestoreDocFile then restores the visibility status again
     std::map<const App::DocumentObject*,ViewProviderDocumentObject*>::iterator it;
-    for (it = d->_ViewProviderMap.begin(); it != d->_ViewProviderMap.end(); ++it) {
-        it->second->startRestoring();
-        it->second->setStatus(Gui::isRestoring,true);
+    for (auto const& [k,v]: d->_ViewProviderMap) {
+        v->startRestoring();
+        v->setStatus(Gui::isRestoring,true);
     }
 }
 
@@ -1543,9 +1581,7 @@ void Document::SaveDocFile (Base::Writer &writer) const
     bool xml = writer.isForceXML();
     //writer.setForceXML(true);
     writer.incInd(); // indentation for 'ViewProvider name'
-    for(it = d->_ViewProviderMap.begin(); it != d->_ViewProviderMap.end(); ++it) {
-        const App::DocumentObject* doc = it->first;
-        ViewProvider* obj = it->second;
+    for(auto [doc, obj]: d->_ViewProviderMap) {
         writer.Stream() << writer.ind() << "<ViewProvider name=\""
                         << doc->getNameInDocument() << "\" "
                         << "expanded=\"" << (doc->testStatus(App::Expand) ? 1:0) << "\"";
@@ -1754,15 +1790,14 @@ MDIView *Document::createView(const Base::Type& typeId)
         // add all providers and then remove the ones already claimed
         std::map<const App::DocumentObject*,ViewProviderDocumentObject*>::const_iterator It1;
         std::vector<App::DocumentObject*> child_vps;
-        for (It1=d->_ViewProviderMap.begin();It1!=d->_ViewProviderMap.end();++It1) {
-            view3D->getViewer()->addViewProvider(It1->second);
-            std::vector<App::DocumentObject*> children = It1->second->claimChildren3D();
+        for (auto const& [k,v]: d->_ViewProviderMap) {
+            view3D->getViewer()->addViewProvider(v.get());
+            std::vector<App::DocumentObject*> children = v->claimChildren3D();
             child_vps.insert(child_vps.end(), children.begin(), children.end());
         }
-        std::map<std::string,ViewProvider*>::const_iterator It2;
-        for (It2=d->_ViewProviderMapAnnotation.begin();It2!=d->_ViewProviderMapAnnotation.end();++It2) {
-            view3D->getViewer()->addViewProvider(It2->second);
-            std::vector<App::DocumentObject*> children = It2->second->claimChildren3D();
+        for (auto const& [k,v]: d->_ViewProviderMapAnnotation) {
+            view3D->getViewer()->addViewProvider(v.get());
+            std::vector<App::DocumentObject*> children = v->claimChildren3D();
             child_vps.insert(child_vps.end(), children.begin(), children.end());
         }
 
@@ -1809,15 +1844,15 @@ Gui::MDIView* Document::cloneView(Gui::MDIView* oldview)
         // add all providers and then remove the ones already claimed
         std::map<const App::DocumentObject*,ViewProviderDocumentObject*>::const_iterator It1;
         std::vector<App::DocumentObject*> child_vps;
-        for (It1=d->_ViewProviderMap.begin();It1!=d->_ViewProviderMap.end();++It1) {
-            view3D->getViewer()->addViewProvider(It1->second);
-            std::vector<App::DocumentObject*> children = It1->second->claimChildren3D();
+        for (auto const& [k,v]: d->_ViewProviderMap) {
+            view3D->getViewer()->addViewProvider(v.get());
+            std::vector<App::DocumentObject*> children = v->claimChildren3D();
             child_vps.insert(child_vps.end(), children.begin(), children.end());
         }
         std::map<std::string,ViewProvider*>::const_iterator It2;
-        for (It2=d->_ViewProviderMapAnnotation.begin();It2!=d->_ViewProviderMapAnnotation.end();++It2) {
-            view3D->getViewer()->addViewProvider(It2->second);
-            std::vector<App::DocumentObject*> children = It2->second->claimChildren3D();
+        for (auto const& [k,v]: d->_ViewProviderMapAnnotation) {
+            view3D->getViewer()->addViewProvider(v.get());
+            std::vector<App::DocumentObject*> children = v->claimChildren3D();
             child_vps.insert(child_vps.end(), children.begin(), children.end());
         }
 

@@ -23,6 +23,7 @@
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
+# include <memory>
 # include <sstream>
 #endif
 
@@ -179,7 +180,7 @@ PyObject* DocumentPy::addAnnotation(PyObject *args)
         return nullptr;
 
     PY_TRY {
-        auto pcExt = new ViewProviderExtern();
+        auto pcExt = std::make_shared<ViewProviderExtern>();
 
         pcExt->setModeByFile(psModName ? psModName : "Main", psFileName);
         pcExt->adjustDocumentName(getDocumentPtr()->getDocument()->getName());

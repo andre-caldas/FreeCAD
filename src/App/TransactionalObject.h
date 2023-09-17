@@ -24,6 +24,7 @@
 #ifndef APP_TRANSACTIONALOBJECT_H
 #define APP_TRANSACTIONALOBJECT_H
 
+#include <memory>
 #include <App/ExtensionContainer.h>
 
 namespace App
@@ -34,7 +35,9 @@ class TransactionObject;
 
 /** Base class of transactional objects
  */
-class AppExport TransactionalObject : public App::ExtensionContainer
+class AppExport TransactionalObject
+    : public App::ExtensionContainer
+    , public std::enable_shared_from_this<TransactionalObject>
 {
     PROPERTY_HEADER_WITH_OVERRIDE(App::TransactionalObject);
 

@@ -2243,13 +2243,17 @@ void MainWindow::customEvent(QEvent* e)
             if (msg.startsWith(QLatin1String("#Inventor V2.1 ascii "))) {
                 Gui::Document *d = Application::Instance->activeDocument();
                 if (d) {
-                    auto view = new ViewProviderExtern();
+                    auto view = std::make_shared<ViewProviderExtern>();
                     try {
                         view->setModeByString("1",msg.toLatin1().constData());
-                        d->setAnnotationViewProvider("Vdbg",view);
+                        d->setAnnotationViewProvider("Vdbg",std::move(view));
                     }
-                    catch (...) {
-                        delete view;
+                    catch(...) {
+                        // This try/catch was originally here for at least one reason.
+                        // That was the deletion of the view variable.
+                        // With std::shared_ptr, we do not need to delete the view anymore.
+                        // Nonetheless, originally the exceptions were not rethrown.
+                        // So, I kept the catch block.
                     }
                 }
             }

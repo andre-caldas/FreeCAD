@@ -27,6 +27,7 @@
 #include <App/DocumentObserver.h>
 #include <CXX/Objects.hxx>
 #include <boost/graph/adjacency_list.hpp>
+#include <memory>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -55,6 +56,15 @@ struct DocumentP
     // Array to preserve the creation order of created objects
     std::vector<DocumentObject*> objectArray;
     std::unordered_set<App::DocumentObject*> touchedObjs;
+    /**
+     * @brief The objects we own are kept in this map.
+     * Instead of deleting DocumentObjects, we simply remove it from ownedObjects.
+     * Also, even if we were not deleting the object, but assuming Transaction
+     * would delete it for us, we remove it form here.
+     * Care needs to be taken because a Transaction owning the same object
+     * needs to acquire a shared_ptr before it is removed from ownedObjects.
+     */
+    std::unordered_map<DocumentObject*, std::shared_ptr<DocumentObject>> ownedObjects;
     std::unordered_map<std::string, DocumentObject*> objectMap;
     std::unordered_map<long, DocumentObject*> objectIdMap;
     std::unordered_map<std::string, bool> partialLoadObjects;
@@ -112,11 +122,9 @@ struct DocumentP
         objectArray.clear();
         for(auto &v : objectMap) {
             v.second->setStatus(ObjectStatus::Destroy, true);
-            v.second->releaseDocumentLock();
-            v.second = nullptr;
         }
-        objectMap.clear();
         objectIdMap.clear();
+        objectMap.clear();
     }
 
     const char *findRecomputeLog(const App::DocumentObject *obj) {

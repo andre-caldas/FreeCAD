@@ -601,6 +601,7 @@ void Document::clearDocument()
     d->objectArray.clear();
     d->objectMap.clear();
     d->objectIdMap.clear();
+    d->ownedObjects.clear();
     d->lastObjectId = 0;
 }
 
@@ -1984,6 +1985,7 @@ void Document::restore (const char *filename,
     d->objectArray.clear();
     d->objectMap.clear();
     d->objectIdMap.clear();
+    d->ownedObjects.clear();
     d->lastObjectId = 0;
 
     if(signal) {
@@ -3122,8 +3124,18 @@ bool Document::recomputeFeature(DocumentObject* Feat, bool recursive)
         return false;
 }
 
-DocumentObject * Document::addObject(const char* sType, const char* pObjectName,
-                                     bool isNew, const char* viewType, bool isPartial)
+DocumentObject* Document::_createDocumentObject(Base::Type type)
+{
+    void* typeInstance = type.createInstance();
+    if (!typeInstance)
+        return nullptr;
+
+    App::DocumentObject* pcObject = static_cast<App::DocumentObject*>(typeInstance);
+    _assumeOwnership(pcObject);
+    return pcObject;
+}
+
+DocumentObject* Document::_createDocumentObject(const char* sType)
 {
     Base::Type type = Base::Type::getTypeIfDerivedFrom(sType, App::DocumentObject::getClassTypeId(), true);
     if (type.isBad()) {
@@ -3132,13 +3144,66 @@ DocumentObject * Document::addObject(const char* sType, const char* pObjectName,
         throw Base::TypeError(str.str());
     }
 
-    void* typeInstance = type.createInstance();
-    if (!typeInstance)
+    return _createDocumentObject(type);
+}
+
+void Document::_assumeOwnership(DocumentObject* pcObject)
+{
+    // Attention!
+    // If we do not check this before creating the shared_ptr,
+    // the pcObject shall get destructed!
+    if (pcObject->getDocument()) {
+        throw Base::RuntimeError("Document object is already added to a document");
+    }
+
+    // We do not assume DocumentObject will always subclass enable_share_from_this.
+    // The enable_share_from_this subclassing is probably just a temporary hack
+    // to deal with the fact that FreeCAD was not designed to work with shared_ptr.
+    assert(!pcObject->weak_from_this().lock());
+    assert(!d->ownedObjects.count(pcObject));
+    // Attention!
+    // Here we assume pcObject is not managed by any other smart pointer, yet.
+    // Then we assume ownership.
+    _assumeOwnership(std::shared_ptr<DocumentObject>{pcObject});
+}
+
+void Document::_assumeOwnership(std::shared_ptr<DocumentObject> sharedObject)
+{
+    DocumentObject* pcObject = sharedObject.get();
+    if (!pcObject->getDocument()) {
+        pcObject->setDocument(this);
+    }
+    // I am just using those asserts because I don't know
+    // what should be done when they are not met.
+    assert(!d->ownedObjects.count(pcObject));
+    assert(pcObject->getDocument() == this);
+    d->ownedObjects.emplace(pcObject, std::move(sharedObject));
+}
+
+std::shared_ptr<DocumentObject>
+Document::_releaseOwnership(DocumentObject* pcObject)
+{
+    std::shared_ptr<DocumentObject> released_ptr;
+    released_ptr.swap(d->ownedObjects.at(pcObject));
+    // TODO: clear other maps?
+    d->ownedObjects.erase(pcObject);
+    return released_ptr;
+}
+
+const std::shared_ptr<DocumentObject>&
+Document::_getSharedPtr(DocumentObject* pcObject) const
+{
+    return d->ownedObjects.at(pcObject);
+}
+
+DocumentObject * Document::addObject(const char* sType, const char* pObjectName,
+                                     bool isNew, const char* viewType, bool isPartial)
+{
+    DocumentObject* pcObject = _createDocumentObject(sType);
+    if(!pcObject)
+    {
         return nullptr;
-
-    App::DocumentObject* pcObject = static_cast<App::DocumentObject*>(typeInstance);
-
-    pcObject->setDocument(this);
+    }
 
     // do no transactions if we do a rollback!
     if (!d->rollback) {
@@ -3215,9 +3280,10 @@ std::vector<DocumentObject *> Document::addObjects(const char* sType, const std:
     std::vector<DocumentObject *> objects;
     objects.resize(objectNames.size());
     std::generate(objects.begin(), objects.end(),
-                  [&]{ return static_cast<App::DocumentObject*>(type.createInstance()); });
+                  [&]{ return _createDocumentObject(type); });
     // the type instance could be a null pointer, it is enough to check the first element
     if (!objects.empty() && !objects[0]) {
+        assert(std::all_of(objects.begin(), objects.end(), [](DocumentObject* o){return o == nullptr;}));
         objects.clear();
         return objects;
     }
@@ -3304,18 +3370,14 @@ std::vector<DocumentObject *> Document::addObjects(const char* sType, const std:
 
 void Document::addObject(DocumentObject* pcObject, const char* pObjectName)
 {
-    if (pcObject->getDocument()) {
-        throw Base::RuntimeError("Document object is already added to a document");
-    }
-
-    pcObject->setDocument(this);
+    _assumeOwnership(pcObject);
 
     // do no transactions if we do a rollback!
     if (!d->rollback) {
         // Undo stuff
         _checkTransaction(nullptr,nullptr,__LINE__);
         if (d->activeUndoTransaction)
-            d->activeUndoTransaction->addObjectDel(pcObject);
+            d->activeUndoTransaction->addObjectDel(_getSharedPtr(pcObject));
     }
 
     // get unique name
@@ -3355,8 +3417,11 @@ void Document::addObject(DocumentObject* pcObject, const char* pObjectName)
     signalActivatedObject(*pcObject);
 }
 
-void Document::_addObject(DocumentObject* pcObject, const char* pObjectName)
+void Document::_addObject(std::shared_ptr<DocumentObject> sharedObject, const char* pObjectName)
 {
+    DocumentObject* pcObject = sharedObject.get();
+    _assumeOwnership(std::move(sharedObject));
+
     std::string ObjectName = getUniqueObjectName(pObjectName);
     d->objectMap[ObjectName] = pcObject;
     // generate object id and add to id map;
@@ -3398,44 +3463,45 @@ void Document::removeObject(const char* sName)
     if (pos == d->objectMap.end())
         return;
 
-    if (pos->second->testStatus(ObjectStatus::PendingRecompute)) {
+    DocumentObject* pcObject = pos->second;
+    if (pcObject->testStatus(ObjectStatus::PendingRecompute)) {
         // TODO: shall we allow removal if there is active undo transaction?
         FC_MSG("pending remove of " << sName << " after recomputing document " << getName());
-        d->pendingRemove.emplace_back(pos->second);
+        d->pendingRemove.emplace_back(pcObject);
         return;
     }
 
     TransactionLocker tlock;
 
-    _checkTransaction(pos->second,nullptr,__LINE__);
+    _checkTransaction(pcObject,nullptr,__LINE__);
 
-    if (d->activeObject == pos->second)
+    if (d->activeObject == pcObject)
         d->activeObject = nullptr;
 
     // Mark the object as about to be deleted
-    pos->second->setStatus(ObjectStatus::Remove, true);
+    pcObject->setStatus(ObjectStatus::Remove, true);
     if (!d->undoing && !d->rollback) {
-        pos->second->unsetupObject();
+        pcObject->unsetupObject();
     }
 
-    signalDeletedObject(*(pos->second));
+    signalDeletedObject(*pcObject);
 
     // do no transactions if we do a rollback!
     if (!d->rollback && d->activeUndoTransaction) {
         // in this case transaction delete or save the object
-        signalTransactionRemove(*pos->second, d->activeUndoTransaction);
+        signalTransactionRemove(*pcObject, d->activeUndoTransaction);
     }
     else {
         // if not saved in undo -> delete object
-        signalTransactionRemove(*pos->second, 0);
+        signalTransactionRemove(*pcObject, 0);
     }
 
 #ifdef USE_OLD_DAG
     if (!d->vertexMap.empty()) {
         // recompute of document is running
         for (std::map<Vertex,DocumentObject*>::iterator it = d->vertexMap.begin(); it != d->vertexMap.end(); ++it) {
-            if (it->second == pos->second) {
-                it->second = 0; // just nullify the pointer
+            if (it->second == pcObject) {
+                it->second.reset(); // just nullify the pointer
                 break;
             }
         }
@@ -3443,7 +3509,7 @@ void Document::removeObject(const char* sName)
 #endif //USE_OLD_DAG
 
     // Before deleting we must nullify all dependent objects
-    breakDependency(pos->second, true);
+    breakDependency(pcObject, true);
 
     //and remove the tip if needed
     if (Tip.getValue() && strcmp(Tip.getValue()->getNameInDocument(), sName)==0) {
@@ -3452,45 +3518,40 @@ void Document::removeObject(const char* sName)
     }
 
     // remove the ID before possibly deleting the object
-    d->objectIdMap.erase(pos->second->_Id);
+    d->objectIdMap.erase(pcObject->_Id);
     // Unset the bit to be on the safe side
-    pos->second->setStatus(ObjectStatus::Remove, false);
+    pcObject->setStatus(ObjectStatus::Remove, false);
 
     // do no transactions if we do a rollback!
-    std::shared_ptr<DocumentObject> tobedestroyed;
     if (!d->rollback) {
         // Undo stuff
         if (d->activeUndoTransaction) {
-            // in this case transaction delete or save the object
-            d->activeUndoTransaction->addObjectNew(pos->second);
+            d->activeUndoTransaction->addObjectNew(_getSharedPtr(pcObject));
         }
         else {
-            // if not saved in undo -> delete object later
-            pos->second->releaseDocumentLock(tobedestroyed);
-            tobedestroyed->setStatus(ObjectStatus::Destroy, true);
+            pcObject->setStatus(ObjectStatus::Destroy, true);
+            // In case the object gets removed from Document, the pointer must be nullified
+            pcObject->pcNameInDocument = nullptr;
         }
     }
 
     for (std::vector<DocumentObject*>::iterator obj = d->objectArray.begin(); obj != d->objectArray.end(); ++obj) {
-        if (*obj == pos->second) {
+        if (*obj == pcObject) {
             d->objectArray.erase(obj);
             break;
         }
     }
 
-    // In case the object gets deleted the pointer must be nullified
-    if (tobedestroyed) {
-        tobedestroyed->pcNameInDocument = nullptr;
-    }
     d->objectMap.erase(pos);
+    _releaseOwnership(pcObject);
 }
 
 /// Remove an object out of the document (internal)
-void Document::_removeObject(DocumentObject* pcObject)
+std::shared_ptr<DocumentObject> Document::_removeObject(DocumentObject* pcObject)
 {
     if (testStatus(Document::Recomputing)) {
         FC_ERR("Cannot delete " << pcObject->getFullName() << " while recomputing");
-        return;
+        return std::shared_ptr<DocumentObject>();
     }
 
     TransactionLocker tlock;
@@ -3498,6 +3559,7 @@ void Document::_removeObject(DocumentObject* pcObject)
     // TODO Refactoring: share code with Document::removeObject() (2015-09-01, Fat-Zer)
     _checkTransaction(pcObject,nullptr,__LINE__);
 
+    // TODO: https://forum.freecad.org/viewtopic.php?t=81176
     auto pos = d->objectMap.find(pcObject->getNameInDocument());
 
     if(!d->rollback && d->activeUndoTransaction && pos->second->hasChildElement()) {
@@ -3535,18 +3597,13 @@ void Document::_removeObject(DocumentObject* pcObject)
     if (!d->rollback && d->activeUndoTransaction) {
         // Undo stuff
         signalTransactionRemove(*pcObject, d->activeUndoTransaction);
-        d->activeUndoTransaction->addObjectNew(pcObject);
+        d->activeUndoTransaction->addObjectNew(_getSharedPtr(pcObject));
     }
     else {
         // for a rollback delete the object
         signalTransactionRemove(*pcObject, 0);
         breakDependency(pcObject, true);
     }
-
-    // remove from map
-    pcObject->setStatus(ObjectStatus::Remove, false); // Unset the bit to be on the safe side
-    d->objectIdMap.erase(pcObject->_Id);
-    d->objectMap.erase(pos);
 
     for (std::vector<DocumentObject*>::iterator it = d->objectArray.begin(); it != d->objectArray.end(); ++it) {
         if (*it == pcObject) {
@@ -3555,11 +3612,16 @@ void Document::_removeObject(DocumentObject* pcObject)
         }
     }
 
-    // for a rollback delete the object
+    // for a rollback destroy (??) the object
     if (d->rollback) {
         pcObject->setStatus(ObjectStatus::Destroy, true);
-        delete pcObject;
     }
+
+    // remove from map
+    pcObject->setStatus(ObjectStatus::Remove, false); // Unset the bit to be on the safe side
+    d->objectIdMap.erase(pcObject->_Id);
+    d->objectMap.erase(pos);
+    return _releaseOwnership(pcObject);
 }
 
 void Document::breakDependency(DocumentObject* pcObject, bool clear)
@@ -3718,9 +3780,12 @@ DocumentObject* Document::moveObject(DocumentObject* obj, bool recursive)
         // all object of the other document that refer to this object must be nullified
         that->breakDependency(obj, false);
         std::string objname = getUniqueObjectName(obj->getNameInDocument());
-        that->_removeObject(obj);
-        this->_addObject(obj, objname.c_str());
-        obj->setDocument(this);
+        auto shared_object = that->_removeObject(obj);
+        if(!shared_object)
+        {
+            return nullptr;
+        }
+        this->_addObject(shared_object, objname.c_str());
         return obj;
     }
 

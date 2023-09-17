@@ -23,6 +23,7 @@
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
+# include <memory>
 # include <QColor>
 # include <QDir>
 # include <QFileInfo>
@@ -2037,17 +2038,10 @@ Py::Object View3DInventorPy::setAnnotation(const Py::Tuple& args)
     char *psAnnoName,*psBuffer;
     if (!PyArg_ParseTuple(args.ptr(), "ss", &psAnnoName, &psBuffer))
         throw Py::Exception();
-    ViewProviderExtern* view = nullptr;
-    try {
-        view = new ViewProviderExtern();
-        view->setModeByString(psAnnoName, psBuffer);
-    }
-    catch (const Base::Exception& e) {
-        delete view;
-        throw Py::RuntimeError(e.what());
-    }
 
-    getView3DIventorPtr()->getGuiDocument()->setAnnotationViewProvider(psAnnoName, view);
+    auto view = std::make_shared<ViewProviderExtern>();
+    view->setModeByString(psAnnoName, psBuffer);
+    getView3DIventorPtr()->getGuiDocument()->setAnnotationViewProvider(psAnnoName, std::move(view));
     return Py::None();
 }
 

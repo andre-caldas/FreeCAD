@@ -224,7 +224,7 @@ public:
     ViewProvider* getViewProvider(const App::DocumentObject *) const;
     ViewProviderDocumentObject *getViewProvider(SoNode *node) const;
     /// set an annotation view provider
-    void setAnnotationViewProvider(const char* name, ViewProvider *pcProvider);
+    void setAnnotationViewProvider(const char* name, std::shared_ptr<ViewProvider> sharedProvider);
     /// get an annotation view provider
     ViewProvider * getAnnotationViewProvider(const char* name) const;
     /// remove an annotation view provider
@@ -301,6 +301,12 @@ public:
 protected:
     // pointer to the python class
     Gui::DocumentPy *_pcDocPy;
+
+    void _assumeOwnership(std::shared_ptr<ViewProviderDocumentObject> sharedProvider, const App::DocumentObject* obj = nullptr);
+    void _assumeOwnership(ViewProviderDocumentObject* pcProvider);
+    void _assumeOwnership(const char* name, std::shared_ptr<ViewProvider> sharedProvider);
+    void _assumeOwnership(const char* name, ViewProvider* pcProvider);
+    const std::shared_ptr<ViewProviderDocumentObject>& _getSharedPtr(const App::DocumentObject* pcObject) const;
 
 private:
     //handles the scene graph nodes to correctly group child and parents
