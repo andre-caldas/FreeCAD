@@ -202,7 +202,7 @@ std::shared_ptr<TransactionalObject>
 Transaction::_prepareToAssumeOwnership(TransactionalObject* Obj)
 {
     try {
-        return Obj->shared_from_this();
+        return Obj->SharedFromThis<TransactionalObject>();
     }
     catch (std::bad_weak_ptr&) {
         assert(!ownedObjects.count(Obj));
@@ -217,7 +217,7 @@ std::shared_ptr<const TransactionalObject>
 Transaction::_prepareToAssumeOwnership(const TransactionalObject* Obj)
 {
     try {
-        return Obj->shared_from_this();
+        return Obj->SharedFromThis<TransactionalObject>();
     }
     catch (std::bad_weak_ptr&) {
         assert(false);
@@ -535,7 +535,7 @@ void TransactionDocumentObject::applyDel(Document &Doc, TransactionalObject *pcO
 void TransactionDocumentObject::applyNew(Document &Doc, TransactionalObject *pcObj)
 {
     if (status == New) {
-        std::shared_ptr<DocumentObject> obj = static_pointer_cast<DocumentObject>(pcObj->shared_from_this());
+        std::shared_ptr<DocumentObject> obj = pcObj->SharedFromThis<DocumentObject>();
         Doc._addObject(obj, _NameInDocument.c_str());
 
 #ifndef USE_OLD_DAG

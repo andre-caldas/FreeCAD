@@ -24,8 +24,8 @@
 #ifndef APP_TRANSACTIONALOBJECT_H
 #define APP_TRANSACTIONALOBJECT_H
 
-#include <memory>
 #include <App/ExtensionContainer.h>
+#include "SharedFromThis.h"
 
 namespace App
 {
@@ -37,7 +37,7 @@ class TransactionObject;
  */
 class AppExport TransactionalObject
     : public App::ExtensionContainer
-    , public std::enable_shared_from_this<TransactionalObject>
+    , public EnableSharedFromThis<TransactionalObject>
 {
     PROPERTY_HEADER_WITH_OVERRIDE(App::TransactionalObject);
 

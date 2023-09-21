@@ -207,6 +207,7 @@ SET(Document_HPP_SRCS
     Placement.h
     OriginFeature.h
     Range.h
+    SharedFromThis.h
     Transactions.h
     TransactionalObject.h
     VRMLObject.h

@@ -3148,20 +3148,16 @@ void Document::_assumeOwnership(DocumentObject* pcObject)
 {
     // Attention!
     // If we do not check this before creating the shared_ptr,
-    // the pcObject shall get destructed!
+    // ownership will be acquired and then the pcObject will get destructed!
     if (pcObject->getDocument()) {
         throw Base::RuntimeError("Document object is already added to a document");
     }
 
-    // We do not assume DocumentObject will always subclass enable_share_from_this.
-    // The enable_share_from_this subclassing is probably just a temporary hack
-    // to deal with the fact that FreeCAD was not designed to work with shared_ptr.
-    assert(!pcObject->weak_from_this().lock());
     assert(!d->ownedObjects.count(pcObject));
     // Attention!
     // Here we assume pcObject is not managed by any other smart pointer, yet.
     // Then we assume ownership.
-    _assumeOwnership(std::shared_ptr<DocumentObject>{pcObject});
+    _assumeOwnership(pcObject->TakeOwnershipFirst<DocumentObject>());
 }
 
 void Document::_assumeOwnership(std::shared_ptr<DocumentObject> sharedObject)
