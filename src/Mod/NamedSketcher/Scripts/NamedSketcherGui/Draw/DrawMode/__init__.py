@@ -54,7 +54,6 @@ class DrawMode:
 
     def Activated(self):
         self.is_clickable = False
-        FreeCADGui.
 
     def processKeys(self, info):
         pass
