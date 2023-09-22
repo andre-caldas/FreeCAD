@@ -874,12 +874,17 @@ Document::~Document()
     }
     catch (const boost::exception&) {
     }
+    catch (...) {
+        assert(false);
+    }
 
 #ifdef FC_LOGUPDATECHAIN
     Console().Log("-Delete Features of %s \n",getName());
 #endif
 
+    FC_LOG("Will delete Document");
     d->clearDocument();
+    FC_LOG("Document cleared");
 
     // Remark: The API of Py::Object has been changed to set whether the wrapper owns the passed
     // Python object or not. In the constructor we forced the wrapper to own the object so we need
@@ -891,6 +896,7 @@ Document::~Document()
     // Call before decrementing the reference counter, otherwise a heap error can occur
     doc->setInvalid();
 
+    FC_LOG("Document set invalid");
     // remove Transient directory
     try {
         Base::FileInfo TransDir(TransientDir.getValue());
@@ -899,7 +905,9 @@ Document::~Document()
     catch (const Base::Exception& e) {
         std::cerr << "Removing transient directory failed: " << e.what() << std::endl;
     }
+    FC_LOG("Directory deleted");
     delete d;
+    FC_LOG("Data structure deleted");
 }
 
 std::string Document::getTransientDirectoryName(const std::string& uuid, const std::string& filename) const
@@ -3151,20 +3159,16 @@ void Document::_assumeOwnership(DocumentObject* pcObject)
 {
     // Attention!
     // If we do not check this before creating the shared_ptr,
-    // the pcObject shall get destructed!
+    // ownership will be acquired and then the pcObject will get destructed!
     if (pcObject->getDocument()) {
         throw Base::RuntimeError("Document object is already added to a document");
     }
 
-    // We do not assume DocumentObject will always subclass enable_share_from_this.
-    // The enable_share_from_this subclassing is probably just a temporary hack
-    // to deal with the fact that FreeCAD was not designed to work with shared_ptr.
-    assert(!pcObject->weak_from_this().lock());
     assert(!d->ownedObjects.count(pcObject));
     // Attention!
     // Here we assume pcObject is not managed by any other smart pointer, yet.
     // Then we assume ownership.
-    _assumeOwnership(std::shared_ptr<DocumentObject>{pcObject});
+    _assumeOwnership(pcObject->TakeOwnershipFirst<DocumentObject>());
 }
 
 void Document::_assumeOwnership(std::shared_ptr<DocumentObject> sharedObject)

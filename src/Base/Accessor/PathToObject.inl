@@ -48,7 +48,7 @@ template<typename... NameOrTag,
              >>*>
 PathToObject::PathToObject(ReferencedObject* root, NameOrTag&&... obj_path)
     : rootTag(root->registerTag("I know it is deprecated"))
-    , rootWeakPtr(root->weak_from_this())
+    , rootWeakPtr(root->WeakFromThis())
     , objectPath({NameAndTag(std::forward<NameOrTag>(obj_path))...})
 {
 }

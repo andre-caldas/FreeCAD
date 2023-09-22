@@ -348,6 +348,8 @@ TopoDS_Shape DrawViewPart::centerScaleRotate(DrawViewPart* dvp, TopoDS_Shape& in
     return centeredShape;
 }
 
+#include<chrono>
+#include<thread>
 //! create a geometry object and trigger the HLR process in another thread
 TechDraw::GeometryObjectPtr DrawViewPart::buildGeometryObject(TopoDS_Shape& shape,
                                                               const gp_Ax2& viewAxis)
@@ -383,6 +385,7 @@ TechDraw::GeometryObjectPtr DrawViewPart::buildGeometryObject(TopoDS_Shape& shap
         m_hlrFuture = QtConcurrent::run(std::move(lambda));
         m_hlrWatcher.setFuture(m_hlrFuture);
         waitingForHlr(true);
+std::this_thread::sleep_for(std::chrono::seconds(10));
     }
     return go;
 }
@@ -425,6 +428,7 @@ void DrawViewPart::onHlrFinished(void)
             m_faceFuture = QtConcurrent::run(std::move(lambda));
             m_faceWatcher.setFuture(m_faceFuture);
             waitingForFaces(true);
+std::this_thread::sleep_for(std::chrono::seconds(10));
         }
         catch (Standard_Failure& e) {
             waitingForFaces(false);

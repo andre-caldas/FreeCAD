@@ -24,7 +24,6 @@
 #ifndef APP_TRANSACTIONALOBJECT_H
 #define APP_TRANSACTIONALOBJECT_H
 
-#include <memory>
 #include <App/ExtensionContainer.h>
 
 namespace App

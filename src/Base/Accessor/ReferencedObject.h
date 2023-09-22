@@ -31,6 +31,7 @@
 
 #include <FCGlobal.h>
 
+#include "EnableSharedFromThis.h"
 #include "NameAndTag.h"
 #include "Types.h"
 
@@ -46,19 +47,10 @@ template<typename T> class IExport;
  */
 class BaseExport ReferencedObject
     : public NameAndTag
-    , public std::enable_shared_from_this<ReferencedObject>
+    , public EnableSharedFromThis<ReferencedObject>
 {
 public:
     virtual ~ReferencedObject() = default;
-
-    template<typename X>
-    std::shared_ptr<X> SharedFromThis();
-    template<typename X>
-    std::shared_ptr<const X> SharedFromThis() const;
-    template<typename X>
-    std::weak_ptr<X> WeakFromThis() noexcept;
-    template<typename X>
-    std::weak_ptr<const X> WeakFromThis() const noexcept;
 
     // Avoid static cast using this template.
     // Use: resolveType<T>(...).

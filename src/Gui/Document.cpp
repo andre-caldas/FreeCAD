@@ -557,7 +557,7 @@ void Document::_assumeOwnership(ViewProviderDocumentObject* pcProvider)
     }
     catch(std::bad_weak_ptr&) {
         // Assuming pcProvider is owned by us.
-        sharedProvider = std::shared_ptr<ViewProviderDocumentObject>{pcProvider};
+        sharedProvider = pcProvider->TakeOwnershipFirst<ViewProviderDocumentObject>();
     }
     _assumeOwnership(sharedProvider);
 }
@@ -570,9 +570,7 @@ void Document::_assumeOwnership(const char* name, std::shared_ptr<ViewProvider> 
 void Document::_assumeOwnership(const char* name, ViewProvider *pcProvider)
 {
     assert(!d->_ViewProviderMapAnnotation.count(name));
-    assert(!pcProvider->weak_from_this().lock());
-    // Assuming pcProvider is owned by us.
-    _assumeOwnership(name, std::shared_ptr<ViewProvider>{pcProvider});
+    _assumeOwnership(name, pcProvider->TakeOwnershipFirst<ViewProvider>());
 }
 
 const std::shared_ptr<ViewProviderDocumentObject>&
@@ -899,7 +897,7 @@ void Document::slotTransactionAppend(const App::DocumentObject& obj, App::Transa
 {
     ViewProvider* viewProvider = getViewProvider(&obj);
     if (viewProvider && viewProvider->isDerivedFrom(ViewProviderDocumentObject::getClassTypeId())) {
-        assert(viewProvider->weak_from_this().lock());
+        assert(viewProvider->HasSharedPtr());
         transaction->addObjectDel(viewProvider->SharedFromThis<App::TransactionalObject>());
     }
 }
