@@ -31,10 +31,10 @@
 namespace Base::Accessor
 {
 
-class NameAndTag;
+class NameAndUuid;
 class ReferencedObject;
 
-using token_item = NameAndTag;
+using token_item = NameAndUuid;
 using token_list = std::vector<token_item>;
 using token_iterator = token_list::const_iterator;
 using object_pointer_type = std::shared_ptr<ReferencedObject>;

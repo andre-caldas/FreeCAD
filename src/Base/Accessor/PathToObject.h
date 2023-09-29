@@ -32,7 +32,7 @@
 #include <string>
 
 // User shall not be required to include this.
-#include "NameAndTag.h"
+#include "NameAndUuid.h"
 #include "Types.h"
 
 namespace Base {
@@ -48,8 +48,8 @@ namespace Base::Accessor
  * a reference to a member of some object.
  * It is composed of:
  * 1. A url path to a document.
- * 1. A @class Tag that identifies a root shared @class ReferencedObject.
- * 2. A sequence of @class NameAndTag that identifies the path
+ * 1. A @class Uuid that identifies a root shared @class ReferencedObject.
+ * 2. A sequence of @class NameAndUuid that identifies the path
  * to the referenced entity.
  *
  * Instances of the @class PathToObject are not aware of the type
@@ -76,7 +76,7 @@ public:
 
     /**
      * @brief References an object through an initial @a root
-     * and a chain of strings/tags. The ownership of root
+     * and a chain of strings/uuids. The ownership of root
      * and every @class ReferencedObject in the path
      * shall be managed through a shared_ptr.
      *
@@ -84,11 +84,11 @@ public:
      * @param obj_path - list of token items that identify
      * the path from @root to the referenced resource.
      */
-    template<typename... NameOrTag,
+    template<typename... NameOrUuid,
              std::enable_if_t<std::conjunction_v<
-                     std::is_convertible<NameOrTag, NameAndTag>...
+                     std::is_convertible<NameOrUuid, NameAndUuid>...
                  >>* = nullptr>
-    PathToObject(std::shared_ptr<ReferencedObject> root, NameOrTag&&... obj_path);
+    PathToObject(std::shared_ptr<ReferencedObject> root, NameOrUuid&&... obj_path);
 
     /**
      * @brief (DEPRECATED) References an object using a root
@@ -98,14 +98,14 @@ public:
      * @param obj_path - list of token items that identify
      * the path from @root to the referenced resource.
      */
-    template<typename... NameOrTag,
+    template<typename... NameOrUuid,
              std::enable_if_t<std::conjunction_v<
-                     std::is_convertible<NameOrTag, NameAndTag>...
+                     std::is_convertible<NameOrUuid, NameAndUuid>...
                  >>* = nullptr>
-    PathToObject(ReferencedObject* root, NameOrTag&&... obj_path);
+    PathToObject(ReferencedObject* root, NameOrUuid&&... obj_path);
 
-    PathToObject(const Tag& tag, const token_list& path)
-        : rootTag(tag)
+    PathToObject(const Uuid& uuid, const token_list& path)
+        : rootUuid(uuid)
         , objectPath(path) {}
 
     PathToObject(std::shared_ptr<ReferencedObject> root, const token_list& path);
@@ -126,11 +126,11 @@ public:
 
     virtual ~PathToObject() {}
 
-    template<typename... NameOrTag,
+    template<typename... NameOrUuid,
              std::enable_if_t<std::conjunction_v<
-                     std::is_convertible<NameOrTag, NameAndTag>...
+                     std::is_convertible<NameOrUuid, NameAndUuid>...
                  >>* = nullptr>
-    PathToObject goFurther(NameOrTag&& ...furtherPath) const;
+    PathToObject goFurther(NameOrUuid&& ...furtherPath) const;
 
     PathToObject operator+ (std::string extra_path) const {return goFurther(std::move(extra_path));}
     PathToObject operator+ (PathToObject extra_path) const {return PathToObject(*this) += extra_path;}
@@ -167,7 +167,7 @@ public:
 
 protected:
     std::string documentUrl; // Not used yet!
-    Tag rootTag;
+    Uuid rootUuid;
     std::weak_ptr<ReferencedObject> rootWeakPtr;
     token_list objectPath;
 };

@@ -32,7 +32,7 @@
 #include <string>
 
 // User shall not be required to include this.
-#include "NameAndTag.h"
+#include "NameAndUuid.h"
 #include "Types.h"
 #include "PathToObject.h"
 
@@ -68,7 +68,7 @@ public:
 
     /**
      * @brief References an object through an initial @a root
-     * and a chain of strings/tags. The ownership of root
+     * and a chain of strings/uuids. The ownership of root
      * and every @class ReferencedObject in the path
      * shall be managed through a shared_ptr.
      *
@@ -76,8 +76,8 @@ public:
      * @param obj_path - list of token items that identify
      * the path from @root to the referenced resource.
      */
-    template<typename... NameOrTag>
-    ReferenceTo(std::shared_ptr<ReferencedObject> root, NameOrTag&&... obj_path)
+    template<typename... NameOrUuid>
+    ReferenceTo(std::shared_ptr<ReferencedObject> root, NameOrUuid&&... obj_path)
         : PathToObject(root, obj_path...) {}
 
     /**
@@ -88,8 +88,8 @@ public:
      * @param obj_path - list of token items that identify
      * the path from @root to the referenced resource.
      */
-    template<typename... NameOrTag>
-    ReferenceTo(ReferencedObject* root, NameOrTag&&... obj_path)
+    template<typename... NameOrUuid>
+    ReferenceTo(ReferencedObject* root, NameOrUuid&&... obj_path)
         : PathToObject(root, obj_path...) {}
 
     friend ReferenceTo<T> operator+(PathToObject path, const ReferenceTo<T> ref)
@@ -146,8 +146,8 @@ public:
     bool hasChanged() const {return (old_reference != lockedResult.get());}
     T* getOldReference() const {return old_reference;}
 
-    template<typename X, typename... NameOrTag>
-    ReferenceTo<X> goFurther(NameOrTag&& ...furtherPath) const;
+    template<typename X, typename... NameOrUuid>
+    ReferenceTo<X> goFurther(NameOrUuid&& ...furtherPath) const;
 
     static ReferenceTo<T> unserialize(Base::XMLReader& reader) {return ReferenceTo<T>{PathToObject::unserialize(reader)};}
 

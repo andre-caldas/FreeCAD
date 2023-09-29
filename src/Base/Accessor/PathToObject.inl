@@ -31,42 +31,42 @@ namespace Base::Accessor {
 
 class ReferencedObject;
 
-template<typename... NameOrTag,
+template<typename... NameOrUuid,
          std::enable_if_t<std::conjunction_v<
-                 std::is_convertible<NameOrTag, NameAndTag>...
+                 std::is_convertible<NameOrUuid, NameAndUuid>...
              >>*>
-PathToObject::PathToObject(std::shared_ptr<ReferencedObject> root, NameOrTag&&... obj_path)
-    : rootTag(root->getTag())
+PathToObject::PathToObject(std::shared_ptr<ReferencedObject> root, NameOrUuid&&... obj_path)
+    : rootUuid(root->getUuid())
     , rootWeakPtr(root)
-    , objectPath(std::initializer_list<NameAndTag>{std::forward(obj_path)...})
+    , objectPath(std::initializer_list<NameAndUuid>{std::forward(obj_path)...})
 {
 }
 
-template<typename... NameOrTag,
+template<typename... NameOrUuid,
          std::enable_if_t<std::conjunction_v<
-                 std::is_convertible<NameOrTag, NameAndTag>...
+                 std::is_convertible<NameOrUuid, NameAndUuid>...
              >>*>
-PathToObject::PathToObject(ReferencedObject* root, NameOrTag&&... obj_path)
-    : rootTag(root->registerTag("I know it is deprecated"))
+PathToObject::PathToObject(ReferencedObject* root, NameOrUuid&&... obj_path)
+    : rootUuid(root->registerUuid("I know it is deprecated"))
     , rootWeakPtr(root->WeakFromThis())
-    , objectPath({NameAndTag(std::forward<NameOrTag>(obj_path))...})
+    , objectPath({NameAndUuid(std::forward<NameOrUuid>(obj_path))...})
 {
 }
 
-template<typename... NameOrTag,
+template<typename... NameOrUuid,
          std::enable_if_t<std::conjunction_v<
-                 std::is_convertible<NameOrTag, NameAndTag>...
+                 std::is_convertible<NameOrUuid, NameAndUuid>...
              >>*>
-PathToObject PathToObject::goFurther(NameOrTag&& ...furtherPath) const
+PathToObject PathToObject::goFurther(NameOrUuid&& ...furtherPath) const
 {
     auto new_path = objectPath;
-    new_path.insert(new_path.end(), {NameAndTag(std::forward<NameOrTag>(furtherPath))...});
+    new_path.insert(new_path.end(), {NameAndUuid(std::forward<NameOrUuid>(furtherPath))...});
     auto lock = rootWeakPtr.lock();
     if(lock)
     {
         return PathToObject(lock, new_path);
     }
-    return PathToObject(rootTag, new_path);
+    return PathToObject(rootUuid, new_path);
 }
 
 template<typename T>

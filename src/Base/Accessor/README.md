@@ -52,7 +52,7 @@ represents a reference to a variable of type `T`
 that can be accessed through the *Accessor scheme*.
 An object of type `Accessor::ReferenceTo<T>` is instantiated by passing to the constructor:
 1. A `std::shared_ptr<ReferencedObject>` that holds a known *root object*.
-2. A sequence of "strings" (or tag/uuid) that represent a *path* to the shared resource.
+2. A sequence of "strings" (or uuid/uuid) that represent a *path* to the shared resource.
 
 For convenience, there is an `Accessor::Chainable` class,
 that subclasses `Accessor::ReferencedObject` and `Accessor::IExport<ReferencedObject>`.
@@ -60,13 +60,13 @@ that subclasses `Accessor::ReferencedObject` and `Accessor::IExport<ReferencedOb
 
 ## The path
 
-The referenced objects have an `Accessor::NameAndTag name_and_tag`.
+The referenced objects have an `Accessor::NameAndUuid name_and_uuid`.
 This gives to each of them a unique id (we use `boost::uuid` by now).
 And it can also have an optional *name*.
-By the way... this optional name cannot "look like" a *tag*.
+By the way... this optional name cannot "look like" a *uuid*.
 
 A *path* is basically a *(probably chainable) root object*
-and a sequence of strings (*names* or *tags*) that identifies a chain of objects.
+and a sequence of strings (*names* or *uuids*) that identifies a chain of objects.
 But the *path* can be longer than that!
 When we reach the last `Accessor::ReferencedObject` in the chain,
 the remaining part of the *path* identifies the variable this `ReferencedObject` exports.

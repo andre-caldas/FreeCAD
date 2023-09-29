@@ -58,7 +58,7 @@ template<typename T>
 typename PropertyTaggedListT<T>::key_type
 PropertyTaggedListT<T>::addElement(ptr_handler element)
 {
-    key_type uuid = element->getTag();
+    key_type uuid = element->getUuid();
     elementList.emplace(uuid, std::move(element));
     return uuid;
 }
@@ -88,7 +88,7 @@ std::shared_ptr<T> PropertyTaggedListT<T>::resolve_share(token_iterator& start, 
 
     for(auto& element: *this)
     {
-        if(element->pointsToMe(*start))
+        if(element->nameAndUuid.pointsToMe(*start))
         {
             ++start;
             return element;
@@ -198,9 +198,9 @@ template<typename T>
 void PropertyTaggedListT<T>::getPaths(std::vector<ObjectIdentifier>& paths) const
 {
     for (auto& element: elementList) {
-        paths.push_back(ObjectIdentifier(*this) << ObjectIdentifier::SimpleComponent(element.second->Tag::toString()));
-        if (element.second->hasName())
-            paths.push_back(ObjectIdentifier(*this) << ObjectIdentifier::SimpleComponent(element.second->getText()));
+        paths.push_back(ObjectIdentifier(*this) << ObjectIdentifier::SimpleComponent(element.second->nameAndUuid.toString()));
+        if (element.second->nameAndUuid.hasName())
+            paths.push_back(ObjectIdentifier(*this) << ObjectIdentifier::SimpleComponent(element.second->nameAndUuid.getText()));
     }
 }
 

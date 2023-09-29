@@ -32,7 +32,7 @@
 #include <FCGlobal.h>
 
 #include "EnableSharedFromThis.h"
-#include "NameAndTag.h"
+#include "NameAndUuid.h"
 #include "Types.h"
 
 namespace Base::Accessor
@@ -46,8 +46,7 @@ template<typename T> class IExport;
  * to resolve the next step in a path.
  */
 class BaseExport ReferencedObject
-    : public NameAndTag
-    , public EnableSharedFromThis<ReferencedObject>
+    : public EnableSharedFromThis<ReferencedObject>
 {
 public:
     virtual ~ReferencedObject() = default;
@@ -64,39 +63,43 @@ public:
     template<typename X>
     std::vector<ReferenceTo<X>> getReferencesTo();
 
+    Uuid::uuid_type getUuid () const;
+
     /**
-     * @brief Globally registers a Tag.
+     * @brief Globally registers a Uuid.
      * This is specially useful when serializing (Save)
      * and unserializing (Restore).
      * @param weak_ptr - a weak_ptr to the @class ReferencedObject.
      */
-    static void registerTag(const std::shared_ptr<ReferencedObject>& shared_ptr);
+    static void registerUuid(const std::shared_ptr<ReferencedObject>& shared_ptr);
 
     /**
-     * @brief Globally registers an unmanaged Tag.
+     * @brief Globally registers an unmanaged Uuid.
      * @param deprecated - You have to pass "I know it is deprecated".
      * @return weak reference to generated "fake shared_ptr".
      * @attention This does not, in fact, owns the shared resource.
      * Object might be destructude without the returned weak reference
      * becoming invalid.
      */
-    Tag::tag_type registerTag(std::string deprecated);
+    Uuid::uuid_type registerUuid(std::string deprecated);
 
     /**
-     * @brief When serializing (Save), tags are saved as strings.
+     * @brief When serializing (Save), uuids are saved as strings.
      * When unserializing (Restore), the string can be used
      * to get a pointer to @class ReferencedObject.
-     * @param tag - string representation of the tag.
+     * @param uuid - string representation of the uuid.
      * @return A weak_ptr to the referenced object.
      */
-    static std::weak_ptr<ReferencedObject> getWeakPtr(std::string_view tag);
+    static std::weak_ptr<ReferencedObject> getWeakPtr(std::string_view uuid);
 
     /**
      * @brief Same as above.
-     * @param tag - the tag.
+     * @param uuid - the uuid.
      * @return A weak_ptr to the referenced object.
      */
-    static std::weak_ptr<ReferencedObject> getWeakPtr(Tag::tag_type tag);
+    static std::weak_ptr<ReferencedObject> getWeakPtr(Uuid::uuid_type uuid);
+
+    NameAndUuid nameAndUuid;
 
 private:
     /**
@@ -104,7 +107,7 @@ private:
      * This is specialy useful when
      * serializing (Save) and unserializing (Restore) those pointers.
      */
-    static std::map<Tag::tag_type, std::weak_ptr<ReferencedObject>> map;
+    static std::map<Uuid::uuid_type, std::weak_ptr<ReferencedObject>> map;
 
     /**
      * @brief (DEPRECATED) For objects that do not use std::shared_ptr yet,

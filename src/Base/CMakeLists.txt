@@ -347,8 +347,8 @@ SET(FreeCADBase_HPP_SRCS
 
 SET(FreeCADBase_Accessor_SRCS
     Accessor/Types.h
-    Accessor/NameAndTag.h
-    Accessor/NameAndTag.cpp
+    Accessor/NameAndUuid.h
+    Accessor/NameAndUuid.cpp
     Accessor/EnableSharedFromThis.h
     Accessor/ReferencedObject.h
     Accessor/ReferencedObject.inl

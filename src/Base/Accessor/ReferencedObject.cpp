@@ -30,66 +30,71 @@
 #include <Base/Console.h>
 #include <Base/Exception.h>
 
-#include "NameAndTag.h"
+#include "NameAndUuid.h"
 #include "ReferencedObject.h"
 
 FC_LOG_LEVEL_INIT("NamedSketch",true,true)
 
 namespace Base::Accessor {
 
-void ReferencedObject::registerTag(const std::shared_ptr<ReferencedObject>& shared_ptr)
+Uuid::uuid_type ReferencedObject::getUuid () const
 {
-    std::lock_guard lock(mutex);
-    auto tag = shared_ptr->getTag();
-    if(!map.count(tag))
-    {
-        FC_MSG("ReferencedObject already registered: '" << tag << "'.");
-        return;
-    }
-    map.insert({tag, shared_ptr});
+    return nameAndUuid.getUuid();
 }
 
-Tag::tag_type ReferencedObject::registerTag(std::string deprecated)
+void ReferencedObject::registerUuid(const std::shared_ptr<ReferencedObject>& shared_ptr)
+{
+    std::lock_guard lock(mutex);
+    auto uuid = shared_ptr->getUuid();
+    if(!map.count(uuid))
+    {
+        FC_MSG("ReferencedObject already registered: '" << uuid << "'.");
+        return;
+    }
+    map.insert({uuid, shared_ptr});
+}
+
+Uuid::uuid_type ReferencedObject::registerUuid(std::string deprecated)
 {
     if(!weak_from_this().expired())
     {
-        return getTag();
+        return getUuid();
     }
 
     if(deprecated != "I know it is deprecated")
     {
-        FC_THROWM(Base::RuntimeError, "All registeredTags must reference a shared_ptr'd resource.");
+        FC_THROWM(Base::RuntimeError, "All registeredUuids must reference a shared_ptr'd resource.");
     }
     std::lock_guard lock(mutex);
     if(!deprecatedFakeSharePointers.count(this))
     {
         std::shared_ptr<ReferencedObject> shared_ptr(this, [](auto){}); // Fake shared_ptr.
-        map.insert({getTag(), shared_ptr});
+        map.insert({getUuid(), shared_ptr});
         deprecatedFakeSharePointers.insert({this, shared_ptr});
-        return getTag();
+        return getUuid();
     }
-    return deprecatedFakeSharePointers.at(this)->getTag();
+    return deprecatedFakeSharePointers.at(this)->getUuid();
 }
 
 std::weak_ptr<ReferencedObject>
-ReferencedObject::getWeakPtr(std::string_view tag)
+ReferencedObject::getWeakPtr(std::string_view uuid)
 {
-    Tag t(std::string{tag});
+    Uuid t(std::string{uuid});
     return getWeakPtr(t);
 }
 
 std::weak_ptr<ReferencedObject>
-ReferencedObject::getWeakPtr(Tag::tag_type tag)
+ReferencedObject::getWeakPtr(Uuid::uuid_type uuid)
 {
     std::lock_guard lock(mutex);
-    if(map.count(tag) == 0)
+    if(map.count(uuid) == 0)
     {
         return std::weak_ptr<ReferencedObject>();
     }
-    return map.at(tag);
+    return map.at(uuid);
 }
 
-std::map<Tag::tag_type, std::weak_ptr<ReferencedObject>> ReferencedObject::map;
+std::map<Uuid::uuid_type, std::weak_ptr<ReferencedObject>> ReferencedObject::map;
 std::map<const ReferencedObject*, std::shared_ptr<ReferencedObject>> ReferencedObject::deprecatedFakeSharePointers;
 std::mutex ReferencedObject::mutex;
 

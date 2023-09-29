@@ -125,6 +125,7 @@ struct DocumentP
         }
         objectIdMap.clear();
         objectMap.clear();
+        ownedObjects.clear();
     }
 
     const char *findRecomputeLog(const App::DocumentObject *obj) {

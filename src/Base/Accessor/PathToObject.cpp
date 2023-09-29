@@ -39,7 +39,7 @@
 namespace Base::Accessor {
 
 PathToObject::PathToObject(std::shared_ptr<ReferencedObject> root, const token_list& path)
-    : rootTag(root->getTag())
+    : rootUuid(root->getUuid())
     , rootWeakPtr(root)
     , objectPath(path)
 {
@@ -64,7 +64,7 @@ PathToObject& PathToObject::operator+= (PathToObject extra_path)
 {
     token_list&& tokens = std::move(extra_path.objectPath);
     objectPath.reserve(objectPath.size() + tokens.size() + 1);
-    objectPath.push_back(NameAndTag(extra_path.rootTag));
+    objectPath.push_back(NameAndUuid(extra_path.rootUuid));
     objectPath.insert(objectPath.end(), tokens.begin(), tokens.end());
     return *this;
 }
@@ -76,15 +76,15 @@ PathToObject::lock_type PathToObject::getLock() const
 
     // First we try the rootWeakPtr.
     lock.last_object = rootWeakPtr.lock();
-    // If it is not valid, we try to find the tag in the global dictionary.
+    // If it is not valid, we try to find the uuid in the global dictionary.
     if(!lock.last_object)
     {
-        lock.last_object = ReferencedObject::getWeakPtr(rootTag).lock();
+        lock.last_object = ReferencedObject::getWeakPtr(rootUuid).lock();
     }
 
     if(!lock.last_object)
     {
-        FC_THROWM(ExceptionCannotResolve, "Root object (" << rootTag.toString() << ") is not available. Path: '" << pathString() << "'.");
+        FC_THROWM(ExceptionCannotResolve, "Root object (" << rootUuid.toString() << ") is not available. Path: '" << pathString() << "'.");
     }
 
     lock.remaining_tokens_start = objectPath.cbegin();
@@ -113,13 +113,13 @@ void PathToObject::serialize(Base::Writer& writer) const
 {
     writer.Stream() << writer.ind() << "<PathToObject>" << std::endl;
     writer.incInd();
-    writer.Stream() << writer.ind() << "<RootTag>";
-    writer.Stream() << rootTag.toString() << "</RootTag>" << std::endl;
+    writer.Stream() << writer.ind() << "<RootUuid>";
+    writer.Stream() << rootUuid.toString() << "</RootUuid>" << std::endl;
     for(auto token: objectPath)
     {
         // TODO: escape token.getText().
-        writer.Stream() << writer.ind() << "<NameOrTag>";
-        writer.Stream() << token.getText() << "</NameOrTag>" << std::endl;
+        writer.Stream() << writer.ind() << "<NameOrUuid>";
+        writer.Stream() << token.getText() << "</NameOrUuid>" << std::endl;
     }
     writer.decInd();
     writer.Stream() << writer.ind() << "</PathToObject>" << std::endl;
@@ -129,7 +129,7 @@ PathToObject
 PathToObject::unserialize(Base::XMLReader& reader)
 {
     reader.readElement("PathToObject");
-    reader.readElement("RootTag");
+    reader.readElement("RootUuid");
     auto root = ReferencedObject::getWeakPtr(reader.getCharacters()).lock();
     if(!root)
     {
@@ -138,8 +138,8 @@ PathToObject::unserialize(Base::XMLReader& reader)
     PathToObject result{root};
     while(!reader.testEndElement("PathToObject"))
     {
-        reader.readElement("NameOrTag");
-        result.objectPath.push_back(NameAndTag(reader.getCharacters()));
+        reader.readElement("NameOrUuid");
+        result.objectPath.push_back(NameAndUuid(reader.getCharacters()));
     }
     return result;
 }

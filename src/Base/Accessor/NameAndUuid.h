@@ -21,8 +21,8 @@
  *                                                                          *
  ***************************************************************************/
 
-#ifndef BASE_Accessor_NameAndTag_H
-#define BASE_Accessor_NameAndTag_H
+#ifndef BASE_Accessor_NameAndUuid_H
+#define BASE_Accessor_NameAndUuid_H
 
 #include <string>
 
@@ -32,47 +32,47 @@
 namespace Base::Accessor
 {
 
-class Tag
+class Uuid
 {
 public:
-    using tag_type = boost::uuids::uuid;
+    using uuid_type = boost::uuids::uuid;
 
-    Tag();
-    Tag(const Tag&) = default;
-    Tag(tag_type tag) : tag(tag) {}
-    Tag(const std::string& tag);
-    Tag(std::string_view tag) : Tag(std::string(tag)){}
-    virtual ~Tag() = default;
+    Uuid();
+    Uuid(const Uuid&) = default;
+    Uuid(uuid_type uuid) : uuid(uuid) {}
+    Uuid(const std::string& uuid);
+    Uuid(std::string_view uuid) : Uuid(std::string(uuid)){}
+    virtual ~Uuid() = default;
 
-    tag_type getTag () const {return tag;}
-    void setTag(const std::string& tag);
-    std::string toString () const {return to_string(tag);}
+    uuid_type getUuid () const {return uuid;}
+    void setUuid(const std::string& uuid);
+    std::string toString () const {return to_string(uuid);}
     operator std::string() const {return toString();}
-    operator tag_type() const {return getTag();}
+    operator uuid_type() const {return getUuid();}
 
-    static bool isTag(const std::string& name_or_tag);
+    static bool isUuid(const std::string& name_or_uuid);
 
 protected:
-    tag_type tag;
+    uuid_type uuid;
 };
 
-class NameAndTag : public Tag
+class NameAndUuid : public Uuid
 {
 public:
-    NameAndTag();
-    NameAndTag(std::string name_or_tag);
-    NameAndTag(const char* name_or_tag) : NameAndTag(std::string(name_or_tag)) {}
-    NameAndTag(tag_type tag) : Tag(tag) {}
-    NameAndTag(Tag tag) : Tag(tag) {}
+    NameAndUuid();
+    NameAndUuid(std::string name_or_uuid);
+    NameAndUuid(const char* name_or_uuid) : NameAndUuid(std::string(name_or_uuid)) {}
+    NameAndUuid(uuid_type uuid) : Uuid(uuid) {}
+    NameAndUuid(Uuid uuid) : Uuid(uuid) {}
 
-    std::string getText() const {return name.empty() ? to_string(tag) : name;}
-    void setText(std::string name_or_tag, bool overwrite_tag = true);
+    std::string getText() const {return name.empty() ? to_string(uuid) : name;}
+    void setText(std::string name_or_uuid, bool overwrite_uuid = true);
 
     operator std::string() const {return getText();}
     bool operator == (std::string_view x) const {return (getText() == x);}
-    bool pointsToMe(NameAndTag& other) const;
+    bool pointsToMe(NameAndUuid& other) const;
     bool pointsToMe(std::string_view other) const;
-    bool pointsToMe(tag_type other) const;
+    bool pointsToMe(uuid_type other) const;
 
     bool hasName() const {return !name.empty();}
     const std::string& onlyName() const {return name;}
@@ -83,4 +83,4 @@ protected:
 
 } //namespace Base::Accessor
 
-#endif // BASE_Accessor_NameAndTag_H
+#endif // BASE_Accessor_NameAndUuid_H

@@ -35,86 +35,86 @@
 
 #include <Base/Exception.h>
 
-#include "NameAndTag.h"
+#include "NameAndUuid.h"
 
 
 namespace Base::Accessor {
 
-Tag::Tag()
-    : tag(boost::uuids::random_generator()())
+Uuid::Uuid()
+    : uuid(boost::uuids::random_generator()())
 {}
 
-Tag::Tag(const std::string& tag)
-    : tag(boost::uuids::string_generator()(tag))
+Uuid::Uuid(const std::string& uuid)
+    : uuid(boost::uuids::string_generator()(uuid))
 {}
 
-void Tag::setTag(const std::string& t)
+void Uuid::setUuid(const std::string& t)
 {
-    tag = boost::uuids::string_generator()(t);
+    uuid = boost::uuids::string_generator()(t);
 }
 
-bool Tag::isTag(const std::string& name_or_tag)
+bool Uuid::isUuid(const std::string& name_or_uuid)
 {
-    // Can't we simply check if name_or_tag is a tag?
+    // Can't we simply check if name_or_uuid is a uuid?
     // It would be less noisy.
     try {
-        boost::uuids::string_generator()(name_or_tag);
+        boost::uuids::string_generator()(name_or_uuid);
         return true;
     } catch (std::runtime_error&) {
     }
     return false;
 }
 
-NameAndTag::NameAndTag() {}
+NameAndUuid::NameAndUuid() {}
 
-NameAndTag::NameAndTag(std::string name_or_tag)
+NameAndUuid::NameAndUuid(std::string name_or_uuid)
 {
-    setText(name_or_tag);
+    setText(name_or_uuid);
 }
 
-void NameAndTag::setText(std::string name_or_tag, bool overwrite_tag)
+void NameAndUuid::setText(std::string name_or_uuid, bool overwrite_uuid)
 {
-    if(overwrite_tag)
+    if(overwrite_uuid)
     {
-        // Can't we simply check if name_or_tag is a tag?
+        // Can't we simply check if name_or_uuid is a uuid?
         // It would be less noisy.
         try {
-            tag = boost::uuids::string_generator()(name_or_tag);
+            uuid = boost::uuids::string_generator()(name_or_uuid);
             name.clear();
             return;
         } catch (std::runtime_error&) {
         }
     }
-    name = std::move(name_or_tag);
+    name = std::move(name_or_uuid);
 }
 
-bool NameAndTag::pointsToMe(NameAndTag& other) const
+bool NameAndUuid::pointsToMe(NameAndUuid& other) const
 {
-     if (tag == other.tag) return true;
+     if (uuid == other.uuid) return true;
      if ((!name.empty()) && (name == other.name)) return true;
      return false;
 }
 
-bool NameAndTag::pointsToMe(std::string_view other) const
+bool NameAndUuid::pointsToMe(std::string_view other) const
 {
     if(name == other)
     {
         return true;
     }
 
-    // Can't we simply check if name_or_tag is a tag?
+    // Can't we simply check if name_or_uuid is a uuid?
     // It would be less noisy.
     try {
-        auto tag = boost::uuids::string_generator()(other.cbegin(), other.cend());
-        return pointsToMe(tag);
+        auto uuid = boost::uuids::string_generator()(other.cbegin(), other.cend());
+        return pointsToMe(uuid);
     } catch (std::runtime_error&) {
     }
     return false;
 }
 
-bool NameAndTag::pointsToMe(Tag::tag_type other) const
+bool NameAndUuid::pointsToMe(Uuid::uuid_type other) const
 {
-     return (tag == other);
+     return (uuid == other);
 }
 
 } // namespace Base
