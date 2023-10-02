@@ -690,6 +690,7 @@ MenuItem* StdWorkbench::setupMenuBar() const
           << "Std_ToggleNavigation"
           << "Std_SetAppearance" << "Std_RandomColor" << "Separator"
           << "Std_Workbench" << "Std_ToolBarMenu" << "Std_DockViewMenu" << "Separator"
+          << "Std_LinkSelectActions"
           << "Std_TreeViewActions"
           << "Std_ViewStatusBar";
 
@@ -721,7 +722,6 @@ MenuItem* StdWorkbench::setupMenuBar() const
     auto macro = new MenuItem( menuBar );
     macro->setCommand("&Macro");
     *macro << "Std_DlgMacroRecord"
-           << "Std_MacroStopRecord"
            << "Std_DlgMacroExecute"
            << "Std_RecentMacros"
            << "Separator"
@@ -785,22 +785,22 @@ ToolBarItem* StdWorkbench::setupToolBars() const
     // Macro
     auto macro = new ToolBarItem( root );
     macro->setCommand("Macro");
-    *macro << "Std_DlgMacroRecord" << "Std_MacroStopRecord" << "Std_DlgMacroExecute"
+    *macro << "Std_DlgMacroRecord" << "Std_DlgMacroExecute"
            << "Std_DlgMacroExecuteDirect";
 
     // View
     auto view = new ToolBarItem( root );
     view->setCommand("View");
-    *view << "Std_ViewFitAll" << "Std_ViewFitSelection" << "Std_DrawStyle" << "Std_SelBoundingBox"
-          << "Separator" << "Std_SelectFilter" << "Std_SelBack" << "Std_SelForward"
-          << "Std_LinkSelectActions"<< "Separator" << "Std_TreeViewActions" << "Std_ViewIsometric"
-          << "Std_ViewFront"<< "Std_ViewTop" << "Std_ViewRight" << "Separator" << "Std_ViewRear"
-          << "Separator" << "Std_ViewBottom"<< "Std_ViewLeft"  << "Separator" << "Std_MeasureDistance";
+    *view << "Std_ViewFitAll" << "Std_ViewFitSelection" << "Std_ViewIsometric"
+          << "Std_ViewFront"<< "Std_ViewTop" << "Std_ViewRight"
+          << "Std_ViewRear" << "Std_ViewBottom"<< "Std_ViewLeft"
+          << "Separator" << "Std_DrawStyle" << "Std_SelectFilter" << "Std_TreeViewActions"
+          << "Separator" << "Std_MeasureDistance";
 
     // Structure
     auto structure = new ToolBarItem( root );
     structure->setCommand("Structure");
-    *structure << "Std_Part" << "Std_Group" << "Std_LinkMake" << "Std_LinkActions";
+    *structure << "Std_Part" << "Std_Group" << "Std_LinkActions";
 
     // Help
     auto help = new ToolBarItem( root );
@@ -824,7 +824,7 @@ ToolBarItem* StdWorkbench::setupCommandBars() const
     // Special Ops
     auto macro = new ToolBarItem( root );
     macro->setCommand("Special Ops");
-    *macro << "Std_DlgParameter" << "Std_DlgPreferences" << "Std_DlgMacroRecord" << "Std_MacroStopRecord"
+    *macro << "Std_DlgParameter" << "Std_DlgPreferences" << "Std_DlgMacroRecord"
            << "Std_DlgMacroExecute" << "Std_DlgCustomize";
 
     return root;
@@ -837,9 +837,9 @@ DockWindowItems* StdWorkbench::setupDockWindows() const
     //root->addDockWidget("Std_HelpView", Qt::RightDockWidgetArea, true, false);
     root->addDockWidget("Std_TreeView", Qt::LeftDockWidgetArea, true, false);
     root->addDockWidget("Std_PropertyView", Qt::LeftDockWidgetArea, true, false);
-    root->addDockWidget("Std_TaskView", Qt::LeftDockWidgetArea, true, true);
     root->addDockWidget("Std_SelectionView", Qt::LeftDockWidgetArea, false, false);
-    root->addDockWidget("Std_ComboView", Qt::LeftDockWidgetArea, false, false);
+    root->addDockWidget("Std_ComboView", Qt::LeftDockWidgetArea, true, true);
+    root->addDockWidget("Std_TaskView", Qt::LeftDockWidgetArea, true, true);
     root->addDockWidget("Std_ReportView", Qt::BottomDockWidgetArea, true, true);
     root->addDockWidget("Std_PythonView", Qt::BottomDockWidgetArea, true, true);
 

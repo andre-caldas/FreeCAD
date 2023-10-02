@@ -224,6 +224,7 @@ public:
 
   void Save (Base::Writer &writer) const override;
   void Restore(Base::XMLReader &reader) override;
+  virtual void beforeSave() const;
 
   virtual void editProperty(const char * /*propName*/) {}
 
