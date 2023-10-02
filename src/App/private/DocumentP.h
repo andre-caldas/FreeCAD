@@ -25,11 +25,14 @@
 
 #include <App/DocumentObject.h>
 #include <App/DocumentObserver.h>
+#include <App/StringHasher.h>
 #include <CXX/Objects.hxx>
+#include <boost/bimap.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
+
 
 // using VertexProperty = boost::property<boost::vertex_root_t, DocumentObject* >;
 using DependencyList = boost::adjacency_list <
@@ -48,6 +51,7 @@ using Node =  std::vector <size_t>;
 using Path =  std::vector <size_t>;
 
 namespace App {
+using HasherMap = boost::bimap<StringHasherRef, int>;
 class Transaction;
 
 // Pimpl class
@@ -84,6 +88,7 @@ struct DocumentP
     unsigned int UndoMemSize;
     unsigned int UndoMaxStackSize;
     std::string programVersion;
+    mutable HasherMap hashers;
 #ifdef USE_OLD_DAG
     DependencyList DepList;
     std::map<DocumentObject*, Vertex> VertexObjectList;
@@ -91,6 +96,8 @@ struct DocumentP
 #endif //USE_OLD_DAG
     std::multimap<const App::DocumentObject*,
         std::unique_ptr<App::DocumentObjectExecReturn> > _RecomputeLog;
+
+    StringHasherRef Hasher;
 
     DocumentP();
 
