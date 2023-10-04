@@ -25,6 +25,7 @@ the assembly code might be:
 1. Store the value of `i` in a register. (the hardware computes values stored in registers)
 2. Adds 1 to the stored value.
 3. Saves the result back to the variable `i`.
+
 Suppose we start with `i = 0`.
 Then, if thread A executes step 1 and is interrupted by B that executes 1,2 and 3.
 And only then, thread A executes step 2 and 3.
@@ -117,8 +118,8 @@ We shall state some rules to be implemented by `UniqueLock` and `SharedLock`:
 1. A `UniqueLock` can request a set of mutexes at once.
 2. A `UniqueLock` is allowed to be called if the same thread already has a `UniqueLock`. But only if all mutexes being locked are in fact already locked. Otherwise, a `UniqueLock` cannot be constructed by a thread that already owns any kind of lock on any mutex. This is a programming error, and should not happen. An exception will be thrown.
 3. If `SharedLock` requests a mutex G and the thread already has a `UniqueLock U`:
-  1. If U **does not own** G, throw and exception. This is a programming error, and should not happen.
-  2. If U **owns** G, do nothing. Just pretend we acquired the lock.
+    1. If U **does not own** G, throw and exception. This is a programming error, and should not happen.
+    2. If U **owns** G, do nothing. Just pretend we acquired the lock.
 
 Those two classes, both descend from `LockBase`.
 The common ancestor holds two `static thread_local` set of mutexes.
@@ -205,7 +206,8 @@ This list is much more delicate then the variable `_Shape`, above.
 With `_Shape`, we could simply discard everything and replace by a brand new `TopoDS_Shape`.
 Now, the situation is different:
 1. Many threads might want to simultaneously traverse / search the container.
-2. Many threads might want to insert or delete a new `DocumentObject` in this container. Or change its structure somehow.
+2. Many threads might want to insert or delete a new `DocumentObject` in this container.
+Or change its structure somehow.
 
 While the container is traversed, it cannot have its structure changed.
 Many threads might traverse it concurrently, as long as its structure does not change.
