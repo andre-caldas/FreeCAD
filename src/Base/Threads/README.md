@@ -273,7 +273,7 @@ This is because, after we get a `UniqueLock` on A, we do not want the thread to 
 So, when we have a `UniqueLock`, we have to acquire them all at once.
 For example:
 ```c_cpp
-  UniqueLoc lock(map, vec); // If we do not add "map" here, the for will throw.
+  UniqueLock lock(map, vec); // If we do not add "map" here, the for will throw.
   for(auto& [k,attomic]: map) // SharedLock acquired here is "dummy".
   {
     lock[vec].push_back(attomic);
