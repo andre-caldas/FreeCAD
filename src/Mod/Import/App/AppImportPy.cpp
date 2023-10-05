@@ -25,6 +25,8 @@
 #define WNT  // avoid conflict with GUID
 #endif
 #ifndef _PreComp_
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/range/adaptor/indexed.hpp>
 #include <climits>
 #if defined(__clang__)
 #pragma clang diagnostic push
@@ -278,11 +280,27 @@ private:
         try {
             Py::Sequence list(object);
             std::vector<App::DocumentObject*> objs;
+            std::map<Part::Feature*, std::vector<App::Color>> partColor;
             for (Py::Sequence::iterator it = list.begin(); it != list.end(); ++it) {
                 PyObject* item = (*it).ptr();
                 if (PyObject_TypeCheck(item, &(App::DocumentObjectPy::Type))) {
                     auto pydoc = static_cast<App::DocumentObjectPy*>(item);
                     objs.push_back(pydoc->getDocumentObjectPtr());
+                }
+                else if (PyTuple_Check(item) && PyTuple_Size(item) == 2) {
+                    Py::Tuple tuple(*it);
+                    Py::Object item0 = tuple.getItem(0);
+                    Py::Object item1 = tuple.getItem(1);
+                    if (PyObject_TypeCheck(item0.ptr(), &(App::DocumentObjectPy::Type))) {
+                        auto pydoc = static_cast<App::DocumentObjectPy*>(item0.ptr());
+                        App::DocumentObject* obj = pydoc->getDocumentObjectPtr();
+                        objs.push_back(obj);
+                        if (Part::Feature* part = dynamic_cast<Part::Feature*>(obj)) {
+                            App::PropertyColorList colors;
+                            colors.setPyObject(item1.ptr());
+                            partColor[part] = colors.getValues();
+                        }
+                    }
                 }
             }
 
@@ -290,7 +308,20 @@ private:
             Handle(TDocStd_Document) hDoc;
             hApp->NewDocument(TCollection_ExtendedString("MDTV-CAF"), hDoc);
 
-            Import::ExportOCAF2 ocaf(hDoc);
+            auto getShapeColors = [partColor](App::DocumentObject* obj, const char* subname) {
+                std::map<std::string, App::Color> cols;
+                auto it = partColor.find(dynamic_cast<Part::Feature*>(obj));
+                if (it != partColor.end() && boost::starts_with(subname, "Face")) {
+                    const auto& colors = it->second;
+                    std::string face("Face");
+                    for (const auto& element : colors | boost::adaptors::indexed(1)) {
+                        cols[face + std::to_string(element.index())] = element.value();
+                    }
+                }
+                return cols;
+            };
+
+            Import::ExportOCAF2 ocaf(hDoc, getShapeColors);
             if (!legacyExport || !ocaf.canFallback(objs)) {
                 ocaf.setExportOptions(ExportOCAF2::customExportOptions());
                 ocaf.setExportHiddenObject(exportHidden);
@@ -301,6 +332,7 @@ private:
             else {
                 bool keepExplicitPlacement = true;
                 ExportOCAFCmd ocaf(hDoc, keepExplicitPlacement);
+                ocaf.setPartColorsMap(partColor);
                 ocaf.exportObjects(objs);
             }
 

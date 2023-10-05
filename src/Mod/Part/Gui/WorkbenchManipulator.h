@@ -21,38 +21,49 @@
  *                                                                         *
  **************************************************************************/
 
-#ifndef IMPORT_READER_GLTF_H
-#define IMPORT_READER_GLTF_H
 
-#include <Mod/Import/ImportGlobal.h>
-#include <Base/FileInfo.h>
-#include <TDocStd_Document.hxx>
-#include <TDF_LabelSequence.hxx>
-#include <TopoDS_Shape.hxx>
+#ifndef PARTGUI_WORKBENCHMANIPULATOR_H
+#define PARTGUI_WORKBENCHMANIPULATOR_H
 
-namespace Import
+#include <Gui/WorkbenchManipulator.h>
+
+namespace PartGui {
+
+class WorkbenchManipulator: public Gui::WorkbenchManipulator
 {
-
-class ImportExport ReaderGltf
-{
-public:
-    explicit ReaderGltf(const Base::FileInfo& file);
-
-    void read(Handle(TDocStd_Document) hDoc);
-    bool cleanup() const;
-    void setCleanup(bool);
+protected:
+    /*!
+     * \brief modifyMenuBar
+     * Method to manipulate the menu structure of a workbench.
+     * The default implementation doesn't change anything.SectionCut
+     */
+    void modifyMenuBar(Gui::MenuItem* menuBar) override;
+    /*!
+     * \brief modifyContextMenu
+     * Method to manipulate the contextmenu structure of a workbench.
+     * The default implementation doesn't change anything.
+     */
+    void modifyContextMenu(const char* recipient, Gui::MenuItem* menuBar) override;
+    /*!
+     * \brief modifyToolBars
+     * Method to manipulate the toolbar structure of a workbench
+     * The default implementation doesn't change anything.
+     */
+    void modifyToolBars([[maybe_unused]] Gui::ToolBarItem* toolBar) override;
+    /*!
+     * \brief modifyDockWindows
+     * Method to manipulate the dock window structure of a workbench
+     * The default implementation doesn't change anything.
+     */
+    void modifyDockWindows([[maybe_unused]] Gui::DockWindowItems* dockWindow) override;
 
 private:
-    TopoDS_Shape fixShape(TopoDS_Shape);
-    void processDocument(Handle(TDocStd_Document) hDoc);
-    TopoDS_Shape processSubShapes(Handle(TDocStd_Document) hDoc,
-                                  const TDF_LabelSequence& subShapeLabels);
-
-private:
-    Base::FileInfo file;
-    bool clean = true;
+    static void addSectionCut(Gui::MenuItem* menuBar);
+    static void addSelectionFilter(Gui::ToolBarItem* toolBar);
+    static void addSelectionFilter(Gui::MenuItem* menuBar);
 };
 
-}  // namespace Import
+} // namespace PartGui
 
-#endif  // IMPORT_READER_GLTF_H
+
+#endif // PARTGUI_WORKBENCHMANIPULATOR_H
