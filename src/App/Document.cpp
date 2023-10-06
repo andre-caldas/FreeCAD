@@ -124,6 +124,7 @@ using namespace App;
 using namespace std;
 using namespace boost;
 using namespace zipios;
+using namespace Base::Threads;
 
 #if FC_DEBUG
 #  define FC_LOGFEATUREUPDATE
@@ -3272,17 +3273,21 @@ DocumentObject * Document::addObject(const char* sType, const char* pObjectName,
         ObjectName = getUniqueObjectName(sType);
 
 
-    d->activeObject = pcObject;
+    { // ExclusiveLock scope
+        ExclusiveLock lock(/*d->activeObject,*/
+                           d->objectMap/*, d->objectIdMap*/);
+        d->activeObject = pcObject;
 
-    // insert in the name map
-    d->objectMap[ObjectName] = pcObject;
-    // generate object id and add to id map;
-    pcObject->_Id = ++d->lastObjectId;
-    d->objectIdMap[pcObject->_Id] = pcObject;
-    // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
-    pcObject->pcNameInDocument = &(d->objectMap.find(ObjectName)->first);
-    // insert in the vector
-    d->objectArray.push_back(pcObject);
+        // insert in the name map
+        lock[d->objectMap][ObjectName] = pcObject;
+        // generate object id and add to id map;
+        pcObject->_Id = ++d->lastObjectId;
+        d->objectIdMap[pcObject->_Id] = pcObject;
+        // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
+        pcObject->pcNameInDocument = &(lock[d->objectMap].find(ObjectName)->first);
+        // insert in the vector
+        d->objectArray.push_back(pcObject);
+    }
 
     // If we are restoring, don't set the Label object now; it will be restored later. This is to avoid potential duplicate
     // label conflicts later.
@@ -3338,6 +3343,7 @@ std::vector<DocumentObject *> Document::addObjects(const char* sType, const std:
         return objects;
     }
 
+    ExclusiveLock lock(d->objectMap);
     // get all existing object names
     std::vector<std::string> reservedNames;
     reservedNames.reserve(d->objectMap.size());
@@ -3355,6 +3361,7 @@ std::vector<DocumentObject *> Document::addObjects(const char* sType, const std:
             // Undo stuff
             _checkTransaction(nullptr,nullptr,__LINE__);
             if (d->activeUndoTransaction) {
+                // TODO: lock mutexes used by addObjectDel.
                 d->activeUndoTransaction->addObjectDel(pcObject);
             }
         }
@@ -3380,12 +3387,12 @@ std::vector<DocumentObject *> Document::addObjects(const char* sType, const std:
         reservedNames.push_back(ObjectName);
 
         // insert in the name map
-        d->objectMap[ObjectName] = pcObject;
+        lock[d->objectMap][ObjectName] = pcObject;
         // generate object id and add to id map;
         pcObject->_Id = ++d->lastObjectId;
         d->objectIdMap[pcObject->_Id] = pcObject;
         // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
-        pcObject->pcNameInDocument = &(d->objectMap.find(ObjectName)->first);
+        pcObject->pcNameInDocument = &(lock[d->objectMap].find(ObjectName)->first);
         // insert in the vector
         d->objectArray.push_back(pcObject);
 
@@ -3402,16 +3409,19 @@ std::vector<DocumentObject *> Document::addObjects(const char* sType, const std:
         const char *viewType = pcObject->getViewProviderNameOverride();
         pcObject->_pcViewProviderName = viewType ? viewType : "";
 
+        // TODO: make signals asynchronous and therefore, thread-safe.
         signalNewObject(*pcObject);
 
         // do no transactions if we do a rollback!
         if (!d->rollback && d->activeUndoTransaction) {
+            // TODO: make signals asynchronous and therefore, thread-safe.
             signalTransactionAppend(*pcObject, d->activeUndoTransaction);
         }
     }
 
     if (!objects.empty()) {
         d->activeObject = objects.back();
+        // TODO: make signals asynchronous and therefore, thread-safe.
         signalActivatedObject(*objects.back());
     }
 
@@ -3439,15 +3449,18 @@ void Document::addObject(DocumentObject* pcObject, const char* pObjectName)
 
     d->activeObject = pcObject;
 
-    // insert in the name map
-    d->objectMap[ObjectName] = pcObject;
-    // generate object id and add to id map;
-    if(!pcObject->_Id) pcObject->_Id = ++d->lastObjectId;
-    d->objectIdMap[pcObject->_Id] = pcObject;
-    // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
-    pcObject->pcNameInDocument = &(d->objectMap.find(ObjectName)->first);
-    // insert in the vector
-    d->objectArray.push_back(pcObject);
+    {
+        ExclusiveLock lock(/*d->activeObject, */d->objectMap);
+        // insert in the name map
+        lock[d->objectMap][ObjectName] = pcObject;
+        // generate object id and add to id map;
+        if(!pcObject->_Id) pcObject->_Id = ++d->lastObjectId;
+        d->objectIdMap[pcObject->_Id] = pcObject;
+        // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
+        pcObject->pcNameInDocument = &(lock[d->objectMap].find(ObjectName)->first);
+        // insert in the vector
+        d->objectArray.push_back(pcObject);
+    }
 
     pcObject->Label.setValue( ObjectName );
 
@@ -3464,6 +3477,7 @@ void Document::addObject(DocumentObject* pcObject, const char* pObjectName)
         signalTransactionAppend(*pcObject, d->activeUndoTransaction);
     }
 
+    // TODO: make signals asynchronous and therefore, multithread friendly.
     signalActivatedObject(*pcObject);
 }
 
@@ -3473,13 +3487,17 @@ void Document::_addObject(std::shared_ptr<DocumentObject> sharedObject, const ch
     _assumeOwnership(std::move(sharedObject));
 
     std::string ObjectName = getUniqueObjectName(pObjectName);
-    d->objectMap[ObjectName] = pcObject;
-    // generate object id and add to id map;
-    if(!pcObject->_Id) pcObject->_Id = ++d->lastObjectId;
-    d->objectIdMap[pcObject->_Id] = pcObject;
-    d->objectArray.push_back(pcObject);
-    // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
-    pcObject->pcNameInDocument = &(d->objectMap.find(ObjectName)->first);
+
+    {
+        ExclusiveLock lock(d->objectMap);
+        lock[d->objectMap][ObjectName] = pcObject;
+        // generate object id and add to id map;
+        if(!pcObject->_Id) pcObject->_Id = ++d->lastObjectId;
+        d->objectIdMap[pcObject->_Id] = pcObject;
+        d->objectArray.push_back(pcObject);
+        // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
+        pcObject->pcNameInDocument = &(lock[d->objectMap].find(ObjectName)->first);
+    }
 
     // do no transactions if we do a rollback!
     if (!d->rollback) {
@@ -3507,6 +3525,7 @@ void Document::_addObject(std::shared_ptr<DocumentObject> sharedObject, const ch
 /// Remove an object out of the document
 void Document::removeObject(const char* sName)
 {
+    ExclusiveLock lock(d->objectMap);
     auto pos = d->objectMap.find(sName);
 
     // name not found?
@@ -3592,7 +3611,7 @@ void Document::removeObject(const char* sName)
         }
     }
 
-    d->objectMap.erase(pos);
+    lock[d->objectMap].erase(pos);
     _releaseOwnership(pcObject);
 }
 
@@ -3609,7 +3628,8 @@ std::shared_ptr<DocumentObject> Document::_removeObject(DocumentObject* pcObject
     // TODO Refactoring: share code with Document::removeObject() (2015-09-01, Fat-Zer)
     _checkTransaction(pcObject,nullptr,__LINE__);
 
-    // TODO: https://forum.freecad.org/viewtopic.php?t=81176
+    // TODO: this lock has a too long scope.
+    ExclusiveLock lock(d->objectMap);
     auto pos = d->objectMap.find(pcObject->getNameInDocument());
 
     if(!d->rollback && d->activeUndoTransaction && pos->second->hasChildElement()) {
@@ -3670,7 +3690,7 @@ std::shared_ptr<DocumentObject> Document::_removeObject(DocumentObject* pcObject
     // remove from map
     pcObject->setStatus(ObjectStatus::Remove, false); // Unset the bit to be on the safe side
     d->objectIdMap.erase(pcObject->_Id);
-    d->objectMap.erase(pos);
+    lock[d->objectMap].erase(pos);
     return _releaseOwnership(pcObject);
 }
 
@@ -3938,8 +3958,8 @@ std::string Document::getUniqueObjectName(const char *Name) const
 
         std::vector<std::string> names;
         names.reserve(d->objectMap.size());
-        for (pos = d->objectMap.begin();pos != d->objectMap.end();++pos) {
-            names.push_back(pos->first);
+        for (auto [name,obj]: d->objectMap) {
+            names.push_back(name);
         }
         return Base::Tools::getUniqueName(CleanName, names, 3);
     }

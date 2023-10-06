@@ -32,19 +32,20 @@ namespace Base::Threads
 {
 
 /**
- * @brief This wraps an std::map and provides a shared_mutex
+ * @brief This wraps an std::vector and provides a shared_mutex
  * to make the map readable by many only when the map structure
  * is not being modified.
  * The map elements are not protected, just the map structure.
  * To protect each element, use std::atomic.
  *
- * Iterators use a shared_lock.
+ * Iterators use SharedLock.
  * Methods that change the map structure use a lock.
  */
 template<typename Val>
 class ThreadSafeVector
     : public ThreadSafeContainer<std::vector<Val>>
 {
+    friend class ExclusiveLock;
 };
 
 } //namespace Base::Threads

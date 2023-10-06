@@ -26,36 +26,40 @@
 
 #include <shared_mutex>
 
-#include "LockedIterator.h"
-
 namespace Base::Threads
 {
 
-class UniqueLock;
+class ExclusiveLock;
+
+template<typename ItType>
+class LockedIterator;
 
 template<typename ContainerType>
 class ThreadSafeContainer
 {
 public:
-    using container_type = ContainerType;
-    using container_iterator = typename container_type::iterator;
-    using container_const_iterator = typename container_type::const_iterator;
+    typedef ContainerType container_type;
+    typedef typename container_type::iterator container_iterator;
+    typedef typename container_type::const_iterator container_const_iterator;
 
-    using iterator = LockedIterator<container_iterator>;
-    using const_iterator = LockedIterator<container_const_iterator>;
+    typedef LockedIterator<container_iterator> iterator;
+    typedef LockedIterator<container_const_iterator> const_iterator;
 
     iterator begin();
-    container_iterator end();
+    const_iterator begin() const;
     const_iterator cbegin() const;
-    container_const_iterator cend() const;
+
+    container_iterator end() noexcept {return container.end();}
+    container_const_iterator end() const {return container.end();}
+    container_const_iterator cend() const {return container.cend();}
 
     void clear();
     size_t size() const;
 
 protected:
-    friend class UniqueLock;
     mutable std::shared_mutex mutex;
     container_type container;
+    friend class ExclusiveLock;
 };
 
 } //namespace Base::Threads

@@ -344,27 +344,26 @@ SET(FreeCADBase_HPP_SRCS
     ZipHeader.h
 )
 
-SET(FreeCADBase_THREADS_SRCS
+SET(FreeCADBase_Threads_SRCS
     Threads/Exception.h
     Threads/LockPolicy.h
     Threads/LockPolicy.inl
     Threads/LockPolicy.cpp
-    Threads/SharedLock.h
     Threads/LockedIterator.h
     Threads/ThreadSafeContainer.h
     Threads/ThreadSafeContainer.inl
     Threads/ThreadSafeVector.h
     Threads/ThreadSafeMap.h
 )
-SOURCE_GROUP("Threads" FILES ${FreeCADBase_THREADS_SRCS})
+SOURCE_GROUP("Threads" FILES ${FreeCADBase_Threads_SRCS})
 
 SET(FreeCADBase_SRCS
     ${PYCXX_SOURCES}
+    ${FreeCADBase_Threads_SRCS}
     ${FreeCADBase_CPP_SRCS}
     ${FreeCADBase_HPP_SRCS}
     ${FreeCADBase_XML_SRCS}
     ${FreeCADBase_UNITAPI_SRCS}
-    ${FreeCADBase_THREADS_SRCS}
     PyTools.c
     PyTools.h
     PreCompiled.cpp

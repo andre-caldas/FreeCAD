@@ -26,6 +26,7 @@
 #include <App/DocumentObject.h>
 #include <App/DocumentObserver.h>
 #include <App/StringHasher.h>
+#include <Base/Threads/ThreadSafeMap.h>
 #include <CXX/Objects.hxx>
 #include <boost/bimap.hpp>
 #include <boost/graph/adjacency_list.hpp>
@@ -49,6 +50,8 @@ using Vertex = Traits::vertex_descriptor;
 using Edge =  Traits::edge_descriptor;
 using Node =  std::vector <size_t>;
 using Path =  std::vector <size_t>;
+template<typename k, typename v>
+using ThreadSafeUnorderedMap = Base::Threads::ThreadSafeUnorderedMap<k,v>;
 
 namespace App {
 using HasherMap = boost::bimap<StringHasherRef, int>;
@@ -69,7 +72,7 @@ struct DocumentP
      * needs to acquire a shared_ptr before it is removed from ownedObjects.
      */
     std::unordered_map<DocumentObject*, std::shared_ptr<DocumentObject>> ownedObjects;
-    std::unordered_map<std::string, DocumentObject*> objectMap;
+    ThreadSafeUnorderedMap<std::string, DocumentObject*> objectMap;
     std::unordered_map<long, DocumentObject*> objectIdMap;
     std::unordered_map<std::string, bool> partialLoadObjects;
     std::vector<DocumentObjectT> pendingRemove;

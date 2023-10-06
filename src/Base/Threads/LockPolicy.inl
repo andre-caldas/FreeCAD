@@ -22,6 +22,7 @@
  ***************************************************************************/
 
 #include <algorithm>
+#include <memory>
 #include <shared_mutex>
 
 #include "Exception.h"
@@ -73,23 +74,22 @@ LockPolicy::LockPolicy(bool is_exclusive, MutN*... mutex)
 }
 
 
-template<typename... MutN,
-         std::enable_if_t<(std::is_same_v<std::shared_mutex, MutN> && ...)>*>
-ExclusiveLock::ExclusiveLock(MutN&... each_mutex)
-    : LockPolicy(true, &each_mutex...)
+template<typename... ThrSfCont>
+ExclusiveLock::ExclusiveLock(ThrSfCont&... container)
+    : LockPolicy(true, &container.mutex...)
 {
     // Policy dictates that we can do:
     // ExclusiveLock l1(m1, m2);
     // ExclusiveLock l2(m1); // Does nothing.
-    assert(mutexes.empty() || mutexes.size() == sizeof...(MutN));
-    if(mutexes.size() == sizeof...(MutN))
+    assert(mutexes.empty() || mutexes.size() == sizeof...(ThrSfCont));
+    if(mutexes.size() == sizeof...(ThrSfCont))
     {
-        locks = std::make_unique<std::scoped_lock>(each_mutex...);
+        locks = std::make_unique<std::scoped_lock<decltype(ThrSfCont::mutex)...>>(container.mutex...);
     }
 }
 
 template<typename ThrSfCont>
-decltype(ThrSfCont::container)& ExclusiveLock::operator[](ThrSfCont& tsc)
+typename ThrSfCont::container_type& ExclusiveLock::operator[](ThrSfCont& tsc)
 {
     if(!threadMutexes.count(&tsc.mutex))
     {

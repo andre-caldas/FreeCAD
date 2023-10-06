@@ -26,6 +26,8 @@
 
 #include <shared_mutex>
 
+#include "LockPolicy.h"
+
 namespace Base::Threads
 {
 
@@ -46,11 +48,12 @@ public:
 
     LockedIterator& operator=(const LockedIterator&) = delete;
     LockedIterator& operator++() {it++; return *this;}
-    typename ItType::value_type& operator*() {return *it;}
+    auto& operator*() const {return *it;}
+    auto* operator->() const {return &*it;}
     operator ItType&() {return it;}
 
 private:
-    mutable std::shared_lock<std::shared_mutex> lock;
+    mutable SharedLock lock;
     ItType it;
 };
 

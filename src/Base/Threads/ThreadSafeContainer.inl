@@ -23,45 +23,45 @@
 
 #include <mutex>
 
+#include "LockPolicy.h"
+#include "LockedIterator.h"
 #include "ThreadSafeContainer.h"
 
 namespace Base::Threads {
 
 template<typename ContainerType>
-typename ThreadSafeContainer<ContainerType>::iterator ThreadSafeContainer<ContainerType>::begin()
+typename ThreadSafeContainer<ContainerType>::iterator
+ThreadSafeContainer<ContainerType>::begin()
 {
     return iterator(mutex, container.begin());
 }
 
 template<typename ContainerType>
-typename ThreadSafeContainer<ContainerType>::container_iterator ThreadSafeContainer<ContainerType>::end()
+typename ThreadSafeContainer<ContainerType>::const_iterator
+ThreadSafeContainer<ContainerType>::begin() const
 {
-    return container.end();
+    return cbegin();
 }
 
 template<typename ContainerType>
-typename ThreadSafeContainer<ContainerType>::const_iterator ThreadSafeContainer<ContainerType>::cbegin() const
+typename ThreadSafeContainer<ContainerType>::const_iterator
+ThreadSafeContainer<ContainerType>::cbegin() const
 {
     return const_iterator(mutex, container.cbegin());
 }
 
-template<typename ContainerType>
-typename ThreadSafeContainer<ContainerType>::container_const_iterator ThreadSafeContainer<ContainerType>::cend() const
-{
-    return container.cend();
-}
 
 template<typename ContainerType>
 void ThreadSafeContainer<ContainerType>::clear()
 {
-    std::unique_lock lock(mutex);
+    ExclusiveLock lock(*this);
     container.clear();
 }
 
 template<typename ContainerType>
 size_t ThreadSafeContainer<ContainerType>::size() const
 {
-    std::unique_lock lock(mutex);
+    SharedLock lock(mutex);
     container.size();
 }
 

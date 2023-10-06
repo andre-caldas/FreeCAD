@@ -55,7 +55,7 @@ protected:
 
     std::unordered_set<std::shared_mutex*> mutexes;
 
-private:
+protected:
     static thread_local bool isExclusive;
     static thread_local std::unordered_set<std::shared_mutex*> threadMutexes;
 };
@@ -74,17 +74,12 @@ private:
 class ExclusiveLock : public LockPolicy
 {
 public:
-    template<typename... MutN,
-             std::enable_if_t<(std::is_same_v<std::shared_mutex, MutN> && ...)>* = nullptr>
-    ExclusiveLock(MutN&... mutex);
-
-    template<typename... ThrSfCont,
-             std::enable_if_t<(std::is_same_v<std::shared_mutex, decltype(ThrSfCont::mutex)> && ...)>* = nullptr>
-    ExclusiveLock(ThrSfCont&... container) : ExclusiveLock(container.mutex...) {}
+    template<typename... ThrSfCont>
+    ExclusiveLock(ThrSfCont&... container);
 
     // This could actually be static.
     template<typename ThrSfCont>
-    decltype(ThrSfCont::container)& operator[](ThrSfCont& tsc);
+    typename ThrSfCont::container_type& operator[](ThrSfCont& tsc);
 
 private:
     /*
