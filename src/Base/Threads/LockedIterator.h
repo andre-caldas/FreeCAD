@@ -64,7 +64,9 @@ public:
     {assert(false); it = other.it; return *this;}
 
     constexpr bool operator==(const LockedIterator& other) const {return it == other.it;}
+    constexpr bool operator!=(const LockedIterator& other) const {return it != other.it;}
     LockedIterator& operator++() {it++; return *this;}
+    LockedIterator operator++(int) {LockedIterator result(*this); ++it; return result;}
     auto& operator*() const {return *it;}
     auto* operator->() const {return &*it;}
     operator ItType&() {return it;}
