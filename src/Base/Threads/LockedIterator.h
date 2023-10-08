@@ -57,6 +57,8 @@ public:
         , it(std::move(it))
     {}
 
+    ~LockedIterator() = default;
+
     // We need LockedIterator to be copy assignable to use algorithms.
     // But we shall never use it. We do not change mutexes, only the iterator.
     // So, this messes with LockPolicy.
@@ -72,12 +74,12 @@ public:
     operator ItType&() {return it;}
 
     template<typename Container>
-    static LockedIterator<ItType> MakeEndIterator(Container& c)
-    {return LockedIterator(c.end());}
+    static LockedIterator<ItType> MakeEndIterator(Container& container)
+    {return LockedIterator(container.end());}
 
     template<typename Container>
-    static LockedIterator<ItType> MakeCEndIterator(const Container& c)
-    {return LockedIterator(c.cend());}
+    static LockedIterator<ItType> MakeCEndIterator(const Container& container)
+    {return LockedIterator(container.cend());}
 
 private:
     mutable SharedLock lock;
@@ -92,7 +94,7 @@ private:
      * Therefore, we also wrap the "end()" iterator.
      * But, since it might be short lived, we do not want the lock to be tied to it.
      */
-    LockedIterator(ItType&& it)
+    explicit LockedIterator(ItType&& it)
         : it(std::move(it))
     {}
 };

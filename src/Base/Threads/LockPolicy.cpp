@@ -50,7 +50,7 @@ SharedLock::SharedLock(std::shared_mutex& mutex)
     }
 }
 
-thread_local bool LockPolicy::isExclusive;
+thread_local bool LockPolicy::isExclusive = false;
 thread_local std::unordered_set<std::shared_mutex*> LockPolicy::threadMutexes;
 
 } //namespace Base::Threads
