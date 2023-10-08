@@ -29,6 +29,9 @@
 
 namespace Base::Threads {
 
+/*
+ * Iterator: begin().
+ */
 template<typename ContainerType>
 typename ThreadSafeContainer<ContainerType>::iterator
 ThreadSafeContainer<ContainerType>::begin()
@@ -51,6 +54,31 @@ ThreadSafeContainer<ContainerType>::cbegin() const
 }
 
 
+/*
+ * Iterator: end().
+ */
+template<typename ContainerType>
+typename ThreadSafeContainer<ContainerType>::iterator
+ThreadSafeContainer<ContainerType>::end()
+{
+    return iterator::MakeEndIterator(container);
+}
+
+template<typename ContainerType>
+typename ThreadSafeContainer<ContainerType>::const_iterator
+ThreadSafeContainer<ContainerType>::end() const
+{
+    return cend();
+}
+
+template<typename ContainerType>
+typename ThreadSafeContainer<ContainerType>::const_iterator
+ThreadSafeContainer<ContainerType>::cend() const
+{
+    return const_iterator::MakeCEndIterator(container);
+}
+
+
 template<typename ContainerType>
 void ThreadSafeContainer<ContainerType>::clear()
 {
@@ -62,7 +90,7 @@ template<typename ContainerType>
 size_t ThreadSafeContainer<ContainerType>::size() const
 {
     SharedLock lock(mutex);
-    container.size();
+    return container.size();
 }
 
 } // namespace Base

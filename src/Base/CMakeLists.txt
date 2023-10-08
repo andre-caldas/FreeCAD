@@ -354,6 +354,7 @@ SET(FreeCADBase_Threads_SRCS
     Threads/ThreadSafeContainer.inl
     Threads/ThreadSafeVector.h
     Threads/ThreadSafeMap.h
+    Threads/AtomicSharedPtr.h
 )
 SOURCE_GROUP("Threads" FILES ${FreeCADBase_Threads_SRCS})
 

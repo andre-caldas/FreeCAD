@@ -49,12 +49,13 @@ void Document::writeDependencyGraphViz(std::ostream &out)
     out << "\tordering=out;" << std::endl;
     out << "\tnode [shape = box];" << std::endl;
 
-    for (const auto &It : d->objectMap) {
-        out << "\t" << It.first << ";" << std::endl;
-        std::vector<DocumentObject*> OutList = It.second->getOutList();
-        for (const auto &It2 : OutList) {
+    for (const auto& [name,obj_ptr] : d->objectMap) {
+        auto obj = obj_ptr.load();
+        out << "\t" << name << ";" << std::endl;
+        std::vector<DocumentObject*> OutList = obj->getOutList();
+        for (const auto& It2 : OutList) {
             if (It2) {
-                out << "\t" << It.first << "->" << It2->getNameInDocument() << ";" << std::endl;
+                out << "\t" << name << "->" << It2->getNameInDocument() << ";" << std::endl;
             }
         }
     }
@@ -399,12 +400,15 @@ void Document::exportGraphviz(std::ostream& out) const
             }
 
             // Internal document objects
-            for (const auto & It : d->objectMap)
-                addExpressionSubgraphIfNeeded(It.second, CSSubgraphs);
+            for (const auto& [k,atomic] : d->objectMap) {
+                auto sharedObj = atomic.load();
+                addExpressionSubgraphIfNeeded(sharedObj.get(), CSSubgraphs);
+            }
 
             // Add external document objects
-            for (const auto & it : d->objectMap) {
-                std::vector<DocumentObject*> OutList = it.second->getOutList();
+            for (const auto& [k,atomic] : d->objectMap) {
+                auto sharedObj = atomic.load();
+                std::vector<DocumentObject*> OutList = sharedObj->getOutList();
                 for (auto obj : OutList) {
                     if (obj) {
                         std::map<std::string,Vertex>::const_iterator item = GlobalVertexList.find(getId(obj));
@@ -414,7 +418,6 @@ void Document::exportGraphviz(std::ostream& out) const
                     }
                 }
             }
-
         }
 
         // Filling up the adjacency List
@@ -424,12 +427,16 @@ void Document::exportGraphviz(std::ostream& out) const
             bool CSSubgraphs = depGrp->GetBool("GeoFeatureSubgraphs", true);
 
             // Add internal document objects
-            for (const auto & It : d->objectMap)
-                add(It.second, It.second->getNameInDocument(), It.second->Label.getValue(), CSSubgraphs);
+            for (const auto& [k,atomic] : d->objectMap) {
+                auto sharedObj = atomic.load();
+                add(sharedObj.get(), sharedObj->getNameInDocument(), sharedObj->Label.getValue(), CSSubgraphs);
+            }
 
             // Add external document objects
-            for (const auto & It : d->objectMap) {
-                std::vector<DocumentObject*> OutList = It.second->getOutList();
+            for (const auto& [k,atomic] : d->objectMap) {
+                auto sharedObj = atomic.load();
+                std::vector<DocumentObject*> OutList = sharedObj->getOutList();
+
                 for (auto obj : OutList) {
                     if (obj) {
                         std::map<std::string,Vertex>::const_iterator item = GlobalVertexList.find(getId(obj));
@@ -484,21 +491,22 @@ void Document::exportGraphviz(std::ostream& out) const
             bool omitGeoFeatureGroups = depGrp->GetBool("GeoFeatureSubgraphs", true);
 
             // Add edges between document objects
-            for (const auto & It : d->objectMap) {
+            for (const auto& [k,atomic] : d->objectMap) {
+                auto sharedObj = atomic.load();
 
                 if(omitGeoFeatureGroups) {
                     //coordinate systems are represented by subgraphs
-                    if(It.second->hasExtension(GeoFeatureGroupExtension::getExtensionClassTypeId()))
+                    if(sharedObj->hasExtension(GeoFeatureGroupExtension::getExtensionClassTypeId()))
                         continue;
 
                     //as well as origins
-                    if(It.second->isDerivedFrom(Origin::getClassTypeId()))
+                    if(sharedObj->isDerivedFrom(Origin::getClassTypeId()))
                         continue;
                 }
 
                 std::map<DocumentObject*, int> dups;
-                std::vector<DocumentObject*> OutList = It.second->getOutList();
-                const DocumentObject * docObj = It.second;
+                std::vector<DocumentObject*> OutList = sharedObj->getOutList();
+                const DocumentObject * docObj = sharedObj.get();
 
                 for (auto obj : OutList) {
                     if (obj) {
@@ -530,7 +538,7 @@ void Document::exportGraphviz(std::ostream& out) const
 
                 // Set labels for duplicate edges
                 for (const auto & dup : dups) {
-                    Edge e(edge(GlobalVertexList[getId(It.second)], GlobalVertexList[getId(dup.first)], DepList).first);
+                    Edge e(edge(GlobalVertexList[getId(sharedObj.get())], GlobalVertexList[getId(dup.first)], DepList).first);
                     std::stringstream s;
                     s << " " << (dup.second + 1) << "x";
                     edgeAttrMap[e]["label"] = s.str();

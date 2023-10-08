@@ -49,9 +49,9 @@ public:
     const_iterator begin() const;
     const_iterator cbegin() const;
 
-    container_iterator end() noexcept {return container.end();}
-    container_const_iterator end() const {return container.end();}
-    container_const_iterator cend() const {return container.cend();}
+    iterator end();
+    const_iterator end() const;
+    const_iterator cend() const;
 
     void clear();
     size_t size() const;

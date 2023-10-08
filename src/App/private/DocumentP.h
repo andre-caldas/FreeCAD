@@ -27,6 +27,7 @@
 #include <App/DocumentObserver.h>
 #include <App/StringHasher.h>
 #include <Base/Threads/ThreadSafeMap.h>
+#include <Base/Threads/AtomicSharedPtr.h>
 #include <CXX/Objects.hxx>
 #include <boost/bimap.hpp>
 #include <boost/graph/adjacency_list.hpp>
@@ -52,6 +53,8 @@ using Node =  std::vector <size_t>;
 using Path =  std::vector <size_t>;
 template<typename k, typename v>
 using ThreadSafeUnorderedMap = Base::Threads::ThreadSafeUnorderedMap<k,v>;
+template<typename t>
+using AtomicSharedPtr = Base::Threads::AtomicSharedPtr<t>;
 
 namespace App {
 using HasherMap = boost::bimap<StringHasherRef, int>;
@@ -63,21 +66,12 @@ struct DocumentP
     // Array to preserve the creation order of created objects
     std::vector<DocumentObject*> objectArray;
     std::unordered_set<App::DocumentObject*> touchedObjs;
-    /**
-     * @brief The objects we own are kept in this map.
-     * Instead of deleting DocumentObjects, we simply remove it from ownedObjects.
-     * Also, even if we were not deleting the object, but assuming Transaction
-     * would delete it for us, we remove it form here.
-     * Care needs to be taken because a Transaction owning the same object
-     * needs to acquire a shared_ptr before it is removed from ownedObjects.
-     */
-    std::unordered_map<DocumentObject*, std::shared_ptr<DocumentObject>> ownedObjects;
-    ThreadSafeUnorderedMap<std::string, DocumentObject*> objectMap;
+    ThreadSafeUnorderedMap<std::string, AtomicSharedPtr<DocumentObject>> objectMap;
     std::unordered_map<long, DocumentObject*> objectIdMap;
     std::unordered_map<std::string, bool> partialLoadObjects;
     std::vector<DocumentObjectT> pendingRemove;
     long lastObjectId;
-    DocumentObject* activeObject;
+    AtomicSharedPtr<DocumentObject> activeObject;
     Transaction *activeUndoTransaction;
     // pointer to the python class
     Py::Object DocumentPythonObject;
@@ -130,8 +124,8 @@ struct DocumentP
 
     void clearDocument() {
         objectArray.clear();
-        for(auto &v : objectMap) {
-            v.second->setStatus(ObjectStatus::Destroy, true);
+        for(auto& [k,obj] : objectMap) {
+            obj.load()->setStatus(ObjectStatus::Destroy, true);
         }
         objectIdMap.clear();
         objectMap.clear();

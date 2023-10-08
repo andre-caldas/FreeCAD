@@ -260,7 +260,7 @@ public:
      * @param objectNames A list of object names
      * @param isNew       If false don't call the \c DocumentObject::setupObject() callback (default is true)
      */
-    std::vector<DocumentObject *>addObjects(const char* sType, const std::vector<std::string>& objectNames, bool isNew=true);
+    std::vector<std::shared_ptr<DocumentObject>> addObjects(const char* sType, const std::vector<std::string>& objectNames, bool isNew=true);
     /// Remove a feature out of the document
     void removeObject(const char* sName);
     /** Add an existing feature with sName (ASCII) to this document and set it active.
@@ -436,7 +436,7 @@ public:
     /// checks if the graph is directed and has no cycles
     bool checkOnCycle();
     /// get a list of all objects linking to the given object
-    std::vector<App::DocumentObject*> getInList(const DocumentObject* me) const;
+    std::vector<std::shared_ptr<DocumentObject>> getInList(const DocumentObject* me) const;
 
     /// Option bit flags used by getDepenencyList()
     enum DependencyOption {
@@ -587,12 +587,11 @@ protected:
     /// Internally called by App::Application to abort the running transaction.
     void _abortTransaction();
 
-    DocumentObject* _createDocumentObject(const char* sType);
-    DocumentObject* _createDocumentObject(Base::Type type);
-    void _assumeOwnership(DocumentObject* pcObject);
+    std::shared_ptr<DocumentObject> _createDocumentObject(const char* sType);
+    std::shared_ptr<DocumentObject> _createDocumentObject(Base::Type type);
+    std::shared_ptr<DocumentObject> _assumeOwnership(DocumentObject* pcObject);
     void _assumeOwnership(std::shared_ptr<DocumentObject> sharedObject);
-    std::shared_ptr<DocumentObject> _releaseOwnership(DocumentObject* pcObject);
-    const std::shared_ptr<DocumentObject>& _getSharedPtr(DocumentObject* pcObject) const;
+    void _releaseOwnership(DocumentObject* pcObject);
 
 private:
     // # Data Member of the document +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

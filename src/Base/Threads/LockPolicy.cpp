@@ -35,6 +35,10 @@ LockPolicy::~LockPolicy()
 }
 
 
+SharedLock::SharedLock()
+    : LockPolicy(false)
+{}
+
 SharedLock::SharedLock(std::shared_mutex& mutex)
     : LockPolicy(false, &mutex)
 {

@@ -46,6 +46,9 @@ namespace Base::Threads
  */
 class LockPolicy
 {
+public:
+    static bool hasAnyLock() {return !threadMutexes.empty();}
+
 protected:
     LockPolicy() = delete;
     template<typename... MutN,
@@ -64,6 +67,7 @@ protected:
 class SharedLock : public LockPolicy
 {
 public:
+    SharedLock();
     SharedLock(std::shared_mutex& mutex);
 
 private:
@@ -80,6 +84,10 @@ public:
     // This could actually be static.
     template<typename ThrSfCont>
     typename ThrSfCont::container_type& operator[](ThrSfCont& tsc);
+
+    static bool hasAnyLock() {return isExclusive && !threadMutexes.empty();}
+    template<typename ThrSfCont>
+    static bool hasLock(const ThrSfCont& c) {return isExclusive && threadMutexes.count(&c.mutex);}
 
 private:
     /*

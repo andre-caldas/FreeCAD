@@ -53,6 +53,9 @@ public:
     auto find(const Key& key) const
     {return LockedIterator(mutex, container.find(key));}
 
+    size_t count(const Key& key) const
+    {SharedLock l(mutex); return container.count(key);}
+
 private:
     using ThreadSafeContainer<std::map<Key,Val>>::mutex;
     using ThreadSafeContainer<std::map<Key,Val>>::container;
@@ -78,6 +81,9 @@ public:
 
     auto find(const Key& key) const
     {return LockedIterator(mutex, container.find(key));}
+
+    size_t count(const Key& key) const
+    {SharedLock l(mutex); return container.count(key);}
 
 private:
     using ThreadSafeContainer<std::unordered_map<Key,Val>>::mutex;
