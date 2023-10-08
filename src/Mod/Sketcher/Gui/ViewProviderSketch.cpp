@@ -39,6 +39,11 @@
 #include <QTextStream>
 #endif
 
+// clang-format off
+#include <Gui/View3DInventor.h>
+#include <Gui/View3DInventorViewer.h>
+// clang-format on
+
 #include <Base/Console.h>
 #include <Base/Vector3D.h>
 #include <Gui/Application.h>
@@ -52,8 +57,6 @@
 #include <Gui/SelectionObject.h>
 #include <Gui/SoFCUnifiedSelection.h>
 #include <Gui/Utilities.h>
-#include <Gui/View3DInventor.h>
-#include <Gui/View3DInventorViewer.h>
 #include <Mod/Part/App/Geometry.h>
 #include <Mod/Sketcher/App/GeoList.h>
 #include <Mod/Sketcher/App/GeometryFacade.h>
@@ -562,10 +565,13 @@ void ViewProviderSketch::purgeHandler()
     Gui::Selection().clearSelection();
 
     // ensure that we are in sketch only selection mode
-    Gui::MDIView* mdi = Gui::Application::Instance->editDocument()->getActiveView();
-    Gui::View3DInventorViewer* viewer;
-    viewer = static_cast<Gui::View3DInventor*>(mdi)->getViewer();
-    viewer->setSelectionEnabled(false);
+    auto* view = dynamic_cast<Gui::View3DInventor*>(Gui::Application::Instance->editDocument()->getActiveView());
+
+    if(view) {
+        Gui::View3DInventorViewer* viewer;
+        viewer = static_cast<Gui::View3DInventor*>(view)->getViewer();
+        viewer->setSelectionEnabled(false);
+    }
 }
 
 void ViewProviderSketch::setAxisPickStyle(bool on)
