@@ -50,7 +50,6 @@ XERCES_CPP_NAMESPACE_END
 namespace Base
 {
 class Persistence;
-class DocumentReader;
 
 /** The XML reader class
  * This is an important helper class for the store and retrieval system
@@ -147,8 +146,18 @@ public:
     const char* localName() const;
     /// get the current element level
     int level() const;
+
+    /// return true if the end of an element is reached, false otherwise
+    bool isEndOfElement() const;
+
+    /// return true if the end of the document is reached, false otherwise
+    bool isEndOfDocument() const;
+
     /// read until a start element is found (\<name\>) or start-end element (\<name/\>) (with special name if given)
     void readElement   (const char* ElementName=nullptr);
+
+    /// Read in the next element. Return true if it succeeded and false otherwise
+    bool readNextElement();
 
     /** read until an end element is found
      *
@@ -322,16 +331,13 @@ public:
     std::string getFileName() const;
     int getFileVersion() const;
     void initLocalReader(std::shared_ptr<Base::XMLReader>);
-    void initLocalDocReader(std::shared_ptr<Base::DocumentReader>);
     std::shared_ptr<Base::XMLReader> getLocalReader() const;
-    std::shared_ptr<Base::DocumentReader> getLocalDocReader() const;
 
 private:
     std::istream& _str;
     std::string _name;
     int fileVersion;
     std::shared_ptr<Base::XMLReader> localreader;
-    std::shared_ptr<Base::DocumentReader> localdocreader;
 };
 
 }
