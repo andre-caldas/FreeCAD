@@ -34,8 +34,7 @@
 #include <QScrollBar>
 #include <QWheelEvent>
 #endif
-#include <Gui/View3DInventor.h>
-#include <Gui/View3DInventorViewer.h>
+
 #include <App/Application.h>
 #include <App/Document.h>
 #include <Base/Parameter.h>
@@ -43,6 +42,8 @@
 #include <Gui/Document.h>
 #include <Gui/NavigationStyle.h>
 #include <Gui/Selection.h>
+#include <Gui/View3DInventor.h>
+#include <Gui/View3DInventorViewer.h>
 
 #include <Mod/TechDraw/App/DrawPage.h>
 #include <Mod/TechDraw/App/DrawSVGTemplate.h>
@@ -170,8 +171,8 @@ QGVPage::QGVPage(ViewProviderPage* vpPage, QGSPage* scenePage, QWidget* parent)
 {
     assert(vpPage);
     m_vpPage = vpPage;
-    const char* name = vpPage->getDrawPage()->getNameInDocument();
-    setObjectName(QString::fromLocal8Bit(name));
+    std::string name = vpPage->getDrawPage()->getNameInDocument();
+    setObjectName(QString::fromLocal8Bit(name.c_str()));
 
     setScene(scenePage);
     setMouseTracking(true);

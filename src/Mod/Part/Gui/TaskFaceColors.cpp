@@ -42,8 +42,7 @@
 # include <Inventor/nodes/SoCamera.h>
 # include <Inventor/nodes/SoSeparator.h>
 #endif
-#include <Gui/View3DInventor.h>
-#include <Gui/View3DInventorViewer.h>
+
 #include <App/Document.h>
 #include <Gui/Application.h>
 #include <Gui/Control.h>
@@ -52,6 +51,8 @@
 #include <Gui/Selection.h>
 #include <Gui/Tools.h>
 #include <Gui/Utilities.h>
+#include <Gui/View3DInventor.h>
+#include <Gui/View3DInventorViewer.h>
 
 #include "TaskFaceColors.h"
 #include "ui_TaskFaceColors.h"
@@ -185,7 +186,7 @@ public:
                     if (polygon.Contains(Base::Vector2d(pt2d.x, pt2d.y))) {
                         std::stringstream str;
                         str << "Face" << k;
-                        Gui::Selection().addSelection(appdoc->getName(), obj->getNameInDocument(), str.str().c_str());
+                        Gui::Selection().addSelection(appdoc->getName(), obj->getNameInDocument().c_str(), str.str().c_str());
                         break;
                     }
                     xp_vertex.Next();

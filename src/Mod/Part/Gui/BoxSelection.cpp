@@ -33,8 +33,7 @@
 # include <Inventor/events/SoMouseButtonEvent.h>
 # include <Inventor/nodes/SoCamera.h>
 #endif
-#include <Gui/View3DInventor.h>
-#include <Gui/View3DInventorViewer.h>
+
 #include <App/Document.h>
 #include <App/DocumentObject.h>
 #include <Gui/Application.h>
@@ -42,6 +41,8 @@
 #include <Gui/Selection.h>
 #include <Gui/SelectionFilter.h>
 #include <Gui/Utilities.h>
+#include <Gui/View3DInventor.h>
+#include <Gui/View3DInventorViewer.h>
 
 #include "BoxSelection.h"
 #include "ViewProviderExt.h"
@@ -115,7 +116,7 @@ void BoxSelection::selectionCallback(void * ud, SoEventCallback * cb)
             if (!vp->isVisible())
                 continue;
             const TopoDS_Shape& shape = it->Shape.getValue();
-            self->addShapeToSelection(doc->getName(), it->getNameInDocument(), proj, polygon, shape, self->shapeEnum);
+            self->addShapeToSelection(doc->getName(), it->getNameInDocument().c_str(), proj, polygon, shape, self->shapeEnum);
         }
         view->redraw();
     }

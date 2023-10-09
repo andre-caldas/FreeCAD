@@ -36,14 +36,13 @@
 #include <Inventor/nodes/SoNormal.h>
 #include <Inventor/nodes/SoPointSet.h>
 #endif
-#include <Gui/View3DInventorViewer.h>
 
 #include <App/Document.h>
 #include <Base/Vector3D.h>
 #include <Gui/Application.h>
 #include <Gui/Document.h>
 #include <Gui/SoFCSelection.h>
-
+#include <Gui/View3DInventorViewer.h>
 #include <Mod/Points/App/PointsFeature.h>
 #include <Mod/Points/App/Properties.h>
 
@@ -383,7 +382,7 @@ void ViewProviderScattered::attach(App::DocumentObject* pcObj)
     // call parent's attach to define display modes
     ViewProviderGeometryObject::attach(pcObj);
 
-    pcHighlight->objectName = pcObj->getNameInDocument();
+    pcHighlight->objectName = pcObj->getNameInDocument().c_str();
     pcHighlight->documentName = pcObj->getDocument()->getName();
     pcHighlight->subElementName = "Main";
 
@@ -555,7 +554,7 @@ void ViewProviderStructured::attach(App::DocumentObject* pcObj)
     // call parent's attach to define display modes
     ViewProviderGeometryObject::attach(pcObj);
 
-    pcHighlight->objectName = pcObj->getNameInDocument();
+    pcHighlight->objectName = pcObj->getNameInDocument().c_str();
     pcHighlight->documentName = pcObj->getDocument()->getName();
     pcHighlight->subElementName = "Main";
 

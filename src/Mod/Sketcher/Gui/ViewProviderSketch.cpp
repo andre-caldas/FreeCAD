@@ -39,11 +39,6 @@
 #include <QTextStream>
 #endif
 
-// clang-format off
-#include <Gui/View3DInventor.h>
-#include <Gui/View3DInventorViewer.h>
-// clang-format on
-
 #include <Base/Console.h>
 #include <Base/Vector3D.h>
 #include <Gui/Application.h>
@@ -57,6 +52,8 @@
 #include <Gui/SelectionObject.h>
 #include <Gui/SoFCUnifiedSelection.h>
 #include <Gui/Utilities.h>
+#include <Gui/View3DInventor.h>
+#include <Gui/View3DInventorViewer.h>
 #include <Mod/Part/App/Geometry.h>
 #include <Mod/Sketcher/App/GeoList.h>
 #include <Mod/Sketcher/App/GeometryFacade.h>
@@ -1914,7 +1911,7 @@ void ViewProviderSketch::onSelectionChanged(const Gui::SelectionChanges& msg)
         else if (msg.Type == Gui::SelectionChanges::AddSelection) {
             // is it this object??
             if (strcmp(msg.pDocName, getSketchObject()->getDocument()->getName()) == 0
-                && strcmp(msg.pObjectName, getSketchObject()->getNameInDocument()) == 0) {
+                && getSketchObject()->getNameInDocument() == msg.pObjectName) {
                 if (msg.pSubName) {
                     std::string shapetype(msg.pSubName);
                     if (shapetype.size() > 4 && shapetype.substr(0, 4) == "Edge") {
@@ -1961,7 +1958,7 @@ void ViewProviderSketch::onSelectionChanged(const Gui::SelectionChanges& msg)
                 || !selection.SelConstraintSet.empty()) {
                 // is it this object??
                 if (strcmp(msg.pDocName, getSketchObject()->getDocument()->getName()) == 0
-                    && strcmp(msg.pObjectName, getSketchObject()->getNameInDocument()) == 0) {
+                    && getSketchObject()->getNameInDocument() == msg.pObjectName) {
                     if (msg.pSubName) {
                         std::string shapetype(msg.pSubName);
                         if (shapetype.size() > 4 && shapetype.substr(0, 4) == "Edge") {
@@ -2025,7 +2022,7 @@ void ViewProviderSketch::onSelectionChanged(const Gui::SelectionChanges& msg)
         }
         else if (msg.Type == Gui::SelectionChanges::SetPreselect) {
             if (strcmp(msg.pDocName, getSketchObject()->getDocument()->getName()) == 0
-                && strcmp(msg.pObjectName, getSketchObject()->getNameInDocument()) == 0) {
+                && getSketchObject()->getNameInDocument() == msg.pObjectName) {
                 if (msg.pSubName) {
                     std::string shapetype(msg.pSubName);
                     if (shapetype.size() > 4 && shapetype.substr(0, 4) == "Edge") {
@@ -3226,7 +3223,7 @@ bool ViewProviderSketch::setEdit(int ModNum)
                     "del(tv)\n"
                     "del(ActiveSketch)\n")
                     .arg(QString::fromLatin1(getDocument()->getDocument()->getName()),
-                         QString::fromLatin1(getSketchObject()->getNameInDocument()),
+                         QString::fromLatin1(getSketchObject()->getNameInDocument().c_str()),
                          QString::fromLatin1(Gui::Command::getObjectCmd(editObj).c_str()),
                          QString::fromLatin1(editSubName.c_str()));
             QByteArray cmdstr_bytearray = cmdstr.toLatin1();
@@ -3481,7 +3478,7 @@ void ViewProviderSketch::unsetEdit(int ModNum)
                                 "del(tv)\n"
                                 "del(ActiveSketch)\n")
                 .arg(QString::fromLatin1(getDocument()->getDocument()->getName()),
-                     QString::fromLatin1(getSketchObject()->getNameInDocument()));
+                     QString::fromLatin1(getSketchObject()->getNameInDocument().c_str()));
         QByteArray cmdstr_bytearray = cmdstr.toLatin1();
         Gui::Command::runCommand(Gui::Command::Gui, cmdstr_bytearray);
     }
@@ -3508,7 +3505,7 @@ void ViewProviderSketch::setEditViewer(Gui::View3DInventorViewer* viewer, int Mo
                     "    "
                     "ActiveSketch.ViewObject.Document.ActiveView.setCameraType('Orthographic')\n")
                     .arg(QString::fromLatin1(getDocument()->getDocument()->getName()),
-                         QString::fromLatin1(getSketchObject()->getNameInDocument()));
+                         QString::fromLatin1(getSketchObject()->getNameInDocument().c_str()));
             QByteArray cmdstr_bytearray = cmdstr.toLatin1();
             Gui::Command::runCommand(Gui::Command::Gui, cmdstr_bytearray);
         }
