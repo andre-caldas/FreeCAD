@@ -1649,7 +1649,7 @@ void CmdPartOffset::activated(int iMsg)
 
     openCommand(QT_TRANSLATE_NOOP("Command", "Make Offset"));
     doCommand(Doc,"App.ActiveDocument.addObject(\"Part::Offset\",\"%s\")",offset.c_str());
-    doCommand(Doc,"App.ActiveDocument.%s.Source = App.ActiveDocument.%s" ,offset.c_str(), shape->getNameInDocument());
+    doCommand(Doc,"App.ActiveDocument.%s.Source = App.ActiveDocument.%s" ,offset.c_str(), shape->getNameInDocument().c_str());
     doCommand(Doc,"App.ActiveDocument.%s.Value = 1.0",offset.c_str());
     updateActive();
 
@@ -1707,7 +1707,7 @@ void CmdPartOffset2D::activated(int iMsg)
 
     openCommand(QT_TRANSLATE_NOOP("Command", "Make 2D Offset"));
     doCommand(Doc,"App.ActiveDocument.addObject(\"Part::Offset2D\",\"%s\")",offset.c_str());
-    doCommand(Doc,"App.ActiveDocument.%s.Source = App.ActiveDocument.%s" ,offset.c_str(), shape->getNameInDocument());
+    doCommand(Doc,"App.ActiveDocument.%s.Source = App.ActiveDocument.%s" ,offset.c_str(), shape->getNameInDocument().c_str());
     doCommand(Doc,"App.ActiveDocument.%s.Value = 1.0",offset.c_str());
     updateActive();
     doCommand(Gui,"Gui.ActiveDocument.setEdit('%s')",offset.c_str());
@@ -1892,7 +1892,7 @@ void CmdPartThickness::activated(int iMsg)
     updateActive();
     if (isActiveObjectValid()) {
         doCommand(App,"App.getDocument(\"%s\").getObject(\"%s\").ViewObject.Visibility = False",
-                  obj->getDocument()->getName(), obj->getNameInDocument());
+                  obj->getDocument()->getName(), obj->getNameInDocument().c_str());
     }
     doCommand(Gui,"Gui.ActiveDocument.setEdit('%s')",thick.c_str());
     adjustCameraPosition();
