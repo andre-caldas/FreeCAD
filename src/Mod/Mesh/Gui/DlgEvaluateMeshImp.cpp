@@ -672,7 +672,7 @@ void DlgEvaluateMeshImp::onRepairNonmanifoldsButtonClicked()
                     Gui::Command::App,
                     R"(App.getDocument("%s").getObject("%s").removeNonManifoldPoints())",
                     docName,
-                    objName);
+                    objName.c_str());
             }
         }
         catch (const Base::Exception& e) {
@@ -983,7 +983,7 @@ void DlgEvaluateMeshImp::onRepairDuplicatedPointsButtonClicked()
                 Gui::Command::App,
                 R"(App.getDocument("%s").getObject("%s").removeDuplicatedPoints())",
                 docName,
-                objName);
+                objName.c_str());
         }
         catch (const Base::Exception& e) {
             QMessageBox::warning(this, tr("Duplicated points"), QString::fromLatin1(e.what()));
@@ -1148,7 +1148,7 @@ void DlgEvaluateMeshImp::onRepairFoldsButtonClicked()
                 Gui::Command::App,
                 R"(App.getDocument("%s").getObject("%s").removeFoldsOnSurface())",
                 docName,
-                objName);
+                objName.c_str());
         }
         catch (const Base::Exception& e) {
             QMessageBox::warning(this, tr("Folds"), QString::fromLatin1(e.what()));
@@ -1200,7 +1200,7 @@ void DlgEvaluateMeshImp::onRepairAllTogetherClicked()
                     if (self && !eval.Evaluate()) {
                         Gui::Command::doCommand(Gui::Command::App,
                             "App.getDocument(\"%s\").getObject(\"%s\").fixSelfIntersections()",
-                            docName, objName);
+                            docName, objName.c_str());
                         run = true;
                     }
                     else {
@@ -1215,7 +1215,7 @@ void DlgEvaluateMeshImp::onRepairAllTogetherClicked()
                     if (!s_eval.Evaluate() || !b_eval.Evaluate() || !f_eval.Evaluate()) {
                         Gui::Command::doCommand(Gui::Command::App,
                             "App.getDocument(\"%s\").getObject(\"%s\").removeFoldsOnSurface()",
-                            docName, objName);
+                            docName, objName.c_str());
                         run = true;
                     }
                     qApp->processEvents();
@@ -1225,7 +1225,7 @@ void DlgEvaluateMeshImp::onRepairAllTogetherClicked()
                     if (!eval.Evaluate()) {
                         Gui::Command::doCommand(Gui::Command::App,
                             "App.getDocument(\"%s\").getObject(\"%s\").harmonizeNormals()",
-                            docName, objName);
+                            docName, objName.c_str());
                         run = true;
                     }
                     qApp->processEvents();
@@ -1235,7 +1235,7 @@ void DlgEvaluateMeshImp::onRepairAllTogetherClicked()
                     if (!eval.Evaluate()) {
                         Gui::Command::doCommand(Gui::Command::App,
                             "App.getDocument(\"%s\").getObject(\"%s\").removeNonManifolds()",
-                            docName, objName);
+                            docName, objName.c_str());
                         run = true;
                     }
                     qApp->processEvents();
@@ -1248,7 +1248,7 @@ void DlgEvaluateMeshImp::onRepairAllTogetherClicked()
                     if (!rf.Evaluate() || !rp.Evaluate() || !cf.Evaluate() || !nb.Evaluate()) {
                         Gui::Command::doCommand(Gui::Command::App,
                             "App.getDocument(\"%s\").getObject(\"%s\").fixIndices()",
-                            docName, objName);
+                            docName, objName.c_str());
                         run = true;
                     }
                 }
@@ -1257,7 +1257,7 @@ void DlgEvaluateMeshImp::onRepairAllTogetherClicked()
                     if (!eval.Evaluate()) {
                         Gui::Command::doCommand(Gui::Command::App,
                             "App.getDocument(\"%s\").getObject(\"%s\").fixDegenerations(%f)",
-                            docName, objName, d->epsilonDegenerated);
+                            docName, objName.c_str(), d->epsilonDegenerated);
                         run = true;
                     }
                     qApp->processEvents();
@@ -1267,7 +1267,7 @@ void DlgEvaluateMeshImp::onRepairAllTogetherClicked()
                     if (!eval.Evaluate()) {
                         Gui::Command::doCommand(Gui::Command::App,
                             "App.getDocument(\"%s\").getObject(\"%s\").removeDuplicatedFacets()",
-                            docName, objName);
+                            docName, objName.c_str());
                         run = true;
                     }
                     qApp->processEvents();
@@ -1277,7 +1277,7 @@ void DlgEvaluateMeshImp::onRepairAllTogetherClicked()
                     if (!eval.Evaluate()) {
                         Gui::Command::doCommand(Gui::Command::App,
                             "App.getDocument(\"%s\").getObject(\"%s\").removeDuplicatedPoints()",
-                            docName, objName);
+                            docName, objName.c_str());
                         run = true;
                     }
                     qApp->processEvents();
