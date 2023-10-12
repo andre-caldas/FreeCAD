@@ -164,7 +164,7 @@ void StdCmdLinkMakeGroup::activated(int option) {
                         Command::doCommand(Command::Doc,
                             "App.getDocument('%s').getObject('%s').Placement = "
                                 "App.getDocument('%s').getObject('%s').Placement",
-                            doc->getName().c_str(),name.c_str(),obj->getDocument()->getName(),obj->getNameInDocument().c_str());
+                            doc->getName(),name.c_str(),obj->getDocument()->getName(),obj->getNameInDocument().c_str());
                 }else
                     name = obj->getNameInDocument();
                 Command::doCommand(Command::Doc,"__objs__.append(App.getDocument('%s').getObject('%s'))",
