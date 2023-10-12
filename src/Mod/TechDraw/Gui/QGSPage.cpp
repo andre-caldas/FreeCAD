@@ -539,7 +539,7 @@ void QGSPage::createBalloon(QPointF origin, DrawView* parent)
     }
     Command::doCommand(Command::Doc,
                        "App.activeDocument().%s.SourceView = (App.activeDocument().%s)",
-                       featName.c_str(), parent->getNameInDocument());
+                       featName.c_str(), parent->getNameInDocument().c_str());
     QGIView* qgParent = getQGIVByName(parent->getNameInDocument());
     //convert from scene coords to qgParent coords and unscale
     QPointF parentOrigin = qgParent->mapFromScene(origin) / parent->getScale();

@@ -154,7 +154,7 @@ void StdCmdLinkMakeGroup::activated(int option) {
                     Command::doCommand(Command::Doc,
                         "App.getDocument('%s').addObject('App::Link','%s').setLink("
                             "App.getDocument('%s').getObject('%s'))",
-                        doc->getName(),name.c_str(),obj->getDocument()->getName(),obj->getNameInDocument());
+                        doc->getName(),name.c_str(),obj->getDocument()->getName(),obj->getNameInDocument().c_str());
                     setLinkLabel(obj,doc->getName(),name.c_str());
                     if(option==2)
                         Command::doCommand(Command::Doc,
@@ -164,7 +164,7 @@ void StdCmdLinkMakeGroup::activated(int option) {
                         Command::doCommand(Command::Doc,
                             "App.getDocument('%s').getObject('%s').Placement = "
                                 "App.getDocument('%s').getObject('%s').Placement",
-                            doc->getName(),name.c_str(),obj->getDocument()->getName(),obj->getNameInDocument());
+                            doc->getName().c_str(),name.c_str(),obj->getDocument()->getName(),obj->getNameInDocument().c_str());
                 }else
                     name = obj->getNameInDocument();
                 Command::doCommand(Command::Doc,"__objs__.append(App.getDocument('%s').getObject('%s'))",
@@ -250,7 +250,7 @@ void StdCmdLinkMake::activated(int) {
                 std::string name = doc->getUniqueObjectName("Link");
                 Command::doCommand(Command::Doc,
                     "App.getDocument('%s').addObject('App::Link','%s').setLink(App.getDocument('%s').%s)",
-                    doc->getName(),name.c_str(),obj->getDocument()->getName(),obj->getNameInDocument());
+                    doc->getName(),name.c_str(),obj->getDocument()->getName(),obj->getNameInDocument().c_str());
                 setLinkLabel(obj,doc->getName(),name.c_str());
                 Selection().addSelection(doc->getName(),name.c_str());
             }

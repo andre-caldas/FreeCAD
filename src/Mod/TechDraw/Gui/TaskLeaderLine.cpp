@@ -351,7 +351,7 @@ void TaskLeaderLine::createLeaderFeature(std::vector<Base::Vector3d> converted)
                        PageName.c_str(), m_leaderName.c_str());
     if (m_baseFeat) {
         Command::doCommand(Command::Doc, "App.activeDocument().%s.LeaderParent = App.activeDocument().%s",
-                               m_leaderName.c_str(), m_baseFeat->getNameInDocument());
+                               m_leaderName.c_str(), m_baseFeat->getNameInDocument().c_str());
     }
 
     App::DocumentObject* obj = m_basePage->getDocument()->getObject(m_leaderName.c_str());

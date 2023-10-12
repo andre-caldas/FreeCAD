@@ -295,7 +295,7 @@ void TaskRichAnno::createAnnoFeature()
 
     if (m_baseFeat) {
         Command::doCommand(Command::Doc, "App.activeDocument().%s.AnnoParent = App.activeDocument().%s",
-                               annoName.c_str(), m_baseFeat->getNameInDocument());
+                               annoName.c_str(), m_baseFeat->getNameInDocument().c_str());
     }
     App::DocumentObject* obj = m_basePage->getDocument()->getObject(annoName.c_str());
     if (!obj) {
