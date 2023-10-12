@@ -455,7 +455,7 @@ void CmdRobotTrajectoryDressUp::activated(int)
         doCommand(Gui,
                   "App.activeDocument().%s.Source = App.activeDocument().%s",
                   FeatName.c_str(),
-                  Object->getNameInDocument());
+                  Object->getNameInDocument().c_str());
         doCommand(Gui, "Gui.activeDocument().hide(\"%s\")", Object->getNameInDocument().c_str());
         doCommand(Gui, "Gui.activeDocument().setEdit('%s')", FeatName.c_str());
     }

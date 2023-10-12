@@ -252,7 +252,7 @@ void CmdSketcherNewSketch::activated(int iMsg)
             if (grp) {
                 doCommand(Doc,
                           "App.activeDocument().%s.addObject(App.activeDocument().%s)",
-                          grp->getNameInDocument(),
+                          grp->getNameInDocument().c_str(),
                           FeatName.c_str());
             }
         }
