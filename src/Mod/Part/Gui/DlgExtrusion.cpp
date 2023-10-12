@@ -709,10 +709,10 @@ bool DlgExtrusion::validate()
 
 void DlgExtrusion::writeParametersToFeature(App::DocumentObject &feature, App::DocumentObject* base) const
 {
-    Gui::Command::doCommand(Gui::Command::Doc,"f = App.getDocument('%s').getObject('%s')", feature.getDocument()->getName(), feature.getNameInDocument());
+    Gui::Command::doCommand(Gui::Command::Doc,"f = App.getDocument('%s').getObject('%s')", feature.getDocument()->getName(), feature.getNameInDocument().c_str());
 
     if (base)
-        Gui::Command::doCommand(Gui::Command::Doc,"f.Base = App.getDocument('%s').getObject('%s')", base->getDocument()->getName(), base->getNameInDocument());
+        Gui::Command::doCommand(Gui::Command::Doc,"f.Base = App.getDocument('%s').getObject('%s')", base->getDocument()->getName(), base->getNameInDocument().c_str());
 
     Part::Extrusion::eDirMode dirMode = this->getDirMode();
     const char* modestr = Part::Extrusion::eDirModeStrings[dirMode];

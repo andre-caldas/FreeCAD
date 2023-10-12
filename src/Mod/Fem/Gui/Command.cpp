@@ -1149,7 +1149,7 @@ void CmdFemCreateNodesSet::activated(int)
         Fem::FemSetNodesObject* NodesObj =
             static_cast<Fem::FemSetNodesObject*>(ObjectFilter.Result[0][0].getObject());
         openCommand(QT_TRANSLATE_NOOP("Command", "Edit nodes set"));
-        doCommand(Gui, "Gui.activeDocument().setEdit('%s')", NodesObj->getNameInDocument());
+        doCommand(Gui, "Gui.activeDocument().setEdit('%s')", NodesObj->getNameInDocument().c_str());
     }
     else if (FemMeshFilter.match()) {
         Fem::FemMeshObject* MeshObj =
@@ -2274,9 +2274,13 @@ void CmdFemPostFunctions::activated(int iMsg)
                   "App.activeDocument().addObject('Fem::FemPost%sFunction','%s')",
                   name.c_str(),
                   FeatName.c_str());
-        doCommand(Doc, "__list__ = App.ActiveDocument.%s.Functions", provider->getNameInDocument());
+        doCommand(Doc,
+                  "__list__ = App.ActiveDocument.%s.Functions",
+                  provider->getNameInDocument().c_str());
         doCommand(Doc, "__list__.append(App.ActiveDocument.%s)", FeatName.c_str());
-        doCommand(Doc, "App.ActiveDocument.%s.Functions = __list__", provider->getNameInDocument());
+        doCommand(Doc,
+                  "App.ActiveDocument.%s.Functions = __list__",
+                  provider->getNameInDocument().c_str());
         doCommand(Doc, "del __list__");
 
         // set the default values, for this get the bounding box

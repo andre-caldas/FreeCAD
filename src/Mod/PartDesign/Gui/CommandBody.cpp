@@ -782,17 +782,17 @@ void CmdPartDesignMoveFeature::activated(int iMsg)
         if ( featureWasTip ) {
             App::DocumentObject * sourceNewTip = source->Tip.getValue();
             if (sourceNewTip)
-                doCommand(Gui,"Gui.activeDocument().show(\"%s\")", sourceNewTip->getNameInDocument());
+                doCommand(Gui,"Gui.activeDocument().show(\"%s\")", sourceNewTip->getNameInDocument().c_str());
         }
 
         // Hide old tip and show new tip (the moved feature) of the target body
         App::DocumentObject* targetNewTip = target->Tip.getValue();
         if ( targetOldTip != targetNewTip ) {
             if ( targetOldTip ) {
-                doCommand(Gui,"Gui.activeDocument().hide(\"%s\")", targetOldTip->getNameInDocument());
+                doCommand(Gui,"Gui.activeDocument().hide(\"%s\")", targetOldTip->getNameInDocument().c_str());
             }
             if (targetNewTip) {
-                doCommand(Gui,"Gui.activeDocument().show(\"%s\")", targetNewTip->getNameInDocument());
+                doCommand(Gui,"Gui.activeDocument().show(\"%s\")", targetNewTip->getNameInDocument().c_str());
             }
         }
 

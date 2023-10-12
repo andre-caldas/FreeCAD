@@ -310,13 +310,13 @@ bool DlgScale::validate()
 void DlgScale::writeParametersToFeature(App::DocumentObject &feature, App::DocumentObject* base) const
 {
 //    Base::Console().Message("DS::writeParametersToFeature()\n");
-    Gui::Command::doCommand(Gui::Command::Doc,"f = App.getDocument('%s').getObject('%s')", feature.getDocument()->getName(), feature.getNameInDocument());
+    Gui::Command::doCommand(Gui::Command::Doc,"f = App.getDocument('%s').getObject('%s')", feature.getDocument()->getName(), feature.getNameInDocument().c_str());
 
     if (!base) {
         return;
     }
 
-    Gui::Command::doCommand(Gui::Command::Doc,"f.Base = App.getDocument('%s').getObject('%s')", base->getDocument()->getName(), base->getNameInDocument());
+    Gui::Command::doCommand(Gui::Command::Doc,"f.Base = App.getDocument('%s').getObject('%s')", base->getDocument()->getName(), base->getNameInDocument().c_str());
 
     Gui::Command::doCommand(Gui::Command::Doc,"f.Uniform = %s", ui->rbUniform->isChecked() ? "True" : "False");
     Gui::Command::doCommand(Gui::Command::Doc,"f.UniformScale = %.7f", ui->dsbUniformScale->value());
