@@ -180,13 +180,13 @@ void DataAlongLineMarker::customEvent(QEvent*)
     Q_EMIT PointsChanged(pt1[0], pt1[1], pt1[2], pt2[0], pt2[1], pt2[2]);
     Gui::Command::doCommand(Gui::Command::Doc,
                             "App.ActiveDocument.%s.Point1 = App.Vector(%f, %f, %f)",
-                            getObject()->getNameInDocument(),
+                            getObject()->getNameInDocument().c_str(),
                             pt1[0],
                             pt1[1],
                             pt1[2]);
     Gui::Command::doCommand(Gui::Command::Doc,
                             "App.ActiveDocument.%s.Point2 = App.Vector(%f, %f, %f)",
-                            getObject()->getNameInDocument(),
+                            getObject()->getNameInDocument().c_str(),
                             pt2[0],
                             pt2[1],
                             pt2[2]);
@@ -207,7 +207,7 @@ void DataAtPointMarker::customEvent(QEvent*)
     Q_EMIT PointsChanged(pt1[0], pt1[1], pt1[2]);
     Gui::Command::doCommand(Gui::Command::Doc,
                             "App.ActiveDocument.%s.Center = App.Vector(%f, %f, %f)",
-                            getObject()->getNameInDocument(),
+                            getObject()->getNameInDocument().c_str(),
                             pt1[0],
                             pt1[1],
                             pt1[2]);
