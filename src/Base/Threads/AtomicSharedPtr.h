@@ -34,6 +34,8 @@ template<typename T>
 class AtomicSharedPtr
 {
 public:
+    using element_type = T;
+
     AtomicSharedPtr() = default;
     AtomicSharedPtr(std::nullptr_t) : AtomicSharedPtr() {}
     AtomicSharedPtr(std::shared_ptr<T> desired) : ptr(std::move(desired)) {}
@@ -87,6 +89,12 @@ public:
     {return compare_exchange_strong(expected, std::move(desired));}
 
     /* Missing wait and notify_xxx */
+
+    bool operator<(const AtomicSharedPtr& other) const
+    {return load().get() < other.load().get();}
+
+    T* threadUnsafePointer() const
+    {return load().get();}
 
 private:
 #if __cplusplus > 202000L
