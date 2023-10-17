@@ -61,7 +61,7 @@ template<typename ContainerType>
 typename ThreadSafeContainer<ContainerType>::iterator
 ThreadSafeContainer<ContainerType>::end()
 {
-    return iterator::MakeEndIterator(container);
+    return iterator::MakeEndIterator(container.end());
 }
 
 template<typename ContainerType>
@@ -75,7 +75,21 @@ template<typename ContainerType>
 typename ThreadSafeContainer<ContainerType>::const_iterator
 ThreadSafeContainer<ContainerType>::cend() const
 {
-    return const_iterator::MakeCEndIterator(container);
+    return const_iterator::MakeEndIterator(container.cend());
+}
+
+template<typename ContainerType>
+size_t ThreadSafeContainer<ContainerType>::size() const
+{
+    SharedLock lock(mutex);
+    return container.size();
+}
+
+template<typename ContainerType>
+bool ThreadSafeContainer<ContainerType>::empty() const
+{
+    SharedLock lock(mutex);
+    return container.empty();
 }
 
 
@@ -86,11 +100,4 @@ void ThreadSafeContainer<ContainerType>::clear()
     container.clear();
 }
 
-template<typename ContainerType>
-size_t ThreadSafeContainer<ContainerType>::size() const
-{
-    SharedLock lock(mutex);
-    return container.size();
-}
-
-} // namespace Base
+} // namespace

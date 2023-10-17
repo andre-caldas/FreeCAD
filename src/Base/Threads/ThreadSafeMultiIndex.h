@@ -24,200 +24,169 @@
 #ifndef BASE_Threads_ThreadSafeMultiIndex_H
 #define BASE_Threads_ThreadSafeMultiIndex_H
 
-#include <utility>
-#include <type_traits>
+#include "type_traits/record_info.h"
 
-#include <boost/multi_index_container.hpp>
-#include <boost/multi_index/hashed_index.hpp>
-#include <boost/multi_index/sequenced_index.hpp>
-#include <boost/multi_index/mem_fun.hpp>
-
-#include "AtomicSharedPtr.h"
+#include "PairSecondIterator.h"
 #include "ThreadSafeContainer.h"
 
-namespace App{class TransactionObject; class TransactionalObject;}
 namespace Base::Threads
 {
 
-namespace bmi = boost::multi_index;
-
-template<typename X, typename Y, typename ...Vn>
-class BmiElement
+template<typename Element, auto ...LocalPointers>
+class MultiIndexContainer
 {
 public:
-    BmiElement(X&& x, Y&& y, Vn&&... vn)
-        : tuple(std::forward(x), std::forward(y), std::forward(vn)...) {}
+    using ElementInfo = MultiIndexElementInfo<Element, LocalPointers...>;
 
-    template<int I>
-    auto& get() const
-    {return std::get<I, X, Y, Vn...>(tuple);}
+    using element_t = Element;
+    template<typename X>
+    static constexpr auto index_from_raw_v = ElementInfo::template index_from_raw_v<X>;
+    template<std::size_t I>
+    using raw_from_index_t = typename ElementInfo::template raw_from_index_t<I>;
+    template<std::size_t I>
+    using type_from_index_t = typename ElementInfo::template type_from_index_t<I>;
 
-    template<int I>
-    auto& get_get() const
-    {return get<I>().get();}
+    using iterator = PairSecondIterator<typename std::map<double, element_t&>::iterator>;
+    using const_iterator = PairSecondIterator<typename std::map<double, element_t&>::const_iterator>;
 
-    operator const std::tuple<X, Y, Vn...>&() {return tuple;}
+    auto begin() {return PairSecondIterator(ordered_data.begin());}
+    auto begin() const {return PairSecondIterator(ordered_data.begin());}
+    auto cbegin() const {return PairSecondIterator(ordered_data.cbegin());}
 
-    const X& first = get<0>();
-    const Y& second = get<1>();
+    auto end() {return PairSecondIterator(ordered_data.end());}
+    auto end() const {return PairSecondIterator(ordered_data.end());}
+    auto cend() const {return PairSecondIterator(ordered_data.cend());}
+
+    template<typename X>
+    auto equal_range(const X& key)
+    {
+        auto& map = std::template get<index_from_raw_v<X>>(indexes);
+        auto it = map.find(ReduceToRaw<X>::reduce(key));
+        return std::pair(PairSecondIterator(std::move(it)), PairSecondIterator(map.end()));
+    }
+
+    template<std::size_t I, typename X>
+    auto equal_range(const X& key) const
+    {
+        auto& map = std::template get<I>(indexes);
+        auto it = map.find(ReduceToRaw<X>::reduce(key));
+        return std::pair(PairSecondIterator(std::move(it)), PairSecondIterator(map.end()));
+    }
+
+    template<std::size_t I, typename Key>
+    bool contains(const Key& key) const
+    {auto range = equal_range<I>(key); return range.first != range.second;}
+
+    template<typename Key>
+    bool contains(const Key& key) const
+    {auto range = equal_range(key); return range.first != range.second;}
+
+    template<typename ...Vn>
+    auto emplace(Vn&& ...vn)
+    {
+        auto emplace_pair = data.emplace(std::forward<Vn>(vn)...);
+        assert(emplace_pair.second);
+        const Element& inserted_element = *(emplace_pair.first);
+        ordered_data.emplace(++counter, inserted_element);
+        assert(ordered_data.size() == data.size());
+
+        insertIndexes(inserted_element);
+        return emplace_pair;
+    }
 
 private:
-    const std::tuple<X, Y, Vn...> tuple;
+    // TODO: use lambda in template (C++20).
+    struct elementHash
+    {
+        std::size_t operator()(const element_t& element)
+        {return (std::size_t)&element;}
+    };
+
+    /**
+     * @brief Holds each data set.
+     */
+    std::unordered_set<element_t, elementHash> data;
+
+    /// @brief Incremented on every insertion.
+    std::atomic_int counter;
+
+    /**
+     * @brief Items oredered by insetion order.
+     * @attention We use double instead of an integer so it becomes easy
+     * to insert an element between two existing elements.
+     */
+    std::map<double, element_t&> ordered_data;
+
+    /**
+     * @brief The Element struct show us what indexes can be used to search the list.
+     * Each tuple entry is an std::map<raw_key, Element&>.
+     */
+    typename ElementInfo::indexes_tuple_t indexes;
+
+    void insertIndexes(const element_t& element)
+    {
+        for(auto i = 0; i < element.tuple_size; ++i)
+        {
+            insertIndex<i>(element);
+        }
+    }
+
+    template<std::size_t I>
+    void insertIndex(const element_t& element)
+    {
+        auto& map = std::template get<I>(indexes);
+        auto& value = element.*(ElementInfo::template pointer_v<I>);
+        auto raw_value = ReduceToRaw<decltype(value)>::reduce(value);
+        map.emplace(raw_value, element);
+        assert(map.size() == data.size());
+    }
 };
 
 
-template<typename Element, int I, typename SmartPtr>
-struct SmartPtrExtractor
-{
-    using element_type = typename std::pointer_traits<SmartPtr>::element_type;
-
-    element_type* operator()(const Element& e) const {return e.template get<I>().get();}
-    element_type* operator()(const SmartPtr& p) const {return p.get();}
-    element_type* operator()(element_type* p) const {return p;}
-};
-
-template<typename Element, int I, typename SmartPtr>
-struct AtomicPtrExtractor
-{
-    using element_type = typename std::pointer_traits<SmartPtr>::element_type;
-
-    element_type* operator()(const Element& e) const {return e.template get<I>().threadUnsafePointer();}
-    element_type* operator()(const SmartPtr& p) const {return p.threadUnsafePointer();}
-    element_type* operator()(const std::shared_ptr<element_type>& p) const {return p.get();}
-    element_type* operator()(element_type* p) const {return p;}
-};
-
-
-template<typename Element, int I, typename V, typename T = V>
-struct key_info
-{
-    using extractor = bmi::const_mem_fun<Element, const T&, &Element::template get<I>>;
-};
-template<typename Element, int I, typename T>
-struct key_info<Element, I, std::shared_ptr<T>, T>
-{
-    using extractor = SmartPtrExtractor<Element, I, std::shared_ptr<T>>;
-};
-template<typename Element, int I, typename T>
-struct key_info<Element, I, std::unique_ptr<T>, T>
-{
-    using extractor = SmartPtrExtractor<Element, I, std::unique_ptr<T>>;
-};
-template<typename Element, int I, typename T>
-struct key_info<Element, I, AtomicSharedPtr<T>, T>
-{
-    using extractor = AtomicPtrExtractor<Element, I, AtomicSharedPtr<T>>;
-};
-
-
-// Just for static asserts.
-struct BmiHashBase {};
-
-template<class Element, int I, typename V>
-struct BmiHash : BmiHashBase
-{
-    static_assert(!std::is_base_of_v<BmiHashBase, V>, "V should not have been processed.");
-    using key_extractor = typename key_info<Element, I, V>::extractor;
-    using type = bmi::hashed_unique<key_extractor>;
-};
-
-template<typename ...Hashes>
-struct BmiIndexByAux
-{
-    using type = typename bmi::indexed_by<
-        bmi::sequenced<>,
-        typename Hashes::type...
-    >;
-};
-
-template<class Element, int RevCount, int Max, typename V, typename ...HashOrVs>
-struct BmiIndexBy
-    : BmiIndexBy<Element, RevCount-1, Max, HashOrVs..., BmiHash<Element, Max-RevCount, V>>
-{
-    // V was not processed, yet.
-    static_assert(!std::is_base_of_v<BmiHashBase, V>, "V should not have been processed.");
-};
-
-template<class Element, int Max, typename Hash, typename ...Hashes>
-struct BmiIndexBy<Element, 0, Max, Hash, Hashes...>
-{
-    static_assert(Max == 1 + sizeof...(Hashes), "Not all types were converted!?");
-    static_assert((std::is_base_of_v<BmiHashBase, Hash>), "All types must be an entry.");
-    static_assert((std::is_base_of_v<BmiHashBase, Hashes> &&...), "All types must be an entry.");
-    typedef typename BmiIndexByAux<Hash, Hashes...>::type type;
-};
-
-template<typename ...Vn>
-struct BmiContainerTypeAux
-{
-    using element = BmiElement<Vn...>;
-    using type = typename bmi::multi_index_container<
-        element,
-        typename BmiIndexBy<element, sizeof...(Vn), sizeof...(Vn), Vn...>::type
-    >;
-};
-
-template<typename ...Vn>
-using BmiContainerType = typename BmiContainerTypeAux<Vn...>::type;
 
 /**
- * @brief This wraps a boost::multi_index_container and provides a shared_mutex
- * to make the container readable by many only when the map structure
- * is not being modified.
- * The container elements cannot change.
+ * @brief Implements a thread safe container that:
+ * 0. Manages a tuple of objects.
+ * 1. Keeps the order of insertion.
+ * 2. Can look up any object with efficenty.
  *
- * If some element type is repeated in two entries, you need to specify
- * which entry you want:
- * bmi_cont.find<0>(key);
- * bmi_cont.find<1>(key);
+ * Possible uses:
+ * 1. An std::map that keeps track the order of insertion.
+ * 2. An std::map that can be searched in both directions.
  */
-template<typename ...Vn>
+template<typename Record, auto ...LocalPointers>
 class ThreadSafeMultiIndex
-    : public ThreadSafeContainer<BmiContainerType<Vn...>>
+    : public ThreadSafeContainer<MultiIndexContainer<Record, LocalPointers...>>
 {
 public:
-    template<int I>
-    auto& get() const
-    {return container.template get<I>();}
+    using base_class_t = ThreadSafeContainer<MultiIndexContainer<Record, LocalPointers...>>;
+
+    template<typename X>
+    auto find(const X& key)
+    {return LockedIterator(mutex, container.equal_range(key));}
+
+    template<typename X>
+    auto find(const X& key) const
+    {return LockedIterator(mutex, container.equal_range(key));}
+
+    template<std::size_t I, typename Key>
+    bool contains(const Key& key) const
+    {SharedLock l(mutex); return container.template contains(key);}
 
     template<typename Key>
-    auto& get() const
-    {return container.template get<Key>();}
+    bool contains(const Key& key) const
+    {SharedLock l(mutex); return container.template contains(key);}
 
+    template<typename ...Vn>
+    auto emplace(Vn&& ...vn)
+    {ExclusiveLock l(mutex); return container.template emplace(vn...);}
 
-    template<int I, typename Key>
-    auto find(const Key& key) const
-    {return LockedIterator<nth_iterator<I>>(mutex, get<I>().find(key));}
-
-    template<typename Key>
-    auto find(const Key& key) const
-    {return LockedIterator<iterator<Key>>(mutex, get<Key>().find(key));}
-
-
-    template<int I, typename Key>
-    size_t count(const Key& key) const
-    {SharedLock l(mutex); return get<I>().count(key);}
-
-    template<typename Key>
-    size_t count(const Key& key) const
-    {SharedLock l(mutex); return container.template get<Key>().count(key);}
-
-    bool empty() const {return container.empty();}
-    void clear() {container.clear();}
 
 private:
-    using ThreadSafeContainer<BmiContainerType<Vn...>>::mutex;
-    using ThreadSafeContainer<BmiContainerType<Vn...>>::container;
-    template<int I>
-    using nth_iterator = typename BmiContainerType<Vn...>::nth_index<I>::type::iterator;
-    template<typename Key>
-    using iterator = typename BmiContainerType<Vn...>::index<Key>::iterator;
-    template<int I>
-    using nth_const_iterator = typename BmiContainerType<Vn...>::nth_index<I>::const_iterator;
-    template<typename Key>
-    using const_iterator = typename BmiContainerType<Vn...>::index<Key>::const_iterator;
+    using base_class_t::mutex;
+    using base_class_t::container;
 };
 
-} //namespace Base::Threads
+} //namespace ::Threads
 
 #endif // BASE_Threads_ThreadSafeMultiIndex_H

@@ -77,10 +77,10 @@ class ThreadSafeUnorderedMap
 {
 public:
     auto find(const Key& key)
-    {return LockedIterator(mutex, container.find(key));}
+    {return LockedIterator<mutex>(container.find(key));}
 
     auto find(const Key& key) const
-    {return LockedIterator(mutex, container.find(key));}
+    {return LockedIterator<mutex>(container.find(key));}
 
     size_t count(const Key& key) const
     {SharedLock l(mutex); return container.count(key);}

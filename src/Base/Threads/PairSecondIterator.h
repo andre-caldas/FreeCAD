@@ -21,50 +21,40 @@
  *                                                                          *
  ***************************************************************************/
 
-#ifndef BASE_Threads_ThreadSafeContainer_H
-#define BASE_Threads_ThreadSafeContainer_H
+#ifndef BASE_Threads_PairSecondIterator_H
+#define BASE_Threads_PairSecondIterator_H
 
-#include <shared_mutex>
+#include <utility>
 
 namespace Base::Threads
 {
 
-class ExclusiveLock;
-
 template<typename ItType>
-class LockedIterator;
-
-template<typename ContainerType>
-class ThreadSafeContainer
+class PairSecondIterator
 {
 public:
-    typedef ContainerType container_type;
-    using container_iterator = typename container_type::iterator;
-    using container_const_iterator = typename container_type::const_iterator;
+    using difference_type = typename ItType::difference_type;
+    using value_type = typename ItType::value_type;
+    using pointer = typename ItType::pointer;
+    using reference = typename ItType::reference;
+    using iterator_category = typename ItType::iterator_category;
 
-    using iterator = LockedIterator<container_iterator>;
-    using const_iterator = LockedIterator<container_const_iterator>;
+    PairSecondIterator(ItType&& it) : it(it) {}
 
-    iterator begin();
-    const_iterator begin() const;
-    const_iterator cbegin() const;
+    /*
+     * CPP loves when we do all that by hand... :-(
+     */
+    constexpr bool operator==(const PairSecondIterator& other) const {return it == other.it;}
+    constexpr bool operator!=(const PairSecondIterator& other) const {return it != other.it;}
+    auto& operator++() {++it; return *this;}
+    auto operator++(int) {PairSecondIterator result(this->it); ++it; return result;}
+    auto& operator*() const {return it->second;}
+    auto* operator->() const {return &it->second;}
 
-    iterator end();
-    const_iterator end() const;
-    const_iterator cend() const;
-
-    size_t size() const;
-    bool empty() const;
-    void clear();
-
-protected:
-    mutable std::shared_mutex mutex;
-    ContainerType container;
-    friend class ExclusiveLock;
+private:
+    ItType it;
 };
 
-} //namespace Base::Threads
+} //namespace ::Threads
 
-#include "ThreadSafeContainer.inl"
-
-#endif // BASE_Threads_ThreadSafeContainer_H
+#endif // BASE_Threads_PairSecondIterator_H

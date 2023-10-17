@@ -345,7 +345,10 @@ SET(FreeCADBase_HPP_SRCS
 )
 
 SET(FreeCADBase_Threads_SRCS
+    Threads/type_traits/record_items.h
+    Threads/type_traits/record_info.h
     Threads/Exception.h
+    Threads/PairSecondIterator.h
     Threads/LockPolicy.h
     Threads/LockPolicy.inl
     Threads/LockPolicy.cpp
