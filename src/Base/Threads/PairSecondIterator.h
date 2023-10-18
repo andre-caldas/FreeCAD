@@ -44,8 +44,10 @@ public:
     /*
      * CPP loves when we do all that by hand... :-(
      */
-    constexpr bool operator==(const PairSecondIterator& other) const {return it == other.it;}
-    constexpr bool operator!=(const PairSecondIterator& other) const {return it != other.it;}
+    template<typename OtherIt>
+    constexpr bool operator==(const OtherIt& other) const {return it == other.it;}
+    template<typename OtherIt>
+    constexpr bool operator!=(const OtherIt& other) const {return it != other.it;}
     auto& operator++() {++it; return *this;}
     auto operator++(int) {PairSecondIterator result(this->it); ++it; return result;}
     auto& operator*() const {return it->second;}

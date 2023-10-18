@@ -82,8 +82,10 @@ public:
     LockedIterator& operator=(const LockedIterator& other)
     {assert(false); it = other.it; end_it = other.end_it; return *this;}
 
-    constexpr bool operator==(const LockedIterator& other) const {return it == other.it;}
-    constexpr bool operator!=(const LockedIterator& other) const {return it != other.it;}
+    template<typename OtherIt>
+    constexpr bool operator==(const OtherIt& other) const {return it == other.it;}
+    template<typename OtherIt>
+    constexpr bool operator!=(const OtherIt& other) const {return it != other.it;}
     LockedIterator& operator++() {++it; return *this;}
     LockedIterator operator++(int) {LockedIterator result(*this); ++it; return result;}
     auto& operator*() const {return *it;}

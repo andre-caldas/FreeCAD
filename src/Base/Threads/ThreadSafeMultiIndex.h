@@ -36,6 +36,38 @@ template<typename Element, auto ...LocalPointers>
 class MultiIndexContainer
 {
 public:
+    using iterator = PairSecondIterator<typename std::map<double, Element&>::iterator>;
+    using const_iterator = PairSecondIterator<typename std::map<double, Element&>::const_iterator>;
+
+    auto begin();
+    auto begin() const;
+    auto cbegin() const;
+
+    auto end();
+    auto end() const;
+    auto cend() const;
+
+    template<typename X>
+    auto equal_range(const X& key);
+
+    template<std::size_t I, typename X>
+    auto equal_range(const X& key) const;
+
+    template<std::size_t I, typename Key>
+    bool contains(const Key& key) const;
+
+    template<typename Key>
+    bool contains(const Key& key) const;
+
+    template<typename ...Vn>
+    auto emplace(Vn&& ...vn);
+
+    auto erase(const Element& element);
+
+    template<typename ItType>
+    auto erase(ItType it);
+
+
     using ElementInfo = MultiIndexElementInfo<Element, LocalPointers...>;
 
     using element_t = Element;
@@ -45,54 +77,6 @@ public:
     using raw_from_index_t = typename ElementInfo::template raw_from_index_t<I>;
     template<std::size_t I>
     using type_from_index_t = typename ElementInfo::template type_from_index_t<I>;
-
-    using iterator = PairSecondIterator<typename std::map<double, element_t&>::iterator>;
-    using const_iterator = PairSecondIterator<typename std::map<double, element_t&>::const_iterator>;
-
-    auto begin() {return PairSecondIterator(ordered_data.begin());}
-    auto begin() const {return PairSecondIterator(ordered_data.begin());}
-    auto cbegin() const {return PairSecondIterator(ordered_data.cbegin());}
-
-    auto end() {return PairSecondIterator(ordered_data.end());}
-    auto end() const {return PairSecondIterator(ordered_data.end());}
-    auto cend() const {return PairSecondIterator(ordered_data.cend());}
-
-    template<typename X>
-    auto equal_range(const X& key)
-    {
-        auto& map = std::template get<index_from_raw_v<X>>(indexes);
-        auto it = map.find(ReduceToRaw<X>::reduce(key));
-        return std::pair(PairSecondIterator(std::move(it)), PairSecondIterator(map.end()));
-    }
-
-    template<std::size_t I, typename X>
-    auto equal_range(const X& key) const
-    {
-        auto& map = std::template get<I>(indexes);
-        auto it = map.find(ReduceToRaw<X>::reduce(key));
-        return std::pair(PairSecondIterator(std::move(it)), PairSecondIterator(map.end()));
-    }
-
-    template<std::size_t I, typename Key>
-    bool contains(const Key& key) const
-    {auto range = equal_range<I>(key); return range.first != range.second;}
-
-    template<typename Key>
-    bool contains(const Key& key) const
-    {auto range = equal_range(key); return range.first != range.second;}
-
-    template<typename ...Vn>
-    auto emplace(Vn&& ...vn)
-    {
-        auto emplace_pair = data.emplace(std::forward<Vn>(vn)...);
-        assert(emplace_pair.second);
-        const Element& inserted_element = *(emplace_pair.first);
-        ordered_data.emplace(++counter, inserted_element);
-        assert(ordered_data.size() == data.size());
-
-        insertIndexes(inserted_element);
-        return emplace_pair;
-    }
 
 private:
     // TODO: use lambda in template (C++20).
@@ -118,28 +102,30 @@ private:
     std::map<double, element_t&> ordered_data;
 
     /**
+     * @brief Reverse of ordered_data.
+     * It is used to get the key for "ordered_data".
+     */
+    std::map<const element_t*, double> ordered_data_reverse;
+
+
+    /**
      * @brief The Element struct show us what indexes can be used to search the list.
      * Each tuple entry is an std::map<raw_key, Element&>.
      */
     typename ElementInfo::indexes_tuple_t indexes;
 
-    void insertIndexes(const element_t& element)
-    {
-        for(auto i = 0; i < element.tuple_size; ++i)
-        {
-            insertIndex<i>(element);
-        }
-    }
+    template<std::size_t ...In>
+    void insertIndexes(const element_t& element, const std::index_sequence<In...>&);
 
     template<std::size_t I>
-    void insertIndex(const element_t& element)
-    {
-        auto& map = std::template get<I>(indexes);
-        auto& value = element.*(ElementInfo::template pointer_v<I>);
-        auto raw_value = ReduceToRaw<decltype(value)>::reduce(value);
-        map.emplace(raw_value, element);
-        assert(map.size() == data.size());
-    }
+    void insertIndex(const element_t& element);
+
+
+    template<std::size_t ...In>
+    void eraseIndexes(const element_t& element, const std::index_sequence<In...>&);
+
+    template<std::size_t I>
+    void eraseIndex(const element_t& element);
 };
 
 
@@ -160,6 +146,8 @@ class ThreadSafeMultiIndex
 {
 public:
     using base_class_t = ThreadSafeContainer<MultiIndexContainer<Record, LocalPointers...>>;
+    using container_t = MultiIndexContainer<Record, LocalPointers...>;
+    using element_t = typename container_t::element_t;
 
     template<typename X>
     auto find(const X& key)
@@ -179,7 +167,14 @@ public:
 
     template<typename ...Vn>
     auto emplace(Vn&& ...vn)
-    {ExclusiveLock l(mutex); return container.template emplace(vn...);}
+    {ExclusiveLock l(mutex); return container.template emplace(std::forward<Vn>(vn)...);}
+
+    auto erase(const element_t& element)
+    {ExclusiveLock l(mutex); return container.template erase(element);}
+
+    template<typename ItType>
+    auto erase(ItType& iterator)
+    {ExclusiveLock l(mutex); return container.template erase(iterator.getIterator());}
 
 
 private:
@@ -188,5 +183,7 @@ private:
 };
 
 } //namespace ::Threads
+
+#include "ThreadSafeMultiIndex.inl"
 
 #endif // BASE_Threads_ThreadSafeMultiIndex_H
