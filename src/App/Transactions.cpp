@@ -164,7 +164,7 @@ void Transaction::addOrRemoveProperty(std::shared_ptr<TransactionalObject> share
         auto smartTo = TransactionFactory::instance().createTransaction(sharedObj->getTypeId());
         To = smartTo.get();
         To->status = TransactionObject::Chn;
-        _Objects.emplace(sharedObj, std::move(smartTo));
+        lock[_Objects].emplace(sharedObj, std::move(smartTo));
     }
 
     To->addOrRemoveProperty(pcProp,add);
@@ -237,20 +237,20 @@ void Transaction::addObjectNew(std::shared_ptr<TransactionalObject> sharedObj)
     auto pos = _Objects.find(sharedObj);
     if (pos) {
         if (pos->transaction->status == TransactionObject::Del) {
-            _Objects.erase(pos);
+            lock[_Objects].erase(pos);
         }
         else {
             pos->transaction->status = TransactionObject::New;
             pos->transaction->_NameInDocument = sharedObj->detachFromDocument();
             // move item at the end to make sure the order of removal is kept
-            _Objects.move_back(pos);
+            lock[_Objects].move_back(pos);
         }
     }
     else {
         auto To = TransactionFactory::instance().createTransaction(sharedObj->getTypeId());
         To->status = TransactionObject::New;
         To->_NameInDocument = sharedObj->detachFromDocument();
-        _Objects.emplace(std::move(sharedObj),std::move(To));
+        lock[_Objects].emplace(std::move(sharedObj),std::move(To));
     }
 }
 
@@ -266,7 +266,7 @@ void Transaction::addObjectDel(std::shared_ptr<const TransactionalObject> shared
     if(pos) {
         // is it created in this transaction ?
         if (pos->transaction->status == TransactionObject::New) {
-            _Objects.erase(pos);
+            lock[_Objects].erase(pos);
         }
         else if (pos->transaction->status == TransactionObject::Chn) {
             pos->transaction->status = TransactionObject::Del;
@@ -275,7 +275,7 @@ void Transaction::addObjectDel(std::shared_ptr<const TransactionalObject> shared
     else {
         auto To = TransactionFactory::instance().createTransaction(sharedObj->getTypeId());
         To->status = TransactionObject::Del;
-        _Objects.emplace(std::move(sharedObj),std::move(To));
+        lock[_Objects].emplace(std::move(sharedObj),std::move(To));
     }
 }
 
@@ -297,7 +297,7 @@ void Transaction::addObjectChange(std::shared_ptr<const TransactionalObject> sha
         auto smartTo = TransactionFactory::instance().createTransaction(sharedObj->getTypeId());
         To = smartTo.get();
         To->status = TransactionObject::Chn;
-        _Objects.emplace(std::move(sharedObj), std::move(smartTo));
+        lock[_Objects].emplace(std::move(sharedObj), std::move(smartTo));
     }
 
     To->setProperty(Prop);

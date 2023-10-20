@@ -3275,7 +3275,7 @@ DocumentObject * Document::addObject(const char* sType, const char* pObjectName,
         sharedObj->_Id = ++d->lastObjectId;
         d->objectIdMap[sharedObj->_Id] = sharedObj.get();
         // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
-        sharedObj->pcNameInDocument = &(lock[d->objectMap].find(ObjectName)->first);
+        sharedObj->pcNameInDocument = &(d->objectMap.find(ObjectName)->first);
         // insert in the vector
         d->objectArray.push_back(sharedObj.get());
     }
@@ -3359,7 +3359,7 @@ Document::addObjects(const char* sType, const std::vector<std::string>& objectNa
 
         // get unique name
         std::string ObjectName = Base::Tools::getIdentifier(objectNames[index].empty()?sType:objectNames[index]);
-        if (d->objectMap.find(ObjectName) != d->objectMap.end()) {
+        if (d->objectMap.contains(ObjectName)) {
             // remove also trailing digits from clean name which is to avoid to create lengthy names
             // like 'Box001001'
             if (!testStatus(KeepTrailingDigits)) {
@@ -3380,7 +3380,7 @@ Document::addObjects(const char* sType, const std::vector<std::string>& objectNa
         sharedObj->_Id = ++d->lastObjectId;
         d->objectIdMap[sharedObj->_Id] = sharedObj.get();
         // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
-        sharedObj->pcNameInDocument = &(lock[d->objectMap].find(ObjectName)->first);
+        sharedObj->pcNameInDocument = &(d->objectMap.find(ObjectName)->first);
         // insert in the vector
         d->objectArray.push_back(sharedObj.get());
 
@@ -3446,7 +3446,7 @@ void Document::addObject(DocumentObject* pcObject, const char* pObjectName)
         if(!sharedObj->_Id) sharedObj->_Id = ++d->lastObjectId;
         d->objectIdMap[sharedObj->_Id] = sharedObj.get();
         // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
-        sharedObj->pcNameInDocument = &(lock[d->objectMap].find(ObjectName)->first);
+        sharedObj->pcNameInDocument = &(d->objectMap.find(ObjectName)->first);
         // insert in the vector
         d->objectArray.push_back(sharedObj.get());
     }
@@ -3484,7 +3484,7 @@ void Document::_addObject(std::shared_ptr<DocumentObject> sharedObject, const ch
         d->objectIdMap[sharedObject->_Id] = sharedObject.get();
         d->objectArray.push_back(sharedObject.get());
         // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
-        sharedObject->pcNameInDocument = &(lock[d->objectMap].find(ObjectName)->first);
+        sharedObject->pcNameInDocument = &(d->objectMap.find(ObjectName)->first);
     }
 
     // do no transactions if we do a rollback!

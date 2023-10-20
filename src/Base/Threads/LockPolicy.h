@@ -48,6 +48,8 @@ class LockPolicy
 {
 public:
     static bool hasAnyLock() {return !threadMutexes.empty();}
+    static bool isLocked(const std::shared_mutex* mutex) {return threadMutexes.count(mutex);}
+    static bool isLocked(const std::shared_mutex& mutex) {return threadMutexes.count(&mutex);}
 
 protected:
     LockPolicy() = delete;
@@ -56,11 +58,11 @@ protected:
     LockPolicy(bool is_exclusive, MutN*... mutex);
     ~LockPolicy();
 
-    std::unordered_set<std::shared_mutex*> mutexes;
+    std::unordered_set<const std::shared_mutex*> mutexes;
 
 protected:
     static thread_local bool isExclusive;
-    static thread_local std::unordered_set<std::shared_mutex*> threadMutexes;
+    static thread_local std::unordered_set<const std::shared_mutex*> threadMutexes;
 };
 
 
@@ -75,26 +77,34 @@ private:
     std::shared_lock<std::shared_mutex> lock;
 };
 
-template<typename X, typename Y>
-struct ForEach
-{
-    using type = X;
-};
 
-template<typename... MutexOrContainer>
-class ExclusiveLock : public LockPolicy
+class ExclusiveLockBase {};
+
+/**
+ * @brief Locks and gives access to locked classes of type "MutexHolder".
+ * The MutexHolder must:
+ * 1. Define typename MutexHolder::mutex_type.
+ * 2. Define a MutexHolder::ModifierGate class
+ *    that implements the container methods that demand ExclusiveLock.
+ * 3. Define a method that takes an ExclusiveLock as argument,
+ *    and returns a ModifierGate instance.
+ */
+template<typename... MutexHolder>
+class ExclusiveLock
+    : public LockPolicy
+    , public ExclusiveLockBase
 {
 public:
     [[nodiscard]]
-    ExclusiveLock(MutexOrContainer&... mutex_or_container);
+    ExclusiveLock(MutexHolder&... mutex_holder);
 
     // This could actually be static.
-    template<typename TSC>
-    typename TSC::container_type& operator[](TSC& tsc);
+    template<typename SomeHolder>
+    auto operator[](SomeHolder& tsc) const;
 
     static bool hasAnyLock() {return isExclusive && !threadMutexes.empty();}
-    template<typename TSC>
-    static bool hasLock(const TSC& c) {return isExclusive && threadMutexes.count(&c.mutex);}
+    template<typename SomeHolder>
+    static bool hasLock(const SomeHolder& c) {return isExclusive && threadMutexes.count(&c.mutex);}
 
 private:
     /*
@@ -105,7 +115,7 @@ private:
      * But, unfortunately, std::lock needs two or more mutexes,
      * and we do not want the code full of ifs.
      */
-    std::unique_ptr<std::scoped_lock<typename ForEach<std::shared_mutex, MutexOrContainer>::type...>> locks;
+    std::unique_ptr<std::scoped_lock<typename MutexHolder::mutex_type...>> locks;
 };
 
 } //namespace Base::Threads

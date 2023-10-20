@@ -142,9 +142,10 @@ class ThreadSafeMultiIndex
     : public ThreadSafeContainer<MultiIndexContainer<Record, LocalPointers...>>
 {
 public:
-    using base_class_t = ThreadSafeContainer<MultiIndexContainer<Record, LocalPointers...>>;
-    using container_t = MultiIndexContainer<Record, LocalPointers...>;
-    using element_t = typename container_t::element_t;
+    using self_t = ThreadSafeMultiIndex;
+    using parent_t = ThreadSafeContainer<MultiIndexContainer<Record, LocalPointers...>>;
+
+    using element_t = Record;
 
     template<typename Key>
     auto find(const Key& key)
@@ -162,28 +163,36 @@ public:
     bool contains(const Key& key) const
     {SharedLock l(mutex); return container.template contains(key);}
 
-    template<typename ...Vn>
-    auto emplace(Vn&& ...vn)
-    {ExclusiveLock l(mutex); return container.template emplace(std::forward<Vn>(vn)...);}
+    struct ModifierGate
+        : parent_t::ModifierGate
+    {
+        ModifierGate(self_t* self) : parent_t::ModifierGate(self), self(self) {}
+        self_t* self;
 
-    auto erase(const element_t& element)
-    {ExclusiveLock l(mutex); return container.template erase(element);}
+        template<typename ...Vn>
+        auto emplace(Vn&& ...vn)
+        {return self->container.template emplace(std::forward<Vn>(vn)...);}
 
-    template<typename ItType>
-    auto erase(ItType& iterator)
-    {ExclusiveLock l(mutex); return container.template erase(iterator.getIterator());}
+        auto erase(const element_t& element)
+        {return self->container.template erase(element);}
 
-    auto move_back(const element_t& element)
-    {ExclusiveLock l(mutex); return container.template move_back(element);}
+        template<typename ItType>
+        auto erase(ItType& iterator)
+        {return self->container.template erase(iterator.getIterator());}
 
-    template<typename ItType>
-    auto move_back(const ItType& iterator)
-    {ExclusiveLock l(mutex); return container.template move_back(iterator.getIterator());}
+        auto move_back(const element_t& element)
+        {return self->container.template move_back(element);}
 
+        template<typename ItType>
+        auto move_back(const ItType& iterator)
+        {return self->container.template move_back(iterator.getIterator());}
+    };
+    ModifierGate getModifierGate(const ExclusiveLockBase*)
+    {assert(LockPolicy::isLocked(mutex));return ModifierGate{this};}
 
-private:
-    using base_class_t::mutex;
-    using base_class_t::container;
+protected:
+    using parent_t::mutex;
+    using parent_t::container;
 };
 
 } //namespace ::Threads

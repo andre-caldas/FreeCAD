@@ -24,13 +24,13 @@
 #ifndef BASE_Threads_ThreadSafeContainer_H
 #define BASE_Threads_ThreadSafeContainer_H
 
+#include <type_traits>
 #include <shared_mutex>
+
+#include "LockPolicy.h"
 
 namespace Base::Threads
 {
-
-template<typename... ThrSfCont>
-class ExclusiveLock;
 
 template<typename ItType>
 class LockedIterator;
@@ -39,12 +39,15 @@ template<typename ContainerType>
 class ThreadSafeContainer
 {
 public:
-    typedef ContainerType container_type;
-    using container_iterator = typename container_type::iterator;
-    using container_const_iterator = typename container_type::const_iterator;
+    using self_t = ThreadSafeContainer;
+    typedef ContainerType unsafe_container_t;
+    typedef typename unsafe_container_t::iterator container_iterator;
+    typedef typename unsafe_container_t::const_iterator container_const_iterator;
 
-    using iterator = LockedIterator<container_iterator>;
-    using const_iterator = LockedIterator<container_const_iterator>;
+    typedef LockedIterator<container_iterator> iterator;
+    typedef LockedIterator<container_const_iterator> const_iterator;
+
+    typedef std::shared_mutex mutex_type;
 
     iterator begin();
     const_iterator begin() const;
@@ -58,14 +61,22 @@ public:
     bool empty() const;
     void clear();
 
-    using lock_type = std::shared_mutex;
+    struct ModifierGate
+    {
+        ModifierGate(self_t* self) : self(self) {}
+        self_t* self;
+        auto getMutexPtr() const {return &self->mutex;}
+        void clear();
+    };
+    ModifierGate getModifierGate(const ExclusiveLockBase*)
+    {assert(LockPolicy::isLocked(mutex));return ModifierGate{this};}
 
 protected:
-    mutable lock_type mutex;
+    mutable mutex_type mutex;
     ContainerType container;
 
 public: // :-(
-    lock_type* getMutexPtr() const {return &mutex;}
+    mutex_type* getMutexPtr() const {return &mutex;}
 };
 
 } //namespace Base::Threads

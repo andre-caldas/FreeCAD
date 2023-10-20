@@ -96,7 +96,14 @@ bool ThreadSafeContainer<ContainerType>::empty() const
 template<typename ContainerType>
 void ThreadSafeContainer<ContainerType>::clear()
 {
-    ExclusiveLock lock(mutex);
+    ExclusiveLock lock(*this);
+    container.clear();
+}
+
+
+template<typename ContainerType>
+void ThreadSafeContainer<ContainerType>::ModifierGate::clear()
+{
     container.clear();
 }
 

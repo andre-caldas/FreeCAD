@@ -98,6 +98,10 @@ struct MutexPointer<std::shared_mutex> : MutexPointer<std::shared_mutex*>
     MutexPointer(std::shared_mutex& mutex) : MutexPointer<std::shared_mutex*>(&mutex) {}
 };
 
+namespace detail {
+template<typename Result, typename From>
+struct ForEach{using type = Result;};
+}
 
 template<typename... MutexOrContainer>
 ExclusiveLock<MutexOrContainer...>::ExclusiveLock(MutexOrContainer&... mutex_or_container)
@@ -124,20 +128,21 @@ ExclusiveLock<MutexOrContainer...>::ExclusiveLock(MutexOrContainer&... mutex_or_
          * Fortunately, mutexes = {container.getMutexPtr()...}.
          */
         locks = std::make_unique<
-            std::scoped_lock<typename ForEach<std::shared_mutex, MutexOrContainer>::type...>
+            std::scoped_lock<typename detail::ForEach<std::shared_mutex, MutexOrContainer>::type...>
         >(*MutexPointer{mutex_or_container}()...);
     }
 }
 
-template<typename... MutexOrContainer>
-template<typename TSC>
-typename TSC::container_type& ExclusiveLock<MutexOrContainer...>::operator[](TSC& tsc)
+template<typename... MutexHolder>
+template<typename SomeHolder>
+auto ExclusiveLock<MutexHolder...>::operator[](SomeHolder& tsc) const
 {
-    if(!threadMutexes.count(tsc.getMutexPtr()))
+    auto gate = tsc.getModifierGate(this);
+    if(!threadMutexes.count(gate.getMutexPtr()))
     {
         throw ExceptionNeedLockToAccessContainer();
     }
-    return tsc.container;
+    return gate;
 }
 
 } //namespace Base::Threads
