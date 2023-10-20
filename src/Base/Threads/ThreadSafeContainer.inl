@@ -36,7 +36,7 @@ template<typename ContainerType>
 typename ThreadSafeContainer<ContainerType>::iterator
 ThreadSafeContainer<ContainerType>::begin()
 {
-    return iterator(mutex, container.begin());
+    return iterator(mutex, container.begin(), container.end());
 }
 
 template<typename ContainerType>
@@ -50,7 +50,7 @@ template<typename ContainerType>
 typename ThreadSafeContainer<ContainerType>::const_iterator
 ThreadSafeContainer<ContainerType>::cbegin() const
 {
-    return const_iterator(mutex, container.cbegin());
+    return const_iterator(mutex, container.cbegin(), container.cend());
 }
 
 
@@ -96,7 +96,7 @@ bool ThreadSafeContainer<ContainerType>::empty() const
 template<typename ContainerType>
 void ThreadSafeContainer<ContainerType>::clear()
 {
-    ExclusiveLock lock(*this);
+    ExclusiveLock lock(mutex);
     container.clear();
 }
 

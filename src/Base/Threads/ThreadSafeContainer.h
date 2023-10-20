@@ -29,6 +29,7 @@
 namespace Base::Threads
 {
 
+template<typename... ThrSfCont>
 class ExclusiveLock;
 
 template<typename ItType>
@@ -57,10 +58,14 @@ public:
     bool empty() const;
     void clear();
 
+    using lock_type = std::shared_mutex;
+
 protected:
-    mutable std::shared_mutex mutex;
+    mutable lock_type mutex;
     ContainerType container;
-    friend class ExclusiveLock;
+
+public: // :-(
+    lock_type* getMutexPtr() const {return &mutex;}
 };
 
 } //namespace Base::Threads

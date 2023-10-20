@@ -90,7 +90,7 @@ struct MultiIndexElementInfo
 
     using indexes_tuple_t = std::tuple<
         std::map<typename ReduceToRaw<MemberPointerTo_t<LocalPointers>>::type,
-                 const Element&
+                 const Element*
         >...
     >;
 };

@@ -68,26 +68,33 @@ class SharedLock : public LockPolicy
 {
 public:
     SharedLock();
+    [[nodiscard]]
     SharedLock(std::shared_mutex& mutex);
 
 private:
     std::shared_lock<std::shared_mutex> lock;
 };
 
+template<typename X, typename Y>
+struct ForEach
+{
+    using type = X;
+};
 
+template<typename... MutexOrContainer>
 class ExclusiveLock : public LockPolicy
 {
 public:
-    template<typename... ThrSfCont>
-    ExclusiveLock(ThrSfCont&... container);
+    [[nodiscard]]
+    ExclusiveLock(MutexOrContainer&... mutex_or_container);
 
     // This could actually be static.
-    template<typename ThrSfCont>
-    typename ThrSfCont::container_type& operator[](ThrSfCont& tsc);
+    template<typename TSC>
+    typename TSC::container_type& operator[](TSC& tsc);
 
     static bool hasAnyLock() {return isExclusive && !threadMutexes.empty();}
-    template<typename ThrSfCont>
-    static bool hasLock(const ThrSfCont& c) {return isExclusive && threadMutexes.count(&c.mutex);}
+    template<typename TSC>
+    static bool hasLock(const TSC& c) {return isExclusive && threadMutexes.count(&c.mutex);}
 
 private:
     /*
@@ -98,7 +105,7 @@ private:
      * But, unfortunately, std::lock needs two or more mutexes,
      * and we do not want the code full of ifs.
      */
-    std::unique_ptr<std::scoped_lock<std::shared_mutex>> locks;
+    std::unique_ptr<std::scoped_lock<typename ForEach<std::shared_mutex, MutexOrContainer>::type...>> locks;
 };
 
 } //namespace Base::Threads

@@ -26,7 +26,7 @@
 
 #include "type_traits/record_info.h"
 
-#include "PairSecondIterator.h"
+#include "IteratorWrapper.h"
 #include "ThreadSafeContainer.h"
 
 namespace Base::Threads
@@ -36,8 +36,8 @@ template<typename Element, auto ...LocalPointers>
 class MultiIndexContainer
 {
 public:
-    using iterator = PairSecondIterator<typename std::map<double, Element&>::iterator>;
-    using const_iterator = PairSecondIterator<typename std::map<double, Element&>::const_iterator>;
+    using iterator = IteratorSecondPtrAsRef<typename std::map<double, Element*>::iterator>;
+    using const_iterator = IteratorSecondPtrAsRef<typename std::map<double, Element*>::const_iterator>;
 
     auto begin();
     auto begin() const;
@@ -47,11 +47,13 @@ public:
     auto end() const;
     auto cend() const;
 
-    template<typename X>
-    auto equal_range(const X& key);
+    bool empty() const;
 
-    template<std::size_t I, typename X>
-    auto equal_range(const X& key) const;
+    template<typename Key>
+    auto equal_range(const Key& key) const;
+
+    template<std::size_t I, typename Key>
+    auto equal_range(const Key& key) const;
 
     template<std::size_t I, typename Key>
     bool contains(const Key& key) const;
@@ -67,6 +69,11 @@ public:
     template<typename ItType>
     auto erase(ItType it);
 
+    auto move_back(const Element& element);
+
+    template<typename ItType>
+    auto move_back(const ItType& it);
+
 
     using ElementInfo = MultiIndexElementInfo<Element, LocalPointers...>;
 
@@ -79,27 +86,17 @@ public:
     using type_from_index_t = typename ElementInfo::template type_from_index_t<I>;
 
 private:
-    // TODO: use lambda in template (C++20).
-    struct elementHash
-    {
-        std::size_t operator()(const element_t& element)
-        {return (std::size_t)&element;}
-    };
-
-    /**
-     * @brief Holds each data set.
-     */
-    std::unordered_set<element_t, elementHash> data;
+    std::unordered_map<const element_t*, std::unique_ptr<element_t>> data;
 
     /// @brief Incremented on every insertion.
     std::atomic_int counter;
 
     /**
-     * @brief Items oredered by insetion order.
+     * @brief Items oredered (in principle) by insetion order.
      * @attention We use double instead of an integer so it becomes easy
      * to insert an element between two existing elements.
      */
-    std::map<double, element_t&> ordered_data;
+    std::map<double, element_t*> ordered_data;
 
     /**
      * @brief Reverse of ordered_data.
@@ -149,12 +146,12 @@ public:
     using container_t = MultiIndexContainer<Record, LocalPointers...>;
     using element_t = typename container_t::element_t;
 
-    template<typename X>
-    auto find(const X& key)
+    template<typename Key>
+    auto find(const Key& key)
     {return LockedIterator(mutex, container.equal_range(key));}
 
-    template<typename X>
-    auto find(const X& key) const
+    template<typename Key>
+    auto find(const Key& key) const
     {return LockedIterator(mutex, container.equal_range(key));}
 
     template<std::size_t I, typename Key>
@@ -175,6 +172,13 @@ public:
     template<typename ItType>
     auto erase(ItType& iterator)
     {ExclusiveLock l(mutex); return container.template erase(iterator.getIterator());}
+
+    auto move_back(const element_t& element)
+    {ExclusiveLock l(mutex); return container.template move_back(element);}
+
+    template<typename ItType>
+    auto move_back(const ItType& iterator)
+    {ExclusiveLock l(mutex); return container.template move_back(iterator.getIterator());}
 
 
 private:

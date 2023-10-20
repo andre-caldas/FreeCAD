@@ -29,6 +29,7 @@
 #include <unordered_map>
 #include <Base/Factory.h>
 #include <Base/Persistence.h>
+#include <Base/Threads/ThreadSafeMultiIndex.h>
 #include <App/PropertyContainer.h>
 
 namespace App
@@ -39,7 +40,6 @@ class Property;
 class Transaction;
 class TransactionObject;
 class TransactionalObject;
-
 
 /** Represents a atomic transaction of the document
  */
@@ -94,17 +94,21 @@ public:
 
 private:
     int transID;
-    using Info = std::pair<const TransactionalObject*, TransactionObject*>;
-    std::unordered_map<const TransactionalObject*, std::shared_ptr<const TransactionalObject>> ownedObjects;
-    bmi::multi_index_container<
-        Info,
-        bmi::indexed_by<
-            bmi::sequenced<>,
-            bmi::hashed_unique<
-                bmi::member<Info, const TransactionalObject*, &Info::first>
-            >
-        >
-    > _Objects;
+
+    struct TransactionRecord
+    {
+        using object_t = std::shared_ptr<const TransactionalObject>;
+        using transaction_t = std::unique_ptr<TransactionObject>;
+        TransactionRecord(object_t object, transaction_t&& transaction)
+            : object(std::move(object))
+            , transaction(std::move(transaction))
+        {}
+        const object_t object;
+        const transaction_t transaction;
+    };
+    Base::Threads::ThreadSafeMultiIndex<TransactionRecord,
+                                        &TransactionRecord::object,
+                                        &TransactionRecord::transaction> _Objects;
 
     std::shared_ptr<TransactionalObject>
     _prepareToAssumeOwnership(TransactionalObject* Obj);
@@ -172,7 +176,7 @@ public:
     static TransactionFactory& instance();
     static void destruct ();
 
-    TransactionObject* createTransaction (const Base::Type& type) const;
+    std::unique_ptr<TransactionObject> createTransaction (const Base::Type& type) const;
     void addProducer (const Base::Type& type, Base::AbstractProducer *producer);
 
 private:

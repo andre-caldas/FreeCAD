@@ -47,33 +47,43 @@ struct ReduceToRawAux
 {
     static_assert(!std::is_class_v<T>, "Need a rule to reduce this class.");
     using from_type = T;
-    using type = std::remove_cv_t<T>;
-    static type reduce(const from_type& ptr) {return (type)ptr;}
+    using type = T;
+    static type reduce(from_type val) {return val;}
+};
+
+template<typename T>
+struct ReduceToRawAux<T&>
+    : ReduceToRawAux<std::remove_cv_t<T>>
+{};
+
+template<typename T>
+struct ReduceToRawAux<T*>
+{
+    using from_type = const T*;
+    using type = const T*;
+    static type reduce(from_type ptr) {return ptr;}
 };
 
 template<typename T>
 struct ReduceToRawAux<std::shared_ptr<T>>
-    : ReduceToRawAux<T*>
 {
     using from_type = std::shared_ptr<T>;
-    using next_type = T*;
+    using next_type = std::remove_cv_t<T>*;
     using type = typename ReduceToRawAux<next_type>::type;
     static type reduce(const from_type& ptr) {return ReduceToRawAux<next_type>::reduce(ptr.get());}
 };
 
 template<typename T>
 struct ReduceToRawAux<std::unique_ptr<T>>
-    : ReduceToRawAux<T*>
 {
     using from_type = std::unique_ptr<T>;
-    using next_type = T*;
+    using next_type = std::remove_cv_t<T>*;
     using type = typename ReduceToRawAux<next_type>::type;
     static type reduce(const from_type& ptr) {return ReduceToRawAux<next_type>::reduce(ptr.get());}
 };
 
 template<typename T>
 struct ReduceToRawAux<AtomicSharedPtr<T>>
-    : ReduceToRawAux<std::shared_ptr<T>>
 {
     using from_type = AtomicSharedPtr<T>;
     using next_type = std::shared_ptr<T>;
@@ -89,14 +99,30 @@ struct ReduceToRaw
 
 /*
  * Index traits.
- */
+~ */
 template<bool equal, std::size_t I, typename V, typename V1, typename ...Vn>
-struct IndexFromTypeAux : IndexFromTypeAux<std::is_same_v<V,V1>, I+1, V, Vn...>
+struct IndexFromTypeAux
+    : IndexFromTypeAux<
+          (I > sizeof...(Vn))
+              ||
+              (
+                  std::is_reference_v<V1>
+                  &&
+                  std::is_same_v<std::remove_cv_t<std::remove_reference_t<V>>,std::remove_cv_t<std::remove_reference_t<V>>>
+              )
+              ||
+              (
+                  std::is_pointer_v<V1>
+                  &&
+                  std::is_same_v<std::remove_cv_t<std::remove_pointer_t<V>>,std::remove_cv_t<std::remove_pointer_t<V>>>
+              )
+          , I+1, V, Vn..., V1>
 {};
 
 template<std::size_t I, typename V, typename V1, typename ...Vn>
 struct IndexFromTypeAux<true, I, V, V1, Vn...>
 {
+    static_assert(I-1 <= sizeof...(Vn), "Index not found.");
     static constexpr std::size_t value = I-1;
 };
 

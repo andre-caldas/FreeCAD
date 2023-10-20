@@ -21,16 +21,16 @@
  *                                                                          *
  ***************************************************************************/
 
-#ifndef BASE_Threads_PairSecondIterator_H
-#define BASE_Threads_PairSecondIterator_H
+#ifndef BASE_Threads_IteratorWrapper_H
+#define BASE_Threads_IteratorWrapper_H
 
 #include <utility>
 
 namespace Base::Threads
 {
 
-template<typename ItType>
-class PairSecondIterator
+template<typename ItType, typename GetReference>
+class IteratorWrapper
 {
 public:
     using difference_type = typename ItType::difference_type;
@@ -39,24 +39,49 @@ public:
     using reference = typename ItType::reference;
     using iterator_category = typename ItType::iterator_category;
 
-    PairSecondIterator(ItType&& it) : it(it) {}
+    IteratorWrapper(const ItType& it) : it(it) {}
+    IteratorWrapper(IteratorWrapper&& other) : it(std::move(other.it)) {}
+    IteratorWrapper(const IteratorWrapper& other) : it(other.it) {}
 
     /*
-     * CPP loves when we do all that by hand... :-(
+     * C++ loves when we do all that by hand... :-(
      */
-    template<typename OtherIt>
-    constexpr bool operator==(const OtherIt& other) const {return it == other.it;}
-    template<typename OtherIt>
-    constexpr bool operator!=(const OtherIt& other) const {return it != other.it;}
+    constexpr bool operator==(const IteratorWrapper& other) const {return it == other.it;}
+    constexpr bool operator!=(const IteratorWrapper& other) const {return it != other.it;}
+    auto& operator=(const IteratorWrapper& other) {it = other.it; return *this;}
     auto& operator++() {++it; return *this;}
-    auto operator++(int) {PairSecondIterator result(this->it); ++it; return result;}
-    auto& operator*() const {return it->second;}
-    auto* operator->() const {return &it->second;}
+    auto operator++(int) {IteratorWrapper result(this->it); ++it; return result;}
+    auto& operator*() const {return GetReference{it}();}
+    auto* operator->() const {return &GetReference{it}();}
 
 private:
     ItType it;
 };
 
+namespace detail {
+template<typename ItType>
+struct GetSecond
+{
+    GetSecond(const ItType& it) : it(it) {}
+    auto& operator()() {return it->second;}
+    const ItType& it;
+};
+
+template<typename ItType>
+struct GetSecondPointerAsReference
+{
+    GetSecondPointerAsReference(const ItType& it) : it(it) {}
+    auto& operator()() {return *it->second;}
+    const ItType& it;
+};
+}
+
+template<typename ItType>
+using IteratorSecond = IteratorWrapper<ItType, detail::GetSecond<ItType>>;
+
+template<typename ItType>
+using IteratorSecondPtrAsRef = IteratorWrapper<ItType, detail::GetSecondPointerAsReference<ItType>>;
+
 } //namespace ::Threads
 
-#endif // BASE_Threads_PairSecondIterator_H
+#endif // BASE_Threads_IteratorWrapper_H

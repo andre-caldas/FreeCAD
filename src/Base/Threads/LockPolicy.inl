@@ -23,6 +23,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <mutex>
 #include <shared_mutex>
 
 #include "Exception.h"
@@ -74,24 +75,65 @@ LockPolicy::LockPolicy(bool is_exclusive, MutN*... mutex)
 }
 
 
-template<typename... ThrSfCont>
-ExclusiveLock::ExclusiveLock(ThrSfCont&... container)
-    : LockPolicy(true, &container.mutex...)
+/*
+ * Traits: we want to pass either a mutex or a container to ExclusiveLock.
+ */
+template<typename C>
+struct MutexPointer
 {
-    // Policy dictates that we can do:
-    // ExclusiveLock l1(m1, m2);
-    // ExclusiveLock l2(m1); // Does nothing.
-    assert(mutexes.empty() || mutexes.size() == sizeof...(ThrSfCont));
-    if(mutexes.size() == sizeof...(ThrSfCont))
+    MutexPointer(const C& container) : container(container) {}
+    auto operator()() {return container.getMutexPtr();}
+    const C& container;
+};
+template<>
+struct MutexPointer<std::shared_mutex*>
+{
+    MutexPointer(std::shared_mutex* mutex) : mutex(mutex) {}
+    auto operator()() {return mutex;}
+    std::shared_mutex* mutex;
+};
+template<>
+struct MutexPointer<std::shared_mutex> : MutexPointer<std::shared_mutex*>
+{
+    MutexPointer(std::shared_mutex& mutex) : MutexPointer<std::shared_mutex*>(&mutex) {}
+};
+
+
+template<typename... MutexOrContainer>
+ExclusiveLock<MutexOrContainer...>::ExclusiveLock(MutexOrContainer&... mutex_or_container)
+    : LockPolicy(true, MutexPointer{mutex_or_container}()...)
+{
+    /*
+     * Here we know that if this is not the first lock,
+     * all previous locks were exclusive and the very first one
+     * already contains this one.
+     *
+     * If this is not the first one, mutexes is empty.
+     * Otherwise, mutexes = {container.getMutexPtr()...}.
+     *
+     * Example:
+     * ExclusiveLock l1(m1, m2);
+     * ExclusiveLock l2(m1); // Does nothing.
+     */
+    assert(mutexes.empty() || mutexes.size() == sizeof...(MutexOrContainer));
+    if(mutexes.size() == sizeof...(MutexOrContainer))
     {
-        locks = std::make_unique<std::scoped_lock<decltype(ThrSfCont::mutex)...>>(container.mutex...);
+        /*
+         * It would be more natural if we could pass "mutexes" to the constructor.
+         * But there is only the option to list all mutexes at compile time.
+         * Fortunately, mutexes = {container.getMutexPtr()...}.
+         */
+        locks = std::make_unique<
+            std::scoped_lock<typename ForEach<std::shared_mutex, MutexOrContainer>::type...>
+        >(*MutexPointer{mutex_or_container}()...);
     }
 }
 
-template<typename ThrSfCont>
-typename ThrSfCont::container_type& ExclusiveLock::operator[](ThrSfCont& tsc)
+template<typename... MutexOrContainer>
+template<typename TSC>
+typename TSC::container_type& ExclusiveLock<MutexOrContainer...>::operator[](TSC& tsc)
 {
-    if(!threadMutexes.count(&tsc.mutex))
+    if(!threadMutexes.count(tsc.getMutexPtr()))
     {
         throw ExceptionNeedLockToAccessContainer();
     }

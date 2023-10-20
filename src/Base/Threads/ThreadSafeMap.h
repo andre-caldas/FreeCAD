@@ -77,18 +77,20 @@ class ThreadSafeUnorderedMap
 {
 public:
     auto find(const Key& key)
-    {return LockedIterator<mutex>(container.find(key));}
+    {return LockedIterator(mutex, container.find(key), container.end());}
 
     auto find(const Key& key) const
-    {return LockedIterator<mutex>(container.find(key));}
+    {return LockedIterator(mutex, container.find(key), container.end());}
 
     size_t count(const Key& key) const
     {SharedLock l(mutex); return container.count(key);}
 
+    bool contains(const Key& key) const
+    {return count(key);}
+
 private:
     using ThreadSafeContainer<std::unordered_map<Key,Val>>::mutex;
     using ThreadSafeContainer<std::unordered_map<Key,Val>>::container;
-    friend class ExclusiveLock;
 };
 
 } //namespace Base::Threads

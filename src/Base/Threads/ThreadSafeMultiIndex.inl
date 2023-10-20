@@ -23,7 +23,7 @@
 
 #include "type_traits/record_info.h"
 
-#include "PairSecondIterator.h"
+#include "IteratorWrapper.h"
 #include "ThreadSafeContainer.h"
 
 #include "ThreadSafeMultiIndex.h"
@@ -34,58 +34,79 @@ namespace Base::Threads
 template<typename Element, auto ...LocalPointers>
 auto MultiIndexContainer<Element, LocalPointers...>::begin()
 {
-    return PairSecondIterator(ordered_data.begin());
+    return iterator(ordered_data.begin());
 }
 
 template<typename Element, auto ...LocalPointers>
 auto MultiIndexContainer<Element, LocalPointers...>::begin() const
 {
-    return PairSecondIterator(ordered_data.begin());
+    return iterator(ordered_data.begin());
 }
 
 template<typename Element, auto ...LocalPointers>
 auto MultiIndexContainer<Element, LocalPointers...>::cbegin() const
 {
-    return PairSecondIterator(ordered_data.cbegin());
+    return iterator(ordered_data.cbegin());
 }
 
 
 template<typename Element, auto ...LocalPointers>
 auto MultiIndexContainer<Element, LocalPointers...>::end()
 {
-    return PairSecondIterator(ordered_data.end());
+    return iterator(ordered_data.end());
 }
 
 template<typename Element, auto ...LocalPointers>
 auto MultiIndexContainer<Element, LocalPointers...>::end() const
 {
-    return PairSecondIterator(ordered_data.end());
+    return iterator(ordered_data.end());
 }
 
 template<typename Element, auto ...LocalPointers>
 auto MultiIndexContainer<Element, LocalPointers...>::cend() const
 {
-    return PairSecondIterator(ordered_data.cend());
+    return iterator(ordered_data.cend());
 }
 
 
 
 template<typename Element, auto ...LocalPointers>
-template<typename X>
-auto MultiIndexContainer<Element, LocalPointers...>::equal_range(const X& key)
+bool MultiIndexContainer<Element, LocalPointers...>::empty() const
 {
-    auto& map = std::template get<index_from_raw_v<X>>(indexes);
-    auto it = map.find(ReduceToRaw<X>::reduce(key));
-    return std::pair(PairSecondIterator(std::move(it)), PairSecondIterator(map.end()));
+    return ordered_data.empty();
 }
 
 template<typename Element, auto ...LocalPointers>
-template<std::size_t I, typename X>
-auto MultiIndexContainer<Element, LocalPointers...>::equal_range(const X& key) const
+template<typename Key>
+auto MultiIndexContainer<Element, LocalPointers...>::equal_range(const Key& key) const
 {
+    return equal_range<index_from_raw_v<Key>>(key);
+}
+
+template<typename Element, auto ...LocalPointers>
+template<std::size_t I, typename Key>
+auto MultiIndexContainer<Element, LocalPointers...>::equal_range(const Key& key) const
+{
+    const_iterator end(ordered_data.end());
+
     auto& map = std::template get<I>(indexes);
-    auto it = map.find(ReduceToRaw<X>::reduce(key));
-    return std::pair(PairSecondIterator(std::move(it)), PairSecondIterator(map.end()));
+    auto it_ptr = map.find(ReduceToRaw<Key>::reduce(key));
+    if(it_ptr == map.end())
+    {
+        return std::make_pair(end, end);
+    }
+
+    auto it_id = ordered_data_reverse.find(it_ptr->second);
+    assert(it_id != ordered_data_reverse.end());
+    if(it_id == ordered_data_reverse.end())
+    {
+        return std::make_pair(end, std::move(end));
+    }
+
+    auto it_final = ordered_data.find(it_id->second);
+    assert(it_final != ordered_data.end());
+
+    return std::make_pair(const_iterator{std::move(it_final)}, std::move(end));
 }
 
 template<typename Element, auto ...LocalPointers>
@@ -108,19 +129,21 @@ template<typename Element, auto ...LocalPointers>
 template<typename ...Vn>
 auto MultiIndexContainer<Element, LocalPointers...>::emplace(Vn&& ...vn)
 {
-    auto emplace_pair = data.emplace(std::forward<Vn>(vn)...);
-    auto [it, success] = emplace_pair;
-    assert(success);
-    const Element& inserted_element = *it;
+    auto unique_ptr = std::make_unique<Element>(std::forward<Vn>(vn)...);
+    Element* inserted_element = unique_ptr.get();
+    auto res1 = data.emplace(unique_ptr.get(), std::move(unique_ptr));
+    assert(res1.second);
 
     double count = ++counter;
-    ordered_data.emplace(count, inserted_element);
+    auto [it, success] = ordered_data.emplace(count, inserted_element);
+    assert(success);
+
     assert(ordered_data.size() == data.size());
-    ordered_data_reverse.emplace(&inserted_element, count);
+    ordered_data_reverse.emplace(inserted_element, count);
     assert(ordered_data_reverse.size() == data.size());
 
-    insertIndexes(inserted_element, std::make_index_sequence<sizeof...(LocalPointers)>{});
-    return emplace_pair;
+    insertIndexes(*inserted_element, std::make_index_sequence<sizeof...(LocalPointers)>{});
+    return std::pair(iterator(std::move(it)), true);
 }
 
 
@@ -133,15 +156,16 @@ auto MultiIndexContainer<Element, LocalPointers...>::erase(const Element& elemen
     {
         return 0;
     }
-    double count = pos->second;
-    ordered_data.erase(count);
-    assert(ordered_data.size() == data.size()-1);
-    ordered_data_reverse.erase(&element);
-    assert(ordered_data_reverse.size() == data.size()-1);
 
     eraseIndexes(element, std::make_index_sequence<sizeof...(LocalPointers)>{});
 
-    data.erase(element);
+    double key = pos->second;
+    ordered_data_reverse.erase(&element);
+    assert(ordered_data_reverse.size() == data.size() - 1);
+    ordered_data.erase(key);
+    assert(ordered_data.size() == data.size() - 1);
+    data.erase(&element);
+    assert(data.size() == ordered_data.size());
     return 1;
 }
 
@@ -149,13 +173,30 @@ template<typename Element, auto ...LocalPointers>
 template<typename ItType>
 auto MultiIndexContainer<Element, LocalPointers...>::erase(ItType it)
 {
-    assert(it != this->cend());
-    if(it == this->cend())
-    {
-        return it;
-    }
     erase(*it);
-    return ++it;
+    return ++it; // Attention: assuming it != end!
+}
+
+
+template<typename Element, auto ...LocalPointers>
+auto MultiIndexContainer<Element, LocalPointers...>::move_back(const Element& element)
+{
+    double old_count = ordered_data_reverse.at(&element);
+    double new_count = ++counter;
+    ordered_data_reverse.at(&element) = new_count;
+
+    auto nh = ordered_data.extract(old_count);
+    nh.key() = new_count;
+    ordered_data.insert(std::move(nh));
+    return new_count;
+}
+
+
+template<typename Element, auto ...LocalPointers>
+template<typename ItType>
+auto MultiIndexContainer<Element, LocalPointers...>::move_back(const ItType& it)
+{
+    return move_back(*it);
 }
 
 
@@ -169,6 +210,7 @@ void MultiIndexContainer<Element, LocalPointers...>::insertIndexes(const element
 {
     // If you know a better way... please, tell me! :-)
     int _[] = {(insertIndex<In>(element),0)...};
+    (void)_;
 }
 
 template<typename Element, auto ...LocalPointers>
@@ -178,7 +220,7 @@ void MultiIndexContainer<Element, LocalPointers...>::insertIndex(const element_t
     auto& map = std::template get<I>(indexes);
     auto& value = element.*(ElementInfo::template pointer_v<I>);
     auto raw_value = ReduceToRaw<decltype(value)>::reduce(value);
-    map.emplace(raw_value, element);
+    map.emplace(raw_value, &element);
     assert(map.size() == data.size());
 }
 
@@ -188,6 +230,7 @@ void MultiIndexContainer<Element, LocalPointers...>::eraseIndexes(const element_
 {
     // If you know a better way... please, tell me! :-)
     int _[] = {(eraseIndex<In>(element),0)...};
+    (void)_;
 }
 
 template<typename Element, auto ...LocalPointers>
