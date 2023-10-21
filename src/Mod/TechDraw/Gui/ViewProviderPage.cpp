@@ -120,10 +120,11 @@ void ViewProviderPage::attach(App::DocumentObject* pcFeat)
     TechDraw::DrawPage* feature = dynamic_cast<TechDraw::DrawPage*>(pcFeat);
     if (feature) {
         connectGuiRepaint = feature->signalGuiPaint.connect(bnd);
-        if (feature->isAttachedToDocument()) {
+        const char* temp = feature->getNameInDocument();
+        if (temp) {
             // it could happen that feature is not completely in the document yet and getNameInDocument returns
             // nullptr, so we only update m_myName if we got a valid string.
-            m_pageName = feature->getNameInDocument();
+            m_pageName = temp;
         }
         m_graphicsScene->setObjectName(QString::fromLocal8Bit(m_pageName.c_str()));
     }

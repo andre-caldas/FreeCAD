@@ -177,7 +177,8 @@ bool TaskLoftParameters::referenceSelected(const Gui::SelectionChanges& msg) con
             return false;
 
         // not allowed to reference ourself
-        if (vp->getObject()->getNameInDocument() == msg.pObjectName)
+        const char* fname = vp->getObject()->getNameInDocument();
+        if (strcmp(msg.pObjectName, fname) == 0)
             return false;
 
         //every selection needs to be a profile in itself, hence currently only full objects are
@@ -236,7 +237,7 @@ void TaskLoftParameters::onDeleteSection()
     int row = ui->listWidgetReferences->currentRow();
     QListWidgetItem* item = ui->listWidgetReferences->takeItem(row);
     if (item) {
-        QByteArray data(item->data(Qt::UserRole).value<App::PropertyLinkSubList::SubSet>().first->getNameInDocument().c_str());
+        QByteArray data(item->data(Qt::UserRole).value<App::PropertyLinkSubList::SubSet>().first->getNameInDocument());
         delete item;
 
         // search inside the list of sections

@@ -331,7 +331,7 @@ void ViewProviderDocumentObject::attach(App::DocumentObject *pcObj)
     // save Object pointer
     pcObject = pcObj;
 
-    if(pcObj && pcObj->isAttachedToDocument() &&
+    if(pcObj && pcObj->getNameInDocument() &&
        Visibility.getValue()!=pcObj->Visibility.getValue())
         pcObj->Visibility.setValue(Visibility.getValue());
 
@@ -519,14 +519,14 @@ bool ViewProviderDocumentObject::canDropObjectEx(App::DocumentObject* obj, App::
 int ViewProviderDocumentObject::replaceObject(
         App::DocumentObject *oldObj, App::DocumentObject *newObj)
 {
-    if(!oldObj || !oldObj->isAttachedToDocument()
-            || !newObj || !newObj->isAttachedToDocument())
+    if(!oldObj || !oldObj->getNameInDocument()
+            || !newObj || !newObj->getNameInDocument())
     {
         FC_THROWM(Base::RuntimeError,"Invalid object");
     }
 
     auto obj = getObject();
-    if(!obj || !obj->isAttachedToDocument())
+    if(!obj || !obj->getNameInDocument())
         FC_THROWM(Base::RuntimeError,"View provider not attached");
 
     int res = ViewProvider::replaceObject(oldObj,newObj);
@@ -606,7 +606,7 @@ bool ViewProviderDocumentObject::getElementPicked(const SoPickedPoint *pp, std::
     if(!vp)
         return false;
     auto obj = vp->getObject();
-    if(!obj || !obj->isAttachedToDocument())
+    if(!obj || !obj->getNameInDocument())
         return false;
     std::ostringstream str;
     str << obj->getNameInDocument() << '.';
@@ -635,7 +635,7 @@ bool ViewProviderDocumentObject::getDetailPath(const char *subname, SoFullPath *
     if(!dot)
         return false;
     auto obj = getObject();
-    if(!obj || !obj->isAttachedToDocument())
+    if(!obj || !obj->getNameInDocument())
         return false;
     auto sobj = obj->getSubObject(std::string(subname,dot-subname+1).c_str());
     if(!sobj)
@@ -676,7 +676,7 @@ ViewProviderDocumentObject *ViewProviderDocumentObject::getLinkedViewProvider(
 {
     (void)subname;
     auto self = const_cast<ViewProviderDocumentObject*>(this);
-    if(!pcObject || !pcObject->isAttachedToDocument())
+    if(!pcObject || !pcObject->getNameInDocument())
         return self;
     auto linked = pcObject->getLinkedObject(recursive);
     if(!linked || linked == pcObject)

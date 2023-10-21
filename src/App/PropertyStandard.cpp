@@ -1315,7 +1315,7 @@ void PropertyString::setValue(const char* newLabel)
     auto obj = dynamic_cast<DocumentObject*>(getContainer());
     bool commit = false;
 
-    if(obj && obj->isAttachedToDocument() && this==&obj->Label &&
+    if(obj && obj->getNameInDocument() && this==&obj->Label &&
        (!obj->getDocument()->testStatus(App::Document::Restoring)||
         obj->getDocument()->testStatus(App::Document::Importing)) &&
        !obj->getDocument()->isPerformingTransaction())
@@ -1364,7 +1364,7 @@ void PropertyString::setValue(const char* newLabel)
                 {
                     // In case the label has the same base name as object's
                     // internal name, use it as the label instead.
-                    const char *objName = obj->getNameInDocument().c_str();
+                    const char *objName = obj->getNameInDocument();
                     const char *c = &objName[lastpos+1];
                     for(;*c;++c) {
                         if(*c<48 || *c>57)
@@ -1456,7 +1456,7 @@ void PropertyString::Save (Base::Writer &writer) const
     auto obj = dynamic_cast<DocumentObject*>(getContainer());
     writer.Stream() << writer.ind() << "<String ";
     bool exported = false;
-    if(obj && obj->isAttachedToDocument() &&
+    if(obj && obj->getNameInDocument() &&
        obj->isExporting() && &obj->Label==this)
     {
         if(obj->allowDuplicateLabel())

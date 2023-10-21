@@ -82,13 +82,13 @@ bool TaskProjection::accept()
     Gui::Command::openCommand("Project shape");
     Gui::Command::addModule(Gui::Command::Doc, "TechDraw");
     for (std::vector<Part::Feature*>::iterator it = shapes.begin(); it != shapes.end(); ++it) {
-        std::string object = (*it)->getNameInDocument();
+        const char* object = (*it)->getNameInDocument();
         Gui::Command::doCommand(Gui::Command::Doc,
-            "FreeCAD.ActiveDocument.addObject('TechDraw::FeatureProjection', '%s_proj')", object.c_str());
+            "FreeCAD.ActiveDocument.addObject('TechDraw::FeatureProjection', '%s_proj')", object);
         Gui::Command::doCommand(Gui::Command::Doc,
             "FreeCAD.ActiveDocument.ActiveObject.Direction=FreeCAD.Vector(%f, %f, %f)", x, y,z);
         Gui::Command::doCommand(Gui::Command::Doc,
-            "FreeCAD.ActiveDocument.ActiveObject.Source=FreeCAD.ActiveDocument.%s", object.c_str());
+            "FreeCAD.ActiveDocument.ActiveObject.Source=FreeCAD.ActiveDocument.%s", object);
         Gui::Command::doCommand(Gui::Command::Doc,
             "FreeCAD.ActiveDocument.ActiveObject.VCompound=%s", (ui->cbVisSharp->isChecked() ? "True" : "False"));
         Gui::Command::doCommand(Gui::Command::Doc,

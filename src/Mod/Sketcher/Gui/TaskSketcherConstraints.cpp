@@ -1351,7 +1351,7 @@ void TaskSketcherConstraints::onSelectionChanged(const Gui::SelectionChanges& ms
         bool select = (msg.Type == Gui::SelectionChanges::AddSelection);
         // is it this object??
         if (strcmp(msg.pDocName, sketchView->getSketchObject()->getDocument()->getName()) == 0
-            && sketchView->getSketchObject()->getNameInDocument() == msg.pObjectName) {
+            && strcmp(msg.pObjectName, sketchView->getSketchObject()->getNameInDocument()) == 0) {
             if (msg.pSubName) {
                 QRegularExpression rx(QString::fromLatin1("^Constraint(\\d+)$"));
                 QRegularExpressionMatch match;

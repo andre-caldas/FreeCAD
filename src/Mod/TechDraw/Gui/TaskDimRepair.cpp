@@ -116,7 +116,7 @@ void TaskDimRepair::slotUseSelection()
         //validators happy
         //bool accepted =
         static_cast<void>(Gui::Selection().addSelection(m_dim->getDocument()->getName(),
-                                                        m_dim->getNameInDocument().c_str()));
+                                                        m_dim->getNameInDocument()));
     }
     ReferenceVector references2d;
     ReferenceVector references3d;

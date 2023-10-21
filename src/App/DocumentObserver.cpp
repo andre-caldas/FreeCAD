@@ -153,7 +153,7 @@ DocumentObjectT &DocumentObjectT::operator=(DocumentObjectT&& obj)
 
 void DocumentObjectT::operator=(const DocumentObject* obj)
 {
-    if(!obj || !obj->isAttachedToDocument()) {
+    if(!obj || !obj->getNameInDocument()) {
         object.clear();
         label.clear();
         document.clear();

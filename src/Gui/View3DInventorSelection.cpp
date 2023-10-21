@@ -108,7 +108,7 @@ void View3DInventorSelection::checkGroupOnTop(const SelectionChanges &Reason)
     if(!getDocument() || !Reason.pDocName || !Reason.pDocName[0] || !Reason.pObjectName)
         return;
     auto obj = getDocument()->getDocument()->getObject(Reason.pObjectName);
-    if(!obj || !obj->isAttachedToDocument())
+    if(!obj || !obj->getNameInDocument())
         return;
     std::string key(obj->getNameInDocument());
     key += '.';
@@ -155,7 +155,7 @@ void View3DInventorSelection::checkGroupOnTop(const SelectionChanges &Reason)
     auto svp = vp;
     if(subname && *subname) {
         auto sobj = obj->getSubObject(subname);
-        if(!sobj || !sobj->isAttachedToDocument())
+        if(!sobj || !sobj->getNameInDocument())
             return;
         if(sobj!=obj) {
             svp = dynamic_cast<ViewProviderDocumentObject*>(
@@ -206,7 +206,7 @@ void View3DInventorSelection::checkGroupOnTop(const SelectionChanges &Reason)
     std::set<ViewProvider*> visited;
     for(auto childVp=vp;;childVp=grpVp) {
         auto grp = App::GeoFeatureGroupExtension::getGroupOfObject(childVp->getObject());
-        if (!grp || !grp->isAttachedToDocument()) {
+        if (!grp || !grp->getNameInDocument()) {
             break;
         }
 

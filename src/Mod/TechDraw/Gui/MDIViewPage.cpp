@@ -110,7 +110,7 @@ MDIViewPage::MDIViewPage(ViewProviderPage* pageVp, Gui::Document* doc, QWidget* 
 
     isSelectionBlocked = false;
 
-    QString tabText = QString::fromUtf8(pageVp->getDrawPage()->getNameInDocument().c_str());
+    QString tabText = QString::fromUtf8(pageVp->getDrawPage()->getNameInDocument());
     tabText += QString::fromUtf8("[*]");
     setWindowTitle(tabText);
 
@@ -178,7 +178,7 @@ void MDIViewPage::onDeleteObject(const App::DocumentObject& obj)
     //if this page has a QView for this obj, delete it.
     blockSceneSelection(true);
     if (obj.isDerivedFrom(TechDraw::DrawView::getClassTypeId())) {
-        (void)m_scene->removeQViewByName(obj.getNameInDocument().c_str());
+        (void)m_scene->removeQViewByName(obj.getNameInDocument());
     }
     blockSceneSelection(false);
 }
@@ -604,14 +604,14 @@ void MDIViewPage::preSelectionChanged(const QPoint& pos)
         ss << "Edge" << edge->getProjIndex();
         //bool accepted =
         static_cast<void>(Gui::Selection().setPreselect(viewObj->getDocument()->getName(),
-                                                        viewObj->getNameInDocument().c_str(),
+                                                        viewObj->getNameInDocument(),
                                                         ss.str().c_str(), pos.x(), pos.y(), 0));
     }
     else if (vert) {
         ss << "Vertex" << vert->getProjIndex();
         //bool accepted =
         static_cast<void>(Gui::Selection().setPreselect(viewObj->getDocument()->getName(),
-                                                        viewObj->getNameInDocument().c_str(),
+                                                        viewObj->getNameInDocument(),
                                                         ss.str().c_str(), pos.x(), pos.y(), 0));
     }
     else if (face) {
@@ -619,13 +619,13 @@ void MDIViewPage::preSelectionChanged(const QPoint& pos)
            << face->getProjIndex();//TODO: SectionFaces have ProjIndex = -1. (but aren't selectable?) Problem?
         //bool accepted =
         static_cast<void>(Gui::Selection().setPreselect(viewObj->getDocument()->getName(),
-                                                        viewObj->getNameInDocument().c_str(),
+                                                        viewObj->getNameInDocument(),
                                                         ss.str().c_str(), pos.x(), pos.y(), 0));
     }
     else {
         ss << "";
         Gui::Selection().setPreselect(viewObj->getDocument()->getName(),
-                                      viewObj->getNameInDocument().c_str(), ss.str().c_str(), pos.x(),
+                                      viewObj->getNameInDocument(), ss.str().c_str(), pos.x(),
                                       pos.y(), 0);
     }
 }
@@ -809,9 +809,9 @@ void MDIViewPage::setTreeToSceneSelect()
                 ss << "Edge" << edge->getProjIndex();
                 //bool accepted =
                 static_cast<void>(Gui::Selection().addSelection(viewObj->getDocument()->getName(),
-                                                                viewObj->getNameInDocument().c_str(),
+                                                                viewObj->getNameInDocument(),
                                                                 ss.str().c_str()));
-                showStatusMsg(viewObj->getDocument()->getName(), viewObj->getNameInDocument().c_str(),
+                showStatusMsg(viewObj->getDocument()->getName(), viewObj->getNameInDocument(),
                               ss.str().c_str());
                 continue;
             }
@@ -834,9 +834,9 @@ void MDIViewPage::setTreeToSceneSelect()
                 ss << "Vertex" << vert->getProjIndex();
                 //bool accepted =
                 static_cast<void>(Gui::Selection().addSelection(viewObj->getDocument()->getName(),
-                                                                viewObj->getNameInDocument().c_str(),
+                                                                viewObj->getNameInDocument(),
                                                                 ss.str().c_str()));
-                showStatusMsg(viewObj->getDocument()->getName(), viewObj->getNameInDocument().c_str(),
+                showStatusMsg(viewObj->getDocument()->getName(), viewObj->getNameInDocument(),
                               ss.str().c_str());
                 continue;
             }
@@ -859,9 +859,9 @@ void MDIViewPage::setTreeToSceneSelect()
                 ss << "Face" << face->getProjIndex();
                 //bool accepted =
                 static_cast<void>(Gui::Selection().addSelection(viewObj->getDocument()->getName(),
-                                                                viewObj->getNameInDocument().c_str(),
+                                                                viewObj->getNameInDocument(),
                                                                 ss.str().c_str()));
-                showStatusMsg(viewObj->getDocument()->getName(), viewObj->getNameInDocument().c_str(),
+                showStatusMsg(viewObj->getDocument()->getName(), viewObj->getNameInDocument(),
                               ss.str().c_str());
                 continue;
             }
@@ -883,14 +883,15 @@ void MDIViewPage::setTreeToSceneSelect()
                 if (!dimObj) {
                     continue;
                 }
-                if (!dimObj->isAttachedToDocument()) {//can happen during undo/redo if Dim is selected???
+                const char* name = dimObj->getNameInDocument();
+                if (!name) {//can happen during undo/redo if Dim is selected???
                     //Base::Console().Log("INFO - MDIVP::sceneSelectionChanged - dimObj name is null!\n");
                     continue;
                 }
 
                 //bool accepted =
                 static_cast<void>(Gui::Selection().addSelection(dimObj->getDocument()->getName(),
-                                                                dimObj->getNameInDocument().c_str()));
+                                                                dimObj->getNameInDocument()));
             }
 
             QGMText* mText = dynamic_cast<QGMText*>(*it);
@@ -910,13 +911,14 @@ void MDIViewPage::setTreeToSceneSelect()
                 if (!parentFeat) {
                     continue;
                 }
-                if (!parentFeat->isAttachedToDocument()) {//can happen during undo/redo if Dim is selected???
+                const char* name = parentFeat->getNameInDocument();
+                if (!name) {//can happen during undo/redo if Dim is selected???
                     continue;
                 }
 
                 //bool accepted =
                 static_cast<void>(Gui::Selection().addSelection(
-                    parentFeat->getDocument()->getName(), parentFeat->getNameInDocument().c_str()));
+                    parentFeat->getDocument()->getName(), parentFeat->getNameInDocument()));
             }
         }
         else {

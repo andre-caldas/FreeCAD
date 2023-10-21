@@ -279,7 +279,8 @@ int DrawPage::removeView(App::DocumentObject* docObj)
         return -1;
     }
 
-    if (!docObj->isAttachedToDocument()) {
+    const char* name = docObj->getNameInDocument();
+    if (!name) {
         return -1;
     }
     const std::vector<App::DocumentObject*> currViews = Views.getValues();
@@ -291,8 +292,8 @@ int DrawPage::removeView(App::DocumentObject* docObj)
             continue;
         }
 
-        std::string viewName = docObj->getNameInDocument();
-        if (viewName != (*it)->getNameInDocument()) {
+        std::string viewName = name;
+        if (viewName.compare((*it)->getNameInDocument()) != 0) {
             newViews.push_back((*it));
         }
     }

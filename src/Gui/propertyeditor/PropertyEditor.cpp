@@ -294,7 +294,7 @@ void PropertyEditor::openEditor(const QModelIndex &index)
             break;
         }
     }
-    if(obj && obj->isAttachedToDocument())
+    if(obj && obj->getNameInDocument())
         str << obj->getNameInDocument() << '.';
     else
         str << tr("property").toUtf8().constData() << ' ';

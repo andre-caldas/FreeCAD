@@ -143,27 +143,29 @@ QList<App::SubObjectT> DlgPropertyLink::getLinksFromProperty(const App::Property
 
 QString DlgPropertyLink::formatObject(App::Document *ownerDoc, App::DocumentObject *obj, const char *sub)
 {
-    if(!obj || !obj->isAttachedToDocument())
+    if(!obj || !obj->getNameInDocument())
         return QLatin1String("?");
 
-    std::string objName = obj->getNameInDocument();
+    const char *objName = obj->getNameInDocument();
+    std::string _objName;
     if(ownerDoc && ownerDoc!=obj->getDocument()) {
-        objName = obj->getFullName();
+        _objName = obj->getFullName();
+        objName = _objName.c_str();
     }
 
     if(!sub || !sub[0]) {
         if(obj->Label.getStrValue() == obj->getNameInDocument())
-            return QLatin1String(objName.c_str());
-        return QString::fromLatin1("%1 (%2)").arg(QLatin1String(objName.c_str()),
+            return QLatin1String(objName);
+        return QString::fromLatin1("%1 (%2)").arg(QLatin1String(objName),
                                                   QString::fromUtf8(obj->Label.getValue()));
     }
 
     auto sobj = obj->getSubObject(sub);
     if(!sobj || sobj->Label.getStrValue() == sobj->getNameInDocument())
-        return QString::fromLatin1("%1.%2").arg(QLatin1String(objName.c_str()),
+        return QString::fromLatin1("%1.%2").arg(QLatin1String(objName),
                                                 QString::fromUtf8(sub));
 
-    return QString::fromLatin1("%1.%2 (%3)").arg(QLatin1String(objName.c_str()),
+    return QString::fromLatin1("%1.%2 (%3)").arg(QLatin1String(objName),
                                                  QString::fromUtf8(sub),
                                                  QString::fromUtf8(sobj->Label.getValue()));
 }
@@ -239,7 +241,7 @@ void DlgPropertyLink::init(const App::DocumentObjectT &prop, bool tryFilter) {
 
     objProp  = prop;
     auto owner = objProp.getObject();
-    if(!owner || !owner->isAttachedToDocument())
+    if(!owner || !owner->getNameInDocument())
         return;
 
     ui->searchBox->setDocumentObject(owner);
@@ -565,7 +567,7 @@ QTreeWidgetItem *DlgPropertyLink::findItem(
     if(pfound)
         *pfound = false;
 
-    if(!obj || !obj->isAttachedToDocument())
+    if(!obj || !obj->getNameInDocument())
         return nullptr;
 
     std::vector<App::DocumentObject *> sobjs;
@@ -606,7 +608,7 @@ QTreeWidgetItem *DlgPropertyLink::findItem(
         bool found = false;
         for(int i=0,count=item->childCount();i<count;++i) {
             auto child = item->child(i);
-            if(strcmp(o->getNameInDocument().c_str(),
+            if(strcmp(o->getNameInDocument(),
                         child->data(0, Qt::UserRole).toByteArray().constData())==0)
             {
                 item = child;
@@ -867,10 +869,10 @@ void DlgPropertyLink::itemSearch(const QString &text, bool select) {
             if(!found)
                 return;
             Gui::Selection().addSelection(obj->getDocument()->getName(),
-                    obj->getNameInDocument().c_str(),subname);
+                    obj->getNameInDocument(),subname);
         }else{
             Selection().setPreselect(obj->getDocument()->getName(),
-                    obj->getNameInDocument().c_str(), subname, 0, 0, 0,
+                    obj->getNameInDocument(), subname, 0, 0, 0,
                     Gui::SelectionChanges::MsgSource::TreeView);
             searchItem = item;
             ui->treeWidget->scrollToItem(searchItem);
@@ -885,7 +887,7 @@ void DlgPropertyLink::itemSearch(const QString &text, bool select) {
 QTreeWidgetItem *DlgPropertyLink::createItem(
         App::DocumentObject *obj, QTreeWidgetItem *parent)
 {
-    if(!obj || !obj->isAttachedToDocument())
+    if(!obj || !obj->getNameInDocument())
         return nullptr;
 
     if(inList.find(obj)!=inList.end())
@@ -903,7 +905,7 @@ QTreeWidgetItem *DlgPropertyLink::createItem(
         item = new QTreeWidgetItem(ui->treeWidget);
     item->setIcon(0, vp->getIcon());
     item->setText(0, QString::fromUtf8((obj)->Label.getValue()));
-    item->setData(0, Qt::UserRole, QByteArray(obj->getNameInDocument().c_str()));
+    item->setData(0, Qt::UserRole, QByteArray(obj->getNameInDocument()));
     item->setData(0, Qt::UserRole+1, QByteArray(obj->getDocument()->getName()));
 
     if(allowSubObject) {
@@ -1036,7 +1038,7 @@ void DlgPropertyLink::onItemExpanded(QTreeWidgetItem * item) {
                 itemMap[obj] = newItem;
         }
     } else if(allowSubObject) {
-        auto obj = doc->getObject(std::string(objName));
+        auto obj = doc->getObject(objName);
         if(!obj)
             return;
         std::set<App::DocumentObject*> childSet;

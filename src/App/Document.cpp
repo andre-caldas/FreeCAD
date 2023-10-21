@@ -1111,7 +1111,7 @@ void Document::exportObjects(const std::vector<App::DocumentObject*>& obj, std::
 
     if(FC_LOG_INSTANCE.isEnabled(FC_LOGLEVEL_LOG)) {
         for(auto o : obj) {
-            if(o && o->isAttachedToDocument()) {
+            if(o && o->getNameInDocument()) {
                 FC_LOG("exporting " << o->getFullName());
                 if (!o->getPropertyByName("_ObjectUUID")) {
                     auto prop = static_cast<PropertyUUID*>(o->addDynamicProperty(
@@ -1185,7 +1185,7 @@ void Document::writeObjects(const std::vector<App::DocumentObject*>& obj,
             for(auto dep : outList) {
                 auto name = dep?dep->getNameInDocument():"";
                 writer.Stream() << writer.ind() << "<" FC_ELEMENT_OBJECT_DEP " "
-                    FC_ATTR_DEP_OBJ_NAME "=\"" << name << "\"/>" << endl;
+                    FC_ATTR_DEP_OBJ_NAME "=\"" << (name?name:"") << "\"/>" << endl;
             }
             writer.decInd();
             writer.Stream() << writer.ind() << "</" FC_ELEMENT_OBJECT_DEPS ">" << endl;
@@ -1376,7 +1376,7 @@ Document::readObjects(Base::XMLReader& reader)
                 objs.push_back(obj);
                 // use this name for the later access because an object with
                 // the given name may already exist
-                reader.addName(name.c_str(), obj->getNameInDocument().c_str());
+                reader.addName(name.c_str(), obj->getNameInDocument());
 
                 // restore touch/error status flags
                 if (reader.hasAttribute("Touched")) {
@@ -1477,7 +1477,7 @@ Document::importObjects(Base::XMLReader& reader)
 
     std::vector<App::DocumentObject*> objs = readObjects(reader);
     for(auto o : objs) {
-        if(o && o->isAttachedToDocument()) {
+        if(o && o->getNameInDocument()) {
             o->setStatus(App::ObjImporting,true);
             FC_LOG("importing " << o->getFullName());
             if (auto propUUID = Base::freecad_dynamic_cast<PropertyUUID>(
@@ -1504,7 +1504,7 @@ Document::importObjects(Base::XMLReader& reader)
     signalFinishImportObjects(objs);
 
     for(auto o : objs) {
-        if(o && o->isAttachedToDocument())
+        if(o && o->getNameInDocument())
             o->setStatus(App::ObjImporting,false);
     }
 
@@ -2412,7 +2412,7 @@ static void _buildDependencyList(const std::vector<App::DocumentObject*> &object
         while(!objs.empty()) {
             auto obj = objs.front();
             objs.pop_front();
-            if(!obj || !obj->isAttachedToDocument())
+            if(!obj || !obj->getNameInDocument())
                 continue;
 
             auto it = outLists.find(obj);
@@ -2439,7 +2439,7 @@ static void _buildDependencyList(const std::vector<App::DocumentObject*> &object
     if(objectMap && depList) {
         for (const auto &v : outLists) {
             for(auto obj : v.second) {
-                if(obj && obj->isAttachedToDocument())
+                if(obj && obj->getNameInDocument())
                     add_edge((*objectMap)[v.first],(*objectMap)[obj],*depList);
             }
         }
@@ -2834,7 +2834,7 @@ int Document::recompute(const std::vector<App::DocumentObject*> &objs, bool forc
             FC_LOG("Recompute pass " << passes);
             for (; idx < topoSortedObjects.size(); ++idx) {
                 auto obj = topoSortedObjects[idx];
-                if(!obj->isAttachedToDocument() || filter.find(obj)!=filter.end())
+                if(!obj->getNameInDocument() || filter.find(obj)!=filter.end())
                     continue;
                 // ask the object if it should be recomputed
                 bool doRecompute = false;
@@ -2891,7 +2891,7 @@ int Document::recompute(const std::vector<App::DocumentObject*> &objs, bool forc
     FC_TIME_LOG(t2, "Recompute");
 
     for(auto obj : topoSortedObjects) {
-        if(!obj->isAttachedToDocument())
+        if(!obj->getNameInDocument())
             continue;
         obj->setStatus(ObjectStatus::PendingRecompute,false);
         obj->setStatus(ObjectStatus::Recompute2,false);
@@ -3052,8 +3052,8 @@ std::vector<App::DocumentObject*> DocumentP::topologicalSort(const std::vector<A
 
     for (auto objectIt : objects) {
         // We now support externally linked objects
-        // if(!obj->isAttachedToDocument() || obj->getDocument()!=this)
-        if(!objectIt->isAttachedToDocument())
+        // if(!obj->getNameInDocument() || obj->getDocument()!=this)
+        if(!objectIt->getNameInDocument())
             continue;
         //we need inlist with unique entries
         auto in = objectIt->getInList();
@@ -3167,7 +3167,7 @@ bool Document::recomputeFeature(DocumentObject* Feat, bool recursive)
     d->clearRecomputeLog(Feat);
 
     // verify that the feature is (active) part of the document
-    if (Feat->isAttachedToDocument()) {
+    if (Feat->getNameInDocument()) {
         if(recursive) {
             bool hasError = false;
             recompute({Feat},true,&hasError);
@@ -3511,11 +3511,6 @@ void Document::_addObject(std::shared_ptr<DocumentObject> sharedObject, const ch
 }
 
 /// Remove an object out of the document
-void Document::removeObject(const std::string& name)
-{
-    removeObject(name.c_str());
-}
-
 void Document::removeObject(const char* sName)
 {
     ExclusiveLock lock(d->objectMap);
@@ -3577,7 +3572,7 @@ void Document::removeObject(const char* sName)
     breakDependency(sharedObj.get(), true);
 
     //and remove the tip if needed
-    if (Tip.getValue() && strcmp(Tip.getValue()->getNameInDocument().c_str(), sName)==0) {
+    if (Tip.getValue() && strcmp(Tip.getValue()->getNameInDocument(), sName)==0) {
         Tip.setValue(nullptr);
         TipName.setValue("");
     }
@@ -3892,12 +3887,7 @@ DocumentObject * Document::getActiveObject() const
     return d->activeObject.load().get();
 }
 
-DocumentObject * Document::getObject(const char* Name) const
-{
-    return getObject(std::string(Name));
-}
-
-DocumentObject * Document::getObject(const std::string Name) const
+DocumentObject * Document::getObject(const char *Name) const
 {
     auto pos = d->objectMap.find(Name);
 
@@ -3937,11 +3927,6 @@ const char * Document::getObjectName(DocumentObject *pFeat) const
     }
 
     return nullptr;
-}
-
-std::string Document::getUniqueObjectName(const std::string& Name) const
-{
-    return getUniqueObjectName(Name.c_str());
 }
 
 std::string Document::getUniqueObjectName(const char *Name) const
@@ -4043,7 +4028,7 @@ std::vector<DocumentObject*> Document::findObjects(const Base::Type& typeId, con
         if (it->getTypeId().isDerivedFrom(typeId)) {
             found = it;
 
-            if (!rx_name.empty() && !boost::regex_search(it->getNameInDocument().c_str(), what, rx_name))
+            if (!rx_name.empty() && !boost::regex_search(it->getNameInDocument(), what, rx_name))
                 found = nullptr;
 
             if (!rx_label.empty() && !boost::regex_search(it->Label.getValue(), what, rx_label))

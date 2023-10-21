@@ -1046,7 +1046,7 @@ void DefineNodesCallback(void* ud, SoEventCallback* n)
                             set.str().c_str());
     Gui::Command::doCommand(Gui::Command::Doc,
                             "App.activeDocument().%s.addObject(App.activeDocument().NodeSet)",
-                            Analysis->getNameInDocument().c_str());
+                            Analysis->getNameInDocument());
     // Gui::Command::updateActive();
     Gui::Command::commitCommand();
 

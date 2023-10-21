@@ -96,7 +96,7 @@ std::vector<App::DocumentObject*> ViewProviderGeoFeatureGroupExtension::extensio
     // remove the otherwise handled objects, preserving their order so the order in the TreeWidget is correct
     std::vector<App::DocumentObject*> Result;
     for(auto obj : model) {
-        if(!obj || !obj->isAttachedToDocument())
+        if(!obj || !obj->getNameInDocument())
             continue;
         if(outSet.count(obj))
             obj->setStatus(App::ObjectStatus::GeoExcluded,true);

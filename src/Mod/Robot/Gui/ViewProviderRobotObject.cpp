@@ -114,13 +114,13 @@ void ViewProviderRobotObject::attach(App::DocumentObject* pcObj)
     ViewProviderGeometryObject::attach(pcObj);
 
     addDisplayMaskMode(pcRobotRoot, "VRML");
-    pcRobotRoot->objectName = pcObj->getNameInDocument().c_str();
+    pcRobotRoot->objectName = pcObj->getNameInDocument();
     pcRobotRoot->documentName = pcObj->getDocument()->getName();
     pcRobotRoot->subElementName = "Main";
     pcRobotRoot->addChild(pcTcpRoot);
 
     addDisplayMaskMode(pcSimpleRoot, "Simple");
-    pcSimpleRoot->objectName = pcObj->getNameInDocument().c_str();
+    pcSimpleRoot->objectName = pcObj->getNameInDocument();
     pcSimpleRoot->documentName = pcObj->getDocument()->getName();
     pcSimpleRoot->subElementName = "Main";
     pcSimpleRoot->addChild(pcTcpRoot);

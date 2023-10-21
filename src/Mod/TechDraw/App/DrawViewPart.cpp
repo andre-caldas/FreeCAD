@@ -1230,9 +1230,10 @@ void DrawViewPart::unsetupObject()
         std::vector<TechDraw::DrawViewDimension*>::iterator it3 = dims.begin();
         for (; it3 != dims.end(); it3++) {
             page->removeView(*it3);
-            if ((*it3)->isAttachedToDocument()) {
+            const char* name = (*it3)->getNameInDocument();
+            if (name) {
                 Base::Interpreter().runStringArg("App.getDocument(\"%s\").removeObject(\"%s\")",
-                                                 docName.c_str(), (*it3)->getNameInDocument().c_str());
+                                                 docName.c_str(), name);
             }
         }
     }
@@ -1245,9 +1246,10 @@ void DrawViewPart::unsetupObject()
         std::vector<TechDraw::DrawViewBalloon*>::iterator it3 = balloons.begin();
         for (; it3 != balloons.end(); it3++) {
             page->removeView(*it3);
-            if ((*it3)->isAttachedToDocument()) {
+            const char* name = (*it3)->getNameInDocument();
+            if (name) {
                 Base::Interpreter().runStringArg("App.getDocument(\"%s\").removeObject(\"%s\")",
-                                                 docName.c_str(), (*it3)->getNameInDocument().c_str());
+                                                 docName.c_str(), name);
             }
         }
     }

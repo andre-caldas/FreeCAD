@@ -381,7 +381,7 @@ public:
                     if (idx & 1)
                         res = QString::fromUtf8(quote(obj->Label.getStrValue()).c_str());
                     else
-                        res = QString::fromLatin1(obj->getNameInDocument().c_str());
+                        res = QString::fromLatin1(obj->getNameInDocument());
                     if (sep && !noProperty)
                         res += QLatin1Char('.');
                 }
@@ -421,7 +421,7 @@ public:
                     if (idx & 1)
                         res = QString::fromUtf8(quote(obj->Label.getStrValue()).c_str());
                     else
-                        res = QString::fromLatin1(obj->getNameInDocument().c_str());
+                        res = QString::fromLatin1(obj->getNameInDocument());
                     if (sep && !noProperty)
                         res += QLatin1Char('.');
                     v->setValue(res);
@@ -673,7 +673,7 @@ void ExpressionCompleter::init() {
 
 void ExpressionCompleter::setDocumentObject(const App::DocumentObject* obj, bool _checkInList)
 {
-    if (!obj || !obj->isAttachedToDocument())
+    if (!obj || !obj->getNameInDocument())
         currentObj = App::DocumentObjectT();
     else
         currentObj = obj;

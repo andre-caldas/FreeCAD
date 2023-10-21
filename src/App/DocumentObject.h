@@ -133,9 +133,7 @@ public:
     ~DocumentObject() override;
 
     /// returns the name which is set in the document for this object (not the name property!)
-    const char* getDagKey() const;
-    /// returns the name which is set in the document for this object (not the name property!)
-    const std::string& getNameInDocument() const;
+    const char *getNameInDocument() const;
     /// Return the object ID that is unique within its owner document
     long getID() const {return _Id;}
     /// returns the name that is safe to be exported to other document

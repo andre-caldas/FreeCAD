@@ -103,7 +103,7 @@ void ViewProviderTrajectory::attach(App::DocumentObject* pcObj)
     pcTrajectoryRoot->addChild(linesep);
 
     addDisplayMaskMode(pcTrajectoryRoot, "Waypoints");
-    pcTrajectoryRoot->objectName = pcObj->getNameInDocument().c_str();
+    pcTrajectoryRoot->objectName = pcObj->getNameInDocument();
     pcTrajectoryRoot->documentName = pcObj->getDocument()->getName();
     pcTrajectoryRoot->subElementName = "Main";
 }

@@ -69,7 +69,7 @@ Transaction::~Transaction()
     for (const auto& record : _Objects) {
         if (record.transaction->status == TransactionObject::New) {
             // If an object has been removed from the document the transaction
-            // status is 'New'. The 'isAttachedToDocument()' member serves as criterion
+            // status is 'New'. The 'pcNameInDocument' member serves as criterion
             // to check whether the object is part of the document or not.
             // Note, it's possible that the transaction status is 'New' while the
             // object is (again) part of the document. This usually happens when
