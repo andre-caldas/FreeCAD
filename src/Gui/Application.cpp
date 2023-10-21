@@ -126,6 +126,7 @@
 #include "WaitCursor.h"
 #include "Workbench.h"
 #include "WorkbenchManager.h"
+#include "WorkbenchManipulator.h"
 #include "WidgetFactory.h"
 
 
@@ -344,7 +345,7 @@ namespace {
         std::stringstream str;
         str << "Image formats (";
         for (const auto& ext : supportedFormats) {
-            str << "*." << ext.constData() << " ";
+            str << "*." << ext.constData() << " *." << ext.toUpper().constData() << " ";
         }
         str << ")";
 
@@ -537,6 +538,7 @@ Application::~Application()
 {
     Base::Console().Log("Destruct Gui::Application\n");
     WorkbenchManager::destruct();
+    WorkbenchManipulator::removeAll();
     SelectionSingleton::destruct();
     Translator::destruct();
     WidgetFactorySupplier::destruct();
@@ -2082,6 +2084,13 @@ void Application::runApplication()
              << QString::fromUtf8((App::Application::getResourceDir() + "Gui/Stylesheets/").c_str())
              << QLatin1String(":/stylesheets");
     QDir::setSearchPaths(QString::fromLatin1("qss"), qssPaths);
+    // setup the search paths for Qt overlay style sheets
+    QStringList qssOverlayPaths;
+    qssOverlayPaths << QString::fromUtf8((App::Application::getUserAppDataDir()
+                        + "Gui/Stylesheets/overlay").c_str())
+                    << QString::fromUtf8((App::Application::getResourceDir()
+                        + "Gui/Stylesheets/overlay").c_str());
+    QDir::setSearchPaths(QStringLiteral("overlay"), qssOverlayPaths);
 
     // set search paths for images
     QStringList imagePaths;

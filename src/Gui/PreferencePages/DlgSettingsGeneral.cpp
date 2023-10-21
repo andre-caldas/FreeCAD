@@ -47,12 +47,15 @@
 #include <Gui/DlgPreferencePackManagementImp.h>
 #include <Gui/DlgRevertToBackupConfigImp.h>
 #include <Gui/MainWindow.h>
+#include <Gui/OverlayManager.h>
+#include <Gui/ParamHandler.h>
 #include <Gui/PreferencePackManager.h>
 #include <Gui/Language/Translator.h>
 
 #include "DlgSettingsGeneral.h"
 #include "ui_DlgSettingsGeneral.h"
 
+using namespace Gui;
 using namespace Gui::Dialog;
 namespace fs = boost::filesystem;
 using namespace Base;
@@ -227,6 +230,10 @@ void DlgSettingsGeneral::saveSettings()
     ui->RecentFiles->onSave();
     ui->EnableCursorBlinking->onSave();
     ui->SplashScreen->onSave();
+    ui->ActivateOverlay->onSave();
+    if (property("ActivateOverlay").toBool() != ui->ActivateOverlay->isChecked()) {
+        requireRestart();
+    }
 
     setRecentFileSize();
     bool force = setLanguage();
@@ -294,6 +301,8 @@ void DlgSettingsGeneral::loadSettings()
     ui->RecentFiles->onRestore();
     ui->EnableCursorBlinking->onRestore();
     ui->SplashScreen->onRestore();
+    ui->ActivateOverlay->onRestore();
+    setProperty("ActivateOverlay", ui->ActivateOverlay->isChecked());
 
     // search for the language files
     ParameterGrp::handle hGrp = WindowParameter::getDefaultParameter()->GetGroup("General");
@@ -653,6 +662,36 @@ void DlgSettingsGeneral::on_checkBox_projectUnitSystemIgnore_stateChanged(int st
 void DlgSettingsGeneral::onThemeChanged(int index) {
     Q_UNUSED(index);
     themeChanged = true;
+}
+
+///////////////////////////////////////////////////////////
+namespace {
+
+class ApplyDockWidget: public ParamHandler {
+public:
+    bool onChange(const ParamKey *) override {
+        OverlayManager::instance()->reload(OverlayManager::ReloadMode::ReloadPause);
+        return true;
+    }
+
+    void onTimer() override {
+        getMainWindow()->initDockWindows(true);
+        OverlayManager::instance()->reload(OverlayManager::ReloadMode::ReloadResume);
+    }
+};
+
+} // anonymous namespace
+
+void DlgSettingsGeneral::attachObserver()
+{
+    static ParamHandlers handlers;
+
+    auto hDockWindows = App::GetApplication().GetUserParameter().GetGroup("BaseApp/Preferences/DockWindows");
+    auto applyDockWidget = std::shared_ptr<ParamHandler>(new ApplyDockWidget);
+    handlers.addHandler(ParamKey(hDockWindows->GetGroup("ComboView"), "Enabled"), applyDockWidget);
+    handlers.addHandler(ParamKey(hDockWindows->GetGroup("TreeView"), "Enabled"), applyDockWidget);
+    handlers.addHandler(ParamKey(hDockWindows->GetGroup("PropertyView"), "Enabled"), applyDockWidget);
+    handlers.addHandler(ParamKey(hDockWindows->GetGroup("DAGView"), "Enabled"), applyDockWidget);
 }
 
 #include "moc_DlgSettingsGeneral.cpp"

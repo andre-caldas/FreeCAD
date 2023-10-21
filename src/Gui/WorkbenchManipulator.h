@@ -59,6 +59,11 @@ public:
      */
     static void removeManipulator(const WorkbenchManipulator::Ptr&);
     /*!
+     * \brief clear
+     * Removes all instances of WorkbenchManipulator
+     */
+    static void removeAll();
+    /*!
      * \brief changeMenuBar
      * Calls \ref modifyMenuBar for every installed WorkbenchManipulator
      */
@@ -114,6 +119,9 @@ public:
     WorkbenchManipulator(WorkbenchManipulator&&) = delete;
     WorkbenchManipulator& operator = (const WorkbenchManipulator&) = delete;
     WorkbenchManipulator& operator = (WorkbenchManipulator&&) = delete;
+
+protected:
+    static std::set<WorkbenchManipulator::Ptr> getManipulators();
 
 private:
     static std::set<WorkbenchManipulator::Ptr> manipulators; // NOLINT
