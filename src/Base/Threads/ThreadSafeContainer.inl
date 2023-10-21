@@ -92,18 +92,10 @@ bool ThreadSafeContainer<ContainerType>::empty() const
     return container.empty();
 }
 
-
 template<typename ContainerType>
 void ThreadSafeContainer<ContainerType>::clear()
 {
     ExclusiveLock lock(*this);
-    container.clear();
-}
-
-
-template<typename ContainerType>
-void ThreadSafeContainer<ContainerType>::ModifierGate::clear()
-{
     container.clear();
 }
 

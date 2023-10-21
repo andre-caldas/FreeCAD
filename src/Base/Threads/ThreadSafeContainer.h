@@ -66,7 +66,7 @@ public:
         ModifierGate(self_t* self) : self(self) {}
         self_t* self;
         auto getMutexPtr() const {return &self->mutex;}
-        void clear();
+        void clear() {self->container.clear();}
     };
     ModifierGate getModifierGate(const ExclusiveLockBase*)
     {assert(LockPolicy::isLocked(mutex));return ModifierGate{this};}
