@@ -135,7 +135,7 @@ public:
     std::map<qint64, QIcon> iconMap;
 
     static ViewProviderDocumentObject *getView(App::DocumentObject *obj) {
-        if(obj && obj->getNameInDocument()) {
+        if(obj && obj->isAttachedToDocument()) {
             Document *pDoc = Application::Instance->getDocument(obj->getDocument());
             if(pDoc) {
                 ViewProvider *vp = pDoc->getViewProvider(obj);
@@ -221,11 +221,11 @@ public:
 
     bool isLinked() const {
         return pcLinked && pcLinked->getObject() &&
-           pcLinked->getObject()->getNameInDocument();
+           pcLinked->getObject()->isAttachedToDocument();
     }
 
     const char *getLinkedName() const {
-        return pcLinked->getObject()->getNameInDocument();
+        return pcLinked->getObject()->getDagKey();
     }
 
     const char *getLinkedLabel() const {
@@ -539,7 +539,7 @@ public:
         //     ++subname;
         //     CHECK_NAME(obj->getDocument()->getName(),'*');
         // }
-        CHECK_NAME(obj->getNameInDocument(),'.');
+        CHECK_NAME(obj->_getNameInDocument(),'.');
         return subname;
     }
 
@@ -1777,13 +1777,13 @@ bool ViewProviderLink::setLinkType(App::LinkBaseExtension *ext) {
 }
 
 App::LinkBaseExtension *ViewProviderLink::getLinkExtension() {
-    if(!pcObject || !pcObject->getNameInDocument())
+    if(!pcObject || !pcObject->isAttachedToDocument())
         return nullptr;
     return pcObject->getExtensionByType<App::LinkBaseExtension>(true);
 }
 
 const App::LinkBaseExtension *ViewProviderLink::getLinkExtension() const{
-    if(!pcObject || !pcObject->getNameInDocument())
+    if(!pcObject || !pcObject->isAttachedToDocument())
         return nullptr;
     return const_cast<App::DocumentObject*>(pcObject)->getExtensionByType<App::LinkBaseExtension>(true);
 }
@@ -2295,7 +2295,7 @@ bool ViewProviderLink::getElementPicked(const SoPickedPoint *pp, std::string &su
             --sub;
             assert(*sub == '.');
             const auto &elements = ext->_getElementListValue();
-            subname.replace(0,sub-subname.c_str(),elements[idx]->getNameInDocument());
+            subname.replace(0,sub-subname.c_str(),elements[idx]->_getNameInDocument());
         }
     }
     return ret;
@@ -2329,7 +2329,7 @@ bool ViewProviderLink::getDetailPath(
                         dot = nullptr;
                 } else {
                     CharRange sub(subname, dot);
-                    if (!boost::equals(sub, linked->getNameInDocument()))
+                    if (!boost::equals(sub, linked->_getNameInDocument()))
                         dot = nullptr;
                 }
                 if (dot && linked->getSubObject(dot+1))
@@ -2366,7 +2366,7 @@ bool ViewProviderLink::onDelete(const std::vector<std::string> &) {
                     // getOnChangeCopyObjects() returns object in depending
                     // order. So we delete it in reverse to avoid error
                     // reported by some parent object failing to find child
-                    objs.emplace_front(obj->getNameInDocument());
+                    objs.emplace_front(obj->_getNameInDocument());
                 }
             }
             for (const auto &name : objs)

@@ -382,7 +382,7 @@ void ViewProviderScattered::attach(App::DocumentObject* pcObj)
     // call parent's attach to define display modes
     ViewProviderGeometryObject::attach(pcObj);
 
-    pcHighlight->objectName = pcObj->getNameInDocument();
+    pcHighlight->objectName = pcObj->_getNameInDocument();
     pcHighlight->documentName = pcObj->getDocument()->getName();
     pcHighlight->subElementName = "Main";
 
@@ -554,7 +554,7 @@ void ViewProviderStructured::attach(App::DocumentObject* pcObj)
     // call parent's attach to define display modes
     ViewProviderGeometryObject::attach(pcObj);
 
-    pcHighlight->objectName = pcObj->getNameInDocument();
+    pcHighlight->objectName = pcObj->_getNameInDocument();
     pcHighlight->documentName = pcObj->getDocument()->getName();
     pcHighlight->subElementName = "Main";
 

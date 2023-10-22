@@ -262,6 +262,8 @@ public:
      */
     std::vector<std::shared_ptr<DocumentObject>> addObjects(const char* sType, const std::vector<std::string>& objectNames, bool isNew=true);
     /// Remove a feature out of the document
+    void removeObject(const std::string& name);
+    /// Remove a feature out of the document
     void removeObject(const char* sName);
     /** Add an existing feature with sName (ASCII) to this document and set it active.
      * Unicode names are set through the Label property.
@@ -297,7 +299,9 @@ public:
     /// Returns the active Object of this document
     DocumentObject *getActiveObject() const;
     /// Returns a Object of this document
-    DocumentObject *getObject(const char *Name) const;
+    DocumentObject *getObject(const std::string& Name) const;
+    /// To be deprecated version of the method above.
+    DocumentObject *getObject(const char* sName) const;
     /// Returns a Object of this document by its id
     DocumentObject *getObjectByID(long id) const;
     /// Returns true if the DocumentObject is contained in this document

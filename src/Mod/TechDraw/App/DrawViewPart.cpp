@@ -242,7 +242,7 @@ void DrawViewPart::addShapes2d(void)
 
 App::DocumentObjectExecReturn* DrawViewPart::execute(void)
 {
-    //    Base::Console().Message("DVP::execute() - %s\n", getNameInDocument());
+    //    Base::Console().Message("DVP::execute() - %s\n", _getNameInDocument());
     if (!keepUpdated()) {
         return DrawView::execute();
     }
@@ -253,7 +253,7 @@ App::DocumentObjectExecReturn* DrawViewPart::execute(void)
 
     TopoDS_Shape shape = getSourceShape();
     if (shape.IsNull()) {
-        Base::Console().Message("DVP::execute - %s - Source shape is Null.\n", getNameInDocument());
+        Base::Console().Message("DVP::execute - %s - Source shape is Null.\n", _getNameInDocument());
         return DrawView::execute();
     }
 
@@ -301,7 +301,7 @@ void DrawViewPart::onChanged(const App::Property* prop)
 
 void DrawViewPart::partExec(TopoDS_Shape& shape)
 {
-    //    Base::Console().Message("DVP::partExec() - %s\n", getNameInDocument());
+    //    Base::Console().Message("DVP::partExec() - %s\n", _getNameInDocument());
     if (waitingForHlr()) {
         //finish what we are already doing before starting a new cycle
         return;
@@ -318,7 +318,7 @@ void DrawViewPart::partExec(TopoDS_Shape& shape)
 //! prepare the shape for HLR processing by centering, scaling and rotating it
 GeometryObjectPtr DrawViewPart::makeGeometryForShape(TopoDS_Shape& shape)
 {
-//    Base::Console().Message("DVP::makeGeometryForShape() - %s\n", getNameInDocument());
+//    Base::Console().Message("DVP::makeGeometryForShape() - %s\n", _getNameInDocument());
 
     // if we use the passed reference directly, the centering doesn't work.  Maybe the underlying OCC TShape
     // isn't modified?  using a copy works and the referenced shape (from getSourceShape in execute())
@@ -339,7 +339,7 @@ GeometryObjectPtr DrawViewPart::makeGeometryForShape(TopoDS_Shape& shape)
 TopoDS_Shape DrawViewPart::centerScaleRotate(DrawViewPart* dvp, TopoDS_Shape& inOutShape,
                                              Base::Vector3d centroid)
 {
-//    Base::Console().Message("DVP::centerScaleRotate() - %s\n", dvp->getNameInDocument());
+//    Base::Console().Message("DVP::centerScaleRotate() - %s\n", dvp->_getNameInDocument());
     gp_Ax2 viewAxis = dvp->getProjectionCS();
 
     //center shape on origin
@@ -358,11 +358,11 @@ TopoDS_Shape DrawViewPart::centerScaleRotate(DrawViewPart* dvp, TopoDS_Shape& in
 TechDraw::GeometryObjectPtr DrawViewPart::buildGeometryObject(TopoDS_Shape& shape,
                                                               const gp_Ax2& viewAxis)
 {
-//    Base::Console().Message("DVP::buildGeometryObject() - %s\n", getNameInDocument());
-    showProgressMessage(getNameInDocument(), "is finding hidden lines");
+//    Base::Console().Message("DVP::buildGeometryObject() - %s\n", _getNameInDocument());
+    showProgressMessage(_getNameInDocument(), "is finding hidden lines");
 
     TechDraw::GeometryObjectPtr go(
-        std::make_shared<TechDraw::GeometryObject>(getNameInDocument(), this));
+        std::make_shared<TechDraw::GeometryObject>(_getNameInDocument(), this));
     go->setIsoCount(IsoCount.getValue());
     go->isPerspective(Perspective.getValue());
     go->setFocus(Focus.getValue());
@@ -396,7 +396,7 @@ TechDraw::GeometryObjectPtr DrawViewPart::buildGeometryObject(TopoDS_Shape& shap
 //! continue processing after hlr thread completes
 void DrawViewPart::onHlrFinished(void)
 {
-    //    Base::Console().Message("DVP::onHlrFinished() - %s\n", getNameInDocument());
+    //    Base::Console().Message("DVP::onHlrFinished() - %s\n", _getNameInDocument());
 
     //now that the new GeometryObject is fully populated, we can replace the old one
     if (m_tempGeometryObject) {
@@ -412,7 +412,7 @@ void DrawViewPart::onHlrFinished(void)
 
     waitingForHlr(false);
     QObject::disconnect(connectHlrWatcher);
-    showProgressMessage(getNameInDocument(), "has finished finding hidden lines");
+    showProgressMessage(_getNameInDocument(), "has finished finding hidden lines");
 
     postHlrTasks();//application level tasks that depend on HLR/GO being complete
 
@@ -435,7 +435,7 @@ void DrawViewPart::onHlrFinished(void)
         catch (Standard_Failure& e) {
             waitingForFaces(false);
             Base::Console().Error("DVP::partExec - %s - extractFaces failed - %s **\n",
-                                  getNameInDocument(), e.GetMessageString());
+                                  _getNameInDocument(), e.GetMessageString());
             throw Base::RuntimeError("DVP::onHlrFinished - error extracting faces");
         }
     }
@@ -444,7 +444,7 @@ void DrawViewPart::onHlrFinished(void)
 //! run any tasks that need to been done after geometry is available
 void DrawViewPart::postHlrTasks(void)
 {
-    //    Base::Console().Message("DVP::postHlrTasks() - %s\n", getNameInDocument());
+    //    Base::Console().Message("DVP::postHlrTasks() - %s\n", _getNameInDocument());
     //add geometry that doesn't come from HLR
     addCosmeticVertexesToGeom();
     addCosmeticEdgesToGeom();
@@ -499,19 +499,19 @@ void DrawViewPart::postFaceExtractionTasks(void)
 void DrawViewPart::extractFaces()
 {
     //    Base::Console().Message("DVP::extractFaces() - %s waitingForHlr: %d waitingForFaces: %d\n",
-    //                            getNameInDocument(), waitingForHlr(), waitingForFaces());
+    //                            _getNameInDocument(), waitingForHlr(), waitingForFaces());
     if (!geometryObject) {
         //geometry is in flux, can not make faces right now
         return;
     }
 
-    showProgressMessage(getNameInDocument(), "is extracting faces");
+    showProgressMessage(_getNameInDocument(), "is extracting faces");
 
     const std::vector<TechDraw::BaseGeomPtr>& goEdges =
         geometryObject->getVisibleFaceEdges(SmoothVisible.getValue(), SeamVisible.getValue());
 
     if (goEdges.empty()) {
-        //        Base::Console().Message("DVP::extractFaces - %s - no face edges available!\n", getNameInDocument());    //debug
+        //        Base::Console().Message("DVP::extractFaces - %s - no face edges available!\n", _getNameInDocument());    //debug
         return;
     }
 
@@ -563,7 +563,7 @@ void DrawViewPart::findFacesNew(const std::vector<BaseGeomPtr> &goEdges)
     if (sortedWires.empty()) {
         Base::Console().Warning(
             "DVP::findFacesNew - %s - Can't make faces from projected edges\n",
-            getNameInDocument());
+            _getNameInDocument());
     }
     else {
         constexpr double minWireArea = 0.000001;//arbitrary very small face size
@@ -685,7 +685,7 @@ void DrawViewPart::findFacesOld(const std::vector<BaseGeomPtr> &goEdges)
     if (sortedWires.empty()) {
         Base::Console().Warning(
             "DVP::findFacesOld - %s -Can't make faces from projected edges\n",
-            getNameInDocument());
+            _getNameInDocument());
         return;
     }
     else {
@@ -706,10 +706,10 @@ void DrawViewPart::findFacesOld(const std::vector<BaseGeomPtr> &goEdges)
 //continue processing after extractFaces thread completes
 void DrawViewPart::onFacesFinished(void)
 {
-    //    Base::Console().Message("DVP::onFacesFinished() - %s\n", getNameInDocument());
+    //    Base::Console().Message("DVP::onFacesFinished() - %s\n", _getNameInDocument());
     waitingForFaces(false);
     QObject::disconnect(connectFaceWatcher);
-    showProgressMessage(getNameInDocument(), "has finished extracting faces");
+    showProgressMessage(_getNameInDocument(), "has finished extracting faces");
 
     // Now we can recompute Dimensions and do other tasks possibly depending on Face extraction
     postFaceExtractionTasks();
@@ -959,7 +959,7 @@ double DrawViewPart::getBoxY() const
 
 QRectF DrawViewPart::getRect() const
 {
-    //    Base::Console().Message("DVP::getRect() - %s\n", getNameInDocument());
+    //    Base::Console().Message("DVP::getRect() - %s\n", _getNameInDocument());
     double x = getBoxX();
     double y = getBoxY();
     return QRectF(0.0, 0.0, x, y);
@@ -1109,7 +1109,7 @@ Base::Vector3d DrawViewPart::localVectorToDirection(const Base::Vector3d localUn
 
 gp_Ax2 DrawViewPart::getProjectionCS(const Base::Vector3d pt) const
 {
-    //    Base::Console().Message("DVP::getProjectionCS() - %s - %s\n", getNameInDocument(), Label.getValue());
+    //    Base::Console().Message("DVP::getProjectionCS() - %s - %s\n", _getNameInDocument(), Label.getValue());
     Base::Vector3d direction = Direction.getValue();
     gp_Dir gDir(direction.x, direction.y, direction.z);
     Base::Vector3d xDir = getXDirection();
@@ -1120,14 +1120,14 @@ gp_Ax2 DrawViewPart::getProjectionCS(const Base::Vector3d pt) const
         viewAxis = gp_Ax2(gOrg, gDir, gXDir);
     }
     catch (...) {
-        Base::Console().Warning("DVP - %s - failed to create projection CS\n", getNameInDocument());
+        Base::Console().Warning("DVP - %s - failed to create projection CS\n", _getNameInDocument());
     }
     return viewAxis;
 }
 
 gp_Ax2 DrawViewPart::getRotatedCS(const Base::Vector3d basePoint) const
 {
-    //    Base::Console().Message("DVP::getRotatedCS() - %s - %s\n", getNameInDocument(), Label.getValue());
+    //    Base::Console().Message("DVP::getRotatedCS() - %s - %s\n", _getNameInDocument(), Label.getValue());
     gp_Ax2 unrotated = getProjectionCS(basePoint);
     gp_Ax1 rotationAxis(DU::togp_Pnt(basePoint), unrotated.Direction());
     double angleRad = Rotation.getValue() * M_PI / 180.0;
@@ -1213,7 +1213,7 @@ void DrawViewPart::unsetupObject()
     std::vector<TechDraw::DrawHatch*> hatches = getHatches();
     std::vector<TechDraw::DrawHatch*>::iterator it = hatches.begin();
     for (; it != hatches.end(); it++) {
-        std::string viewName = (*it)->getNameInDocument();
+        std::string viewName = (*it)->_getNameInDocument();
         Base::Interpreter().runStringArg("App.getDocument(\"%s\").removeObject(\"%s\")",
                                          docName.c_str(), viewName.c_str());
     }
@@ -1222,7 +1222,7 @@ void DrawViewPart::unsetupObject()
     std::vector<TechDraw::DrawGeomHatch*> gHatches = getGeomHatches();
     std::vector<TechDraw::DrawGeomHatch*>::iterator it2 = gHatches.begin();
     for (; it2 != gHatches.end(); it2++) {
-        std::string viewName = (*it2)->getNameInDocument();
+        std::string viewName = (*it2)->_getNameInDocument();
         Base::Interpreter().runStringArg("App.getDocument(\"%s\").removeObject(\"%s\")",
                                          docName.c_str(), viewName.c_str());
     }
@@ -1235,7 +1235,7 @@ void DrawViewPart::unsetupObject()
         std::vector<TechDraw::DrawViewDimension*>::iterator it3 = dims.begin();
         for (; it3 != dims.end(); it3++) {
             page->removeView(*it3);
-            const char* name = (*it3)->getNameInDocument();
+            const char* name = (*it3)->_getNameInDocument();
             if (name) {
                 Base::Interpreter().runStringArg("App.getDocument(\"%s\").removeObject(\"%s\")",
                                                  docName.c_str(), name);
@@ -1251,7 +1251,7 @@ void DrawViewPart::unsetupObject()
         std::vector<TechDraw::DrawViewBalloon*>::iterator it3 = balloons.begin();
         for (; it3 != balloons.end(); it3++) {
             page->removeView(*it3);
-            const char* name = (*it3)->getNameInDocument();
+            const char* name = (*it3)->_getNameInDocument();
             if (name) {
                 Base::Interpreter().runStringArg("App.getDocument(\"%s\").removeObject(\"%s\")",
                                                  docName.c_str(), name);
@@ -1317,7 +1317,7 @@ void DrawViewPart::updateReferenceVert(std::string tag, Base::Vector3d loc2d)
 
 void DrawViewPart::addReferencesToGeom()
 {
-    //    Base::Console().Message("DVP::addReferencesToGeom() - %s\n", getNameInDocument());
+    //    Base::Console().Message("DVP::addReferencesToGeom() - %s\n", _getNameInDocument());
     std::vector<TechDraw::VertexPtr> gVerts = getVertexGeometry();
     gVerts.insert(gVerts.end(), m_referenceVerts.begin(), m_referenceVerts.end());
     getGeometryObject()->setVertexGeometry(gVerts);
@@ -1328,7 +1328,7 @@ void DrawViewPart::addReferencesToGeom()
 std::string DrawViewPart::addReferenceVertex(Base::Vector3d v)
 {
     //    Base::Console().Message("DVP::addReferenceVertex(%s) - %s\n",
-    //                            DrawUtil::formatVector(v).c_str(), getNameInDocument());
+    //                            DrawUtil::formatVector(v).c_str(), _getNameInDocument());
     std::string refTag;
     //    Base::Vector3d scaledV = v * getScale();
     //    TechDraw::Vertex* ref = new TechDraw::Vertex(scaledV);
@@ -1372,7 +1372,7 @@ void DrawViewPart::removeAllReferencesFromGeom()
 
 void DrawViewPart::resetReferenceVerts()
 {
-    //    Base::Console().Message("DVP::resetReferenceVerts() %s\n", getNameInDocument());
+    //    Base::Console().Message("DVP::resetReferenceVerts() %s\n", _getNameInDocument());
     removeAllReferencesFromGeom();
     addReferencesToGeom();
 }

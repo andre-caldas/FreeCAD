@@ -260,7 +260,7 @@ void DlgEvaluateMeshImp::slotCreatedObject(const App::DocumentObject& Obj)
     // add new mesh object to the list
     if (Obj.getTypeId().isDerivedFrom(Mesh::Feature::getClassTypeId())) {
         QString label = QString::fromUtf8(Obj.Label.getValue());
-        QString name = QString::fromLatin1(Obj.getNameInDocument());
+        QString name = QString::fromLatin1(Obj._getNameInDocument());
         d->ui.meshNameButton->addItem(label, name);
     }
 }
@@ -269,7 +269,7 @@ void DlgEvaluateMeshImp::slotDeletedObject(const App::DocumentObject& Obj)
 {
     // remove mesh objects from the list
     if (Obj.getTypeId().isDerivedFrom(Mesh::Feature::getClassTypeId())) {
-        int index = d->ui.meshNameButton->findData(QString::fromLatin1(Obj.getNameInDocument()));
+        int index = d->ui.meshNameButton->findData(QString::fromLatin1(Obj._getNameInDocument()));
         if (index > 0) {
             d->ui.meshNameButton->removeItem(index);
             d->ui.meshNameButton->setDisabled(d->ui.meshNameButton->count() < 2);
@@ -301,7 +301,7 @@ void DlgEvaluateMeshImp::slotChangedObject(const App::DocumentObject& Obj,
         if (Prop.getTypeId() == App::PropertyString::getClassTypeId()
             && strcmp(Prop.getName(), "Label") == 0) {
             QString label = QString::fromUtf8(Obj.Label.getValue());
-            QString name = QString::fromLatin1(Obj.getNameInDocument());
+            QString name = QString::fromLatin1(Obj._getNameInDocument());
             int index = d->ui.meshNameButton->findData(name);
             d->ui.meshNameButton->setItemText(index, label);
         }
@@ -335,7 +335,7 @@ void DlgEvaluateMeshImp::setMesh(Mesh::Feature* m)
     refreshList();
 
     int ct = d->ui.meshNameButton->count();
-    QString objName = QString::fromLatin1(m->getNameInDocument());
+    QString objName = QString::fromLatin1(m->_getNameInDocument());
     for (int i = 1; i < ct; i++) {
         if (d->ui.meshNameButton->itemData(i).toString() == objName) {
             d->ui.meshNameButton->setCurrentIndex(i);
@@ -392,7 +392,7 @@ void DlgEvaluateMeshImp::onMeshNameButtonActivated(int i)
     std::vector<App::DocumentObject*> objs =
         getDocument()->getObjectsOfType(Mesh::Feature::getClassTypeId());
     for (auto obj : objs) {
-        if (item == QLatin1String(obj->getNameInDocument())) {
+        if (item == QLatin1String(obj->_getNameInDocument())) {
             d->meshFeature = static_cast<Mesh::Feature*>(obj);
             break;
         }
@@ -414,7 +414,7 @@ void DlgEvaluateMeshImp::refreshList()
             this->getDocument()->getObjectsOfType(Mesh::Feature::getClassTypeId());
         for (auto obj : objs) {
             items.push_back(qMakePair(QString::fromUtf8(obj->Label.getValue()),
-                                      QString::fromLatin1(obj->getNameInDocument())));
+                                      QString::fromLatin1(obj->_getNameInDocument())));
         }
     }
 
@@ -546,7 +546,7 @@ void DlgEvaluateMeshImp::onRepairOrientationButtonClicked()
 {
     if (d->meshFeature) {
         const char* docName = App::GetApplication().getDocumentName(d->meshFeature->getDocument());
-        const char* objName = d->meshFeature->getNameInDocument();
+        const char* objName = d->meshFeature->_getNameInDocument();
         Gui::Document* doc = Gui::Application::Instance->getDocument(docName);
         doc->openCommand(QT_TRANSLATE_NOOP("Command", "Harmonize normals"));
         try {
@@ -657,7 +657,7 @@ void DlgEvaluateMeshImp::onRepairNonmanifoldsButtonClicked()
 {
     if (d->meshFeature) {
         const char* docName = App::GetApplication().getDocumentName(d->meshFeature->getDocument());
-        const char* objName = d->meshFeature->getNameInDocument();
+        const char* objName = d->meshFeature->_getNameInDocument();
         Gui::Document* doc = Gui::Application::Instance->getDocument(docName);
         doc->openCommand(QT_TRANSLATE_NOOP("Command", "Remove non-manifolds"));
         try {
@@ -762,7 +762,7 @@ void DlgEvaluateMeshImp::onRepairIndicesButtonClicked()
 {
     if (d->meshFeature) {
         const char* docName = App::GetApplication().getDocumentName(d->meshFeature->getDocument());
-        const char* objName = d->meshFeature->getNameInDocument();
+        const char* objName = d->meshFeature->_getNameInDocument();
         Gui::Document* doc = Gui::Application::Instance->getDocument(docName);
         doc->openCommand(QT_TRANSLATE_NOOP("Command", "Fix indices"));
         try {
@@ -832,7 +832,7 @@ void DlgEvaluateMeshImp::onRepairDegeneratedButtonClicked()
 {
     if (d->meshFeature) {
         const char* docName = App::GetApplication().getDocumentName(d->meshFeature->getDocument());
-        const char* objName = d->meshFeature->getNameInDocument();
+        const char* objName = d->meshFeature->_getNameInDocument();
         Gui::Document* doc = Gui::Application::Instance->getDocument(docName);
         doc->openCommand(QT_TRANSLATE_NOOP("Command", "Remove degenerated faces"));
         try {
@@ -904,7 +904,7 @@ void DlgEvaluateMeshImp::onRepairDuplicatedFacesButtonClicked()
 {
     if (d->meshFeature) {
         const char* docName = App::GetApplication().getDocumentName(d->meshFeature->getDocument());
-        const char* objName = d->meshFeature->getNameInDocument();
+        const char* objName = d->meshFeature->_getNameInDocument();
         Gui::Document* doc = Gui::Application::Instance->getDocument(docName);
         doc->openCommand(QT_TRANSLATE_NOOP("Command", "Remove duplicated faces"));
         try {
@@ -974,7 +974,7 @@ void DlgEvaluateMeshImp::onRepairDuplicatedPointsButtonClicked()
 {
     if (d->meshFeature) {
         const char* docName = App::GetApplication().getDocumentName(d->meshFeature->getDocument());
-        const char* objName = d->meshFeature->getNameInDocument();
+        const char* objName = d->meshFeature->_getNameInDocument();
         Gui::Document* doc = Gui::Application::Instance->getDocument(docName);
         doc->openCommand(QT_TRANSLATE_NOOP("Command", "Remove duplicated points"));
         try {
@@ -1138,7 +1138,7 @@ void DlgEvaluateMeshImp::onRepairFoldsButtonClicked()
 {
     if (d->meshFeature) {
         const char* docName = App::GetApplication().getDocumentName(d->meshFeature->getDocument());
-        const char* objName = d->meshFeature->getNameInDocument();
+        const char* objName = d->meshFeature->_getNameInDocument();
         Gui::Document* doc = Gui::Application::Instance->getDocument(docName);
         qApp->setOverrideCursor(Qt::WaitCursor);
         doc->openCommand(QT_TRANSLATE_NOOP("Command", "Remove folds"));
@@ -1183,7 +1183,7 @@ void DlgEvaluateMeshImp::onRepairAllTogetherClicked()
     if (d->meshFeature) {
         Gui::WaitCursor wc;
         const char* docName = App::GetApplication().getDocumentName(d->meshFeature->getDocument());
-        const char* objName = d->meshFeature->getNameInDocument();
+        const char* objName = d->meshFeature->_getNameInDocument();
         Gui::Document* doc = Gui::Application::Instance->getDocument(docName);
         doc->openCommand(QT_TRANSLATE_NOOP("Command", "Repair mesh"));
 
