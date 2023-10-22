@@ -1366,7 +1366,7 @@ void StdCmdDelete::activated(int iMsg)
                             if(parent->getDocument() != obj->getDocument())
                                 label = QLatin1String(parent->getFullName().c_str());
                             else
-                                label = QLatin1String(parent->getNameInDocument());
+                                label = QLatin1String(parent->_getNameInDocument());
                             if(parent->Label.getStrValue() != parent->getNameInDocument())
                                 label += QString::fromLatin1(" (%1)").arg(
                                         QString::fromUtf8(parent->Label.getValue()));

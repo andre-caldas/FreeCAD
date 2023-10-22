@@ -1185,7 +1185,7 @@ void Document::writeObjects(const std::vector<App::DocumentObject*>& obj,
             writer.Stream() << "\">" << endl;
             writer.incInd();
             for(auto dep : outList) {
-                auto name = dep?dep->getNameInDocument():"";
+                auto name = dep?dep->_getNameInDocument():"";
                 writer.Stream() << writer.ind() << "<" FC_ELEMENT_OBJECT_DEP " "
                     FC_ATTR_DEP_OBJ_NAME "=\"" << (name?name:"") << "\"/>" << endl;
             }
@@ -1378,7 +1378,7 @@ Document::readObjects(Base::XMLReader& reader)
                 objs.push_back(obj);
                 // use this name for the later access because an object with
                 // the given name may already exist
-                reader.addName(name.c_str(), obj->getNameInDocument());
+                reader.addName(name.c_str(), obj->_getNameInDocument());
 
                 // restore touch/error status flags
                 if (reader.hasAttribute("Touched")) {
@@ -3448,6 +3448,11 @@ void Document::_addObject(DocumentObject* pcObject, const char* pObjectName)
 }
 
 /// Remove an object out of the document
+void Document::removeObject(const std::string& name)
+{
+    removeObject(name.c_str());
+}
+
 void Document::removeObject(const char* sName)
 {
     auto pos = d->objectMap.find(sName);
@@ -3504,7 +3509,7 @@ void Document::removeObject(const char* sName)
     breakDependency(pos->second, true);
 
     //and remove the tip if needed
-    if (Tip.getValue() && strcmp(Tip.getValue()->getNameInDocument(), sName)==0) {
+    if (Tip.getValue() && strcmp(Tip.getValue()->_getNameInDocument(), sName)==0) {
         Tip.setValue(nullptr);
         TipName.setValue("");
     }
@@ -3776,7 +3781,7 @@ DocumentObject* Document::moveObject(DocumentObject* obj, bool recursive)
     if(!recursive && !d->iUndoMode && !that->d->iUndoMode && !that->d->rollback) {
         // all object of the other document that refer to this object must be nullified
         that->breakDependency(obj, false);
-        std::string objname = getUniqueObjectName(obj->getNameInDocument());
+        std::string objname = getUniqueObjectName(obj->_getNameInDocument());
         that->_removeObject(obj);
         this->_addObject(obj, objname.c_str());
         obj->setDocument(this);
@@ -3817,7 +3822,7 @@ DocumentObject * Document::getActiveObject() const
     return d->activeObject;
 }
 
-DocumentObject * Document::getObject(const char *Name) const
+DocumentObject* Document::getObject(const std::string& Name) const
 {
     auto pos = d->objectMap.find(Name);
 
@@ -3825,6 +3830,11 @@ DocumentObject * Document::getObject(const char *Name) const
         return pos->second;
     else
         return nullptr;
+}
+
+DocumentObject* Document::getObject(const char* sName) const
+{
+    return getObject(std::string(sName));
 }
 
 DocumentObject * Document::getObjectByID(long id) const
@@ -3951,7 +3961,7 @@ std::vector<DocumentObject*> Document::findObjects(const Base::Type& typeId, con
         if (it->getTypeId().isDerivedFrom(typeId)) {
             found = it;
 
-            if (!rx_name.empty() && !boost::regex_search(it->getNameInDocument(), what, rx_name))
+            if (!rx_name.empty() && !boost::regex_search(it->_getNameInDocument(), what, rx_name))
                 found = nullptr;
 
             if (!rx_label.empty() && !boost::regex_search(it->Label.getValue(), what, rx_label))

@@ -206,7 +206,7 @@ void ViewProviderAnnotation::attach(App::DocumentObject* f)
     selectionColor.setPackedValue((uint32_t)selection, transparency);
     textsep->colorSelection.setValue(selectionColor);
 
-    textsep->objectName = pcObject->getNameInDocument();
+    textsep->objectName = pcObject->_getNameInDocument();
     textsep->documentName = pcObject->getDocument()->getName();
     textsep->subElementName = "Main";
     textsep->addChild(pTranslation);
@@ -221,7 +221,7 @@ void ViewProviderAnnotation::attach(App::DocumentObject* f)
     textsep3d->colorHighlight.setValue(highlightColor);
     textsep3d->colorSelection.setValue(selectionColor);
 
-    textsep3d->objectName = pcObject->getNameInDocument();
+    textsep3d->objectName = pcObject->_getNameInDocument();
     textsep3d->documentName = pcObject->getDocument()->getName();
     textsep3d->subElementName = "Main";
     textsep3d->addChild(pTranslation);

@@ -118,7 +118,7 @@ void TaskLinkDim::loadAvailDims()
 void TaskLinkDim::loadToTree(const TechDraw::DrawViewDimension* dim, const bool selected, Gui::Document* guiDoc)
 {
     QString label = QString::fromUtf8(dim->Label.getValue());
-    QString name = QString::fromUtf8(dim->getNameInDocument());
+    QString name = QString::fromUtf8(dim->_getNameInDocument());
     QString tooltip = label + QString::fromUtf8(" / ") + name;
 
     QTreeWidgetItem* child = new QTreeWidgetItem();

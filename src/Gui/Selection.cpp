@@ -219,7 +219,7 @@ std::vector<SelectionSingleton::SelObj> SelectionSingleton::getSelection(const c
         }
 
         tempSelObj.DocName  = obj->getDocument()->getName();
-        tempSelObj.FeatName = obj->getNameInDocument();
+        tempSelObj.FeatName = obj->_getNameInDocument();
         tempSelObj.SubName = subelement;
         tempSelObj.TypeName = obj->getTypeId().getName();
         tempSelObj.pObject  = obj;
@@ -1345,7 +1345,7 @@ void SelectionSingleton::setSelection(const char* pDocName, const std::vector<Ap
         if(!obj || !obj->isAttachedToDocument())
             continue;
         _SelObj temp;
-        int ret = checkSelection(pDocName,obj->getNameInDocument(), nullptr, ResolveMode::NoResolve, temp);
+        int ret = checkSelection(pDocName,obj->_getNameInDocument(), nullptr, ResolveMode::NoResolve, temp);
         if (ret!=0)
             continue;
         touched = true;
@@ -1451,7 +1451,7 @@ bool SelectionSingleton::isSelected(App::DocumentObject* pObject, const char* pS
         return false;
     _SelObj sel;
     return checkSelection(pObject->getDocument()->getName(),
-            pObject->getNameInDocument(), pSubName, resolve, sel, &_SelList) > 0;
+            pObject->_getNameInDocument(), pSubName, resolve, sel, &_SelList) > 0;
 }
 
 int SelectionSingleton::checkSelection(const char *pDocName, const char *pObjectName, const char *pSubName,
@@ -1906,7 +1906,7 @@ PyObject *SelectionSingleton::sAddSelection(PyObject * /*self*/, PyObject *args)
         }
 
         Selection().addSelection(docObj->getDocument()->getName(),
-                                 docObj->getNameInDocument(),
+                                 docObj->_getNameInDocument(),
                                  subname, x, y, z, nullptr, Base::asBoolean(clearPreselect));
         Py_Return;
     }
@@ -1929,7 +1929,7 @@ PyObject *SelectionSingleton::sAddSelection(PyObject * /*self*/, PyObject *args)
                 for (Py::Sequence::iterator it = list.begin(); it != list.end(); ++it) {
                     std::string subname = static_cast<std::string>(Py::String(*it));
                     Selection().addSelection(docObj->getDocument()->getName(),
-                                             docObj->getNameInDocument(),
+                                             docObj->_getNameInDocument(),
                                              subname.c_str(), 0, 0, 0, nullptr, Base::asBoolean(clearPreselect));
                 }
                 Py_Return;
@@ -1962,7 +1962,7 @@ PyObject *SelectionSingleton::sUpdateSelection(PyObject * /*self*/, PyObject *ar
     }
 
     Selection().updateSelection(Base::asBoolean(show),
-            docObj->getDocument()->getName(), docObj->getNameInDocument(), subname);
+            docObj->getDocument()->getName(), docObj->_getNameInDocument(), subname);
 
     Py_Return;
 }
@@ -1992,7 +1992,7 @@ PyObject *SelectionSingleton::sRemoveSelection(PyObject * /*self*/, PyObject *ar
     }
 
     Selection().rmvSelection(docObj->getDocument()->getName(),
-                             docObj->getNameInDocument(),
+                             docObj->_getNameInDocument(),
                              subname);
 
     Py_Return;
@@ -2130,7 +2130,7 @@ PyObject *SelectionSingleton::sSetPreselection(PyObject * /*self*/, PyObject *ar
         }
 
         Selection().setPreselect(docObj->getDocument()->getName(),
-                                 docObj->getNameInDocument(),
+                                 docObj->_getNameInDocument(),
                                  subname,x,y,z, static_cast<SelectionChanges::MsgSource>(type));
         Py_Return;
     }

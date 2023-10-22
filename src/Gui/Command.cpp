@@ -593,7 +593,7 @@ std::string Command::getObjectCmd(const App::DocumentObject *obj,
 {
     if(!obj || !obj->isAttachedToDocument())
         return {"None"};
-    return getObjectCmd(obj->getNameInDocument(), obj->getDocument(), prefix, postfix,gui);
+    return getObjectCmd(obj->_getNameInDocument(), obj->getDocument(), prefix, postfix,gui);
 }
 
 void Command::setAppModuleName(const char* s)

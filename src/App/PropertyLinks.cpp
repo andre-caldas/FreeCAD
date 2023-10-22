@@ -1246,7 +1246,7 @@ std::string PropertyLinkBase::tryImportSubName(const App::DocumentObject *obj, c
         if(next[0] == '$') {
             if(strcmp(next+1,sobj->Label.getValue())!=0)
                 continue;
-        } else if(strcmp(next,sobj->getNameInDocument())!=0) {
+        } else if(strcmp(next,sobj->_getNameInDocument())!=0) {
             continue;
         }
         auto it = nameMap.find(sobj->getExportName(true));
@@ -3037,7 +3037,7 @@ void PropertyXLink::setValue(App::DocumentObject *lValue,
     DocInfoPtr info;
     const char *name = "";
     if(lValue) {
-        name = lValue->getNameInDocument();
+        name = lValue->_getNameInDocument();
         if(lValue->getDocument() != owner->getDocument()) {
             if(!docInfo || lValue->getDocument()!=docInfo->pcDoc)
             {

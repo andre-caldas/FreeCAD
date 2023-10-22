@@ -491,7 +491,7 @@ bool SoFCUnifiedSelection::setHighlight(SoFullPath *path, const SoDetail *det,
        vpd && vpd->getObject() && vpd->getObject()->isAttachedToDocument())
     {
         const char *docname = vpd->getObject()->getDocument()->getName();
-        const char *objname = vpd->getObject()->getNameInDocument();
+        const char *objname = vpd->getObject()->_getNameInDocument();
 
         this->preSelection = 1;
         static char buf[513];
@@ -553,7 +553,7 @@ bool SoFCUnifiedSelection::setSelection(const std::vector<PickedInfo> &infos, bo
             sel.pObject = info.vpd->getObject();
             sel.pDoc = sel.pObject->getDocument();
             sel.DocName = sel.pDoc->getName();
-            sel.FeatName = sel.pObject->getNameInDocument();
+            sel.FeatName = sel.pObject->_getNameInDocument();
             sel.TypeName = sel.pObject->getTypeId().getName();
             sel.SubName = info.element.c_str();
             const auto &pt = info.pp->getPoint();
@@ -570,7 +570,7 @@ bool SoFCUnifiedSelection::setSelection(const std::vector<PickedInfo> &infos, bo
         return false;
     if(!vpd->getObject()->isAttachedToDocument())
         return false;
-    const char *objname = vpd->getObject()->getNameInDocument();
+    const char *objname = vpd->getObject()->_getNameInDocument();
     const char *docname = vpd->getObject()->getDocument()->getName();
 
     bool hasNext = false;

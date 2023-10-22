@@ -292,7 +292,7 @@ int DrawPage::removeView(App::DocumentObject* docObj)
         }
 
         std::string viewName = docObj->getNameInDocument();
-        if (viewName.compare((*it)->getNameInDocument()) != 0) {
+        if (viewName != (*it)->getNameInDocument()) {
             newViews.push_back((*it));
         }
     }

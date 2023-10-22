@@ -82,7 +82,7 @@ bool TaskProjection::accept()
     Gui::Command::openCommand("Project shape");
     Gui::Command::addModule(Gui::Command::Doc, "TechDraw");
     for (std::vector<Part::Feature*>::iterator it = shapes.begin(); it != shapes.end(); ++it) {
-        const char* object = (*it)->getNameInDocument();
+        const char* object = (*it)->_getNameInDocument();
         Gui::Command::doCommand(Gui::Command::Doc,
             "FreeCAD.ActiveDocument.addObject('TechDraw::FeatureProjection', '%s_proj')", object);
         Gui::Command::doCommand(Gui::Command::Doc,

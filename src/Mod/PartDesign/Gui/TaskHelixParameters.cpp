@@ -623,7 +623,7 @@ void TaskHelixParameters::startReferenceSelection(App::DocumentObject* profile, 
     if (pcHelix && showPreview(pcHelix)) {
         Gui::Document* doc = vp->getDocument();
         if (doc) {
-            doc->setHide(profile->getNameInDocument());
+            doc->setHide(profile->_getNameInDocument());
         }
     }
     else {
@@ -637,7 +637,7 @@ void TaskHelixParameters::finishReferenceSelection(App::DocumentObject* profile,
     if (pcHelix && showPreview(pcHelix)) {
         Gui::Document* doc = vp->getDocument();
         if (doc) {
-            doc->setShow(profile->getNameInDocument());
+            doc->setShow(profile->_getNameInDocument());
         }
     }
     else {

@@ -381,7 +381,7 @@ public:
                     if (idx & 1)
                         res = QString::fromUtf8(quote(obj->Label.getStrValue()).c_str());
                     else
-                        res = QString::fromLatin1(obj->getNameInDocument());
+                        res = QString::fromLatin1(obj->_getNameInDocument());
                     if (sep && !noProperty)
                         res += QLatin1Char('.');
                 }
@@ -421,7 +421,7 @@ public:
                     if (idx & 1)
                         res = QString::fromUtf8(quote(obj->Label.getStrValue()).c_str());
                     else
-                        res = QString::fromLatin1(obj->getNameInDocument());
+                        res = QString::fromLatin1(obj->_getNameInDocument());
                     if (sep && !noProperty)
                         res += QLatin1Char('.');
                     v->setValue(res);

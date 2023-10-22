@@ -278,7 +278,7 @@ std::string DocumentObject::getFullName() const {
         return "?";
     std::string name(getDocument()->getName());
     name += '#';
-    name += *pcNameInDocument;
+    name += getNameInDocument();
     return name;
 }
 
@@ -301,14 +301,29 @@ const char* DocumentObject::getDagKey() const
     return pcNameInDocument->c_str();
 }
 
-const char *DocumentObject::getNameInDocument() const
+const std::string& DocumentObject::getNameInDocument() const
 {
     // Note: It can happen that we query the internal name of an object even if it is not
     // part of a document (anymore). This is the case e.g. if we have a reference in Python
     // to an object that has been removed from the document. In this case we should rather
     // return 0.
     //assert(pcNameInDocument);
-    if (!pcNameInDocument)
+    if(pcNameInDocument == nullptr)
+    {
+        static std::string default_name("(?=Object not in a document=?)");
+        return default_name;
+    }
+    return *pcNameInDocument;
+}
+
+const char* DocumentObject::_getNameInDocument() const
+{
+    // Note: It can happen that we query the internal name of an object even if it is not
+    // part of a document (anymore). This is the case e.g. if we have a reference in Python
+    // to an object that has been removed from the document. In this case we should rather
+    // return 0.
+    //assert(pcNameInDocument);
+    if(pcNameInDocument == nullptr)
         return nullptr;
     return pcNameInDocument->c_str();
 }
@@ -324,13 +339,13 @@ std::string DocumentObject::getExportName(bool forced) const {
         return {};
 
     if(!forced && !isExporting())
-        return *pcNameInDocument;
+        return getNameInDocument();
 
     // '@' is an invalid character for an internal name, which ensures the
     // following returned name will be unique in any document. Saving external
     // object like that shall only happens in Document::exportObjects(). We
     // shall strip out this '@' and the following document name during restoring.
-    return *pcNameInDocument + '@' + getDocument()->getName();
+    return getNameInDocument() + '@' + getDocument()->getName();
 }
 
 bool DocumentObject::isAttachedToDocument() const

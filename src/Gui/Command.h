@@ -151,7 +151,7 @@
     auto __obj = _obj;\
     if(__obj && __obj->isAttachedToDocument()) {\
         Gui::Command::doCommand(Gui::Command::Doc,"App.getDocument('%s').getObject('%s')." _cmd,\
-                __obj->getDocument()->getName(),__obj->getNameInDocument(),## __VA_ARGS__);\
+                __obj->getDocument()->getName(),__obj->_getNameInDocument(),## __VA_ARGS__);\
     }\
 }while(0)
 
@@ -164,7 +164,7 @@
     auto __obj = _obj;\
     if(__obj && __obj->isAttachedToDocument()) {\
         Gui::Command::doCommand(Gui::Command::Gui,"Gui.getDocument('%s').getObject('%s')." _cmd,\
-                __obj->getDocument()->getName(),__obj->getNameInDocument(),## __VA_ARGS__);\
+                __obj->getDocument()->getName(),__obj->_getNameInDocument(),## __VA_ARGS__);\
     }\
 }while(0)
 
@@ -181,7 +181,7 @@
     if(__obj && __obj->isAttachedToDocument()) {\
         Gui::Command::doCommand(Gui::Command::Gui,\
             "Gui.ActiveDocument.setEdit(App.getDocument('%s').getObject('%s'), %i)",\
-            __obj->getDocument()->getName(), __obj->getNameInDocument(), Gui::Application::Instance->getUserEditMode());\
+            __obj->getDocument()->getName(), __obj->_getNameInDocument(), Gui::Application::Instance->getUserEditMode());\
     }\
 }while(0)
 

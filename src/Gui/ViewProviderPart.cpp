@@ -103,7 +103,7 @@ bool ViewProviderPart::doubleClicked()
                 "Gui.ActiveDocument.ActiveView.setActiveObject('%s', App.getDocument('%s').getObject('%s'))",
                 PARTKEY,
                 this->getObject()->getDocument()->getName(),
-                this->getObject()->getNameInDocument());
+                this->getObject()->_getNameInDocument());
     }
 
     return true;

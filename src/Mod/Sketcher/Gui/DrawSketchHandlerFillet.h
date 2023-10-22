@@ -215,7 +215,7 @@ public:
                     ss << "Edge" << firstCurve + 1;
                     Gui::Selection().addSelection(
                         sketchgui->getSketchObject()->getDocument()->getName(),
-                        sketchgui->getSketchObject()->getNameInDocument(),
+                        sketchgui->getSketchObject()->_getNameInDocument(),
                         ss.str().c_str(),
                         onSketchPos.x,
                         onSketchPos.y,

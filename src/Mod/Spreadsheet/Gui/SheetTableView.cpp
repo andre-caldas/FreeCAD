@@ -679,7 +679,7 @@ void SheetTableView::deleteSelection()
         for (; i != ranges.end(); ++i) {
             Gui::Command::doCommand(Gui::Command::Doc,
                                     "App.ActiveDocument.%s.clear('%s')",
-                                    sheet->getNameInDocument(),
+                                    sheet->_getNameInDocument(),
                                     i->rangeString().c_str());
         }
         Gui::Command::doCommand(Gui::Command::Doc, "App.ActiveDocument.recompute()");

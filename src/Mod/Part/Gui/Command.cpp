@@ -1136,7 +1136,7 @@ void CmdPartMakeSolid::activated(int iMsg)
                     "__o__.Shape=__s__\n"
                     "del __s__, __o__"
                     )
-                    .arg(QLatin1String(it->getNameInDocument()),
+                    .arg(QLatin1String(it->_getNameInDocument()),
                          QLatin1String(it->Label.getValue()));
             }
             else if (type == TopAbs_SHELL) {
@@ -1148,7 +1148,7 @@ void CmdPartMakeSolid::activated(int iMsg)
                     "__o__.Shape=__s__\n"
                     "del __s__, __o__"
                     )
-                    .arg(QLatin1String(it->getNameInDocument()),
+                    .arg(QLatin1String(it->_getNameInDocument()),
                          QLatin1String(it->Label.getValue()));
             }
             else {
@@ -1211,14 +1211,14 @@ void CmdPartReverseShape::activated(int iMsg)
                 "del __o__"
                 )
                 .arg(QString::fromLatin1(name.c_str()),
-                     QString::fromLatin1(it->getNameInDocument()),
+                     QString::fromLatin1(it->_getNameInDocument()),
                      QString::fromLatin1(it->Label.getValue()));
 
             try {
                 runCommand(Doc, str.toLatin1());
-                copyVisual(name.c_str(), "ShapeColor", it->getNameInDocument());
-                copyVisual(name.c_str(), "LineColor" , it->getNameInDocument());
-                copyVisual(name.c_str(), "PointColor", it->getNameInDocument());
+                copyVisual(name.c_str(), "ShapeColor", it->_getNameInDocument());
+                copyVisual(name.c_str(), "LineColor" , it->_getNameInDocument());
+                copyVisual(name.c_str(), "PointColor", it->_getNameInDocument());
             }
             catch (const Base::Exception& e) {
                 Base::Console().Error("Cannot convert %s because %s.\n",
@@ -1649,7 +1649,7 @@ void CmdPartOffset::activated(int iMsg)
 
     openCommand(QT_TRANSLATE_NOOP("Command", "Make Offset"));
     doCommand(Doc,"App.ActiveDocument.addObject(\"Part::Offset\",\"%s\")",offset.c_str());
-    doCommand(Doc,"App.ActiveDocument.%s.Source = App.ActiveDocument.%s" ,offset.c_str(), shape->getNameInDocument());
+    doCommand(Doc,"App.ActiveDocument.%s.Source = App.ActiveDocument.%s" ,offset.c_str(), shape->_getNameInDocument());
     doCommand(Doc,"App.ActiveDocument.%s.Value = 1.0",offset.c_str());
     updateActive();
 
@@ -1657,9 +1657,9 @@ void CmdPartOffset::activated(int iMsg)
 
     adjustCameraPosition();
 
-    copyVisual(offset.c_str(), "ShapeColor", shape->getNameInDocument());
-    copyVisual(offset.c_str(), "LineColor" , shape->getNameInDocument());
-    copyVisual(offset.c_str(), "PointColor", shape->getNameInDocument());
+    copyVisual(offset.c_str(), "ShapeColor", shape->_getNameInDocument());
+    copyVisual(offset.c_str(), "LineColor" , shape->_getNameInDocument());
+    copyVisual(offset.c_str(), "PointColor", shape->_getNameInDocument());
 }
 
 bool CmdPartOffset::isActive()
@@ -1707,15 +1707,15 @@ void CmdPartOffset2D::activated(int iMsg)
 
     openCommand(QT_TRANSLATE_NOOP("Command", "Make 2D Offset"));
     doCommand(Doc,"App.ActiveDocument.addObject(\"Part::Offset2D\",\"%s\")",offset.c_str());
-    doCommand(Doc,"App.ActiveDocument.%s.Source = App.ActiveDocument.%s" ,offset.c_str(), shape->getNameInDocument());
+    doCommand(Doc,"App.ActiveDocument.%s.Source = App.ActiveDocument.%s" ,offset.c_str(), shape->_getNameInDocument());
     doCommand(Doc,"App.ActiveDocument.%s.Value = 1.0",offset.c_str());
     updateActive();
     doCommand(Gui,"Gui.ActiveDocument.setEdit('%s')",offset.c_str());
     adjustCameraPosition();
 
-    copyVisual(offset.c_str(), "ShapeColor", shape->getNameInDocument());
-    copyVisual(offset.c_str(), "LineColor" , shape->getNameInDocument());
-    copyVisual(offset.c_str(), "PointColor", shape->getNameInDocument());
+    copyVisual(offset.c_str(), "ShapeColor", shape->_getNameInDocument());
+    copyVisual(offset.c_str(), "LineColor" , shape->_getNameInDocument());
+    copyVisual(offset.c_str(), "PointColor", shape->_getNameInDocument());
 }
 
 bool CmdPartOffset2D::isActive()
@@ -1892,14 +1892,14 @@ void CmdPartThickness::activated(int iMsg)
     updateActive();
     if (isActiveObjectValid()) {
         doCommand(App,"App.getDocument(\"%s\").getObject(\"%s\").ViewObject.Visibility = False",
-                  obj->getDocument()->getName(), obj->getNameInDocument());
+                  obj->getDocument()->getName(), obj->_getNameInDocument());
     }
     doCommand(Gui,"Gui.ActiveDocument.setEdit('%s')",thick.c_str());
     adjustCameraPosition();
 
-    copyVisual(thick.c_str(), "ShapeColor", obj->getNameInDocument());
-    copyVisual(thick.c_str(), "LineColor" , obj->getNameInDocument());
-    copyVisual(thick.c_str(), "PointColor", obj->getNameInDocument());
+    copyVisual(thick.c_str(), "ShapeColor", obj->_getNameInDocument());
+    copyVisual(thick.c_str(), "LineColor" , obj->_getNameInDocument());
+    copyVisual(thick.c_str(), "PointColor", obj->_getNameInDocument());
 }
 
 bool CmdPartThickness::isActive()

@@ -153,7 +153,7 @@ TaskMultiTransformParameters::TaskMultiTransformParameters(ViewProviderTransform
         if (obj) {
             QListWidgetItem* item = new QListWidgetItem();
             item->setText(QString::fromUtf8(obj->Label.getValue()));
-            item->setData(Qt::UserRole, QString::fromLatin1(obj->getNameInDocument()));
+            item->setData(Qt::UserRole, QString::fromLatin1(obj->_getNameInDocument()));
             ui->listWidgetFeatures->addItem(item);
         }
     }
@@ -163,7 +163,7 @@ TaskMultiTransformParameters::TaskMultiTransformParameters(ViewProviderTransform
 void TaskMultiTransformParameters::addObject(App::DocumentObject* obj)
 {
     QString label = QString::fromUtf8(obj->Label.getValue());
-    QString objectName = QString::fromLatin1(obj->getNameInDocument());
+    QString objectName = QString::fromLatin1(obj->_getNameInDocument());
 
     QListWidgetItem* item = new QListWidgetItem();
     item->setText(label);
@@ -404,8 +404,8 @@ void TaskMultiTransformParameters::onTransformAddScaled()
 void TaskMultiTransformParameters::finishAdd(std::string &newFeatName)
 {
     //Gui::Command::updateActive();
-    //Gui::Command::copyVisual(newFeatName.c_str(), "ShapeColor", getOriginals().front()->getNameInDocument().c_str());
-    //Gui::Command::copyVisual(newFeatName.c_str(), "DisplayMode", getOriginals().front()->getNameInDocument().c_str());
+    //Gui::Command::copyVisual(newFeatName.c_str(), "ShapeColor", getOriginals().front()->_getNameInDocument());
+    //Gui::Command::copyVisual(newFeatName.c_str(), "DisplayMode", getOriginals().front()->_getNameInDocument());
 
     setupTransaction();
     PartDesign::MultiTransform* pcMultiTransform = static_cast<PartDesign::MultiTransform*>(TransformedView->getObject());
@@ -587,7 +587,7 @@ bool TaskDlgMultiTransformParameters::accept()
 //    {
 //        if ((*it) != NULL)
 //            Gui::Command::doCommand(
-//                Gui::Command::Doc,"App.ActiveDocument.removeObject(\"%s\")", (*it)->getNameInDocument());
+//                Gui::Command::Doc,"App.ActiveDocument.removeObject(\"%s\")", (*it)->_getNameInDocument());
 //    }
 //
 //    return TaskDlgTransformedParameters::reject();

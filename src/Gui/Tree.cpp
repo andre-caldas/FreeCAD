@@ -820,13 +820,13 @@ void TreeWidget::itemSearch(const QString& text, bool select) {
         }
         scrollToItem(item);
         Selection().setPreselect(obj->getDocument()->getName(),
-            obj->getNameInDocument(), subname.c_str(), 0, 0, 0,
+            obj->_getNameInDocument(), subname.c_str(), 0, 0, 0,
             SelectionChanges::MsgSource::TreeView);
         if (select) {
             Gui::Selection().selStackPush();
             Gui::Selection().clearSelection();
             Gui::Selection().addSelection(obj->getDocument()->getName(),
-                obj->getNameInDocument(), subname.c_str());
+                obj->_getNameInDocument(), subname.c_str());
             Gui::Selection().selStackPush();
         }
         else {
@@ -1069,7 +1069,7 @@ void TreeWidget::onCreateGroup()
         QString cmd = QString::fromLatin1("App.getDocument(\"%1\").getObject(\"%2\")"
             ".newObject(\"App::DocumentObjectGroup\",\"Group\").Label=\"%3\"")
             .arg(QString::fromLatin1(doc->getName()),
-                QString::fromLatin1(obj->getNameInDocument()),
+                QString::fromLatin1(obj->_getNameInDocument()),
                 name);
         Gui::Command::runCommand(Gui::Command::App, cmd.toUtf8());
     }
@@ -1149,7 +1149,7 @@ bool TreeWidget::CheckForDependents()
 void TreeWidget::addDependentToSelection(App::Document* doc, App::DocumentObject* docObject)
 {
     // add the docObject to the selection
-    Selection().addSelection(doc->getName(), docObject->getNameInDocument());
+    Selection().addSelection(doc->getName(), docObject->_getNameInDocument());
     // get the dependent
     auto subObjectList = docObject->getOutList();
     // the dependent can in turn have dependents, thus add them recursively
@@ -1170,7 +1170,7 @@ void TreeWidget::onSelectDependents()
         doc = docitem->document()->getDocument();
         std::vector<App::DocumentObject*> obj = doc->getObjects();
         for (auto it = obj.begin(); it != obj.end(); ++it)
-            Selection().addSelection(doc->getName(), (*it)->getNameInDocument());
+            Selection().addSelection(doc->getName(), (*it)->_getNameInDocument());
     }
     // it can be an object
     else {
@@ -1936,12 +1936,12 @@ void TreeWidget::dropEvent(QDropEvent* event)
         if (targetParent) {
             targetSubname << vp->getObject()->getNameInDocument() << '.';
             Selection().addSelection(targetParent->getDocument()->getName(),
-                targetParent->getNameInDocument(), targetSubname.str().c_str());
+                targetParent->_getNameInDocument(), targetSubname.str().c_str());
         }
         else {
             targetParent = targetItemObj->object()->getObject();
             Selection().addSelection(targetParent->getDocument()->getName(),
-                targetParent->getNameInDocument());
+                targetParent->_getNameInDocument());
         }
 
         bool syncPlacement = TreeParams::getSyncPlacement() && targetItemObj->isGroup();
@@ -2219,7 +2219,7 @@ void TreeWidget::dropEvent(QDropEvent* event)
                 Selection().clearCompleteSelection();
                 for (auto& v : droppedObjects)
                     Selection().addSelection(v.first->getDocument()->getName(),
-                        v.first->getNameInDocument(), v.second.c_str());
+                        v.first->_getNameInDocument(), v.second.c_str());
                 Selection().selStackPush();
             }
         }
@@ -2855,7 +2855,7 @@ void TreeWidget::onPreSelectTimer() {
         parent = obj;
     else if (!obj->redirectSubName(ss, parent, nullptr))
         ss << obj->getNameInDocument() << '.';
-    Selection().setPreselect(parent->getDocument()->getName(), parent->getNameInDocument(),
+    Selection().setPreselect(parent->getDocument()->getName(), parent->_getNameInDocument(),
         ss.str().c_str(), 0, 0, 0, SelectionChanges::MsgSource::TreeView);
 }
 
@@ -4044,7 +4044,7 @@ static unsigned int countExpandedItem(const QTreeWidgetItem* item) {
             continue;
         auto obj = static_cast<const DocumentObjectItem*>(citem)->object()->getObject();
         if (obj->isAttachedToDocument())
-            size += strlen(obj->getNameInDocument()) + countExpandedItem(citem);
+            size += obj->getNameInDocument().size() + countExpandedItem(citem);
     }
     return size;
 }
@@ -4343,7 +4343,7 @@ void DocumentItem::updateItemSelection(DocumentObjectItem* item) {
             str << obj->getNameInDocument() << '.';
         obj = topParent;
     }
-    const char* objname = obj->getNameInDocument();
+    const char* objname = obj->_getNameInDocument();
     const char* docname = obj->getDocument()->getName();
     const auto& subname = str.str();
 
@@ -4863,7 +4863,7 @@ void DocumentObjectItem::testStatus(bool resetStatus, QIcon& icon1, QIcon& icon2
         auto parent = parentItem->object()->getObject();
         auto ext = parent->getExtensionByType<App::GroupExtension>(true, false);
         if (!ext)
-            visible = parent->isElementVisible(pObject->getNameInDocument());
+            visible = parent->isElementVisible(pObject->_getNameInDocument());
         else {
             // We are dealing with a plain group. It has special handling when
             // linked, which allows it to have indpenedent visibility control.
@@ -4872,7 +4872,7 @@ void DocumentObjectItem::testStatus(bool resetStatus, QIcon& icon1, QIcon& icon2
             for (auto pp = parentItem->getParentItem(); pp; pp = pp->getParentItem()) {
                 auto obj = pp->object()->getObject();
                 if (!obj->hasExtension(App::GroupExtension::getExtensionClassTypeId(), false)) {
-                    visible = pp->object()->getObject()->isElementVisible(pObject->getNameInDocument());
+                    visible = pp->object()->getObject()->isElementVisible(pObject->_getNameInDocument());
                     break;
                 }
             }
@@ -5066,7 +5066,7 @@ void DocumentObjectItem::displayStatusInfo()
         info += TreeWidget::tr(" (but must be executed)");
 
     QString status = TreeWidget::tr("%1, Internal name: %2")
-        .arg(info, QString::fromLatin1(Obj->getNameInDocument()));
+        .arg(info, QString::fromLatin1(Obj->_getNameInDocument()));
 
     if (!Obj->isError())
         getMainWindow()->showMessage(status);
@@ -5187,7 +5187,7 @@ int DocumentObjectItem::isGroup() const {
             auto pobj = parent->object()->getObject();
             if (pobj->hasExtension(App::GroupExtension::getExtensionClassTypeId(), false))
                 continue;
-            if (pobj->isElementVisible(obj->getNameInDocument()) >= 0)
+            if (pobj->isElementVisible(obj->_getNameInDocument()) >= 0)
                 return LinkGroup;
         }
     }
@@ -5222,7 +5222,7 @@ DocumentObjectItem* DocumentObjectItem::getParentItem() const {
 }
 
 const char* DocumentObjectItem::getName() const {
-    const char* name = object()->getObject()->getNameInDocument();
+    const char* name = object()->getObject()->_getNameInDocument();
     return name ? name : "";
 }
 

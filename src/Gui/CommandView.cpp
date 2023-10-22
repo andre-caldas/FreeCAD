@@ -921,14 +921,14 @@ void StdCmdToggleSelectability::activated(int iMsg)
         TransactionView transaction(pcDoc, QT_TRANSLATE_NOOP("Command", "Toggle selectability"));
 
         for (const auto & ft : sel) {
-            ViewProvider *pr = pcDoc->getViewProviderByName(ft->getNameInDocument());
+            ViewProvider *pr = pcDoc->getViewProviderByName(ft->_getNameInDocument());
             if (pr && pr->isDerivedFrom(ViewProviderGeometryObject::getClassTypeId())){
                 if (static_cast<ViewProviderGeometryObject*>(pr)->Selectable.getValue())
                     doCommand(Gui,"Gui.getDocument(\"%s\").getObject(\"%s\").Selectable=False"
-                                 , doc->getName(), ft->getNameInDocument());
+                                 , doc->getName(), ft->_getNameInDocument());
                 else
                     doCommand(Gui,"Gui.getDocument(\"%s\").getObject(\"%s\").Selectable=True"
-                                 , doc->getName(), ft->getNameInDocument());
+                                 , doc->getName(), ft->_getNameInDocument());
             }
         }
     }
@@ -1024,7 +1024,7 @@ void StdCmdSelectVisibleObjects::activated(int iMsg)
     std::vector<App::DocumentObject*> visible;
     visible.reserve(obj.size());
     for (const auto & it : obj) {
-        if (doc->isShow(it->getNameInDocument()))
+        if (doc->isShow(it->_getNameInDocument()))
             visible.push_back(it);
     }
 
@@ -1064,12 +1064,12 @@ void StdCmdToggleObjects::activated(int iMsg)
         (App::DocumentObject::getClassTypeId());
 
     for (const auto & it : obj) {
-        if (doc->isShow(it->getNameInDocument()))
+        if (doc->isShow(it->_getNameInDocument()))
             doCommand(Gui,"Gui.getDocument(\"%s\").getObject(\"%s\").Visibility=False"
-                         , app->getName(), it->getNameInDocument());
+                         , app->getName(), it->_getNameInDocument());
         else
             doCommand(Gui,"Gui.getDocument(\"%s\").getObject(\"%s\").Visibility=True"
-                         , app->getName(), it->getNameInDocument());
+                         , app->getName(), it->_getNameInDocument());
     }
 }
 
@@ -1106,7 +1106,7 @@ void StdCmdShowObjects::activated(int iMsg)
 
     for (const auto & it : obj) {
         doCommand(Gui,"Gui.getDocument(\"%s\").getObject(\"%s\").Visibility=True"
-                     , app->getName(), it->getNameInDocument());
+                     , app->getName(), it->_getNameInDocument());
     }
 }
 
@@ -1143,7 +1143,7 @@ void StdCmdHideObjects::activated(int iMsg)
 
     for (const auto & it : obj) {
         doCommand(Gui,"Gui.getDocument(\"%s\").getObject(\"%s\").Visibility=False"
-                     , app->getName(), it->getNameInDocument());
+                     , app->getName(), it->_getNameInDocument());
     }
 }
 
@@ -2874,7 +2874,7 @@ static void doSelect(void* ud, SoEventCallback * cb)
 
             Base::Matrix4D mat;
             for(auto &sub : getBoxSelection(vp,selectionMode,selectElement,proj,polygon,mat))
-                Gui::Selection().addSelection(doc->getName(), obj->getNameInDocument(), sub.c_str());
+                Gui::Selection().addSelection(doc->getName(), obj->_getNameInDocument(), sub.c_str());
         }
     }
 }
