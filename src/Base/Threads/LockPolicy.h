@@ -29,9 +29,24 @@
 #include <mutex>
 #include <shared_mutex>
 #include <unordered_set>
+#include <stack>
 
 namespace Base::Threads
 {
+
+/**
+ * @brief Even when an @class ExlcusiveLock is requested in a situation
+ * where we already have any @class SharedLock,
+ * this will be allowed as long as long as the following conditions are satisfied.
+ * 1. This @a mutex is not locked yet.
+ * 2. Its @ parent_mutex is already locked (only a shared_lock is enough).
+ */
+struct MutexPair
+{
+    std::shared_mutex mutex;
+    MutexPair* parent_pair = nullptr;
+};
+
 
 /**
  * @brief Implements the following policy: (see README.md)
@@ -43,26 +58,43 @@ namespace Base::Threads
  *    2.1. If U **does not own** G, throw and exception.
  *         This is a programming error and should not happen.
  *    2.2. If U **owns** G, do nothing. Just pretend we acquired the lock.
+ *
+ * @attention Description needs update to explain mutexes hierarchy.
  */
 class LockPolicy
 {
 public:
-    static bool hasAnyLock() {return !threadMutexes.empty();}
-    static bool isLocked(const std::shared_mutex* mutex) {return threadMutexes.count(mutex);}
-    static bool isLocked(const std::shared_mutex& mutex) {return threadMutexes.count(&mutex);}
+    static bool hasAnyLock();
+    static bool isLocked(const MutexPair* mutex);
+    static bool isLocked(const MutexPair& mutex);
+    static bool isLockedExclusively(const MutexPair* mutex);
+    static bool isLockedExclusively(const MutexPair& mutex);
 
 protected:
-    LockPolicy() = delete;
+    /**
+     * @brief Implements the lock policy.
+     * @param is_exclusive - Is it an exclusive lock?
+     * @param mutex - Each pair is composed of the mutex to be locked (first)
+     * and a mutex that if already locked imposes a new layer for threadMutexesLayers.
+     */
     template<typename... MutN,
-             std::enable_if_t<(std::is_same_v<std::shared_mutex, MutN> && ...)>* = nullptr>
+             std::enable_if_t<(std::is_same_v<MutexPair, MutN> && ...)>* = nullptr>
     LockPolicy(bool is_exclusive, MutN*... mutex);
+    LockPolicy() = delete;
     ~LockPolicy();
 
-    std::unordered_set<const std::shared_mutex*> mutexes;
+    std::unordered_set<const MutexPair*> mutexes;
 
-protected:
-    static thread_local bool isExclusive;
-    static thread_local std::unordered_set<const std::shared_mutex*> threadMutexes;
+private:
+    static thread_local std::unordered_set<const MutexPair*> threadExclusiveMutexes;
+    static thread_local std::unordered_set<const MutexPair*> threadNonExclusiveMutexes;
+    static thread_local std::stack<bool> isLayerExclusive;
+    static thread_local std::stack<std::unordered_set<const MutexPair*>> threadMutexLayers;
+
+    bool _areParentsLocked() const;
+    void _processLock(bool is_exclusive);
+    void _processExclusiveLock();
+    void _processNonExclusiveLock();
 };
 
 
@@ -71,22 +103,26 @@ class SharedLock : public LockPolicy
 public:
     SharedLock();
     [[nodiscard]]
-    SharedLock(std::shared_mutex& mutex);
+    SharedLock(MutexPair& mutex);
 
 private:
     std::shared_lock<std::shared_mutex> lock;
 };
 
 
+namespace detail {
+template<typename Result, typename From>
+struct ForEach {using type = Result;};
+}
+
 class ExclusiveLockBase {};
 
 /**
  * @brief Locks and gives access to locked classes of type "MutexHolder".
  * The MutexHolder must:
- * 1. Define typename MutexHolder::mutex_type.
- * 2. Define a MutexHolder::ModifierGate class
+ * 1. Define a MutexHolder::ModifierGate class
  *    that implements the container methods that demand ExclusiveLock.
- * 3. Define a method that takes an ExclusiveLock as argument,
+ * 2. Define a method that takes an ExclusiveLock as argument,
  *    and returns a ModifierGate instance.
  */
 template<typename... MutexHolder>
@@ -102,10 +138,6 @@ public:
     template<typename SomeHolder>
     auto operator[](SomeHolder& tsc) const;
 
-    static bool hasAnyLock() {return isExclusive && !threadMutexes.empty();}
-    template<typename SomeHolder>
-    static bool hasLock(const SomeHolder& c) {return isExclusive && threadMutexes.count(&c.mutex);}
-
 private:
     /*
      * After constructed, std::scoped_lock cannot be changed.
@@ -115,7 +147,7 @@ private:
      * But, unfortunately, std::lock needs two or more mutexes,
      * and we do not want the code full of ifs.
      */
-    std::unique_ptr<std::scoped_lock<typename MutexHolder::mutex_type...>> locks;
+    std::unique_ptr<std::scoped_lock<typename detail::ForEach<std::shared_mutex,MutexHolder>::type...>> locks;
 };
 
 } //namespace Base::Threads

@@ -89,7 +89,7 @@ public:
         {return self->container[key];}
     };
     ModifierGate getModifierGate(const ExclusiveLockBase*)
-    {assert(LockPolicy::isLocked(mutex));return ModifierGate{this};}
+    {assert(LockPolicy::isLockedExclusively(mutex));return ModifierGate{this};}
 
 protected:
     using parent_t::mutex;

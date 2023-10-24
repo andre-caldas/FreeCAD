@@ -29,11 +29,18 @@
 namespace Base::Threads
 {
 
-class ExceptionExclusiveNotFirst : public Base::TypeError
+class ExceptionNoExclusiveOverNonExclusive : public Base::TypeError
 {
 public:
-    ExceptionExclusiveNotFirst()
-        : Base::TypeError("An exclusive lock cannot come after other locks.") {}
+    ExceptionNoExclusiveOverNonExclusive()
+        : Base::TypeError("Cannot lock exclusively a mutex that is already non-exclusive.") {}
+};
+
+class ExceptionExclusiveParentNotLocked : public Base::TypeError
+{
+public:
+    ExceptionExclusiveParentNotLocked()
+        : Base::TypeError("An exclusive lock cannot come after non-chainable locks.") {}
 };
 
 class ExceptionNoLocksAfterExclusiveLock : public Base::TypeError

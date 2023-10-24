@@ -57,13 +57,13 @@ public:
      * @param it - original iterator to be wrapped.
      * @param end_it - end iterator, so we know when we reach the end.
      */
-    LockedIterator(std::shared_mutex& mutex, ItType&& it, ItType end_it)
+    LockedIterator(MutexPair& mutex, ItType&& it, ItType end_it)
         : lock(mutex)
         , it(std::move(it))
         , end_it(std::move(end_it)) // Attention: do not use && for end_it.
     {}
 
-    LockedIterator(std::shared_mutex& mutex, std::pair<ItType,ItType>&& range)
+    LockedIterator(MutexPair& mutex, std::pair<ItType,ItType>&& range)
         : lock(mutex)
         , it(std::move(range.first))
         , end_it(std::move(range.second))

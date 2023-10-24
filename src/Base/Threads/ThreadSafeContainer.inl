@@ -99,4 +99,12 @@ void ThreadSafeContainer<ContainerType>::clear()
     container.clear();
 }
 
+template<typename ContainerType>
+template<typename SomeHolder>
+void ThreadSafeContainer<ContainerType>::setParentMutex(SomeHolder& tsc)
+{
+    auto gate = tsc.getModifierGate(this);
+    mutex.parent_pair = gate.getMutexPtr();
+}
+
 } // namespace

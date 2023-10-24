@@ -47,8 +47,6 @@ public:
     typedef LockedIterator<container_iterator> iterator;
     typedef LockedIterator<container_const_iterator> const_iterator;
 
-    typedef std::shared_mutex mutex_type;
-
     iterator begin();
     const_iterator begin() const;
     const_iterator cbegin() const;
@@ -69,14 +67,18 @@ public:
         void clear() {self->container.clear();}
     };
     ModifierGate getModifierGate(const ExclusiveLockBase*)
-    {assert(LockPolicy::isLocked(mutex));return ModifierGate{this};}
+    {assert(LockPolicy::isLockedExclusively(mutex));return ModifierGate{this};}
+
+    template<typename SomeHolder>
+    void setParentMutex(SomeHolder& tsc);
+
+public:
+    // TODO: eliminate this or the gate version.
+    auto getMutexPtr() const {return &mutex;}
 
 protected:
-    mutable mutex_type mutex;
+    mutable MutexPair mutex;
     ContainerType container;
-
-public: // :-(
-    mutex_type* getMutexPtr() const {return &mutex;}
 };
 
 } //namespace Base::Threads

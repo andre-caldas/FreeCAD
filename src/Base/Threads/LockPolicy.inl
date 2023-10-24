@@ -33,45 +33,11 @@ namespace Base::Threads
 {
 
 template<typename... MutN,
-         std::enable_if_t<(std::is_same_v<std::shared_mutex, MutN> && ...)>*>
+         std::enable_if_t<(std::is_same_v<MutexPair, MutN> && ...)>*>
 LockPolicy::LockPolicy(bool is_exclusive, MutN*... mutex)
     : mutexes{mutex...}
 {
-    if(threadMutexes.empty())
-    {
-        // Lock anything that was requested.
-        threadMutexes = mutexes;
-        isExclusive = is_exclusive;
-        return;
-    }
-
-    if(is_exclusive && !isExclusive)
-    {
-        // No request for exclusive lock when we already hold shared locks.
-        throw ExceptionExclusiveNotFirst();
-    }
-
-    // remove already  mutexes from the list.
-    for(auto element: threadMutexes)
-    {
-        // This only erases if element exists in "mutexes". :-)
-        mutexes.erase(element);
-    }
-
-    if(mutexes.empty())
-    {
-        // Nothing to lock.
-        return;
-    }
-
-    if(isExclusive)
-    {
-        // If we hold exclusive locks, we cannot wait for new mutexes.
-        // This is to avoid deadlocks.
-        throw ExceptionNoLocksAfterExclusiveLock();
-    }
-
-    threadMutexes.merge(mutexes);
+    _processLock(is_exclusive);
 }
 
 
@@ -79,38 +45,33 @@ LockPolicy::LockPolicy(bool is_exclusive, MutN*... mutex)
  * Traits: we want to pass either a mutex or a container to ExclusiveLock.
  */
 template<typename C>
-struct MutexPointer
+struct MutexPairPointer
 {
-    MutexPointer(const C& container) : container(container) {}
-    auto operator()() {return container.getMutexPtr();}
+    MutexPairPointer(const C& container) : container(container) {}
+    auto getPair() {return container.getMutexPtr();}
     const C& container;
 };
 template<>
-struct MutexPointer<std::shared_mutex*>
+struct MutexPairPointer<MutexPair*>
 {
-    MutexPointer(std::shared_mutex* mutex) : mutex(mutex) {}
-    auto operator()() {return mutex;}
-    std::shared_mutex* mutex;
+    MutexPairPointer(MutexPair* mutex) : mutex(mutex) {}
+    auto getPair() {return mutex;}
+    MutexPair* mutex;
 };
 template<>
-struct MutexPointer<std::shared_mutex> : MutexPointer<std::shared_mutex*>
+struct MutexPairPointer<MutexPair> : MutexPairPointer<MutexPair*>
 {
-    MutexPointer(std::shared_mutex& mutex) : MutexPointer<std::shared_mutex*>(&mutex) {}
+    MutexPairPointer(MutexPair& mutex) : MutexPairPointer<MutexPair*>(&mutex) {}
 };
 
-namespace detail {
-template<typename Result, typename From>
-struct ForEach{using type = Result;};
-}
-
-template<typename... MutexOrContainer>
-ExclusiveLock<MutexOrContainer...>::ExclusiveLock(MutexOrContainer&... mutex_or_container)
-    : LockPolicy(true, MutexPointer{mutex_or_container}()...)
+template<typename... MutexPairOrContainer>
+ExclusiveLock<MutexPairOrContainer...>::ExclusiveLock(MutexPairOrContainer&... pair_or_container)
+    : LockPolicy(true, MutexPairPointer{pair_or_container}.getPair()...)
 {
     /*
      * Here we know that if this is not the first lock,
-     * all previous locks were exclusive and the very first one
-     * already contains this one.
+     * all previous locks in the same layer were exclusive
+     * and the very first one already contains this one.
      *
      * If this is not the first one, mutexes is empty.
      * Otherwise, mutexes = {container.getMutexPtr()...}.
@@ -119,8 +80,8 @@ ExclusiveLock<MutexOrContainer...>::ExclusiveLock(MutexOrContainer&... mutex_or_
      * ExclusiveLock l1(m1, m2);
      * ExclusiveLock l2(m1); // Does nothing.
      */
-    assert(mutexes.empty() || mutexes.size() == sizeof...(MutexOrContainer));
-    if(mutexes.size() == sizeof...(MutexOrContainer))
+    assert(mutexes.empty() || mutexes.size() == sizeof...(MutexPairOrContainer));
+    if(mutexes.size() == sizeof...(MutexPairOrContainer))
     {
         /*
          * It would be more natural if we could pass "mutexes" to the constructor.
@@ -128,8 +89,8 @@ ExclusiveLock<MutexOrContainer...>::ExclusiveLock(MutexOrContainer&... mutex_or_
          * Fortunately, mutexes = {container.getMutexPtr()...}.
          */
         locks = std::make_unique<
-            std::scoped_lock<typename detail::ForEach<std::shared_mutex, MutexOrContainer>::type...>
-        >(*MutexPointer{mutex_or_container}()...);
+            std::scoped_lock<typename detail::ForEach<std::shared_mutex, MutexPairOrContainer>::type...>
+        >(MutexPairPointer{pair_or_container}.getPair()->mutex...);
     }
 }
 
@@ -138,7 +99,7 @@ template<typename SomeHolder>
 auto ExclusiveLock<MutexHolder...>::operator[](SomeHolder& tsc) const
 {
     auto gate = tsc.getModifierGate(this);
-    if(!threadMutexes.count(gate.getMutexPtr()))
+    if(!isLockedExclusively(gate.getMutexPtr()))
     {
         throw ExceptionNeedLockToAccessContainer();
     }
