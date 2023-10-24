@@ -345,8 +345,28 @@ SET(FreeCADBase_HPP_SRCS
     ZipHeader.h
 )
 
+SET(FreeCADBase_Threads_SRCS
+    Threads/type_traits/record_items.h
+    Threads/type_traits/record_info.h
+    Threads/Exception.h
+    Threads/IteratorWrapper.h
+    Threads/LockPolicy.h
+    Threads/LockPolicy.inl
+    Threads/LockPolicy.cpp
+    Threads/LockedIterator.h
+    Threads/ThreadSafeContainer.h
+    Threads/ThreadSafeContainer.inl
+    Threads/ThreadSafeVector.h
+    Threads/ThreadSafeMap.h
+    Threads/ThreadSafeMultiIndex.h
+    Threads/ThreadSafeMultiIndex.inl
+    Threads/AtomicSharedPtr.h
+)
+SOURCE_GROUP("Threads" FILES ${FreeCADBase_Threads_SRCS})
+
 SET(FreeCADBase_SRCS
     ${PYCXX_SOURCES}
+    ${FreeCADBase_Threads_SRCS}
     ${FreeCADBase_CPP_SRCS}
     ${FreeCADBase_HPP_SRCS}
     ${FreeCADBase_XML_SRCS}
