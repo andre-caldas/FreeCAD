@@ -176,6 +176,7 @@ void Transaction::addOrRemoveProperty(std::shared_ptr<TransactionalObject> share
 
 void Transaction::apply(Document &Doc, bool forward)
 {
+    ExclusiveLock lock{_Objects};
     std::string errMsg;
     try {
         for(const auto& [obj,trans] : _Objects)

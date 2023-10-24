@@ -31,6 +31,7 @@
 #include <App/DocumentObserver.h>
 #include <App/StringHasher.h>
 #include <Base/Threads/ThreadSafeMap.h>
+#include <Base/Threads/LockPolicy.h>
 #include <Base/Threads/AtomicSharedPtr.h>
 #include <CXX/Objects.hxx>
 #include <boost/bimap.hpp>
@@ -55,10 +56,7 @@ using Vertex = Traits::vertex_descriptor;
 using Edge =  Traits::edge_descriptor;
 using Node =  std::vector <size_t>;
 using Path =  std::vector <size_t>;
-template<typename k, typename v>
-using ThreadSafeUnorderedMap = Base::Threads::ThreadSafeUnorderedMap<k,v>;
-template<typename t>
-using AtomicSharedPtr = Base::Threads::AtomicSharedPtr<t>;
+using namespace Base::Threads;
 
 namespace App {
 using HasherMap = boost::bimap<StringHasherRef, int>;
@@ -127,12 +125,13 @@ struct DocumentP
     }
 
     void clearDocument() {
+        ExclusiveLock lock(objectMap);
         objectArray.clear();
         for(auto& [k,obj] : objectMap) {
             obj.load()->setStatus(ObjectStatus::Destroy, true);
         }
         objectIdMap.clear();
-        objectMap.clear();
+        lock[objectMap].clear();
     }
 
     const char *findRecomputeLog(const App::DocumentObject *obj) {

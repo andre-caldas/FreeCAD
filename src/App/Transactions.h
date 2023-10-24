@@ -37,7 +37,6 @@ namespace App
 
 class Document;
 class Property;
-class Transaction;
 class TransactionObject;
 class TransactionalObject;
 
