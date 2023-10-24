@@ -31,11 +31,63 @@
 namespace Base::Threads
 {
 
+template<typename ItType>
+class EndAwareIterator
+{
+public:
+    /* I have absolutely no idea if those are correct. Probably not! :-( */
+    using difference_type = typename ItType::difference_type;
+    using value_type = typename ItType::value_type;
+    using pointer = typename ItType::pointer;
+    using reference = typename ItType::reference;
+    using iterator_category = typename ItType::iterator_category;
+
+    EndAwareIterator(const EndAwareIterator& other)
+        : it(other.it)
+        , end_it(other.end_it)
+    {}
+
+    EndAwareIterator(ItType&& it, ItType end_it)
+        : it(std::move(it))
+        , end_it(std::move(end_it))
+    {}
+
+    EndAwareIterator(std::pair<ItType,ItType>&& range)
+        : it(std::move(range.first))
+        , end_it(std::move(range.second))
+    {}
+
+    /**
+     * @brief This iterator is aware of its "end".
+     * So, we can convert it to "true" when it is not "end",
+     * and false otherwise.
+     */
+    operator bool() const {return it != end_it;}
+
+    EndAwareIterator& operator=(const EndAwareIterator& other)
+    {it = other.it; end_it = other.end_it; return *this;}
+
+    constexpr bool operator==(const EndAwareIterator& other) const {return it == other.it;}
+    constexpr bool operator!=(const EndAwareIterator& other) const {return it != other.it;}
+    EndAwareIterator& operator++() {++it; return *this;}
+    EndAwareIterator operator++(int) {EndAwareIterator result(*this); ++it; return result;}
+    auto& operator*() const {return *it;}
+    auto* operator->() const {return &*it;}
+
+    virtual ~EndAwareIterator() = default;
+
+private:
+    ItType it;
+    ItType end_it;
+};
+
+
 /**
  * @brief
  */
 template<typename ItType>
 class LockedIterator
+    : public EndAwareIterator<ItType>
 {
 public:
     /* I have absolutely no idea if those are correct. Probably not! :-( */
@@ -47,8 +99,7 @@ public:
 
     // Attention: do not lock mutex again!
     LockedIterator(const LockedIterator& other)
-        : it(other.it)
-        , end_it(other.end_it)
+        : EndAwareIterator<ItType>(other)
     {}
 
     /**
@@ -58,23 +109,14 @@ public:
      * @param end_it - end iterator, so we know when we reach the end.
      */
     LockedIterator(MutexPair& mutex, ItType&& it, ItType end_it)
-        : lock(mutex)
-        , it(std::move(it))
-        , end_it(std::move(end_it)) // Attention: do not use && for end_it.
+        : EndAwareIterator<ItType>(std::move(it), std::move(end_it))
+        , lock(mutex)
     {}
 
     LockedIterator(MutexPair& mutex, std::pair<ItType,ItType>&& range)
-        : lock(mutex)
-        , it(std::move(range.first))
-        , end_it(std::move(range.second))
+        : EndAwareIterator<ItType>(std::move(range))
+        , lock(mutex)
     {}
-
-    /**
-     * @brief This iterator is aware of its "end".
-     * So, we can convert it to "true" when it is not "end",
-     * and false otherwise.
-     */
-    operator bool() const {return it != end_it;}
 
     // We need LockedIterator to be copy assignable to use algorithms.
     // But we shall never use it. We do not change mutexes, only the iterator.
@@ -117,8 +159,7 @@ private:
      * But, since it might be short lived, we do not want the lock to be tied to it.
      */
     explicit LockedIterator(ItType&& it)
-        : it(it)
-        , end_it(std::move(it))
+        : EndAwareIterator<ItType>(std::move(it), it)
     {}
 };
 

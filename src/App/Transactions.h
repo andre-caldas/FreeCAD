@@ -105,9 +105,9 @@ private:
         const object_t object;
         const transaction_t transaction;
     };
-    Base::Threads::ThreadSafeMultiIndex<TransactionRecord,
-                                        &TransactionRecord::object,
-                                        &TransactionRecord::transaction> _Objects;
+    Base::Threads::MultiIndexContainer<TransactionRecord,
+                                       &TransactionRecord::object,
+                                       &TransactionRecord::transaction> _Objects;
 
     std::shared_ptr<TransactionalObject>
     _prepareToAssumeOwnership(TransactionalObject* Obj);

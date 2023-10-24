@@ -55,6 +55,12 @@ public:
     template<std::size_t I, typename Key>
     auto equal_range(const Key& key) const;
 
+    template<typename Key>
+    auto find(const Key& key);
+
+    template<typename Key>
+    auto find(const Key& key) const;
+
     template<std::size_t I, typename Key>
     bool contains(const Key& key) const;
 

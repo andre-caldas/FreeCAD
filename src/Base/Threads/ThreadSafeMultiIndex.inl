@@ -93,7 +93,7 @@ auto MultiIndexContainer<Element, LocalPointers...>::equal_range(const Key& key)
     auto it_ptr = map.find(ReduceToRaw<Key>::reduce(key));
     if(it_ptr == map.end())
     {
-        return std::make_pair(end, end);
+        return std::make_pair(end, std::move(end));
     }
 
     auto it_id = ordered_data_reverse.find(it_ptr->second);
@@ -107,6 +107,21 @@ auto MultiIndexContainer<Element, LocalPointers...>::equal_range(const Key& key)
     assert(it_final != ordered_data.end());
 
     return std::make_pair(const_iterator{std::move(it_final)}, std::move(end));
+}
+
+
+template<typename Element, auto ...LocalPointers>
+template<typename Key>
+auto MultiIndexContainer<Element, LocalPointers...>::find(const Key& key)
+{
+    return EndAwareIterator(equal_range(key));
+}
+
+template<typename Element, auto ...LocalPointers>
+template<typename Key>
+auto MultiIndexContainer<Element, LocalPointers...>::find(const Key& key) const
+{
+    return EndAwareIterator(equal_range(key));
 }
 
 template<typename Element, auto ...LocalPointers>
