@@ -88,9 +88,7 @@ ExclusiveLock<MutexPairOrContainer...>::ExclusiveLock(MutexPairOrContainer&... p
          * But there is only the option to list all mutexes at compile time.
          * Fortunately, mutexes = {container.getMutexPtr()...}.
          */
-        locks = std::make_unique<
-            std::scoped_lock<typename detail::ForEach<std::shared_mutex, MutexPairOrContainer>::type...>
-        >(MutexPairPointer{pair_or_container}.getPair()->mutex...);
+        locks = std::make_unique<locks_t>(MutexPairPointer{pair_or_container}.getPair()->mutex...);
     }
 }
 

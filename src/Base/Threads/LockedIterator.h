@@ -74,6 +74,9 @@ public:
     auto& operator*() const {return *it;}
     auto* operator->() const {return &*it;}
 
+    const auto& getIterator() const {return it;}
+    auto& getIterator() {return it;}
+
     virtual ~EndAwareIterator() = default;
 
 private:
@@ -122,17 +125,10 @@ public:
     // But we shall never use it. We do not change mutexes, only the iterator.
     // So, this messes with LockPolicy.
     LockedIterator& operator=(const LockedIterator& other)
-    {assert(false); it = other.it; end_it = other.end_it; return *this;}
+    {assert(false); EndAwareIterator<ItType>::operator=(*this, other); return *this;}
 
-    constexpr bool operator==(const LockedIterator& other) const {return it == other.it;}
-    constexpr bool operator!=(const LockedIterator& other) const {return it != other.it;}
-    LockedIterator& operator++() {++it; return *this;}
-    LockedIterator operator++(int) {LockedIterator result(*this); ++it; return result;}
-    auto& operator*() const {return *it;}
-    auto* operator->() const {return &*it;}
-
-    const auto& getIterator() const {return it;}
-    auto& getIterator() {return it;}
+    LockedIterator& operator++() {EndAwareIterator<ItType>::operator++(); return *this;}
+    LockedIterator operator++(int) {LockedIterator result(*this); ++(*this); return result;}
 
     /**
      * @brief Static method to provide a LockedIterator that does not lock anything.
@@ -140,14 +136,11 @@ public:
      * @param end_it - original container's end iterator.
      * @return An "end" iterator of type LockedIterator<ItType>.
      */
-    template<typename EndIterator>
-    static LockedIterator<ItType> MakeEndIterator(EndIterator&& end_it)
-    {return LockedIterator(std::move(end_it));}
+    static LockedIterator<ItType> MakeEndIterator(ItType&& end_it)
+    {return LockedIterator<ItType>(std::move(end_it));}
 
 private:
     mutable SharedLock lock;
-    ItType it;
-    ItType end_it;
 
     /**
      * @brief A wrapper that does not actually lock anything.

@@ -31,6 +31,8 @@
 #include <unordered_set>
 #include <stack>
 
+#include "type_traits/Utils.h"
+
 namespace Base::Threads
 {
 
@@ -110,11 +112,6 @@ private:
 };
 
 
-namespace detail {
-template<typename Result, typename From>
-struct ForEach {using type = Result;};
-}
-
 class ExclusiveLockBase {};
 
 /**
@@ -139,6 +136,7 @@ public:
     auto operator[](SomeHolder& tsc) const;
 
 private:
+    using locks_t = std::scoped_lock<ForEach_t<std::shared_mutex,MutexHolder>...>;
     /*
      * After constructed, std::scoped_lock cannot be changed.
      * So, we usa a unique_ptr.
@@ -147,7 +145,7 @@ private:
      * But, unfortunately, std::lock needs two or more mutexes,
      * and we do not want the code full of ifs.
      */
-    std::unique_ptr<std::scoped_lock<typename detail::ForEach<std::shared_mutex,MutexHolder>::type...>> locks;
+    std::unique_ptr<locks_t> locks;
 };
 
 } //namespace Base::Threads

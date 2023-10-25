@@ -24,114 +24,12 @@
 #ifndef BASE_Threads_ThreadSafeMultiIndex_H
 #define BASE_Threads_ThreadSafeMultiIndex_H
 
-#include "type_traits/record_info.h"
+#include "MultiIndexContainer.h"
 
-#include "IteratorWrapper.h"
 #include "ThreadSafeContainer.h"
 
 namespace Base::Threads
 {
-
-template<typename Element, auto ...LocalPointers>
-class MultiIndexContainer
-{
-public:
-    using iterator = IteratorSecondPtrAsRef<typename std::map<double, Element*>::iterator>;
-    using const_iterator = IteratorSecondPtrAsRef<typename std::map<double, Element*>::const_iterator>;
-
-    auto begin();
-    auto begin() const;
-    auto cbegin() const;
-
-    auto end();
-    auto end() const;
-    auto cend() const;
-
-    bool empty() const;
-
-    template<typename Key>
-    auto equal_range(const Key& key) const;
-
-    template<std::size_t I, typename Key>
-    auto equal_range(const Key& key) const;
-
-    template<typename Key>
-    auto find(const Key& key);
-
-    template<typename Key>
-    auto find(const Key& key) const;
-
-    template<std::size_t I, typename Key>
-    bool contains(const Key& key) const;
-
-    template<typename Key>
-    bool contains(const Key& key) const;
-
-    template<typename ...Vn>
-    auto emplace(Vn&& ...vn);
-
-    auto erase(const Element& element);
-
-    template<typename ItType>
-    auto erase(ItType it);
-
-    auto move_back(const Element& element);
-
-    template<typename ItType>
-    auto move_back(const ItType& it);
-
-
-    using ElementInfo = MultiIndexElementInfo<Element, LocalPointers...>;
-
-    using element_t = Element;
-    template<typename X>
-    static constexpr auto index_from_raw_v = ElementInfo::template index_from_raw_v<X>;
-    template<std::size_t I>
-    using raw_from_index_t = typename ElementInfo::template raw_from_index_t<I>;
-    template<std::size_t I>
-    using type_from_index_t = typename ElementInfo::template type_from_index_t<I>;
-
-private:
-    std::unordered_map<const element_t*, std::unique_ptr<element_t>> data;
-
-    /// @brief Incremented on every insertion.
-    std::atomic_int counter;
-
-    /**
-     * @brief Items oredered (in principle) by insetion order.
-     * @attention We use double instead of an integer so it becomes easy
-     * to insert an element between two existing elements.
-     */
-    std::map<double, element_t*> ordered_data;
-
-    /**
-     * @brief Reverse of ordered_data.
-     * It is used to get the key for "ordered_data".
-     */
-    std::map<const element_t*, double> ordered_data_reverse;
-
-
-    /**
-     * @brief The Element struct show us what indexes can be used to search the list.
-     * Each tuple entry is an std::map<raw_key, Element&>.
-     */
-    typename ElementInfo::indexes_tuple_t indexes;
-
-    template<std::size_t ...In>
-    void insertIndexes(const element_t& element, const std::index_sequence<In...>&);
-
-    template<std::size_t I>
-    void insertIndex(const element_t& element);
-
-
-    template<std::size_t ...In>
-    void eraseIndexes(const element_t& element, const std::index_sequence<In...>&);
-
-    template<std::size_t I>
-    void eraseIndex(const element_t& element);
-};
-
-
 
 /**
  * @brief Implements a thread safe container that:
@@ -186,6 +84,13 @@ public:
         auto erase(ItType& iterator)
         {return self->container.template erase(iterator.getIterator());}
 
+        auto extract(const element_t& element)
+        {return self->container.template extract(element);}
+
+        template<typename ItType>
+        auto extract(ItType& iterator)
+        {return self->container.template extract(iterator.getIterator());}
+
         auto move_back(const element_t& element)
         {return self->container.template move_back(element);}
 
@@ -202,7 +107,5 @@ protected:
 };
 
 } //namespace ::Threads
-
-#include "ThreadSafeMultiIndex.inl"
 
 #endif // BASE_Threads_ThreadSafeMultiIndex_H
