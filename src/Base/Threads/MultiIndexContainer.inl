@@ -169,7 +169,7 @@ auto MultiIndexContainer<Record, LocalPointers...>::emplace(Vn&& ...vn)
     auto res1 = data.emplace(unique_ptr.get(), std::move(unique_ptr));
     assert(res1.second);
 
-    double count = ++counter;
+    long count = ++counter;
     auto [it, success] = ordered_data.emplace(count, inserted_record);
     assert(success);
 
@@ -212,7 +212,7 @@ auto MultiIndexContainer<Record, LocalPointers...>::extract(const Record& record
 
     eraseIndexes(record, std::make_index_sequence<sizeof...(LocalPointers)>{});
 
-    double key = pos->second;
+    long key = pos->second;
     ordered_data_reverse.erase(&record);
     assert(ordered_data_reverse.size() == data.size() - 1);
     ordered_data.erase(key);
@@ -233,8 +233,8 @@ auto MultiIndexContainer<Record, LocalPointers...>::extract(ItType it)
 template<typename Record, auto ...LocalPointers>
 auto MultiIndexContainer<Record, LocalPointers...>::move_back(const Record& record)
 {
-    double old_count = ordered_data_reverse.at(&record);
-    double new_count = ++counter;
+    long old_count = ordered_data_reverse.at(&record);
+    long new_count = ++counter;
     ordered_data_reverse.at(&record) = new_count;
 
     auto nh = ordered_data.extract(old_count);
