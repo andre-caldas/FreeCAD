@@ -3958,7 +3958,7 @@ std::vector<DocumentObject*> Document::findObjects(const Base::Type& typeId, con
         if (info.object->getTypeId().isDerivedFrom(typeId)) {
             found = info.object;
 
-            if (!rx_name.empty() && !boost::regex_search(info.name, what, rx_name))
+            if (!rx_name.empty() && !boost::regex_search(info.name.c_str(), what, rx_name))
                 found = nullptr;
 
             if (!rx_label.empty() && !boost::regex_search(info.object->Label.getValue(), what, rx_label))
