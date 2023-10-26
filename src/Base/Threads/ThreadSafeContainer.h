@@ -47,13 +47,13 @@ public:
     typedef LockedIterator<container_iterator> iterator;
     typedef LockedIterator<container_const_iterator> const_iterator;
 
-    iterator begin();
-    const_iterator begin() const;
-    const_iterator cbegin() const;
+    auto begin();
+    auto begin() const;
+    auto cbegin() const;
 
-    iterator end();
-    const_iterator end() const;
-    const_iterator cend() const;
+    auto end();
+    auto end() const;
+    auto cend() const;
 
     size_t size() const;
     bool empty() const;
@@ -67,7 +67,7 @@ public:
         void clear() {self->container.clear();}
     };
     ModifierGate getModifierGate(const ExclusiveLockBase*)
-    {assert(LockPolicy::isLockedExclusively(mutex));return ModifierGate{this};}
+    {assert(LockPolicy::isLockedExclusively(mutex)); return ModifierGate{this};}
 
     template<typename SomeHolder>
     void setParentMutex(SomeHolder& tsc);

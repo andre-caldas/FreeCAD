@@ -48,16 +48,18 @@ class ThreadSafeMultiIndex
 public:
     using self_t = ThreadSafeMultiIndex;
     using parent_t = ThreadSafeContainer<MultiIndexContainer<Record, LocalPointers...>>;
+    using iterator = typename parent_t::iterator;
+    using const_iterator = typename parent_t::const_iterator;
 
     using element_t = Record;
 
     template<typename Key>
     auto find(const Key& key)
-    {return iterator(mutex, container.equal_range(key));}
+    {return iterator(mutex, container.find(key));}
 
     template<typename Key>
     auto find(const Key& key) const
-    {return const_iterator(mutex, container.equal_range(key));}
+    {return const_iterator(mutex, container.find(key));}
 
     template<std::size_t I, typename Key>
     bool contains(const Key& key) const
@@ -82,21 +84,21 @@ public:
 
         template<typename ItType>
         auto erase(ItType& iterator)
-        {return self->container.template erase(iterator.getIterator());}
+        {return self->container.template erase(iterator);}
 
         auto extract(const element_t& element)
         {return self->container.template extract(element);}
 
         template<typename ItType>
         auto extract(ItType& iterator)
-        {return self->container.template extract(iterator.getIterator());}
+        {return self->container.template extract(iterator);}
 
         auto move_back(const element_t& element)
         {return self->container.template move_back(element);}
 
         template<typename ItType>
         auto move_back(const ItType& iterator)
-        {return self->container.template move_back(iterator.getIterator());}
+        {return self->container.template move_back(iterator);}
     };
     ModifierGate getModifierGate(const ExclusiveLockBase*)
     {assert(LockPolicy::isLockedExclusively(mutex));return ModifierGate{this};}
