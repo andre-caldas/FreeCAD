@@ -53,11 +53,11 @@ public:
 
     template<typename Key>
     auto find(const Key& key)
-    {return LockedIterator(mutex, container.equal_range(key));}
+    {return iterator(mutex, container.equal_range(key));}
 
     template<typename Key>
     auto find(const Key& key) const
-    {return LockedIterator(mutex, container.equal_range(key));}
+    {return const_iterator(mutex, container.equal_range(key));}
 
     template<std::size_t I, typename Key>
     bool contains(const Key& key) const
