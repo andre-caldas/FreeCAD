@@ -28,10 +28,9 @@
 #endif
 
 #include <App/DocumentObject.h>
+#include <App/DocumentObjectInfo.h>
 #include <App/DocumentObserver.h>
 #include <App/StringHasher.h>
-#include <Base/Threads/ThreadSafeMultiIndex.h>
-#include <Base/Threads/AtomicSharedPtr.h>
 #include <Base/Threads/LockPolicy.h>
 #include <CXX/Objects.hxx>
 #include <boost/bimap.hpp>
@@ -60,34 +59,13 @@ namespace App {
 using HasherMap = boost::bimap<StringHasherRef, int>;
 class Transaction;
 
-struct DocumentObjectInfoRecord
-{
-    using object_t = DocumentObject*;//Base::Threads::AtomicSharedPtr<DocumentObject>;
-    DocumentObjectInfoRecord(DocumentObject* obj,
-                             std::string name)
-        : object(obj)
-        , id(object->getID())
-        , name(std::move(name))
-    {}
-
-    object_t object;
-    long id;
-    std::string name;
-};
-
 // Pimpl class
 struct DocumentP
 {
-    template<typename Record, auto ...LocalPointers>
-    using MultiIndex = Base::Threads::ThreadSafeMultiIndex<Record, LocalPointers...>;
-
     // Array to preserve the creation order of created objects
     std::vector<DocumentObject*> objectArray;
     std::unordered_set<App::DocumentObject*> touchedObjs;
-    MultiIndex<DocumentObjectInfoRecord,
-               &DocumentObjectInfoRecord::object,
-               &DocumentObjectInfoRecord::id,
-               &DocumentObjectInfoRecord::name> objectInfo;
+    object_info_list_t objectInfo;
     std::unordered_map<std::string, bool> partialLoadObjects;
     std::vector<DocumentObjectT> pendingRemove;
     long lastObjectId;

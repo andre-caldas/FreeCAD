@@ -3221,10 +3221,10 @@ DocumentObject * Document::addObject(const char* sType, const char* pObjectName,
         // generate object id and add to id map;
         pcObject->_Id = ++d->lastObjectId;
         // store object information;
-        lock[d->objectInfo].emplace(pcObject, ObjectName);
+        auto [it,success] = lock[d->objectInfo].emplace(pcObject, ObjectName);
+        assert(success);
         // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
-        pcObject->pcNameInDocument = &(d->objectInfo.find(ObjectName)->name);
-        // insert in the vector
+        pcObject->pcNameInDocument = &it->name;
         d->objectArray.push_back(pcObject);
     }
 
@@ -3327,10 +3327,10 @@ std::vector<DocumentObject *> Document::addObjects(const char* sType, const std:
             // generate object id and add to id map;
             pcObject->_Id = ++d->lastObjectId;
             // store object information;
-            lock[d->objectInfo].emplace(pcObject, ObjectName);
+            auto [it,success] = lock[d->objectInfo].emplace(pcObject, ObjectName);
+            assert(success);
             // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
-            pcObject->pcNameInDocument = &(d->objectInfo.find(ObjectName)->name);
-            // insert in the vector
+            pcObject->pcNameInDocument = &it->name;
             d->objectArray.push_back(pcObject);
         }
 
@@ -3393,10 +3393,10 @@ void Document::addObject(DocumentObject* pcObject, const char* pObjectName)
         // generate object id and add to id map;
         pcObject->_Id = ++d->lastObjectId;
         // store object information;
-        lock[d->objectInfo].emplace(pcObject, ObjectName);
+        auto [it,success] = lock[d->objectInfo].emplace(pcObject, ObjectName);
+        assert(success);
         // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
-        pcObject->pcNameInDocument = &(d->objectInfo.find(ObjectName)->name);
-        // insert in the vector
+        pcObject->pcNameInDocument = &it->name;
         d->objectArray.push_back(pcObject);
     }
 
@@ -3427,10 +3427,10 @@ void Document::_addObject(DocumentObject* pcObject, const char* pObjectName)
         // generate object id and add to id map;
         if(!pcObject->_Id) pcObject->_Id = ++d->lastObjectId;
         // store object information;
-        lock[d->objectInfo].emplace(pcObject, ObjectName);
+        auto [it,success] = lock[d->objectInfo].emplace(pcObject, ObjectName);
+        assert(success);
         // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
-        pcObject->pcNameInDocument = &(d->objectInfo.find(ObjectName)->name);
-        // insert in the vector
+        pcObject->pcNameInDocument = &it->name;
         d->objectArray.push_back(pcObject);
     }
 
@@ -3954,14 +3954,14 @@ std::vector<DocumentObject*> Document::findObjects(const Base::Type& typeId, con
 
     std::vector<DocumentObject*> Objects;
     DocumentObject* found = nullptr;
-    for (auto it : d->objectArray) {
-        if (it->getTypeId().isDerivedFrom(typeId)) {
-            found = it;
+    for (const auto& info: d->objectInfo) {
+        if (info.object->getTypeId().isDerivedFrom(typeId)) {
+            found = info.object;
 
-            if (!rx_name.empty() && !boost::regex_search(it->getNameInDocument(), what, rx_name))
+            if (!rx_name.empty() && !boost::regex_search(info.name, what, rx_name))
                 found = nullptr;
 
-            if (!rx_label.empty() && !boost::regex_search(it->Label.getValue(), what, rx_label))
+            if (!rx_label.empty() && !boost::regex_search(info.object->Label.getValue(), what, rx_label))
                 found = nullptr;
 
             if (found)
