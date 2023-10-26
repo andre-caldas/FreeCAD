@@ -3307,7 +3307,7 @@ std::vector<DocumentObject *> Document::addObjects(const char* sType, const std:
         if (ObjectName.empty())
             ObjectName = sType;
         ObjectName = Base::Tools::getIdentifier(ObjectName);
-        if (d->objectInfo.find(ObjectName)) {
+        if (d->objectInfo.contains(ObjectName)) {
             // remove also trailing digits from clean name which is to avoid to create lengthy names
             // like 'Box001001'
             if (!testStatus(KeepTrailingDigits)) {
@@ -3465,7 +3465,7 @@ void Document::removeObject(const char* sName)
     auto object_info = d->objectInfo.find(sName);
 
     // name not found?
-    if (!object_info)
+    if (object_info == d->objectInfo.end())
         return;
 
     auto removed_object = object_info->object;
@@ -3836,7 +3836,7 @@ DocumentObject * Document::getActiveObject() const
 DocumentObject * Document::getObject(const char *Name) const
 {
     auto info = d->objectInfo.find(Name);
-    if (info) {
+    if (info != d->objectInfo.end()) {
         return info->object;
     }
     return nullptr;
@@ -3845,7 +3845,7 @@ DocumentObject * Document::getObject(const char *Name) const
 DocumentObject* Document::getObjectByID(long id) const
 {
     auto object_info = d->objectInfo.find(id);
-    if(object_info)
+    if(object_info != d->objectInfo.end())
         return object_info->object;
     return nullptr;
 }
@@ -3854,13 +3854,13 @@ DocumentObject* Document::getObjectByID(long id) const
 // Note: This method is only used in Tree.cpp slotChangeObject(), see explanation there
 bool Document::isIn(const DocumentObject* pFeat) const
 {
-    return d->objectInfo.find(pFeat);
+    return d->objectInfo.contains(pFeat);
 }
 
 const char* Document::getObjectName(DocumentObject *pFeat) const
 {
     const auto& info = d->objectInfo.find(pFeat);
-    if(!info) {
+    if(info == d->objectInfo.end()) {
         return nullptr;
     }
     return info->name.c_str();
@@ -3874,7 +3874,7 @@ std::string Document::getUniqueObjectName(const char *Name) const
 
     // name in use?
     auto info = d->objectInfo.find(CleanName);
-    if (!info) {
+    if (info == d->objectInfo.end()) {
         // if not, name is OK
         return CleanName;
     }
