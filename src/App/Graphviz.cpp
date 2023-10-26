@@ -426,7 +426,7 @@ void Document::exportGraphviz(std::ostream& out) const
 
             // Add internal document objects
             for (const auto& info: d->objectInfo) {
-                add(info.object, info.object->getNameInDocument(), info.object->Label.getValue(), CSSubgraphs);
+                add(info.object, info.name, info.object->Label.getValue(), CSSubgraphs);
             }
 
             // Add external document objects
