@@ -35,8 +35,8 @@ class MultiIndexContainer
 {
 public:
     using self_t = MultiIndexContainer;
-    using map_iterator_t = typename std::map<double, Record*>::iterator;
-    using map_const_iterator_t = typename std::map<double, Record*>::const_iterator;
+    using map_iterator_t = typename std::map<long, Record*>::iterator;
+    using map_const_iterator_t = typename std::map<long, Record*>::const_iterator;
     using iterator = IteratorSecondPtrAsRef<self_t, map_iterator_t>;
     using const_iterator = IteratorSecondPtrAsRef<self_t, map_const_iterator_t>;
 
@@ -103,20 +103,18 @@ private:
     std::unordered_map<const record_t*, std::unique_ptr<record_t>> data;
 
     /// @brief Incremented on every insertion.
-    std::atomic_int counter;
+    std::atomic_long counter;
 
     /**
      * @brief Items oredered (in principle) by insetion order.
-     * @attention We use double instead of an integer so it becomes easy
-     * to insert a record between two existing records.
      */
-    std::map<double, record_t*> ordered_data;
+    std::map<long, record_t*> ordered_data;
 
     /**
      * @brief Reverse of ordered_data.
      * It is used to get the key for "ordered_data".
      */
-    std::map<const record_t*, double> ordered_data_reverse;
+    std::map<const record_t*, long> ordered_data_reverse;
 
 
     /**
