@@ -33,24 +33,21 @@ namespace Base::Threads {
  * Iterator: begin().
  */
 template<typename ContainerType>
-typename ThreadSafeContainer<ContainerType>::iterator
-ThreadSafeContainer<ContainerType>::begin()
+auto ThreadSafeContainer<ContainerType>::begin()
 {
-    return iterator(mutex, container.begin(), container.end());
+    return iterator(mutex, container.begin());
 }
 
 template<typename ContainerType>
-typename ThreadSafeContainer<ContainerType>::const_iterator
-ThreadSafeContainer<ContainerType>::begin() const
+auto ThreadSafeContainer<ContainerType>::begin() const
 {
     return cbegin();
 }
 
 template<typename ContainerType>
-typename ThreadSafeContainer<ContainerType>::const_iterator
-ThreadSafeContainer<ContainerType>::cbegin() const
+auto ThreadSafeContainer<ContainerType>::cbegin() const
 {
-    return const_iterator(mutex, container.cbegin(), container.cend());
+    return const_iterator(mutex, container.cbegin());
 }
 
 
@@ -58,22 +55,19 @@ ThreadSafeContainer<ContainerType>::cbegin() const
  * Iterator: end().
  */
 template<typename ContainerType>
-typename ThreadSafeContainer<ContainerType>::iterator
-ThreadSafeContainer<ContainerType>::end()
+auto ThreadSafeContainer<ContainerType>::end()
 {
     return iterator::MakeEndIterator(container.end());
 }
 
 template<typename ContainerType>
-typename ThreadSafeContainer<ContainerType>::const_iterator
-ThreadSafeContainer<ContainerType>::end() const
+auto ThreadSafeContainer<ContainerType>::end() const
 {
     return cend();
 }
 
 template<typename ContainerType>
-typename ThreadSafeContainer<ContainerType>::const_iterator
-ThreadSafeContainer<ContainerType>::cend() const
+auto ThreadSafeContainer<ContainerType>::cend() const
 {
     return const_iterator::MakeEndIterator(container.cend());
 }

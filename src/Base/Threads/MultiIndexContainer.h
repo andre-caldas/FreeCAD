@@ -34,8 +34,11 @@ template<typename Record, auto ...LocalPointers>
 class MultiIndexContainer
 {
 public:
-    using iterator = IteratorSecondPtrAsRef<typename std::map<double, Record*>::iterator>;
-    using const_iterator = IteratorSecondPtrAsRef<typename std::map<double, Record*>::const_iterator>;
+    using self_t = MultiIndexContainer;
+    using map_iterator_t = typename std::map<double, Record*>::iterator;
+    using map_const_iterator_t = typename std::map<double, Record*>::const_iterator;
+    using iterator = IteratorSecondPtrAsRef<self_t, map_iterator_t>;
+    using const_iterator = IteratorSecondPtrAsRef<self_t, map_const_iterator_t>;
 
     auto begin();
     auto begin() const;
@@ -50,15 +53,15 @@ public:
     void clear();
 
     template<typename Key>
-    auto equal_range(const Key& key) const;
+    auto find(const Key& key);
 
     template<std::size_t I, typename Key>
-    auto equal_range(const Key& key) const;
-
-    template<typename Key>
     auto find(const Key& key);
 
     template<typename Key>
+    auto find(const Key& key) const;
+
+    template<std::size_t I, typename Key>
     auto find(const Key& key) const;
 
     template<std::size_t I, typename Key>
@@ -141,6 +144,9 @@ private:
 
     template<std::size_t I>
     void clearIndex();
+
+    template<typename iterator, std::size_t I, typename Key>
+    auto _find(const Key& key);
 };
 
 } //namespace ::Threads

@@ -93,66 +93,71 @@ void MultiIndexContainer<Record, LocalPointers...>::clear()
 
 template<typename Record, auto ...LocalPointers>
 template<typename Key>
-auto MultiIndexContainer<Record, LocalPointers...>::equal_range(const Key& key) const
+auto MultiIndexContainer<Record, LocalPointers...>::find(const Key& key)
 {
-    return equal_range<index_from_raw_v<Key>>(key);
+    return find<index_from_raw_v<Key>>(key);
 }
 
 template<typename Record, auto ...LocalPointers>
 template<std::size_t I, typename Key>
-auto MultiIndexContainer<Record, LocalPointers...>::equal_range(const Key& key) const
-{
-    const_iterator end(ordered_data.end());
-
-    auto& map = std::template get<I>(indexes);
-    auto it_ptr = map.find(ReduceToRaw<Key>::reduce(key));
-    if(it_ptr == map.end())
-    {
-        return std::make_pair(end, std::move(end));
-    }
-
-    auto it_id = ordered_data_reverse.find(it_ptr->second);
-    assert(it_id != ordered_data_reverse.end());
-    if(it_id == ordered_data_reverse.end())
-    {
-        return std::make_pair(end, std::move(end));
-    }
-
-    auto it_final = ordered_data.find(it_id->second);
-    assert(it_final != ordered_data.end());
-
-    return std::make_pair(const_iterator{std::move(it_final)}, std::move(end));
-}
-
-
-template<typename Record, auto ...LocalPointers>
-template<typename Key>
 auto MultiIndexContainer<Record, LocalPointers...>::find(const Key& key)
 {
-    return EndAwareIterator(equal_range(key));
+    return _find<iterator, I>(key);
 }
 
 template<typename Record, auto ...LocalPointers>
 template<typename Key>
 auto MultiIndexContainer<Record, LocalPointers...>::find(const Key& key) const
 {
-    return EndAwareIterator(equal_range(key));
+    return find<index_from_raw_v<Key>>(key);
+}
+
+template<typename Record, auto ...LocalPointers>
+template<std::size_t I, typename Key>
+auto MultiIndexContainer<Record, LocalPointers...>::find(const Key& key) const
+{
+    auto self = const_cast<self_t*>(this);
+    return self->template _find<const_iterator, I>(key);
+}
+
+template<typename Record, auto ...LocalPointers>
+template<typename ItType, std::size_t I, typename Key>
+auto MultiIndexContainer<Record, LocalPointers...>::_find(const Key& key)
+{
+    auto& map = std::template get<I>(indexes);
+    auto it_ptr = map.find(ReduceToRaw<Key>::reduce(key));
+    if(it_ptr == map.end())
+    {
+        return ItType(ordered_data.end());
+    }
+
+    auto it_id = ordered_data_reverse.find(it_ptr->second);
+    assert(it_id != ordered_data_reverse.end());
+    if(it_id == ordered_data_reverse.end())
+    {
+        return ItType{ordered_data.end()};
+    }
+
+    auto it_final = ordered_data.find(it_id->second);
+    assert(it_final != ordered_data.end());
+
+    return ItType{std::move(it_final)};
 }
 
 template<typename Record, auto ...LocalPointers>
 template<std::size_t I, typename Key>
 bool MultiIndexContainer<Record, LocalPointers...>::contains(const Key& key) const
 {
-    auto range = equal_range<I>(key);
-    return range.first != range.second;
+    auto it = find<I>(key);
+    return it != end();
 }
 
 template<typename Record, auto ...LocalPointers>
 template<typename Key>
 bool MultiIndexContainer<Record, LocalPointers...>::contains(const Key& key) const
 {
-    auto range = equal_range(key);
-    return range.first != range.second;
+    auto it = find(key);
+    return it != end();
 }
 
 template<typename Record, auto ...LocalPointers>

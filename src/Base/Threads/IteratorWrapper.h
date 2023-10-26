@@ -24,6 +24,7 @@
 #ifndef BASE_Threads_IteratorWrapper_H
 #define BASE_Threads_IteratorWrapper_H
 
+#include <type_traits>
 #include <utility>
 
 namespace Base::Threads
@@ -34,53 +35,102 @@ class IteratorWrapper
 {
 public:
     using difference_type = typename ItType::difference_type;
-    using value_type = typename ItType::value_type;
-    using pointer = typename ItType::pointer;
-    using reference = typename ItType::reference;
     using iterator_category = typename ItType::iterator_category;
+    using value_type = typename GetReference::value_type;
+    using pointer_type = typename GetReference::pointer_type;
+    using reference_type = typename GetReference::reference_type;
 
-    IteratorWrapper(const ItType& it) : it(it) {}
-    IteratorWrapper(IteratorWrapper&& other) : it(std::move(other.it)) {}
     IteratorWrapper(const IteratorWrapper& other) : it(other.it) {}
+    IteratorWrapper(const ItType& it) : it(it) {}
 
-    /*
-     * C++ loves when we do all that by hand... :-(
-     */
-    constexpr bool operator==(const IteratorWrapper& other) const {return it == other.it;}
-    constexpr bool operator!=(const IteratorWrapper& other) const {return it != other.it;}
-    auto& operator=(const IteratorWrapper& other) {it = other.it; return *this;}
-    auto& operator++() {++it; return *this;}
-    auto operator++(int) {IteratorWrapper result(this->it); ++it; return result;}
-    auto& operator*() const {return GetReference{it}();}
-    auto* operator->() const {return &GetReference{it}();}
+    IteratorWrapper& operator=(const IteratorWrapper& other)
+    {it = other.it; return *this;}
+    IteratorWrapper& operator=(const ItType& other)
+    {it = other; return *this;}
+
+    constexpr bool operator==(const IteratorWrapper& other) const
+    {return it == other.it;}
+    constexpr bool operator!=(const IteratorWrapper& other) const
+    {return it != other.it;}
+
+    constexpr bool operator==(const ItType& other) const
+    {return it == other;}
+    constexpr bool operator!=(const ItType& other) const
+    {return it != other;}
+
+    IteratorWrapper& operator++()
+    {++it; return *this;}
+    IteratorWrapper operator++(int)
+    {IteratorWrapper result(*this); ++it; return result;}
+
+    auto& operator*() const
+    {return GetReference{it}();}
+    auto* operator->() const
+    {return &GetReference{it}();}
+
+    ItType& getIterator() {return it;}
 
 private:
     ItType it;
 };
 
-namespace detail {
-template<typename ItType>
+namespace ReferenceGetter {
+
+template<typename, typename ItType>
+struct Identity
+{
+    using value_type = typename ItType::value_type;
+    using pointer_type = typename ItType::pointer_type;
+    using reference_type = typename ItType::reference_type;
+
+    Identity(const ItType& it) : it(it) {}
+    auto& operator()() {return *it;}
+    const ItType& it;
+};
+
+template<typename ContainerType, typename ItType>
 struct GetSecond
 {
+    using container_const_iterator = typename ContainerType::const_iterator;
+    static constexpr bool is_const_v = std::is_same_v<ItType, container_const_iterator>;
+
+    using it_value_type = typename ItType::value_type;
+    using cv_value_type = std::remove_reference_t<typename it_value_type::second_type>;
+
+    using value_type = std::remove_cv_t<cv_value_type>;
+    using pointer_type = std::conditional<is_const_v, const value_type*, value_type*>;
+    using reference_type = std::conditional<is_const_v, const value_type&, value_type&>;
+
     GetSecond(const ItType& it) : it(it) {}
-    auto& operator()() {return it->second;}
+    reference_type operator()() {return it->second;}
     const ItType& it;
 };
 
-template<typename ItType>
+template<typename, typename ItType>
 struct GetSecondPointerAsReference
 {
+    using it_value_type = typename ItType::value_type;
+
+    using pointer_type = typename it_value_type::second_type;
+    using reference_type = std::remove_pointer_t<pointer_type>&;
+    using value_type =  std::remove_cv_t<std::remove_pointer_t<pointer_type>>;
+
     GetSecondPointerAsReference(const ItType& it) : it(it) {}
-    auto& operator()() {return *it->second;}
+    reference_type operator()() {return *it->second;}
     const ItType& it;
 };
-}
 
-template<typename ItType>
-using IteratorSecond = IteratorWrapper<ItType, detail::GetSecond<ItType>>;
+} //namespace: ReferenceGetter
 
-template<typename ItType>
-using IteratorSecondPtrAsRef = IteratorWrapper<ItType, detail::GetSecondPointerAsReference<ItType>>;
+template<typename ContainerType, typename ItType>
+using IteratorSecond =
+    IteratorWrapper<ItType,
+                    ReferenceGetter::GetSecond<ContainerType, ItType>>;
+
+template<typename ContainerType, typename ItType>
+using IteratorSecondPtrAsRef =
+    IteratorWrapper<ItType,
+                    ReferenceGetter::GetSecondPointerAsReference<ContainerType, ItType>>;
 
 } //namespace ::Threads
 
