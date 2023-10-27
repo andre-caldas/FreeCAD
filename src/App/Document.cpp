@@ -3822,19 +3822,18 @@ DocumentObject * Document::getActiveObject() const
     return d->activeObject;
 }
 
-DocumentObject* Document::getObject(const std::string& Name) const
+DocumentObject* Document::getObject(const std::string& name) const
 {
-    auto pos = d->objectMap.find(Name);
-
-    if (pos != d->objectMap.end())
-        return pos->second;
-    else
-        return nullptr;
+    return getObject(name.c_str());
 }
 
 DocumentObject* Document::getObject(const char* sName) const
 {
-    return getObject(std::string(sName));
+    auto pos = d->objectMap.find(sName);
+    if (pos != d->objectMap.end()) {
+        return pos->second;
+    }
+    return nullptr;
 }
 
 DocumentObject * Document::getObjectByID(long id) const

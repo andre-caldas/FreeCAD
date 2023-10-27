@@ -299,7 +299,7 @@ public:
     /// Returns the active Object of this document
     DocumentObject *getActiveObject() const;
     /// Returns a Object of this document
-    DocumentObject *getObject(const std::string& Name) const;
+    DocumentObject* getObject(const std::string& name) const;
     /// To be deprecated version of the method above.
     DocumentObject *getObject(const char* sName) const;
     /// Returns a Object of this document by its id

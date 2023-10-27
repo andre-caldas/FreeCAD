@@ -2370,7 +2370,7 @@ bool ViewProviderLink::onDelete(const std::vector<std::string> &) {
                 }
             }
             for (const auto &name : objs)
-                doc->removeObject(name.c_str());
+                doc->removeObject(name);
         }
     }
     return true;
