@@ -32,6 +32,7 @@
 #include <App/DocumentObserver.h>
 #include <App/StringHasher.h>
 #include <Base/Threads/LockPolicy.h>
+#include <Base/Threads/AtomicSharedPtr.h>
 #include <CXX/Objects.hxx>
 #include <boost/bimap.hpp>
 #include <boost/graph/adjacency_list.hpp>
@@ -70,7 +71,7 @@ struct DocumentP
     std::unordered_map<std::string, bool> partialLoadObjects;
     std::vector<DocumentObjectT> pendingRemove;
     long lastObjectId;
-    AtomicSharedPtr<DocumentObject> activeObject;
+    Base::Threads::AtomicSharedPtr<DocumentObject> activeObject;
     Transaction *activeUndoTransaction;
     // pointer to the python class
     Py::Object DocumentPythonObject;

@@ -156,7 +156,7 @@ void Transaction::addOrRemoveProperty(std::shared_ptr<TransactionalObject> share
 
     TransactionObject *To;
 
-    if (pos) {
+    if (pos != _Objects.end()) {
         To = pos->transaction.get();
     }
     else {
@@ -233,7 +233,7 @@ void Transaction::addObjectNew(TransactionalObject *Obj)
 void Transaction::addObjectNew(std::shared_ptr<TransactionalObject> sharedObj)
 {
     auto pos = _Objects.find(sharedObj);
-    if (pos) {
+    if(pos != _Objects.end()) {
         if (pos->transaction->status == TransactionObject::Del) {
             _Objects.erase(pos);
         }
@@ -260,7 +260,7 @@ void Transaction::addObjectDel(const TransactionalObject *Obj)
 void Transaction::addObjectDel(std::shared_ptr<const TransactionalObject> sharedObj)
 {
     auto pos = _Objects.find(sharedObj);
-    if(pos) {
+    if(pos != _Objects.end()) {
         // is it created in this transaction ?
         if (pos->transaction->status == TransactionObject::New) {
             _Objects.erase(pos);
@@ -286,7 +286,7 @@ void Transaction::addObjectChange(std::shared_ptr<const TransactionalObject> sha
     auto pos = _Objects.find(sharedObj);
 
     TransactionObject* To;
-    if (pos) {
+    if(pos != _Objects.end()) {
         To = pos->transaction.get();
     }
     else {
