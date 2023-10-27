@@ -26,6 +26,13 @@
 namespace Base::Threads
 {
 
+namespace {
+thread_local std::unordered_set<const MutexPair*> threadExclusiveMutexes;
+thread_local std::unordered_set<const MutexPair*> threadNonExclusiveMutexes;
+thread_local std::stack<bool> isLayerExclusive;
+thread_local std::stack<std::unordered_set<const MutexPair*>> threadMutexLayers;
+}
+
 bool LockPolicy::hasAnyLock()
 {
     assert(threadMutexLayers.empty() ==
@@ -233,10 +240,5 @@ SharedLock::SharedLock(MutexPair& mutex)
         lock = std::shared_lock(mutex.mutex);
     }
 }
-
-thread_local std::unordered_set<const MutexPair*> LockPolicy::threadExclusiveMutexes;
-thread_local std::unordered_set<const MutexPair*> LockPolicy::threadNonExclusiveMutexes;
-thread_local std::stack<bool> LockPolicy::isLayerExclusive;
-thread_local std::stack<std::unordered_set<const MutexPair*>> LockPolicy::threadMutexLayers;
 
 } //namespace Base::Threads

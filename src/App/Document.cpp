@@ -120,6 +120,7 @@ FC_LOG_LEVEL_INIT("App", true, true, true)
 using Base::Console;
 using Base::streq;
 using Base::Writer;
+using namespace Base::Threads;
 using namespace App;
 using namespace std;
 using namespace boost;
@@ -599,8 +600,7 @@ void Document::clearDocument()
 
     d->clearRecomputeLog();
     d->objectArray.clear();
-    d->objectMap.clear();
-    d->objectIdMap.clear();
+    d->objectInfo.clear();
     d->lastObjectId = 0;
 }
 
@@ -2040,8 +2040,7 @@ void Document::restore (const char *filename,
 
     d->clearRecomputeLog();
     d->objectArray.clear();
-    d->objectMap.clear();
-    d->objectIdMap.clear();
+    d->objectInfo.clear();
     d->lastObjectId = 0;
 
     if(signal) {
@@ -2369,13 +2368,13 @@ std::vector<App::DocumentObject*> Document::getInList(const DocumentObject* me) 
     // result list
     std::vector<App::DocumentObject*> result;
     // go through all objects
-    for (const auto & It : d->objectMap) {
+    for (const auto& info: d->objectInfo) {
         // get the outList and search if me is in that list
-        std::vector<DocumentObject*> OutList = It.second->getOutList();
+        std::vector<DocumentObject*> OutList = info.object->getOutList();
         for (auto obj : OutList) {
             if (obj && obj == me)
                 // add the parent object
-                result.push_back(It.second);
+                result.push_back(info.object);
         }
     }
     return result;
@@ -3217,15 +3216,17 @@ DocumentObject * Document::addObject(const char* sType, const char* pObjectName,
 
     d->activeObject = pcObject;
 
-    // insert in the name map
-    d->objectMap[ObjectName] = pcObject;
-    // generate object id and add to id map;
-    pcObject->_Id = ++d->lastObjectId;
-    d->objectIdMap[pcObject->_Id] = pcObject;
-    // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
-    pcObject->pcNameInDocument = &(d->objectMap.find(ObjectName)->first);
-    // insert in the vector
-    d->objectArray.push_back(pcObject);
+    {
+        ExclusiveLock lock(d->objectInfo);
+        // generate object id and add to id map;
+        pcObject->_Id = ++d->lastObjectId;
+        // store object information;
+        auto [it,success] = lock[d->objectInfo].emplace(pcObject, ObjectName);
+        assert(success);
+        // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
+        pcObject->pcNameInDocument = &it->name;
+        d->objectArray.push_back(pcObject);
+    }
 
     // If we are restoring, don't set the Label object now; it will be restored later. This is to avoid potential duplicate
     // label conflicts later.
@@ -3282,9 +3283,9 @@ std::vector<DocumentObject *> Document::addObjects(const char* sType, const std:
 
     // get all existing object names
     std::vector<std::string> reservedNames;
-    reservedNames.reserve(d->objectMap.size());
-    for (const auto & pos : d->objectMap) {
-        reservedNames.push_back(pos.first);
+    reservedNames.reserve(d->objectInfo.size());
+    for (const auto& info: d->objectInfo) {
+        reservedNames.push_back(info.name);
     }
 
     for (auto it = objects.begin(); it != objects.end(); ++it) {
@@ -3306,7 +3307,7 @@ std::vector<DocumentObject *> Document::addObjects(const char* sType, const std:
         if (ObjectName.empty())
             ObjectName = sType;
         ObjectName = Base::Tools::getIdentifier(ObjectName);
-        if (d->objectMap.find(ObjectName) != d->objectMap.end()) {
+        if (d->objectInfo.contains(ObjectName)) {
             // remove also trailing digits from clean name which is to avoid to create lengthy names
             // like 'Box001001'
             if (!testStatus(KeepTrailingDigits)) {
@@ -3321,15 +3322,17 @@ std::vector<DocumentObject *> Document::addObjects(const char* sType, const std:
 
         reservedNames.push_back(ObjectName);
 
-        // insert in the name map
-        d->objectMap[ObjectName] = pcObject;
-        // generate object id and add to id map;
-        pcObject->_Id = ++d->lastObjectId;
-        d->objectIdMap[pcObject->_Id] = pcObject;
-        // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
-        pcObject->pcNameInDocument = &(d->objectMap.find(ObjectName)->first);
-        // insert in the vector
-        d->objectArray.push_back(pcObject);
+        {
+            ExclusiveLock lock(d->objectInfo);
+            // generate object id and add to id map;
+            pcObject->_Id = ++d->lastObjectId;
+            // store object information;
+            auto [it,success] = lock[d->objectInfo].emplace(pcObject, ObjectName);
+            assert(success);
+            // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
+            pcObject->pcNameInDocument = &it->name;
+            d->objectArray.push_back(pcObject);
+        }
 
         pcObject->Label.setValue(ObjectName);
 
@@ -3385,17 +3388,19 @@ void Document::addObject(DocumentObject* pcObject, const char* pObjectName)
 
     d->activeObject = pcObject;
 
-    // insert in the name map
-    d->objectMap[ObjectName] = pcObject;
-    // generate object id and add to id map;
-    if(!pcObject->_Id) pcObject->_Id = ++d->lastObjectId;
-    d->objectIdMap[pcObject->_Id] = pcObject;
-    // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
-    pcObject->pcNameInDocument = &(d->objectMap.find(ObjectName)->first);
-    // insert in the vector
-    d->objectArray.push_back(pcObject);
+    {
+        ExclusiveLock lock(d->objectInfo);
+        // generate object id and add to id map;
+        pcObject->_Id = ++d->lastObjectId;
+        // store object information;
+        auto [it,success] = lock[d->objectInfo].emplace(pcObject, ObjectName);
+        assert(success);
+        // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
+        pcObject->pcNameInDocument = &it->name;
+        d->objectArray.push_back(pcObject);
+    }
 
-    pcObject->Label.setValue( ObjectName );
+    pcObject->Label.setValue(ObjectName);
 
     // mark the object as new (i.e. set status bit 2) and send the signal
     pcObject->setStatus(ObjectStatus::New, true);
@@ -3416,13 +3421,18 @@ void Document::addObject(DocumentObject* pcObject, const char* pObjectName)
 void Document::_addObject(DocumentObject* pcObject, const char* pObjectName)
 {
     std::string ObjectName = getUniqueObjectName(pObjectName);
-    d->objectMap[ObjectName] = pcObject;
-    // generate object id and add to id map;
-    if(!pcObject->_Id) pcObject->_Id = ++d->lastObjectId;
-    d->objectIdMap[pcObject->_Id] = pcObject;
-    d->objectArray.push_back(pcObject);
-    // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
-    pcObject->pcNameInDocument = &(d->objectMap.find(ObjectName)->first);
+
+    {
+        ExclusiveLock lock(d->objectInfo);
+        // generate object id and add to id map;
+        if(!pcObject->_Id) pcObject->_Id = ++d->lastObjectId;
+        // store object information;
+        auto [it,success] = lock[d->objectInfo].emplace(pcObject, ObjectName);
+        assert(success);
+        // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
+        pcObject->pcNameInDocument = &it->name;
+        d->objectArray.push_back(pcObject);
+    }
 
     // do no transactions if we do a rollback!
     if (!d->rollback) {
@@ -3455,49 +3465,53 @@ void Document::removeObject(const std::string& name)
 
 void Document::removeObject(const char* sName)
 {
-    auto pos = d->objectMap.find(sName);
+    // TODO: too many things done while holding the lock.
+    ExclusiveLock lock(d->objectInfo);
+    auto object_info = d->objectInfo.find(sName);
 
     // name not found?
-    if (pos == d->objectMap.end())
+    if (object_info == d->objectInfo.end())
         return;
 
-    if (pos->second->testStatus(ObjectStatus::PendingRecompute)) {
+    auto removed_object = object_info->object;
+
+    if (removed_object->testStatus(ObjectStatus::PendingRecompute)) {
         // TODO: shall we allow removal if there is active undo transaction?
         FC_MSG("pending remove of " << sName << " after recomputing document " << getName());
-        d->pendingRemove.emplace_back(pos->second);
+        d->pendingRemove.emplace_back(removed_object);
         return;
     }
 
     TransactionLocker tlock;
 
-    _checkTransaction(pos->second,nullptr,__LINE__);
+    _checkTransaction(removed_object,nullptr,__LINE__);
 
-    if (d->activeObject == pos->second)
+    if (d->activeObject == removed_object)
         d->activeObject = nullptr;
 
     // Mark the object as about to be deleted
-    pos->second->setStatus(ObjectStatus::Remove, true);
+    removed_object->setStatus(ObjectStatus::Remove, true);
     if (!d->undoing && !d->rollback) {
-        pos->second->unsetupObject();
+        removed_object->unsetupObject();
     }
 
-    signalDeletedObject(*(pos->second));
+    signalDeletedObject(*(removed_object));
 
     // do no transactions if we do a rollback!
     if (!d->rollback && d->activeUndoTransaction) {
         // in this case transaction delete or save the object
-        signalTransactionRemove(*pos->second, d->activeUndoTransaction);
+        signalTransactionRemove(*removed_object, d->activeUndoTransaction);
     }
     else {
         // if not saved in undo -> delete object
-        signalTransactionRemove(*pos->second, 0);
+        signalTransactionRemove(*removed_object, 0);
     }
 
 #ifdef USE_OLD_DAG
     if (!d->vertexMap.empty()) {
         // recompute of document is running
         for (std::map<Vertex,DocumentObject*>::iterator it = d->vertexMap.begin(); it != d->vertexMap.end(); ++it) {
-            if (it->second == pos->second) {
+            if (it->second == removed_object) {
                 it->second = 0; // just nullify the pointer
                 break;
             }
@@ -3506,7 +3520,7 @@ void Document::removeObject(const char* sName)
 #endif //USE_OLD_DAG
 
     // Before deleting we must nullify all dependent objects
-    breakDependency(pos->second, true);
+    breakDependency(removed_object, true);
 
     //and remove the tip if needed
     if (Tip.getValue() && strcmp(Tip.getValue()->_getNameInDocument(), sName)==0) {
@@ -3515,9 +3529,10 @@ void Document::removeObject(const char* sName)
     }
 
     // remove the ID before possibly deleting the object
-    d->objectIdMap.erase(pos->second->_Id);
+    // See: https://forum.freecad.org/viewtopic.php?p=714880#p714880
+    auto nh = lock[d->objectInfo].extract(object_info);
     // Unset the bit to be on the safe side
-    pos->second->setStatus(ObjectStatus::Remove, false);
+    removed_object->setStatus(ObjectStatus::Remove, false);
 
     // do no transactions if we do a rollback!
     std::unique_ptr<DocumentObject> tobedestroyed;
@@ -3525,18 +3540,18 @@ void Document::removeObject(const char* sName)
         // Undo stuff
         if (d->activeUndoTransaction) {
             // in this case transaction delete or save the object
-            d->activeUndoTransaction->addObjectNew(pos->second);
+            d->activeUndoTransaction->addObjectNew(removed_object);
         }
         else {
             // if not saved in undo -> delete object later
-            std::unique_ptr<DocumentObject> delobj(pos->second);
+            std::unique_ptr<DocumentObject> delobj(removed_object);
             tobedestroyed.swap(delobj);
             tobedestroyed->setStatus(ObjectStatus::Destroy, true);
         }
     }
 
     for (std::vector<DocumentObject*>::iterator obj = d->objectArray.begin(); obj != d->objectArray.end(); ++obj) {
-        if (*obj == pos->second) {
+        if (*obj == removed_object) {
             d->objectArray.erase(obj);
             break;
         }
@@ -3546,7 +3561,6 @@ void Document::removeObject(const char* sName)
     if (tobedestroyed) {
         tobedestroyed->pcNameInDocument = nullptr;
     }
-    d->objectMap.erase(pos);
 }
 
 /// Remove an object out of the document (internal)
@@ -3562,17 +3576,20 @@ void Document::_removeObject(DocumentObject* pcObject)
     // TODO Refactoring: share code with Document::removeObject() (2015-09-01, Fat-Zer)
     _checkTransaction(pcObject,nullptr,__LINE__);
 
-    auto pos = d->objectMap.find(pcObject->getNameInDocument());
+    // TODO: Too many things done while holding the lock.
+    ExclusiveLock lock(d->objectInfo);
+    auto object_info = d->objectInfo.find(pcObject);
+    auto removed_object = object_info->object;
 
-    if(!d->rollback && d->activeUndoTransaction && pos->second->hasChildElement()) {
+    if(!d->rollback && d->activeUndoTransaction && removed_object->hasChildElement()) {
         // Preserve link group children global visibility. See comments in
         // removeObject() for more details.
-        for(auto &sub : pos->second->getSubObjects()) {
+        for(auto &sub : removed_object->getSubObjects()) {
             if(sub.empty())
                 continue;
             if(sub[sub.size()-1]!='.')
                 sub += '.';
-            auto sobj = pos->second->getSubObject(sub.c_str());
+            auto sobj = removed_object->getSubObject(sub.c_str());
             if(sobj && sobj->getDocument()==this && !sobj->Visibility.getValue())
                 d->activeUndoTransaction->addObjectChange(sobj,&sobj->Visibility);
         }
@@ -3609,8 +3626,7 @@ void Document::_removeObject(DocumentObject* pcObject)
 
     // remove from map
     pcObject->setStatus(ObjectStatus::Remove, false); // Unset the bit to be on the safe side
-    d->objectIdMap.erase(pcObject->_Id);
-    d->objectMap.erase(pos);
+    lock[d->objectInfo].erase(object_info);
 
     for (std::vector<DocumentObject*>::iterator it = d->objectArray.begin(); it != d->objectArray.end(); ++it) {
         if (*it == pcObject) {
@@ -3829,41 +3845,35 @@ DocumentObject* Document::getObject(const std::string& name) const
 
 DocumentObject* Document::getObject(const char* sName) const
 {
-    auto pos = d->objectMap.find(sName);
-    if (pos != d->objectMap.end()) {
-        return pos->second;
+    auto info = d->objectInfo.find(Name);
+    if (info != d->objectInfo.end()) {
+        return info->object;
     }
     return nullptr;
 }
 
-DocumentObject * Document::getObjectByID(long id) const
+DocumentObject* Document::getObjectByID(long id) const
 {
-    auto it = d->objectIdMap.find(id);
-    if(it!=d->objectIdMap.end())
-        return it->second;
+    auto object_info = d->objectInfo.find(id);
+    if(object_info != d->objectInfo.end())
+        return object_info->object;
     return nullptr;
 }
 
 
 // Note: This method is only used in Tree.cpp slotChangeObject(), see explanation there
-bool Document::isIn(const DocumentObject *pFeat) const
+bool Document::isIn(const DocumentObject* pFeat) const
 {
-    for (const auto & pos : d->objectMap) {
-        if (pos.second == pFeat)
-            return true;
-    }
-
-    return false;
+    return d->objectInfo.contains(pFeat);
 }
 
-const char * Document::getObjectName(DocumentObject *pFeat) const
+const char* Document::getObjectName(DocumentObject *pFeat) const
 {
-    for (const auto & pos : d->objectMap) {
-        if (pos.second == pFeat)
-            return pos.first.c_str();
+    const auto& info = d->objectInfo.find(pFeat);
+    if(info == d->objectInfo.end()) {
+        return nullptr;
     }
-
-    return nullptr;
+    return info->name.c_str();
 }
 
 std::string Document::getUniqueObjectName(const char *Name) const
@@ -3873,29 +3883,27 @@ std::string Document::getUniqueObjectName(const char *Name) const
     std::string CleanName = Base::Tools::getIdentifier(Name);
 
     // name in use?
-    auto pos = d->objectMap.find(CleanName);
-
-    if (pos == d->objectMap.end()) {
+    auto info = d->objectInfo.find(CleanName);
+    if (info == d->objectInfo.end()) {
         // if not, name is OK
         return CleanName;
     }
-    else {
-        // remove also trailing digits from clean name which is to avoid to create lengthy names
-        // like 'Box001001'
-        if (!testStatus(KeepTrailingDigits)) {
-            std::string::size_type index = CleanName.find_last_not_of("0123456789");
-            if (index+1 < CleanName.size()) {
-                CleanName = CleanName.substr(0,index+1);
-            }
-        }
 
-        std::vector<std::string> names;
-        names.reserve(d->objectMap.size());
-        for (pos = d->objectMap.begin();pos != d->objectMap.end();++pos) {
-            names.push_back(pos->first);
+    // remove also trailing digits from clean name which is to avoid to create lengthy names
+    // like 'Box001001'
+    if (!testStatus(KeepTrailingDigits)) {
+        std::string::size_type index = CleanName.find_last_not_of("0123456789");
+        if (index+1 < CleanName.size()) {
+            CleanName = CleanName.substr(0,index+1);
         }
-        return Base::Tools::getUniqueName(CleanName, names, 3);
     }
+
+    std::vector<std::string> names;
+    names.reserve(d->objectInfo.size());
+    for (const auto& info: d->objectInfo) {
+        names.push_back(info.name);
+    }
+    return Base::Tools::getUniqueName(CleanName, names, 3);
 }
 
 std::string Document::getStandardObjectName(const char *Name, int d) const
@@ -3956,14 +3964,14 @@ std::vector<DocumentObject*> Document::findObjects(const Base::Type& typeId, con
 
     std::vector<DocumentObject*> Objects;
     DocumentObject* found = nullptr;
-    for (auto it : d->objectArray) {
-        if (it->getTypeId().isDerivedFrom(typeId)) {
-            found = it;
+    for (const auto& info: d->objectInfo) {
+        if (info.object->getTypeId().isDerivedFrom(typeId)) {
+            found = info.object;
 
-            if (!rx_name.empty() && !boost::regex_search(it->_getNameInDocument(), what, rx_name))
+            if (!rx_name.empty() && !boost::regex_search(info.name.c_str(), what, rx_name))
                 found = nullptr;
 
-            if (!rx_label.empty() && !boost::regex_search(it->Label.getValue(), what, rx_label))
+            if (!rx_label.empty() && !boost::regex_search(info.object->Label.getValue(), what, rx_label))
                 found = nullptr;
 
             if (found)
@@ -3976,8 +3984,9 @@ std::vector<DocumentObject*> Document::findObjects(const Base::Type& typeId, con
 int Document::countObjectsOfType(const Base::Type& typeId) const
 {
     int ct=0;
-    for (const auto & it : d->objectMap) {
-        if (it.second->getTypeId().isDerivedFrom(typeId))
+    // TODO: do we want typeId in objectInfo?
+    for (const auto& info: d->objectInfo) {
+        if (info.object->getTypeId().isDerivedFrom(typeId))
             ct++;
     }
 

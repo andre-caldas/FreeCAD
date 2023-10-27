@@ -28,8 +28,10 @@
 #endif
 
 #include <App/DocumentObject.h>
+#include <App/DocumentObjectInfo.h>
 #include <App/DocumentObserver.h>
 #include <App/StringHasher.h>
+#include <Base/Threads/LockPolicy.h>
 #include <CXX/Objects.hxx>
 #include <boost/bimap.hpp>
 #include <boost/graph/adjacency_list.hpp>
@@ -63,8 +65,7 @@ struct DocumentP
     // Array to preserve the creation order of created objects
     std::vector<DocumentObject*> objectArray;
     std::unordered_set<App::DocumentObject*> touchedObjs;
-    std::unordered_map<std::string, DocumentObject*> objectMap;
-    std::unordered_map<long, DocumentObject*> objectIdMap;
+    object_info_list_t objectInfo;
     std::unordered_map<std::string, bool> partialLoadObjects;
     std::vector<DocumentObjectT> pendingRemove;
     long lastObjectId;
@@ -120,14 +121,13 @@ struct DocumentP
     }
 
     void clearDocument() {
+        Base::Threads::ExclusiveLock lock(objectInfo);
         objectArray.clear();
-        for(auto &v : objectMap) {
-            v.second->setStatus(ObjectStatus::Destroy, true);
-            delete(v.second);
-            v.second = nullptr;
+        for(const auto& info: objectInfo) {
+            info.object->setStatus(ObjectStatus::Destroy, true);
+            delete(info.object);
         }
-        objectMap.clear();
-        objectIdMap.clear();
+        lock[objectInfo].clear();
     }
 
     const char *findRecomputeLog(const App::DocumentObject *obj) {
