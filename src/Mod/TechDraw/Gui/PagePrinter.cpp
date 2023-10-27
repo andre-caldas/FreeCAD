@@ -123,7 +123,7 @@ void PagePrinter::printPdf(std::string file)
     QString filename = QString::fromUtf8(file.data(), file.size());
     QPrinter printer(QPrinter::HighResolution);
     QPdfWriter pdfWriter(filename);
-    QString documentName = QString::fromUtf8(m_vpPage->getDrawPage()->getNameInDocument());
+    QString documentName = QString::fromUtf8(m_vpPage->getDrawPage()->_getNameInDocument());
     pdfWriter.setTitle(documentName);
     pdfWriter.setResolution(printer.resolution());
 

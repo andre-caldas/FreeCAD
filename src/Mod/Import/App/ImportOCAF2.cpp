@@ -598,7 +598,7 @@ App::DocumentObject* ImportOCAF2::loadShapes()
             objNames.emplace_back(obj->getDocument(), obj->getNameInDocument());
         }
         for (auto& v : objNames) {
-            v.first->removeObject(v.second.c_str());
+            v.first->removeObject(v.second);
         }
         ret = feature;
         ret->recomputeFeature(true);

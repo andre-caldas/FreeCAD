@@ -194,7 +194,7 @@ void DlgSettingsLightSources::loadDirection()
 void DlgSettingsLightSources::toggleLight(bool on)
 {
     if (view) {
-        view->getHeadlight()->on = on;
+        view->setHeadlightEnabled(on);
     }
 }
 
@@ -210,10 +210,10 @@ void DlgSettingsLightSources::lightColor()
 {
     if (view) {
         QColor color = ui->light1Color->color();
-        double red = color.redF();
-        double green = color.greenF();
-        double blue = color.blueF();
-        view->getHeadlight()->color = SbColor(float(red), float(green), float(blue));
+        float red = float(color.redF());
+        float green = float(color.greenF());
+        float blue = float(color.blueF());
+        view->getHeadlight()->color = SbColor(red, green, blue);
     }
 }
 
