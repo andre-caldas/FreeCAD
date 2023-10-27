@@ -91,11 +91,6 @@ protected:
     std::unordered_set<const MutexPair*> mutexes;
 
 private:
-    static thread_local std::unordered_set<const MutexPair*> threadExclusiveMutexes;
-    static thread_local std::unordered_set<const MutexPair*> threadNonExclusiveMutexes;
-    static thread_local std::stack<bool> isLayerExclusive;
-    static thread_local std::stack<std::unordered_set<const MutexPair*>> threadMutexLayers;
-
     bool _areParentsLocked() const;
     void _processLock(bool is_exclusive);
     void _processExclusiveLock();
