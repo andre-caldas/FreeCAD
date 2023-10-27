@@ -28,11 +28,10 @@
 #endif
 
 #include <App/DocumentObject.h>
+#include <App/DocumentObjectInfo.h>
 #include <App/DocumentObserver.h>
 #include <App/StringHasher.h>
-#include <Base/Threads/ThreadSafeMap.h>
 #include <Base/Threads/LockPolicy.h>
-#include <Base/Threads/AtomicSharedPtr.h>
 #include <CXX/Objects.hxx>
 #include <boost/bimap.hpp>
 #include <boost/graph/adjacency_list.hpp>
@@ -56,7 +55,6 @@ using Vertex = Traits::vertex_descriptor;
 using Edge =  Traits::edge_descriptor;
 using Node =  std::vector <size_t>;
 using Path =  std::vector <size_t>;
-using namespace Base::Threads;
 
 namespace App {
 using HasherMap = boost::bimap<StringHasherRef, int>;
@@ -68,8 +66,7 @@ struct DocumentP
     // Array to preserve the creation order of created objects
     std::vector<DocumentObject*> objectArray;
     std::unordered_set<App::DocumentObject*> touchedObjs;
-    ThreadSafeUnorderedMap<std::string, AtomicSharedPtr<DocumentObject>> objectMap;
-    std::unordered_map<long, DocumentObject*> objectIdMap;
+    object_info_list_t objectInfo;
     std::unordered_map<std::string, bool> partialLoadObjects;
     std::vector<DocumentObjectT> pendingRemove;
     long lastObjectId;
@@ -125,13 +122,12 @@ struct DocumentP
     }
 
     void clearDocument() {
-        ExclusiveLock lock(objectMap);
+        Base::Threads::ExclusiveLock lock(objectInfo);
         objectArray.clear();
-        for(auto& [k,obj] : objectMap) {
-            obj.load()->setStatus(ObjectStatus::Destroy, true);
+        for(const auto& info: objectInfo) {
+            info.object->setStatus(ObjectStatus::Destroy, true);
         }
-        objectIdMap.clear();
-        lock[objectMap].clear();
+        lock[objectInfo].clear();
     }
 
     const char *findRecomputeLog(const App::DocumentObject *obj) {

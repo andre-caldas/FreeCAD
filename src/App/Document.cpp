@@ -121,6 +121,7 @@ FC_LOG_LEVEL_INIT("App", true, true, true)
 using Base::Console;
 using Base::streq;
 using Base::Writer;
+using namespace Base::Threads;
 using namespace App;
 using namespace std;
 using namespace boost;
@@ -601,8 +602,7 @@ void Document::clearDocument()
 
     d->clearRecomputeLog();
     d->objectArray.clear();
-    d->objectMap.clear();
-    d->objectIdMap.clear();
+    d->objectInfo.clear();
     d->lastObjectId = 0;
 }
 
@@ -2042,8 +2042,7 @@ void Document::restore (const char *filename,
 
     d->clearRecomputeLog();
     d->objectArray.clear();
-    d->objectMap.clear();
-    d->objectIdMap.clear();
+    d->objectInfo.clear();
     d->lastObjectId = 0;
 
     if(signal) {
@@ -2366,21 +2365,20 @@ bool Document::hasLinksTo(const DocumentObject *obj) const {
     return !links.empty();
 }
 
-std::vector<std::shared_ptr<::DocumentObject>>
+std::vector<std::shared_ptr<DocumentObject>>
 Document::getInList(const DocumentObject* me) const
 {
     // result list
     std::vector<std::shared_ptr<DocumentObject>> result;
     // go through all objects
-    for (const auto& [k,atomic] : d->objectMap) {
-        const auto sharedObj = atomic.load();
-
+    for (const auto& info: d->objectInfo) {
         // get the outList and search if me is in that list
-        std::vector<DocumentObject*> OutList = sharedObj->getOutList();
+        std::vector<DocumentObject*> OutList = info.object->getOutList();
         for (auto obj : OutList) {
-            if (obj && obj == me)
+            if (obj && obj == me) {
                 // add the parent object
-                result.push_back(sharedObj);
+                result.push_back(info.object);
+            }
         }
     }
     return result;
@@ -3267,22 +3265,19 @@ DocumentObject * Document::addObject(const char* sType, const char* pObjectName,
     else
         ObjectName = getUniqueObjectName(sType);
 
-
-    { // ExclusiveLock scope
-        ExclusiveLock lock(/*d->activeObject,*/
-                           d->objectMap/*, d->objectIdMap*/);
-        d->activeObject = sharedObj;
-
-        // insert in the name map
-        lock[d->objectMap][ObjectName] = sharedObj;
+    {
+        ExclusiveLock lock(d->objectInfo);
         // generate object id and add to id map;
-        sharedObj->_Id = ++d->lastObjectId;
-        d->objectIdMap[sharedObj->_Id] = sharedObj.get();
+        pcObject->_Id = ++d->lastObjectId;
+        // store object information;
+        auto [info,success] = lock[d->objectInfo].emplace(pcObject, ObjectName);
+        assert(success);
         // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
-        sharedObj->pcNameInDocument = &(d->objectMap.find(ObjectName)->first);
-        // insert in the vector
-        d->objectArray.push_back(sharedObj.get());
+        pcObject->pcNameInDocument = &info->name;
+        d->objectArray.push_back(pcObject);
     }
+
+    d->activeObject = sharedObj;
 
     // If we are restoring, don't set the Label object now; it will be restored later. This is to avoid potential duplicate
     // label conflicts later.
@@ -3341,9 +3336,9 @@ Document::addObjects(const char* sType, const std::vector<std::string>& objectNa
     ExclusiveLock lock(d->objectMap);
     // get all existing object names
     std::vector<std::string> reservedNames;
-    reservedNames.reserve(d->objectMap.size());
-    for (const auto & pos : d->objectMap) {
-        reservedNames.push_back(pos.first);
+    reservedNames.reserve(d->objectInfo.size());
+    for (const auto& info: d->objectInfo) {
+        reservedNames.push_back(info.name);
     }
 
     assert(objectNames.size() == objects.size());
@@ -3362,8 +3357,11 @@ Document::addObjects(const char* sType, const std::vector<std::string>& objectNa
         }
 
         // get unique name
-        std::string ObjectName = Base::Tools::getIdentifier(objectNames[index].empty()?sType:objectNames[index]);
-        if (d->objectMap.contains(ObjectName)) {
+        std::string ObjectName = objectNames[index];
+        if (ObjectName.empty())
+            ObjectName = sType;
+        ObjectName = Base::Tools::getIdentifier(ObjectName);
+        if (d->objectInfo.contains(ObjectName)) {
             // remove also trailing digits from clean name which is to avoid to create lengthy names
             // like 'Box001001'
             if (!testStatus(KeepTrailingDigits)) {
@@ -3378,15 +3376,17 @@ Document::addObjects(const char* sType, const std::vector<std::string>& objectNa
 
         reservedNames.push_back(ObjectName);
 
-        // insert in the name map
-        lock[d->objectMap][ObjectName] = sharedObj;
-        // generate object id and add to id map;
-        sharedObj->_Id = ++d->lastObjectId;
-        d->objectIdMap[sharedObj->_Id] = sharedObj.get();
-        // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
-        sharedObj->pcNameInDocument = &(d->objectMap.find(ObjectName)->first);
-        // insert in the vector
-        d->objectArray.push_back(sharedObj.get());
+        {
+            ExclusiveLock lock(d->objectInfo);
+            // generate object id and add to id map;
+            sharedObject->_Id = ++d->lastObjectId;
+            // store object information;
+            auto [info,success] = lock[d->objectInfo].emplace(sharedObject, ObjectName);
+            assert(success);
+            // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
+            sharedObject->pcNameInDocument = &info->name;
+            d->objectArray.push_back(pcObject);
+        }
 
         sharedObj->Label.setValue(ObjectName);
 
@@ -3443,19 +3443,18 @@ void Document::addObject(DocumentObject* pcObject, const char* pObjectName)
     d->activeObject = sharedObj;
 
     {
-        ExclusiveLock lock(/*d->activeObject, */d->objectMap);
-        // insert in the name map
-        lock[d->objectMap][ObjectName] = sharedObj;
+        ExclusiveLock lock(d->objectInfo);
         // generate object id and add to id map;
-        if(!sharedObj->_Id) sharedObj->_Id = ++d->lastObjectId;
-        d->objectIdMap[sharedObj->_Id] = sharedObj.get();
+        sharedObject->_Id = ++d->lastObjectId;
+        // store object information;
+        auto [info,success] = lock[d->objectInfo].emplace(sharedObject, ObjectName);
+        assert(success);
         // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
-        sharedObj->pcNameInDocument = &(d->objectMap.find(ObjectName)->first);
-        // insert in the vector
-        d->objectArray.push_back(sharedObj.get());
+        sharedObject->pcNameInDocument = &info->name;
+        d->objectArray.push_back(sharedObject);
     }
 
-    sharedObj->Label.setValue( ObjectName );
+    sharedObject->Label.setValue(ObjectName);
 
     // mark the object as new (i.e. set status bit 2) and send the signal
     sharedObj->setStatus(ObjectStatus::New, true);
@@ -3481,14 +3480,15 @@ void Document::_addObject(std::shared_ptr<DocumentObject> sharedObject, const ch
     std::string ObjectName = getUniqueObjectName(pObjectName);
 
     {
-        ExclusiveLock lock(d->objectMap);
-        lock[d->objectMap][ObjectName] = sharedObject;
+        ExclusiveLock lock(d->objectInfo);
         // generate object id and add to id map;
-        if(!sharedObject->_Id) sharedObject->_Id = ++d->lastObjectId;
-        d->objectIdMap[sharedObject->_Id] = sharedObject.get();
-        d->objectArray.push_back(sharedObject.get());
+        if(!sharedObject->_Id) pcObject->_Id = ++d->lastObjectId;
+        // store object information;
+        auto [info,success] = lock[d->objectInfo].emplace(sharedObject, ObjectName);
+        assert(success);
         // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
-        sharedObject->pcNameInDocument = &(d->objectMap.find(ObjectName)->first);
+        sharedObject->pcNameInDocument = &info->name;
+        d->objectArray.push_back(sharedObject);
     }
 
     // do no transactions if we do a rollback!
@@ -3522,18 +3522,21 @@ void Document::removeObject(const std::string& name)
 
 void Document::removeObject(const char* sName)
 {
-    ExclusiveLock lock(d->objectMap);
-    auto pos = d->objectMap.find(sName);
+    // TODO: too many things done while holding the lock.
+    ExclusiveLock lock(d->objectInfo);
+    auto object_info = d->objectInfo.find(sName);
 
     // name not found?
-    if (pos == d->objectMap.end())
+    if (object_info == d->objectInfo.end())
         return;
 
-    const auto sharedObj = pos->second.load();
-    if (sharedObj->testStatus(ObjectStatus::PendingRecompute)) {
+    auto removed_object = object_info->object;
+    assert(removed_object);
+
+    if (removed_object->testStatus(ObjectStatus::PendingRecompute)) {
         // TODO: shall we allow removal if there is active undo transaction?
         FC_MSG("pending remove of " << sName << " after recomputing document " << getName());
-        d->pendingRemove.emplace_back(sharedObj.get());
+        d->pendingRemove.emplace_back(removed_object.get());
         return;
     }
 
@@ -3543,34 +3546,34 @@ void Document::removeObject(const char* sName)
     //       "Lock policy says you cannot hold a LockPolicy lock and then a foreign one.");
     TransactionLocker tlock;
 
-    _checkTransaction(sharedObj.get(),nullptr,__LINE__);
+    _checkTransaction(removed_object.get(),nullptr,__LINE__);
 
     d->activeObject.compare_store(sharedObj, nullptr);
 
     // Mark the object as about to be deleted
-    sharedObj->setStatus(ObjectStatus::Remove, true);
+    removed_object->setStatus(ObjectStatus::Remove, true);
     if (!d->undoing && !d->rollback) {
-        sharedObj->unsetupObject();
+        removed_object->unsetupObject();
     }
 
-    signalDeletedObject(*sharedObj);
+    signalDeletedObject(*(removed_object));
 
     // do no transactions if we do a rollback!
     if (!d->rollback && d->activeUndoTransaction) {
         // in this case transaction delete or save the object
-        signalTransactionRemove(*sharedObj, d->activeUndoTransaction);
+        signalTransactionRemove(*removed_object, d->activeUndoTransaction);
     }
     else {
         // if not saved in undo -> delete object
-        signalTransactionRemove(*sharedObj, 0);
+        signalTransactionRemove(*removed_object, 0);
     }
 
 #ifdef USE_OLD_DAG
     if (!d->vertexMap.empty()) {
         // recompute of document is running
         for (std::map<Vertex,DocumentObject*>::iterator it = d->vertexMap.begin(); it != d->vertexMap.end(); ++it) {
-            if (it->second == sharedObj.get()) {
-                it->second.reset(); // just nullify the pointer
+            if (it->second == removed_object.get()) {
+                it->second = 0; // just nullify the pointer
                 break;
             }
         }
@@ -3578,7 +3581,7 @@ void Document::removeObject(const char* sName)
 #endif //USE_OLD_DAG
 
     // Before deleting we must nullify all dependent objects
-    breakDependency(sharedObj.get(), true);
+    breakDependency(removed_object.get(), true);
 
     //and remove the tip if needed
     if (Tip.getValue() && strcmp(Tip.getValue()->_getNameInDocument(), sName)==0) {
@@ -3586,32 +3589,31 @@ void Document::removeObject(const char* sName)
         TipName.setValue("");
     }
 
-    // remove the ID before possibly deleting the object
-    d->objectIdMap.erase(sharedObj->_Id);
+    // See: https://forum.freecad.org/viewtopic.php?p=714880#p714880
+    auto nh = lock[d->objectInfo].extract(object_info);
     // Unset the bit to be on the safe side
-    sharedObj->setStatus(ObjectStatus::Remove, false);
+    removed_object->setStatus(ObjectStatus::Remove, false);
 
     // do no transactions if we do a rollback!
     if (!d->rollback) {
         // Undo stuff
         if (d->activeUndoTransaction) {
-            d->activeUndoTransaction->addObjectNew(sharedObj);
+            d->activeUndoTransaction->addObjectNew(removed_object);
         }
         else {
-            sharedObj->setStatus(ObjectStatus::Destroy, true);
+            removed_object->setStatus(ObjectStatus::Destroy, true);
             // In case the object gets removed from Document, the pointer must be nullified
-            sharedObj->pcNameInDocument = nullptr;
+            removed_object->pcNameInDocument = nullptr;
         }
     }
 
-    for (auto obj = d->objectArray.begin(); obj != d->objectArray.end(); ++obj) {
-        if (*obj == sharedObj.get()) {
+    for (std::vector<DocumentObject*>::iterator obj = d->objectArray.begin(); obj != d->objectArray.end(); ++obj) {
+        if (*obj == removed_object) {
             d->objectArray.erase(obj);
             break;
         }
     }
 
-    lock[d->objectMap].erase(pos);
     _releaseOwnership(sharedObj.get());
 }
 
@@ -3628,21 +3630,21 @@ std::shared_ptr<DocumentObject> Document::_removeObject(DocumentObject* pcObject
     // TODO Refactoring: share code with Document::removeObject() (2015-09-01, Fat-Zer)
     _checkTransaction(pcObject,nullptr,__LINE__);
 
-    // TODO: this lock has a too long scope.
-    ExclusiveLock lock(d->objectMap);
-    auto pos = d->objectMap.find(pcObject->getNameInDocument());
-    const auto sharedObj = pos->second.load();
-    assert(sharedObj);
+    // TODO: Too many things done while holding the lock.
+    ExclusiveLock lock(d->objectInfo);
+    auto object_info = d->objectInfo.find(pcObject);
+    auto removed_object = object_info->object;
+    assert(removed_object);
 
-    if(!d->rollback && d->activeUndoTransaction && sharedObj->hasChildElement()) {
+    if(!d->rollback && d->activeUndoTransaction && removed_object->hasChildElement()) {
         // Preserve link group children global visibility. See comments in
         // removeObject() for more details.
-        for(auto &sub : sharedObj->getSubObjects()) {
+        for(auto &sub : removed_object->getSubObjects()) {>>>>>>> origin/MultiIndex_in_Document
             if(sub.empty())
                 continue;
             if(sub[sub.size()-1]!='.')
                 sub += '.';
-            auto sobj = sharedObj->getSubObject(sub.c_str());
+            auto sobj = removed_object->getSubObject(sub.c_str());
             if(sobj && sobj->getDocument()==this && !sobj->Visibility.getValue())
                 d->activeUndoTransaction->addObjectChange(sobj,&sobj->Visibility);
         }
@@ -3675,6 +3677,10 @@ std::shared_ptr<DocumentObject> Document::_removeObject(DocumentObject* pcObject
         signalTransactionRemove(*pcObject, 0);
         breakDependency(pcObject, true);
     }
+
+    // remove from map
+    pcObject->setStatus(ObjectStatus::Remove, false); // Unset the bit to be on the safe side
+    auto nh = lock[d->objectInfo].extract(object_info);
 
     for (std::vector<DocumentObject*>::iterator it = d->objectArray.begin(); it != d->objectArray.end(); ++it) {
         if (*it == pcObject) {
@@ -3904,41 +3910,35 @@ DocumentObject* Document::getObject(const std::string& name) const
 
 DocumentObject* Document::getObject(const char* sName) const
 {
-    auto pos = d->objectMap.find(sName);
-    if (pos != d->objectMap.end()) {
-        return pos->second;
+    auto info = d->objectInfo.find(sName);
+    if (info != d->objectInfo.end()) {
+        return info->object.get();
     }
     return nullptr;
 }
 
-DocumentObject * Document::getObjectByID(long id) const
+DocumentObject* Document::getObjectByID(long id) const
 {
-    auto it = d->objectIdMap.find(id);
-    if(it!=d->objectIdMap.end())
-        return it->second;
+    auto object_info = d->objectInfo.find(id);
+    if(object_info != d->objectInfo.end())
+        return object_info->object;
     return nullptr;
 }
 
 
 // Note: This method is only used in Tree.cpp slotChangeObject(), see explanation there
-bool Document::isIn(const DocumentObject *pFeat) const
+bool Document::isIn(const DocumentObject* pFeat) const
 {
-    for (const auto& [k,atomic] : d->objectMap) {
-        if (atomic.load().get() == pFeat)
-            return true;
-    }
-    return false;
+    return d->objectInfo.contains(pFeat);
 }
 
-const char * Document::getObjectName(DocumentObject *pFeat) const
+const char* Document::getObjectName(DocumentObject *pFeat) const
 {
-    for (const auto& [k,atomic] : d->objectMap) {
-        if (atomic.load().get() == pFeat)
-            // TODO: this is a non-thread safe return. Return std::string, instead.
-            return k.c_str();
+    const auto& info = d->objectInfo.find(pFeat);
+    if(info == d->objectInfo.end()) {
+        return nullptr;
     }
-
-    return nullptr;
+    return info->name.c_str();
 }
 
 std::string Document::getUniqueObjectName(const char *Name) const
@@ -3947,35 +3947,33 @@ std::string Document::getUniqueObjectName(const char *Name) const
         return {};
     std::string CleanName = Base::Tools::getIdentifier(Name);
 
-    // TODO: Activate this. If you are here, you are probably going to insert into d->objectMap.
+    // TODO: If you are here, you are probably going to insert into d->objectInfo.
     //assert(ExclusiveLock::hasLock(d->objectMap) &&
     //       "You should hold an ExclusiveLock before calling Document::getUniqueObjectName");
 
     // name in use?
-    auto pos = d->objectMap.find(CleanName);
-
-    if (pos == d->objectMap.end()) {
+    auto info = d->objectInfo.find(CleanName);
+    if (info == d->objectInfo.end()) {
         // if not, name is OK
         return CleanName;
     }
-    else {
-        // remove also trailing digits from clean name which is to avoid to create lengthy names
-        // like 'Box001001'
-        if (!testStatus(KeepTrailingDigits)) {
-            std::string::size_type index = CleanName.find_last_not_of("0123456789");
-            if (index+1 < CleanName.size()) {
-                CleanName = CleanName.substr(0,index+1);
-            }
-        }
 
-        std::vector<std::string> names;
-        names.reserve(d->objectMap.size());
-        for (auto [name,obj]: d->objectMap) {
-            names.push_back(name);
+    // remove also trailing digits from clean name which is to avoid to create lengthy names
+    // like 'Box001001'
+    if (!testStatus(KeepTrailingDigits)) {
+        std::string::size_type index = CleanName.find_last_not_of("0123456789");
+        if (index+1 < CleanName.size()) {
+            CleanName = CleanName.substr(0,index+1);
         }
-        // TODO: thread safe because of "pos". Obscure, though.
-        return Base::Tools::getUniqueName(CleanName, names, 3);
     }
+
+    std::vector<std::string> names;
+    names.reserve(d->objectInfo.size());
+    for (const auto& info: d->objectInfo) {
+        names.push_back(info.name);
+    }
+    // TODO: this is thread safe because we hold "info". Obscure, though.
+    return Base::Tools::getUniqueName(CleanName, names, 3);
 }
 
 std::string Document::getStandardObjectName(const char *Name, int d) const
@@ -4036,14 +4034,14 @@ std::vector<DocumentObject*> Document::findObjects(const Base::Type& typeId, con
 
     std::vector<DocumentObject*> Objects;
     DocumentObject* found = nullptr;
-    for (auto it : d->objectArray) {
-        if (it->getTypeId().isDerivedFrom(typeId)) {
-            found = it;
+    for (const auto& info: d->objectInfo) {
+        if (info.object->getTypeId().isDerivedFrom(typeId)) {
+            found = info.object;
 
-            if (!rx_name.empty() && !boost::regex_search(it->_getNameInDocument(), what, rx_name))
+            if (!rx_name.empty() && !boost::regex_search(info.name.c_str(), what, rx_name))
                 found = nullptr;
 
-            if (!rx_label.empty() && !boost::regex_search(it->Label.getValue(), what, rx_label))
+            if (!rx_label.empty() && !boost::regex_search(info.object->Label.getValue(), what, rx_label))
                 found = nullptr;
 
             if (found)
@@ -4056,9 +4054,9 @@ std::vector<DocumentObject*> Document::findObjects(const Base::Type& typeId, con
 int Document::countObjectsOfType(const Base::Type& typeId) const
 {
     int ct=0;
-    for (const auto& [k,atomic] : d->objectMap) {
-        const auto sharedObj = atomic.load();
-        if (sharedObj->getTypeId().isDerivedFrom(typeId))
+    // TODO: do we want typeId in objectInfo?
+    for (const auto& info: d->objectInfo) {
+        if (info.object->getTypeId().isDerivedFrom(typeId))
             ct++;
     }
 

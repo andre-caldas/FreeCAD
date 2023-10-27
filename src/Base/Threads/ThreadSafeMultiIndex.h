@@ -63,11 +63,11 @@ public:
 
     template<std::size_t I, typename Key>
     bool contains(const Key& key) const
-    {SharedLock l(mutex); return container.template contains(key);}
+    {SharedLock l(mutex); return container.template contains<>(key);}
 
     template<typename Key>
     bool contains(const Key& key) const
-    {SharedLock l(mutex); return container.template contains(key);}
+    {SharedLock l(mutex); return container.template contains<>(key);}
 
     struct ModifierGate
         : parent_t::ModifierGate
@@ -77,28 +77,28 @@ public:
 
         template<typename ...Vn>
         auto emplace(Vn&& ...vn)
-        {return self->container.template emplace(std::forward<Vn>(vn)...);}
+        {return self->container.template emplace<>(std::forward<Vn>(vn)...);}
 
         auto erase(const element_t& element)
-        {return self->container.template erase(element);}
+        {return self->container.template erase<>(element);}
 
         template<typename ItType>
         auto erase(ItType& iterator)
-        {return self->container.template erase(iterator);}
+        {return self->container.template erase<>(iterator);}
 
         auto extract(const element_t& element)
-        {return self->container.template extract(element);}
+        {return self->container.template extract<>(element);}
 
         template<typename ItType>
         auto extract(ItType& iterator)
-        {return self->container.template extract(iterator);}
+        {return self->container.template extract<>(iterator);}
 
         auto move_back(const element_t& element)
-        {return self->container.template move_back(element);}
+        {return self->container.template move_back<>(element);}
 
         template<typename ItType>
         auto move_back(const ItType& iterator)
-        {return self->container.template move_back(iterator);}
+        {return self->container.template move_back<>(iterator);}
     };
     ModifierGate getModifierGate(const ExclusiveLockBase*)
     {assert(LockPolicy::isLockedExclusively(mutex));return ModifierGate{this};}

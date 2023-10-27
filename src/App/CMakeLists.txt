@@ -178,6 +178,7 @@ SET(Document_HPP_SRCS
     Annotation.h
     Document.h
     DocumentObject.h
+    DocumentObjectInfo.h
     Extension.h
     ExtensionContainer.h
     GroupExtension.h
