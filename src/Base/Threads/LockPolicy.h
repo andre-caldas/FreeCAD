@@ -24,6 +24,9 @@
 #ifndef BASE_Threads_LockPolicy_H
 #define BASE_Threads_LockPolicy_H
 
+#ifndef FC_GLOBAL_H
+#include <FCGlobal.h>
+#endif
 #include <type_traits>
 #include <memory>
 #include <mutex>
@@ -63,7 +66,7 @@ struct MutexPair
  *
  * @attention Description needs update to explain mutexes hierarchy.
  */
-class LockPolicy
+class BaseExport LockPolicy
 {
 public:
     static bool hasAnyLock();
@@ -100,7 +103,7 @@ private:
 };
 
 
-class SharedLock : public LockPolicy
+class BaseExport SharedLock : public LockPolicy
 {
 public:
     SharedLock();
