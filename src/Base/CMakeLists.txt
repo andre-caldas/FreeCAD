@@ -346,8 +346,10 @@ SET(FreeCADBase_HPP_SRCS
 )
 
 SET(FreeCADBase_Threads_SRCS
-    Threads/type_traits/record_items.h
-    Threads/type_traits/record_info.h
+    Threads/type_traits/Utils.h
+    Threads/type_traits/ReduceToRaw.h
+    Threads/type_traits/IndexTraits.h
+    Threads/type_traits/MultiIndexRecordInfo.h
     Threads/Exception.h
     Threads/IteratorWrapper.h
     Threads/LockPolicy.h
@@ -358,8 +360,9 @@ SET(FreeCADBase_Threads_SRCS
     Threads/ThreadSafeContainer.inl
     Threads/ThreadSafeVector.h
     Threads/ThreadSafeMap.h
+    Threads/MultiIndexContainer.h
+    Threads/MultiIndexContainer.inl
     Threads/ThreadSafeMultiIndex.h
-    Threads/ThreadSafeMultiIndex.inl
     Threads/AtomicSharedPtr.h
 )
 SOURCE_GROUP("Threads" FILES ${FreeCADBase_Threads_SRCS})

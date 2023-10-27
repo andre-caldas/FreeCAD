@@ -24,12 +24,17 @@
 #ifndef BASE_Threads_LockPolicy_H
 #define BASE_Threads_LockPolicy_H
 
+#ifndef FC_GLOBAL_H
+#include <FCGlobal.h>
+#endif
 #include <type_traits>
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
 #include <unordered_set>
 #include <stack>
+
+#include "type_traits/Utils.h"
 
 namespace Base::Threads
 {
@@ -61,7 +66,7 @@ struct MutexPair
  *
  * @attention Description needs update to explain mutexes hierarchy.
  */
-class LockPolicy
+class BaseExport LockPolicy
 {
 public:
     static bool hasAnyLock();
@@ -98,7 +103,7 @@ private:
 };
 
 
-class SharedLock : public LockPolicy
+class BaseExport SharedLock : public LockPolicy
 {
 public:
     SharedLock();
@@ -109,11 +114,6 @@ private:
     std::shared_lock<std::shared_mutex> lock;
 };
 
-
-namespace detail {
-template<typename Result, typename From>
-struct ForEach {using type = Result;};
-}
 
 class ExclusiveLockBase {};
 
@@ -139,6 +139,7 @@ public:
     auto operator[](SomeHolder& tsc) const;
 
 private:
+    using locks_t = std::scoped_lock<ForEach_t<std::shared_mutex,MutexHolder>...>;
     /*
      * After constructed, std::scoped_lock cannot be changed.
      * So, we usa a unique_ptr.
@@ -147,7 +148,7 @@ private:
      * But, unfortunately, std::lock needs two or more mutexes,
      * and we do not want the code full of ifs.
      */
-    std::unique_ptr<std::scoped_lock<typename detail::ForEach<std::shared_mutex,MutexHolder>::type...>> locks;
+    std::unique_ptr<locks_t> locks;
 };
 
 } //namespace Base::Threads

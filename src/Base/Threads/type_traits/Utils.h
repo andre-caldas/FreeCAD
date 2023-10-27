@@ -21,68 +21,58 @@
  *                                                                          *
  ***************************************************************************/
 
-#ifndef BASE_Threads_ThreadSafeContainer_H
-#define BASE_Threads_ThreadSafeContainer_H
+#ifndef BASE_Threads_Traits_Utils_H
+#define BASE_Threads_Traits_Utils_H
 
 #include <type_traits>
-#include <shared_mutex>
 
-#include "LockPolicy.h"
+#include "IndexTraits.h"
 
 namespace Base::Threads
 {
 
-template<typename ItType>
-class LockedIterator;
+/**
+ * @brief Used to unpack packed template types.
+ * @see ForEach_t.
+ */
+template<typename Result, typename From>
+struct ForEach {using type = Result;};
+/**
+ * @brief When you have template packed types Fn,
+ * you can use @class ForEach to replace each Fn by some
+ * constant type Result:
+ * ForEach_t<std::string, Fn>...
+ */
+template<typename Result, typename From>
+using ForEach_t = typename ForEach<Result, From>::type;
 
-template<typename ContainerType>
-class ThreadSafeContainer
+
+namespace utils_detail {
+// https://stackoverflow.com/a/72263473/1290711
+template<typename T>
+struct MemberPointerToAux;
+template<class C, typename T>
+struct MemberPointerToAux<T C::*>
 {
-public:
-    using self_t = ThreadSafeContainer;
-    typedef ContainerType unsafe_container_t;
-    typedef typename unsafe_container_t::iterator container_iterator;
-    typedef typename unsafe_container_t::const_iterator container_const_iterator;
-
-    typedef LockedIterator<container_iterator> iterator;
-    typedef LockedIterator<container_const_iterator> const_iterator;
-
-    auto begin();
-    auto begin() const;
-    auto cbegin() const;
-
-    auto end();
-    auto end() const;
-    auto cend() const;
-
-    size_t size() const;
-    bool empty() const;
-    void clear();
-
-    struct ModifierGate
-    {
-        ModifierGate(self_t* self) : self(self) {}
-        self_t* self;
-        auto getMutexPtr() const {return &self->mutex;}
-        void clear() {self->container.clear();}
-    };
-    ModifierGate getModifierGate(const ExclusiveLockBase*)
-    {assert(LockPolicy::isLockedExclusively(mutex)); return ModifierGate{this};}
-
-    template<typename SomeHolder>
-    void setParentMutex(SomeHolder& tsc);
-
-public:
-    // TODO: eliminate this or the gate version.
-    auto getMutexPtr() const {return &mutex;}
-
-protected:
-    mutable MutexPair mutex;
-    ContainerType container;
+    using type = T;
 };
+} //namespace: utils_detail
+
+/**
+ * @brief Given a "member pointer" T that points to a member of X,
+ * informs which type is X.
+ */
+template<auto T>
+struct MemberPointerTo
+    : utils_detail::MemberPointerToAux<std::remove_cv_t<decltype(T)>>
+{};
+template<auto T>
+/**
+ * @brief Given a "member pointer" T that points to a member of X,
+ * the type X.
+ */
+using MemberPointerTo_t = typename MemberPointerTo<T>::type;
 
 } //namespace Base::Threads
 
-#include "ThreadSafeContainer.inl"
-
-#endif // BASE_Threads_ThreadSafeContainer_H
+#endif // BASE_Threads_Traits_Utils_H

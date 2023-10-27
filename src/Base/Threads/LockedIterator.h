@@ -24,6 +24,7 @@
 #ifndef BASE_Threads_LockedIterator_H
 #define BASE_Threads_LockedIterator_H
 
+#include <type_traits>
 #include <shared_mutex>
 
 #include "LockPolicy.h"
@@ -31,90 +32,24 @@
 namespace Base::Threads
 {
 
-template<typename ItType>
-class EndAwareIterator
-{
-public:
-    /* I have absolutely no idea if those are correct. Probably not! :-( */
-    using difference_type = typename ItType::difference_type;
-    using value_type = typename ItType::value_type;
-    using pointer = typename ItType::pointer;
-    using reference = typename ItType::reference;
-    using iterator_category = typename ItType::iterator_category;
-
-    EndAwareIterator(const EndAwareIterator& other)
-        : it(other.it)
-        , end_it(other.end_it)
-    {}
-
-    EndAwareIterator(ItType&& it, ItType end_it)
-        : it(std::move(it))
-        , end_it(std::move(end_it))
-    {}
-
-    EndAwareIterator(std::pair<ItType,ItType>&& range)
-        : it(std::move(range.first))
-        , end_it(std::move(range.second))
-    {}
-
-    /**
-     * @brief This iterator is aware of its "end".
-     * So, we can convert it to "true" when it is not "end",
-     * and false otherwise.
-     */
-    operator bool() const {return it != end_it;}
-
-    EndAwareIterator& operator=(const EndAwareIterator& other)
-    {it = other.it; end_it = other.end_it; return *this;}
-
-    constexpr bool operator==(const EndAwareIterator& other) const {return it == other.it;}
-    constexpr bool operator!=(const EndAwareIterator& other) const {return it != other.it;}
-    EndAwareIterator& operator++() {++it; return *this;}
-    EndAwareIterator operator++(int) {EndAwareIterator result(*this); ++it; return result;}
-    auto& operator*() const {return *it;}
-    auto* operator->() const {return &*it;}
-
-    virtual ~EndAwareIterator() = default;
-
-private:
-    ItType it;
-    ItType end_it;
-};
-
-
 /**
  * @brief
  */
 template<typename ItType>
 class LockedIterator
-    : public EndAwareIterator<ItType>
+    : private ItType
 {
 public:
-    /* I have absolutely no idea if those are correct. Probably not! :-( */
-    using difference_type = typename ItType::difference_type;
-    using value_type = typename ItType::value_type;
-    using pointer = typename ItType::pointer;
-    using reference = typename ItType::reference;
-    using iterator_category = typename ItType::iterator_category;
-
     // Attention: do not lock mutex again!
-    LockedIterator(const LockedIterator& other)
-        : EndAwareIterator<ItType>(other)
-    {}
+    LockedIterator(const LockedIterator& other) : ItType(other) {}
 
     /**
      * @brief An iterator (wrapper) that locks the mutex using SharedLock.
      * @param mutex - the mutex to lock.
      * @param it - original iterator to be wrapped.
-     * @param end_it - end iterator, so we know when we reach the end.
      */
-    LockedIterator(MutexPair& mutex, ItType&& it, ItType end_it)
-        : EndAwareIterator<ItType>(std::move(it), std::move(end_it))
-        , lock(mutex)
-    {}
-
-    LockedIterator(MutexPair& mutex, std::pair<ItType,ItType>&& range)
-        : EndAwareIterator<ItType>(std::move(range))
+    LockedIterator(MutexPair& mutex, ItType it)
+        : ItType(std::move(it))
         , lock(mutex)
     {}
 
@@ -122,17 +57,20 @@ public:
     // But we shall never use it. We do not change mutexes, only the iterator.
     // So, this messes with LockPolicy.
     LockedIterator& operator=(const LockedIterator& other)
-    {assert(false); it = other.it; end_it = other.end_it; return *this;}
+    {assert(false); ItType::operator=(other); return *this;}
 
-    constexpr bool operator==(const LockedIterator& other) const {return it == other.it;}
-    constexpr bool operator!=(const LockedIterator& other) const {return it != other.it;}
-    LockedIterator& operator++() {++it; return *this;}
-    LockedIterator operator++(int) {LockedIterator result(*this); ++it; return result;}
-    auto& operator*() const {return *it;}
-    auto* operator->() const {return &*it;}
+    constexpr bool operator==(const LockedIterator& other) const
+    {return ItType::operator==(other);}
+    constexpr bool operator!=(const LockedIterator& other) const
+    {return ItType::operator!=(other);}
 
-    const auto& getIterator() const {return it;}
-    auto& getIterator() {return it;}
+    LockedIterator& operator++() {ItType::operator++(); return *this;}
+    LockedIterator operator++(int) {LockedIterator result(*this); ++*this; return result;}
+
+    using ItType::operator==;
+    using ItType::operator!=;
+    using ItType::operator*;
+    using ItType::operator->;
 
     /**
      * @brief Static method to provide a LockedIterator that does not lock anything.
@@ -140,14 +78,14 @@ public:
      * @param end_it - original container's end iterator.
      * @return An "end" iterator of type LockedIterator<ItType>.
      */
-    template<typename EndIterator>
-    static LockedIterator<ItType> MakeEndIterator(EndIterator&& end_it)
-    {return LockedIterator(std::move(end_it));}
+    static LockedIterator<ItType> MakeEndIterator(ItType&& end_it)
+    {return LockedIterator<ItType>(std::move(end_it));}
+
+    operator const ItType&() const {return *this;}
+    operator ItType&() {return *this;}
 
 private:
     mutable SharedLock lock;
-    ItType it;
-    ItType end_it;
 
     /**
      * @brief A wrapper that does not actually lock anything.
@@ -159,7 +97,7 @@ private:
      * But, since it might be short lived, we do not want the lock to be tied to it.
      */
     explicit LockedIterator(ItType&& it)
-        : EndAwareIterator<ItType>(std::move(it), it)
+        : ItType(std::move(it))
     {}
 };
 
