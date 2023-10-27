@@ -3845,7 +3845,7 @@ DocumentObject* Document::getObject(const std::string& name) const
 
 DocumentObject* Document::getObject(const char* sName) const
 {
-    auto info = d->objectInfo.find(Name);
+    auto info = d->objectInfo.find(sName);
     if (info != d->objectInfo.end()) {
         return info->object;
     }
