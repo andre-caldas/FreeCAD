@@ -37,8 +37,8 @@ public:
     using difference_type = typename ItType::difference_type;
     using iterator_category = typename ItType::iterator_category;
     using value_type = typename GetReference::value_type;
-    using pointer_type = typename GetReference::pointer_type;
-    using reference_type = typename GetReference::reference_type;
+    using pointer = typename GetReference::pointer;
+    using reference = typename GetReference::reference;
 
     IteratorWrapper(const IteratorWrapper& other) : it(other.it) {}
     IteratorWrapper(const ItType& it) : it(it) {}
@@ -80,8 +80,8 @@ template<typename, typename ItType>
 struct Identity
 {
     using value_type = typename ItType::value_type;
-    using pointer_type = typename ItType::pointer_type;
-    using reference_type = typename ItType::reference_type;
+    using pointer = typename ItType::pointer;
+    using reference = typename ItType::reference;
 
     Identity(const ItType& it) : it(it) {}
     auto& operator()() {return *it;}
@@ -98,11 +98,11 @@ struct GetSecond
     using cv_value_type = std::remove_reference_t<typename it_value_type::second_type>;
 
     using value_type = std::remove_cv_t<cv_value_type>;
-    using pointer_type = std::conditional<is_const_v, const value_type*, value_type*>;
-    using reference_type = std::conditional<is_const_v, const value_type&, value_type&>;
+    using pointer = std::conditional<is_const_v, const value_type*, value_type*>;
+    using reference = std::conditional<is_const_v, const value_type&, value_type&>;
 
     GetSecond(const ItType& it) : it(it) {}
-    reference_type operator()() {return it->second;}
+    reference operator()() {return it->second;}
     const ItType& it;
 };
 
@@ -111,12 +111,12 @@ struct GetSecondPointerAsReference
 {
     using it_value_type = typename ItType::value_type;
 
-    using pointer_type = typename it_value_type::second_type;
-    using reference_type = std::remove_pointer_t<pointer_type>&;
-    using value_type =  std::remove_cv_t<std::remove_pointer_t<pointer_type>>;
+    using pointer = typename it_value_type::second_type;
+    using reference = std::remove_pointer_t<pointer>&;
+    using value_type =  std::remove_cv_t<std::remove_pointer_t<pointer>>;
 
     GetSecondPointerAsReference(const ItType& it) : it(it) {}
-    reference_type operator()() {return *it->second;}
+    reference operator()() {return *it->second;}
     const ItType& it;
 };
 
