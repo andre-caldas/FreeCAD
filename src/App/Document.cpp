@@ -3696,7 +3696,6 @@ std::shared_ptr<DocumentObject> Document::_removeObject(DocumentObject* pcObject
 
     // remove from map
     pcObject->setStatus(ObjectStatus::Remove, false); // Unset the bit to be on the safe side
-    lock[d->objectInfo].erase(object_info);
     _releaseOwnership(pcObject);
     return sharedObject;
 }
