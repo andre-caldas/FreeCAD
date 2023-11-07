@@ -31,7 +31,7 @@
 #include <App/DocumentObjectInfo.h>
 #include <App/DocumentObserver.h>
 #include <App/StringHasher.h>
-#include <Base/Threads/LockPolicy.h>
+#include <Base/Threads/locks/LockPolicy.h>
 #include <Base/Threads/AtomicSharedPtr.h>
 #include <CXX/Objects.hxx>
 #include <boost/bimap.hpp>

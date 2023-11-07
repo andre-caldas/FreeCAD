@@ -56,12 +56,6 @@ DrawViewMulti::DrawViewMulti()
     //Source is replaced by Sources in Multi
     Source.setStatus(App::Property::ReadOnly, true);
     Source.setStatus(App::Property::Hidden, true);
-
-    geometryObject = nullptr;
-}
-
-DrawViewMulti::~DrawViewMulti()
-{
 }
 
 short DrawViewMulti::mustExecute() const
@@ -110,7 +104,7 @@ App::DocumentObjectExecReturn *DrawViewMulti::execute()
     try {
         inputCenter = ShapeUtils::findCentroid(comp,
                                                      Direction.getValue());
-        shapeCentroid = Base::Vector3d(inputCenter.X(), inputCenter.Y(), inputCenter.Z());
+        centroid = Base::Vector3d(inputCenter.X(), inputCenter.Y(), inputCenter.Z());
         TopoDS_Shape mirroredShape = ShapeUtils::mirrorShape(comp,
                                                     inputCenter,
                                                     getScale());

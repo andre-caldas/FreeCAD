@@ -132,8 +132,7 @@ const char* DrawViewSection::CutSurfaceEnums[] = {"Hide", "Color", "SvgHatch", "
 PROPERTY_SOURCE(TechDraw::DrawViewSection, TechDraw::DrawViewPart)
 
 DrawViewSection::DrawViewSection()
-    : m_waitingForCut(false)
-    , m_shapeSize(0.0)
+    : m_shapeSize(0.0)
 {
     static const char* sgroup = "Section";
     static const char* fgroup = "Cut Surface Format";
@@ -246,15 +245,6 @@ DrawViewSection::DrawViewSection()
     SectionDirection.setStatus(App::Property::ReadOnly, true);
 }
 
-DrawViewSection::~DrawViewSection()
-{
-    // don't destroy this object while it has dependent threads running
-    if (m_cutFuture.isRunning()) {
-        Base::Console().Message("%s is waiting for tasks to complete\n", Label.getValue());
-        m_cutFuture.waitForFinished();
-    }
-}
-
 short DrawViewSection::mustExecute() const
 {
     if (isRestoring()) {
@@ -335,30 +325,28 @@ void DrawViewSection::onChanged(const App::Property* prop)
 
 TopoDS_Shape DrawViewSection::getShapeToCut()
 {
-    //    Base::Console().Message("DVS::getShapeToCut() - %s\n",
-    //    getNameInDocument());
     App::DocumentObject* base = BaseView.getValue();
-    TechDraw::DrawViewPart* dvp = nullptr;
-    TechDraw::DrawViewSection* dvs = nullptr;
-    TechDraw::DrawViewDetail* dvd = nullptr;
+    DrawViewPart* dvp = nullptr;
+    DrawViewSection* dvs = nullptr;
+    DrawViewDetail* dvd = nullptr;
     if (!base) {
         return TopoDS_Shape();
     }
 
     TopoDS_Shape shapeToCut;
-    if (base->getTypeId().isDerivedFrom(TechDraw::DrawViewSection::getClassTypeId())) {
-        dvs = static_cast<TechDraw::DrawViewSection*>(base);
+    if (base->getTypeId().isDerivedFrom(DrawViewSection::getClassTypeId())) {
+        dvs = static_cast<DrawViewSection*>(base);
         shapeToCut = dvs->getShapeToCut();
         if (UsePreviousCut.getValue()) {
             shapeToCut = dvs->getCutShapeRaw();
         }
     }
-    else if (base->getTypeId().isDerivedFrom(TechDraw::DrawViewDetail::getClassTypeId())) {
-        dvd = static_cast<TechDraw::DrawViewDetail*>(base);
+    else if (base->getTypeId().isDerivedFrom(DrawViewDetail::getClassTypeId())) {
+        dvd = static_cast<DrawViewDetail*>(base);
         shapeToCut = dvd->getDetailShape();
     }
-    else if (base->getTypeId().isDerivedFrom(TechDraw::DrawViewPart::getClassTypeId())) {
-        dvp = static_cast<TechDraw::DrawViewPart*>(base);
+    else if (base->getTypeId().isDerivedFrom(DrawViewPart::getClassTypeId())) {
+        dvp = static_cast<DrawViewPart*>(base);
         shapeToCut = dvp->getSourceShape();
         if (FuseBeforeCut.getValue()) {
             shapeToCut = dvp->getSourceShape(true);
@@ -378,17 +366,12 @@ TopoDS_Shape DrawViewSection::getShapeForDetail() const
 
 App::DocumentObjectExecReturn* DrawViewSection::execute()
 {
-    //    Base::Console().Message("DVS::execute() - %s\n", getNameInDocument());
     if (!keepUpdated()) {
         return App::DocumentObject::StdReturn;
     }
 
     if (!isBaseValid()) {
         return new App::DocumentObjectExecReturn("BaseView object not found");
-    }
-
-    if (waitingForCut() || waitingForHlr()) {
-        return DrawView::execute();
     }
 
     TopoDS_Shape baseShape = getShapeToCut();
@@ -438,51 +421,17 @@ bool DrawViewSection::isBaseValid() const
 
 void DrawViewSection::sectionExec(TopoDS_Shape& baseShape)
 {
-    //    Base::Console().Message("DVS::sectionExec() - %s baseShape.IsNull:
-    //    %d\n",
-    //                            getNameInDocument(), baseShape.IsNull());
-
-    if (waitingForHlr() || waitingForCut()) {
-        return;
-    }
-
     if (baseShape.IsNull()) {
         // should be caught before this
         return;
     }
 
     m_cuttingTool = makeCuttingTool(m_shapeSize);
-
-    try {
-        // note that &m_cutWatcher in the third parameter is not strictly required,
-        // but using the 4 parameter signature instead of the 3 parameter signature
-        // prevents clazy warning:
-        // https://github.com/KDE/clazy/blob/1.11/docs/checks/README-connect-3arg-lambda.md
-        connectCutWatcher =
-            QObject::connect(&m_cutWatcher, &QFutureWatcherBase::finished, &m_cutWatcher, [this] {
-                this->onSectionCutFinished();
-            });
-
-        // We create a lambda closure to hold a copy of baseShape.
-        // This is important because this variable might be local to the calling
-        // function and might get destructed before the parallel processing finishes.
-        auto lambda = [this, baseShape]{this->makeSectionCut(baseShape);};
-        m_cutFuture = QtConcurrent::run(std::move(lambda));
-        m_cutWatcher.setFuture(m_cutFuture);
-        waitingForCut(true);
-    }
-    catch (...) {
-        Base::Console().Message("DVS::sectionExec - failed to make section cut");
-        return;
-    }
+    makeSectionCut(baseShape);
 }
 
 void DrawViewSection::makeSectionCut(const TopoDS_Shape& baseShape)
 {
-    //    Base::Console().Message("DVS::makeSectionCut() - %s - baseShape.IsNull:
-    //    %d\n",
-    //                            getNameInDocument(), baseShape.IsNull());
-
     showProgressMessage(getNameInDocument(), "is making section cut");
 
     // We need to copy the shape to not modify the BRepstructure
@@ -498,52 +447,58 @@ void DrawViewSection::makeSectionCut(const TopoDS_Shape& baseShape)
         BRepTools::Write(m_cuttingTool, "DVSTool.brep");// debug
     }
 
-    // perform the cut. We cut each solid in myShape individually to avoid issues
-    // where a compound BaseShape does not cut correctly.
-    BRep_Builder builder;
-    TopoDS_Compound cutPieces;
-    builder.MakeCompound(cutPieces);
-    TopExp_Explorer expl(myShape, TopAbs_SOLID);
-    for (; expl.More(); expl.Next()) {
-        const TopoDS_Solid& s = TopoDS::Solid(expl.Current());
-        BRepAlgoAPI_Cut mkCut(s, m_cuttingTool);
-        if (!mkCut.IsDone()) {
-            Base::Console().Warning("DVS: Section cut has failed in %s\n", getNameInDocument());
-            continue;
+    // Although "self" is not used,
+    // it warrants that "this" will not get destructed.
+    auto lambda = [self = SharedFromThis(), this, myShape = std::move(myShape)]
+    {
+        // perform the cut. We cut each solid in myShape individually to avoid issues
+        // where a compound BaseShape does not cut correctly.
+        BRep_Builder builder;
+        TopoDS_Compound cutPieces;
+        builder.MakeCompound(cutPieces);
+        TopExp_Explorer expl(myShape, TopAbs_SOLID);
+        for (; expl.More(); expl.Next()) {
+            const TopoDS_Solid& s = TopoDS::Solid(expl.Current());
+            BRepAlgoAPI_Cut mkCut(s, m_cuttingTool);
+            if (!mkCut.IsDone()) {
+                Base::Console().Warning("DVS: Section cut has failed in %s\n", getNameInDocument());
+                continue;
+            }
+            builder.Add(cutPieces, mkCut.Shape());
         }
-        builder.Add(cutPieces, mkCut.Shape());
-    }
 
-    // cutPieces contains result of cutting each subshape in baseShape with tool
-    m_cutPieces = cutPieces;
-    if (debugSection()) {
-        BRepTools::Write(cutPieces, "DVSCutPieces1.brep");// debug
-    }
+                // cutPieces contains result of cutting each subshape in baseShape with tool
+        m_cutPieces = cutPieces;
+        if (debugSection()) {
+            BRepTools::Write(cutPieces, "DVSCutPieces1.brep");// debug
+        }
 
-    // second cut if requested.  Sometimes the first cut includes extra uncut
-    // pieces.
-    if (trimAfterCut()) {
-        BRepAlgoAPI_Cut mkCut2(cutPieces, m_cuttingTool);
-        if (mkCut2.IsDone()) {
-            m_cutPieces = mkCut2.Shape();
-            if (debugSection()) {
-                BRepTools::Write(m_cutPieces, "DVSCutPieces2.brep");// debug
+        // second cut if requested.  Sometimes the first cut includes extra uncut
+        // pieces.
+        if (trimAfterCut()) {
+            BRepAlgoAPI_Cut mkCut2(cutPieces, m_cuttingTool);
+            if (mkCut2.IsDone()) {
+                m_cutPieces = mkCut2.Shape();
+                if (debugSection()) {
+                    BRepTools::Write(m_cutPieces, "DVSCutPieces2.brep");// debug
+                }
             }
         }
-    }
 
-    // check for error in cut
-    Bnd_Box testBox;
-    BRepBndLib::AddOptimal(m_cutPieces, testBox);
-    testBox.SetGap(0.0);
-    if (testBox.IsVoid()) {// prism & input don't intersect.  rawShape is
-                           // garbage, don't bother.
-        Base::Console().Warning("DVS::makeSectionCut - prism & input don't intersect - %s\n",
-                                Label.getValue());
-        return;
-    }
+        // check for error in cut
+        Bnd_Box testBox;
+        BRepBndLib::AddOptimal(m_cutPieces, testBox);
+        testBox.SetGap(0.0);
+        if (testBox.IsVoid()) {
+            // prism & input don't intersect.  rawShape is garbage, don't bother.
+            Base::Console().Warning("DVS::makeSectionCut - prism & input don't intersect - %s\n",
+                                    Label.getValue());
+        }
 
-    waitingForCut(false);
+        onSectionCutFinished()
+    };
+
+    std::thread{std::move(lambda)}.detatch();
 }
 
 //! position, scale and rotate shape for  buildGeometryObject
@@ -611,8 +566,6 @@ TopoDS_Shape DrawViewSection::makeCuttingTool(double shapeSize)
 
 void DrawViewSection::onSectionCutFinished()
 {
-    //    Base::Console().Message("DVS::onSectionCutFinished() - %s\n",
-    //    getNameInDocument());
     QObject::disconnect(connectCutWatcher);
 
     showProgressMessage(getNameInDocument(), "has finished making section cut");
@@ -625,11 +578,11 @@ void DrawViewSection::onSectionCutFinished()
     postSectionCutTasks();
 
     // display geometry for cut shape is in geometryObject as in DVP
-    m_tempGeometryObject = buildGeometryObject(m_preparedShape, getProjectionCS());
+    buildGeometryObject(m_preparedShape, getProjectionCS());
 }
 
 // activities that depend on updated geometry object
-void DrawViewSection::postHlrTasks(void)
+void DrawViewSection::postHlrTasks()
 {
     //    Base::Console().Message("DVS::postHlrTasks() - %s\n",
     //    getNameInDocument());

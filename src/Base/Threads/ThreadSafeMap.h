@@ -52,6 +52,8 @@ public:
     using typename parent_t::iterator;
     using typename parent_t::const_iterator;
 
+    using parent_t::ThreadSafeContainer;
+
     auto find(const Key& key)
     {return LockedIterator(mutex, container.find(key), container.end());}
 
@@ -70,10 +72,10 @@ public:
     auto& at(const Key& key) const
     {SharedLock l(mutex); return container.at(key);}
 
-    struct ModifierGate
-        : parent_t::ModifierGate
+    struct WriterGate
+        : parent_t::WriterGate
     {
-        ModifierGate(self_t* self) : parent_t::ModifierGate(self), self(self) {}
+        WriterGate(self_t* self) : parent_t::WriterGate(self), self(self) {}
         self_t* self;
 
         auto erase(const Key& key)
@@ -88,8 +90,8 @@ public:
         auto& operator[](const Key& key)
         {return self->container[key];}
     };
-    ModifierGate getModifierGate(const ExclusiveLockBase*)
-    {assert(LockPolicy::isLockedExclusively(mutex));return ModifierGate{this};}
+    WriterGate getWriterGate(const ExclusiveLockBase*)
+    {assert(LockPolicy::isLockedExclusively(mutex));return WriterGate{this};}
 
 protected:
     using parent_t::mutex;

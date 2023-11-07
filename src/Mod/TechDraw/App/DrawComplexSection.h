@@ -41,7 +41,6 @@ class TechDrawExport DrawComplexSection: public DrawViewSection
 
 public:
     DrawComplexSection();
-    ~DrawComplexSection() override = default;
 
     App::PropertyLink CuttingToolWireObject;
     App::PropertyEnumeration ProjectionStrategy;//Offset or Aligned
@@ -51,16 +50,12 @@ public:
     bool isBaseValid() const override;
     TopoDS_Compound findSectionPlaneIntersections(const TopoDS_Shape& cutShape) override;
     TopoDS_Shape prepareShape(const TopoDS_Shape& cutShape, double shapeSize) override;
-    TopoDS_Shape getShapeToPrepare() const override;
     TopoDS_Shape getShapeToIntersect() override;
     gp_Pln getSectionPlane() const override;
     TopoDS_Compound alignSectionFaces(TopoDS_Shape faceIntersections) override;
     std::pair<Base::Vector3d, Base::Vector3d> sectionLineEnds() override;
 
     void makeSectionCut(const TopoDS_Shape& baseShape) override;
-
-    void waitingForAlign(bool s) { m_waitingForAlign = s; }
-    bool waitingForAlign(void) const { return m_waitingForAlign; }
 
     TopoDS_Shape getShapeForDetail() const override;
 
@@ -105,11 +100,6 @@ private:
     TopoDS_Shape m_toolFaceShape;
     TopoDS_Shape m_alignResult;
     TopoDS_Shape m_preparedShape;//saved for detail views
-
-    QMetaObject::Connection connectAlignWatcher;
-    QFutureWatcher<void> m_alignWatcher;
-    QFuture<void> m_alignFuture;
-    bool m_waitingForAlign;
 
     static const char* ProjectionStrategyEnums[];
 };

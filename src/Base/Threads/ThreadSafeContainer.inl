@@ -23,7 +23,7 @@
 
 #include <mutex>
 
-#include "LockPolicy.h"
+#include "locks/LockPolicy.h"
 #include "LockedIterator.h"
 #include "ThreadSafeContainer.h"
 
@@ -97,7 +97,7 @@ template<typename ContainerType>
 template<typename SomeHolder>
 void ThreadSafeContainer<ContainerType>::setParentMutex(SomeHolder& tsc)
 {
-    auto gate = tsc.getModifierGate(this);
+    auto gate = tsc.getWriterGate(this);
     mutex.parent_pair = gate.getMutexPtr();
 }
 

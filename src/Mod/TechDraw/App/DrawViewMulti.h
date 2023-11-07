@@ -56,7 +56,6 @@ class TechDrawExport DrawViewMulti : public DrawViewPart
 public:
     /// Constructor
     DrawViewMulti();
-    ~DrawViewMulti() override;
 
     App::PropertyLinkList    Sources;
 

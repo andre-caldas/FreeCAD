@@ -42,9 +42,9 @@ public:
 
     bool HasSharedPtr() const noexcept;
 
-    template<typename X>
+    template<typename X = Default>
     std::shared_ptr<X> SharedFromThis();
-    template<typename X>
+    template<typename X = Default>
     std::shared_ptr<const X> SharedFromThis() const;
 
     template<typename X = Default>

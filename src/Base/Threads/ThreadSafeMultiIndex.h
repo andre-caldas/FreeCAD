@@ -53,6 +53,8 @@ public:
 
     using element_t = Record;
 
+    using parent_t::ThreadSafeContainer;
+
     template<typename Key>
     auto find(const Key& key)
     {return iterator(mutex, container.find(key));}
@@ -69,10 +71,10 @@ public:
     bool contains(const Key& key) const
     {SharedLock l(mutex); return container.template contains<>(key);}
 
-    struct ModifierGate
-        : parent_t::ModifierGate
+    struct WriterGate
+        : parent_t::WriterGate
     {
-        ModifierGate(self_t* self) : parent_t::ModifierGate(self), self(self) {}
+        WriterGate(self_t* self) : parent_t::WriterGate(self), self(self) {}
         self_t* self;
 
         template<typename ...Vn>
@@ -100,8 +102,8 @@ public:
         auto move_back(const ItType& iterator)
         {return self->container.template move_back<>(iterator);}
     };
-    ModifierGate getModifierGate(const ExclusiveLockBase*)
-    {assert(LockPolicy::isLockedExclusively(mutex));return ModifierGate{this};}
+    WriterGate getWriterGate(const ExclusiveLockBase*)
+    {assert(LockPolicy::isLockedExclusively(mutex));return WriterGate{this};}
 
 protected:
     using parent_t::mutex;

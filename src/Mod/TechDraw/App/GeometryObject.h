@@ -102,16 +102,16 @@ public:
 
     void pruneVertexGeom(Base::Vector3d center, double radius);
 
-    TopoDS_Shape getVisHard() { return visHard; }
-    TopoDS_Shape getVisOutline() { return visOutline; }
-    TopoDS_Shape getVisSmooth() { return visSmooth; }
-    TopoDS_Shape getVisSeam() { return visSeam; }
-    TopoDS_Shape getVisIso() { return visIso; }
-    TopoDS_Shape getHidHard() { return hidHard; }
-    TopoDS_Shape getHidOutline() { return hidOutline; }
-    TopoDS_Shape getHidSmooth() { return hidSmooth; }
-    TopoDS_Shape getHidSeam() { return hidSeam; }
-    TopoDS_Shape getHidIso() { return hidIso; }
+    TopoDS_Shape getVisHard() const { return visHard; }
+    TopoDS_Shape getVisOutline() const { return visOutline; }
+    TopoDS_Shape getVisSmooth() const { return visSmooth; }
+    TopoDS_Shape getVisSeam() const { return visSeam; }
+    TopoDS_Shape getVisIso() const { return visIso; }
+    TopoDS_Shape getHidHard() const { return hidHard; }
+    TopoDS_Shape getHidOutline() const { return hidOutline; }
+    TopoDS_Shape getHidSmooth() const { return hidSmooth; }
+    TopoDS_Shape getHidSeam() const { return hidSeam; }
+    TopoDS_Shape getHidIso() const { return hidIso; }
 
     void addVertex(TechDraw::VertexPtr v);
     void addEdge(TechDraw::BaseGeomPtr bg);

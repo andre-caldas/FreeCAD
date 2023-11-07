@@ -413,14 +413,14 @@ private:
 
         try {
             App::DocumentObject* obj = nullptr;
-            TechDraw::DrawViewPart* dvp = nullptr;
+            const TechDraw::DrawViewPart* dvp = nullptr;
             TechDraw::DXFOutput dxfOut;
             std::string dxfText;
             std::stringstream ss;
             if (PyObject_TypeCheck(viewObj, &(TechDraw::DrawViewPartPy::Type))) {
                 obj = static_cast<App::DocumentObjectPy*>(viewObj)->getDocumentObjectPtr();
                 dvp = static_cast<TechDraw::DrawViewPart*>(obj);
-                TechDraw::GeometryObjectPtr gObj = dvp->getGeometryObject();
+                auto gObj = dvp->getGeometryObject();
                 TopoDS_Shape shape = ShapeUtils::mirrorShape(gObj->getVisHard());
                 ss << dxfOut.exportEdges(shape);
                 shape = ShapeUtils::mirrorShape(gObj->getVisOutline());
@@ -478,7 +478,7 @@ private:
             if (PyObject_TypeCheck(viewObj, &(TechDraw::DrawViewPartPy::Type))) {
                 obj = static_cast<App::DocumentObjectPy*>(viewObj)->getDocumentObjectPtr();
                 dvp = static_cast<TechDraw::DrawViewPart*>(obj);
-                TechDraw::GeometryObjectPtr gObj = dvp->getGeometryObject();
+                auto gObj = dvp->getGeometryObject();
                 //visible group begin "<g ... >"
                 ss << grpHead1;
 //                double thick = dvp->LineWidth.getValue();
@@ -542,7 +542,7 @@ private:
     {
         if(!dvp->hasGeometry())
             return;
-        TechDraw::GeometryObjectPtr gObj = dvp->getGeometryObject();
+        auto gObj = dvp->getGeometryObject();
         TopoDS_Shape shape = ShapeUtils::mirrorShape(gObj->getVisHard());
         double offX = 0.0;
         double offY = 0.0;

@@ -351,11 +351,15 @@ SET(FreeCADBase_Threads_SRCS
     Threads/type_traits/IndexTraits.h
     Threads/type_traits/MultiIndexRecordInfo.h
     Threads/Exception.h
+    Threads/locks/LockPolicy.h
+    Threads/locks/LockPolicy.inl
+    Threads/locks/LockPolicy.cpp
+    Threads/locks/ReaderLock.h
+    Threads/locks/WriterLock.h
+    Threads/locks/WriterLock.inl
     Threads/IteratorWrapper.h
-    Threads/LockPolicy.h
-    Threads/LockPolicy.inl
-    Threads/LockPolicy.cpp
     Threads/LockedIterator.h
+    Threads/ThreadSafeStruct.h
     Threads/ThreadSafeContainer.h
     Threads/ThreadSafeContainer.inl
     Threads/ThreadSafeVector.h

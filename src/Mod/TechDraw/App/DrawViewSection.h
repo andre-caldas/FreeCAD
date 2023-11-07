@@ -81,7 +81,6 @@ class TechDrawExport DrawViewSection: public DrawViewPart
 
 public:
     DrawViewSection();
-    ~DrawViewSection() override;
 
     App::PropertyLink BaseView;
     App::PropertyVector SectionNormal;
@@ -121,17 +120,13 @@ public:
 
     void sectionExec(TopoDS_Shape& s);
     virtual void makeSectionCut(const TopoDS_Shape& baseShape);
-    void postHlrTasks(void) override;
+    void postHlrTasks() override;
     virtual void postSectionCutTasks();
-    void waitingForCut(bool s) { m_waitingForCut = s; }
-    bool waitingForCut(void) const { return m_waitingForCut; }
-    bool waitingForResult() const override;
 
     virtual TopoDS_Shape makeCuttingTool(double shapeSize);
     virtual TopoDS_Shape getShapeToCut();
     virtual bool isBaseValid() const;
     virtual TopoDS_Shape prepareShape(const TopoDS_Shape& rawShape, double shapeSize);
-    virtual TopoDS_Shape getShapeToPrepare() const { return m_cutPieces; }
 
     //CS related methods
     gp_Ax2 getProjectionCS(Base::Vector3d pt = Base::Vector3d(0.0, 0.0, 0.0)) const override;
@@ -171,7 +166,6 @@ public:
 
     TopoDS_Shape makeFaceFromWires(std::vector<TopoDS_Wire> &inWires);
 
-public Q_SLOTS:
     virtual void onSectionCutFinished(void);
 
 protected:
@@ -199,10 +193,6 @@ protected:
     gp_Ax2 m_projectionCS;
     TopoDS_Shape m_preparedShape;//the shape after cutting, centering, scaling etc
 
-    QMetaObject::Connection connectCutWatcher;
-    QFutureWatcher<void> m_cutWatcher;
-    QFuture<void> m_cutFuture;
-    bool m_waitingForCut;
     TopoDS_Shape m_cuttingTool;
     double m_shapeSize;
 };

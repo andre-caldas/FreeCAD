@@ -26,7 +26,7 @@
 #include <mutex>
 #include <shared_mutex>
 
-#include "Exception.h"
+#include "../Exception.h"
 #include "LockPolicy.h"
 
 namespace Base::Threads
@@ -48,7 +48,7 @@ template<typename C>
 struct MutexPairPointer
 {
     MutexPairPointer(const C& container) : container(container) {}
-    auto getPair() {return container.getMutexPtr();}
+    auto getPair() {return container.getMutexPair();}
     const C& container;
 };
 template<>
@@ -64,9 +64,13 @@ struct MutexPairPointer<MutexPair> : MutexPairPointer<MutexPair*>
     MutexPairPointer(MutexPair& mutex) : MutexPairPointer<MutexPair*>(&mutex) {}
 };
 
-template<typename... MutexPairOrContainer>
-ExclusiveLock<MutexPairOrContainer...>::ExclusiveLock(MutexPairOrContainer&... pair_or_container)
-    : LockPolicy(true, MutexPairPointer{pair_or_container}.getPair()...)
+template<typename FirstMutexHolder, typename... MutexHolder>
+ExclusiveLock<FirstMutexHolder, MutexHolder...>
+    ::ExclusiveLock(FirstMutexHolder& first_holder, MutexHolder&... holder)
+    : LockPolicy(true,
+                 MutexPairPointer{first_holder}.getPair(),
+                 MutexPairPointer{holder}.getPair()...)
+    , firstMutexHolder(first_holder)
 {
     /*
      * Here we know that if this is not the first lock,
@@ -80,24 +84,25 @@ ExclusiveLock<MutexPairOrContainer...>::ExclusiveLock(MutexPairOrContainer&... p
      * ExclusiveLock l1(m1, m2);
      * ExclusiveLock l2(m1); // Does nothing.
      */
-    assert(mutexes.empty() || mutexes.size() == sizeof...(MutexPairOrContainer));
-    if(mutexes.size() == sizeof...(MutexPairOrContainer))
+    assert(mutexes.empty() || mutexes.size() == 1+sizeof...(MutexHolder));
+    if(mutexes.size() == 1+sizeof...(MutexHolder))
     {
         /*
          * It would be more natural if we could pass "mutexes" to the constructor.
          * But there is only the option to list all mutexes at compile time.
          * Fortunately, mutexes = {container.getMutexPtr()...}.
          */
-        locks = std::make_unique<locks_t>(MutexPairPointer{pair_or_container}.getPair()->mutex...);
+        locks = std::make_unique<locks_t>(MutexPairPointer{first_holder}.getPair()->mutex,
+                                          MutexPairPointer{holder}.getPair()->mutex...);
     }
 }
 
-template<typename... MutexHolder>
+template<typename FirstMutexHolder, typename... MutexHolder>
 template<typename SomeHolder>
-auto ExclusiveLock<MutexHolder...>::operator[](SomeHolder& tsc) const
+auto ExclusiveLock<FirstMutexHolder, MutexHolder...>::operator[](SomeHolder& tsc) const
 {
-    auto gate = tsc.getModifierGate(this);
-    if(!isLockedExclusively(gate.getMutexPtr()))
+    auto gate = tsc.getWriterGate(this);
+    if(!isLockedExclusively(gate.getMutexPair()))
     {
         throw ExceptionNeedLockToAccessContainer();
     }

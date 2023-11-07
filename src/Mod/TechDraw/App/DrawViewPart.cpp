@@ -36,6 +36,8 @@
 
 #include "PreCompiled.h"
 
+#include <thread>
+
 #ifndef _PreComp_
 #include <BRepAlgo_NormalProjection.hxx>
 #include <BRepBndLib.hxx>
@@ -97,13 +99,9 @@ using DU = DrawUtil;
 PROPERTY_SOURCE_WITH_EXTENSIONS(TechDraw::DrawViewPart, TechDraw::DrawView)
 
 DrawViewPart::DrawViewPart(void)
-    : geometryObject(nullptr), m_tempGeometryObject(nullptr), m_waitingForFaces(false),
-      m_waitingForHlr(false)
 {
     static const char* group = "Projection";
     static const char* sgroup = "HLR Parameters";
-    nowUnsetting = false;
-    m_handleFaces = false;
 
     CosmeticExtension::initExtension(this);
 
@@ -145,22 +143,10 @@ DrawViewPart::DrawViewPart(void)
 
     ADD_PROPERTY_TYPE(ScrubCount, (Preferences::scrubCount()), sgroup, App::Prop_None,
                       "The number of times FreeCAD should try to clean the HLR result.");
-
-    //initialize bbox to non-garbage
-    bbox = Base::BoundBox3d(Base::Vector3d(0.0, 0.0, 0.0), 0.0);
 }
 
 DrawViewPart::~DrawViewPart()
 {
-    //don't delete this object while it still has dependent threads running
-    if (m_hlrFuture.isRunning()) {
-        Base::Console().Message("%s is waiting for HLR to finish\n", Label.getValue());
-        m_hlrFuture.waitForFinished();
-    }
-    if (m_faceFuture.isRunning()) {
-        Base::Console().Message("%s is waiting for face finding to finish\n", Label.getValue());
-        m_faceFuture.waitForFinished();
-    }
     removeAllReferencesFromGeom();
 }
 
@@ -207,24 +193,31 @@ std::vector<App::DocumentObject*> DrawViewPart::getAllSources() const
 //! not meant to include complex 2d shapes such as Sketches.
 void DrawViewPart::addShapes2d(void)
 {
-//    Base::Console().Message("DVP::addShapes2d()\n");
+    auto lock = concurrentData.continueWriting();
+    if(!lock) {
+        return;
+    }
+
     // get all the 2d shapes in the sources, then pick through them for loose edges
     // or vertices.
     std::vector<TopoDS_Shape> shapes = ShapeExtractor::getShapes2d(getAllSources());
+
+    const auto& geometryObject = lock->geometryObject;
+
     for (auto& s : shapes) {
         if (s.ShapeType() == TopAbs_VERTEX) {
             gp_Pnt gp = BRep_Tool::Pnt(TopoDS::Vertex(s));
             Base::Vector3d vp(gp.X(), gp.Y(), gp.Z());
-            vp = vp - m_saveCentroid;
+            vp = vp - lock->centroid;
             //need to offset the point to match the big projection
             Base::Vector3d projected = projectPoint(vp * getScale());
             TechDraw::VertexPtr v1(std::make_shared<TechDraw::Vertex>(projected));
-            geometryObject->addVertex(v1);
+            lock->geometryObject->addVertex(v1);
         }
         else if (s.ShapeType() == TopAbs_EDGE) {
             Base::Console().Message("DVP::add2dShapes - found loose edge - isNull: %d\n", s.IsNull());
-            TopoDS_Shape sTrans = ShapeUtils::moveShape(s,
-                                                      m_saveCentroid * -1.0);
+            TopoDS_Shape sTrans =
+                ShapeUtils::moveShape(s, - 1.0 * lock->);
             TopoDS_Shape sScale = ShapeUtils::scaleShape(sTrans,
                                                        getScale());
             TopoDS_Shape sMirror = ShapeUtils::mirrorShape(sScale);
@@ -264,7 +257,7 @@ App::DocumentObjectExecReturn* DrawViewPart::execute(void)
         XDirection.purgeTouched();//don't trigger updates!
     }
 
-    partExec(shape);
+    makeGeometryForShape(shape);
 
     return DrawView::execute();
 }
@@ -299,40 +292,21 @@ void DrawViewPart::onChanged(const App::Property* prop)
     DrawView::onChanged(prop);
 }
 
-void DrawViewPart::partExec(TopoDS_Shape& shape)
-{
-    //    Base::Console().Message("DVP::partExec() - %s\n", _getNameInDocument());
-    if (waitingForHlr()) {
-        //finish what we are already doing before starting a new cycle
-        return;
-    }
-
-    //we need to keep using the old geometryObject until the new one is fully populated
-    m_tempGeometryObject = makeGeometryForShape(shape);
-    if (CoarseView.getValue()) {
-        onHlrFinished();//poly algo does not run in separate thread, so we need to invoke
-                        //the post hlr processing manually
-    }
-}
-
 //! prepare the shape for HLR processing by centering, scaling and rotating it
-GeometryObjectPtr DrawViewPart::makeGeometryForShape(TopoDS_Shape& shape)
+void DrawViewPart::makeGeometryForShape(const TopoDS_Shape& shape)
 {
-//    Base::Console().Message("DVP::makeGeometryForShape() - %s\n", _getNameInDocument());
-
     // if we use the passed reference directly, the centering doesn't work.  Maybe the underlying OCC TShape
     // isn't modified?  using a copy works and the referenced shape (from getSourceShape in execute())
     // isn't used for anything anyway.
-    bool copyGeometry = true;
-    bool copyMesh = false;
-    BRepBuilderAPI_Copy copier(shape, copyGeometry, copyMesh);
-    TopoDS_Shape localShape = copier.Shape();
+    BRepBuilderAPI_Copy copier(shape);
+    auto localShape = copier.Shape();
 
+    // TODO: remove all those "m_saveXXX".
     gp_Pnt gCentroid = ShapeUtils::findCentroid(localShape, getProjectionCS());
     m_saveCentroid = DU::toVector3d(gCentroid);
     m_saveShape = centerScaleRotate(this, localShape, m_saveCentroid);
 
-    return buildGeometryObject(localShape, getProjectionCS());
+    buildGeometryObject(std::move(localShape), getProjectionCS());
 }
 
 //! Modify a shape by centering, scaling and rotating and return the centered (but not rotated) shape
@@ -354,97 +328,99 @@ TopoDS_Shape DrawViewPart::centerScaleRotate(DrawViewPart* dvp, TopoDS_Shape& in
     return centeredShape;
 }
 
-//! create a geometry object and trigger the HLR process in another thread
-TechDraw::GeometryObjectPtr DrawViewPart::buildGeometryObject(TopoDS_Shape& shape,
-                                                              const gp_Ax2& viewAxis)
+void DrawViewPart::buildGeometryObject(const TopoDS_Shape& shape, const gp_Ax2& viewAxis)
 {
-//    Base::Console().Message("DVP::buildGeometryObject() - %s\n", _getNameInDocument());
-    showProgressMessage(_getNameInDocument(), "is finding hidden lines");
+    // TODO: should we "markStart()" here, instead?
+    BRepBuilderAPI_Copy copier(shape);
+    buildGeometryObject(copier.Shape(), viewAxis);
+}
 
-    TechDraw::GeometryObjectPtr go(
-        std::make_shared<TechDraw::GeometryObject>(_getNameInDocument(), this));
+void DrawViewPart::buildGeometryObject(TopoDS_Shape&& shape, const gp_Ax2& viewAxis)
+{
+    showProgressMessage(getNameInDocument(), "is finding hidden lines");
+
+    auto lock = concurrentData.startWriting();
+    lock.release();
+
+    auto go = std::make_shared<GeometryObject>(_getNameInDocument(), this);
     go->setIsoCount(IsoCount.getValue());
     go->isPerspective(Perspective.getValue());
     go->setFocus(Focus.getValue());
     go->usePolygonHLR(CoarseView.getValue());
     go->setScrubCount(ScrubCount.getValue());
 
-    if (CoarseView.getValue()) {
-        //the polygon approximation HLR process runs quickly, so doesn't need to be in a
-        //separate thread
-        go->projectShapeWithPolygonAlgo(shape, viewAxis);
+    lock.resume();
+    if(!lock) {
+        return;
     }
-    else {
-        //projectShape (the HLR process) runs in a separate thread since it can take a long time
-        //note that &m_hlrWatcher in the third parameter is not strictly required, but using the
-        //4 parameter signature instead of the 3 parameter signature prevents clazy warning:
-        //https://github.com/KDE/clazy/blob/1.11/docs/checks/README-connect-3arg-lambda.md
-        connectHlrWatcher = QObject::connect(&m_hlrWatcher, &QFutureWatcherBase::finished,
-                                             &m_hlrWatcher, [this] { this->onHlrFinished(); });
 
-        // We create a lambda closure to hold a copy of go, shape and viewAxis.
-        // This is important because those variables might be local to the calling
-        // function and might get destructed before the parallel processing finishes.
-        auto lambda = [go, shape, viewAxis]{go->projectShape(shape, viewAxis);};
-        m_hlrFuture = QtConcurrent::run(std::move(lambda));
-        m_hlrWatcher.setFuture(m_hlrFuture);
-        waitingForHlr(true);
-    }
-    return go;
+    // Although the "self" variable is not being accessed,
+    // it warrants that "this" will not be destructed meanwhile.
+    auto lambda = [self = SharedFromThis(), this, lock = std::move(lock),
+                   shape = std::move(shape), go, viewAxis] noexcept
+    {
+        lock.release();
+
+        //the polygon approximation HLR process runs quickly
+        go->projectShapeWithPolygonAlgo(shape, viewAxis);
+        if(!lock) {
+            return;
+        }
+
+        if (!CoarseView.getValue()) {
+            go->projectShape(shape, viewAxis);
+            if(!lock) {
+                return;
+            }
+        }
+
+        onHlrFinished(go);
+        if(!lock) {
+            return;
+        }
+
+        extractFaces();
+        if(!lock) {
+            return;
+        }
+
+        onFacesFinished();
+        if(!lock) {
+            return;
+        }
+
+        onGeometryObjectFinished();
+    };
+
+    std::thread{std::move(lambda)}.detatch();
 }
 
 //! continue processing after hlr thread completes
-void DrawViewPart::onHlrFinished(void)
+void DrawViewPart::onHlrFinished(std::shared_ptr<GeometryObject> go,
+                                 )
 {
-    //    Base::Console().Message("DVP::onHlrFinished() - %s\n", _getNameInDocument());
+    // If we can, we do stuff without holding the lock.
+    auto bbox = go->calcBoundingBox();
 
-    //now that the new GeometryObject is fully populated, we can replace the old one
-    if (m_tempGeometryObject) {
-        geometryObject = m_tempGeometryObject;//replace with new
-        m_tempGeometryObject = nullptr;       //superfluous?
+    if(!lock.resume()) {
+        return;
     }
-    if (!geometryObject) {
-        throw Base::RuntimeError("DrawViewPart has lost its geometry");
-    }
+    lock->geometryObject = std::move(go);
+    lock->bbox = std::move(bbox);
+    lock.release();
 
-    //the last hlr related task is to make a bbox of the results
-    bbox = geometryObject->calcBoundingBox();
+    showProgressMessage(getNameInDocument(), "has finished finding hidden lines");
 
-    waitingForHlr(false);
-    QObject::disconnect(connectHlrWatcher);
-    showProgressMessage(_getNameInDocument(), "has finished finding hidden lines");
-
-    postHlrTasks();//application level tasks that depend on HLR/GO being complete
-
-    //start face finding in a separate thread.  We don't find faces when using the polygon
-    //HLR method.
-    if (handleFaces() && !CoarseView.getValue()) {
-        try {
-            //note that &m_faceWatcher in the third parameter is not strictly required, but using the
-            //4 parameter signature instead of the 3 parameter signature prevents clazy warning:
-            //https://github.com/KDE/clazy/blob/1.11/docs/checks/README-connect-3arg-lambda.md
-            connectFaceWatcher =
-                QObject::connect(&m_faceWatcher, &QFutureWatcherBase::finished, &m_faceWatcher,
-                                 [this] { this->onFacesFinished(); });
-
-            auto lambda = [this]{this->extractFaces();};
-            m_faceFuture = QtConcurrent::run(std::move(lambda));
-            m_faceWatcher.setFuture(m_faceFuture);
-            waitingForFaces(true);
-        }
-        catch (Standard_Failure& e) {
-            waitingForFaces(false);
-            Base::Console().Error("DVP::partExec - %s - extractFaces failed - %s **\n",
-                                  _getNameInDocument(), e.GetMessageString());
-            throw Base::RuntimeError("DVP::onHlrFinished - error extracting faces");
-        }
-    }
+    //application level tasks that depend on HLR/GO being complete
+    postHlrTasks();
 }
 
 //! run any tasks that need to been done after geometry is available
-void DrawViewPart::postHlrTasks(void)
+void DrawViewPart::postHlrTasks()
 {
-    //    Base::Console().Message("DVP::postHlrTasks() - %s\n", _getNameInDocument());
+    if(!lock.resume()) {
+        return;
+    }
     //add geometry that doesn't come from HLR
     addCosmeticVertexesToGeom();
     addCosmeticEdgesToGeom();
@@ -453,8 +429,7 @@ void DrawViewPart::postHlrTasks(void)
 
     //balloons need to be recomputed here because their
     //references will be invalid until the geometry exists
-    std::vector<TechDraw::DrawViewBalloon*> bals = getBalloons();
-    for (auto& b : bals) {
+    for (auto b: getBalloons()) {
         b->recomputeFeature();
     }
     // Dimensions need to be recomputed now if face finding is not going to take place.
@@ -464,23 +439,32 @@ void DrawViewPart::postHlrTasks(void)
             d->recomputeFeature();
         }
     }
+    lock.release();
 
     //second pass if required
     if (ScaleType.isValue("Automatic") && !checkFit()) {
         double newScale = autoScale();
         Scale.setValue(newScale);
         Scale.purgeTouched();
-        partExec(m_saveShape);
+        // TODO: we should mark for update, not call recursivelly!
+        // If anyone answers...
+        // https://forum.freecad.org/viewtopic.php?t=82503
+        // partExec(m_saveShape);
     }
 
+    // TODO: investigate/eliminate this!!!
+    // Sounds like a very complicated way to avoid infinite recursions.
     overrideKeepUpdated(false);
 
     requestPaint();
 }
 
 // Run any tasks that need to be done after faces are available
-void DrawViewPart::postFaceExtractionTasks(void)
+void DrawViewPart::postFaceExtractionTasks()
 {
+    if(!lock.resume()) {
+        return;
+    }
     // Some centerlines depend on faces so we could not add CL geometry before now
     addCenterLinesToGeom();
 
@@ -490,6 +474,7 @@ void DrawViewPart::postFaceExtractionTasks(void)
     for (auto& d : dims) {
         d->recomputeFeature();
     }
+    lock.release();
 
     requestPaint();
 }
@@ -498,20 +483,25 @@ void DrawViewPart::postFaceExtractionTasks(void)
 //! make faces from the edge geometry
 void DrawViewPart::extractFaces()
 {
-    //    Base::Console().Message("DVP::extractFaces() - %s waitingForHlr: %d waitingForFaces: %d\n",
-    //                            _getNameInDocument(), waitingForHlr(), waitingForFaces());
-    if (!geometryObject) {
-        //geometry is in flux, can not make faces right now
+    if (!handleFaces()) {
+        return;
+    }
+    if (CoarseView.getValue()) {
         return;
     }
 
-    showProgressMessage(_getNameInDocument(), "is extracting faces");
+    showProgressMessage(getNameInDocument(), "is extracting faces");
 
-    const std::vector<TechDraw::BaseGeomPtr>& goEdges =
-        geometryObject->getVisibleFaceEdges(SmoothVisible.getValue(), SeamVisible.getValue());
+    auto lock = concurrentData.continueReading();
+    if(!lock) {
+        return;
+    }
+    const std::vector<BaseGeomPtr>& goEdges =
+        lock->geometryObject
+            ->getVisibleFaceEdges(SmoothVisible.getValue(), SeamVisible.getValue());
+    lock.release();
 
     if (goEdges.empty()) {
-        //        Base::Console().Message("DVP::extractFaces - %s - no face edges available!\n", _getNameInDocument());    //debug
         return;
     }
 
@@ -545,7 +535,6 @@ void DrawViewPart::findFacesNew(const std::vector<BaseGeomPtr> &goEdges)
     catch (Base::Exception& e) {
         throw Base::RuntimeError(e.what());
     }
-    geometryObject->clearFaceGeom();
 
     std::vector<TopoDS_Wire> closedWires;
     for (auto& e : closedEdges) {
@@ -560,6 +549,12 @@ void DrawViewPart::findFacesNew(const std::vector<BaseGeomPtr> &goEdges)
         sortedWires = eWalker.sortWiresBySize(sortedWires);
     }
 
+    auto lock = concurrentData.continueWriting();
+    if(!lock) {
+        return;
+    }
+    lock->geometryObject->clearFaceGeom();
+
     if (sortedWires.empty()) {
         Base::Console().Warning(
             "DVP::findFacesNew - %s - Can't make faces from projected edges\n",
@@ -567,23 +562,19 @@ void DrawViewPart::findFacesNew(const std::vector<BaseGeomPtr> &goEdges)
     }
     else {
         constexpr double minWireArea = 0.000001;//arbitrary very small face size
-        std::vector<TopoDS_Wire>::iterator itWire = sortedWires.begin();
-        for (; itWire != sortedWires.end(); itWire++) {
-            if (!BRep_Tool::IsClosed(*itWire)) {
+        for (const auto& wire: sortedWires) {
+            if (!BRep_Tool::IsClosed(wire)) {
                 continue;//can not make a face from open wire
             }
 
-            double area = ShapeAnalysis::ContourArea(*itWire);
+            double area = ShapeAnalysis::ContourArea(wire);
             if (area <= minWireArea) {
                 continue;//can not make a face from wire with no area
             }
 
-            TechDraw::FacePtr f(std::make_shared<TechDraw::Face>());
-            const TopoDS_Wire& wire = (*itWire);
-            f->wires.push_back(new TechDraw::Wire(wire));
-            if (geometryObject) {
-                geometryObject->addFaceGeom(f);
-            }
+            FacePtr f(std::make_shared<Face>());
+            f->wires.push_back(new Wire(wire));
+            lock->geometryObject->addFaceGeom(f);
         }
     }
 }
@@ -594,10 +585,8 @@ void DrawViewPart::findFacesOld(const std::vector<BaseGeomPtr> &goEdges)
     //make a copy of the input edges so the loose tolerances of face finding are
     //not applied to the real edge geometry.  See TopoDS_Shape::TShape().
     std::vector<TopoDS_Edge> copyEdges;
-    bool copyGeometry = true;
-    bool copyMesh = false;
     for (const auto& e : goEdges) {
-        BRepBuilderAPI_Copy copier(e->getOCCEdge(), copyGeometry, copyMesh);
+        BRepBuilderAPI_Copy copier(e->getOCCEdge());
         copyEdges.push_back(TopoDS::Edge(copier.Shape()));
     }
     std::vector<TopoDS_Edge> nonZero;
@@ -610,32 +599,28 @@ void DrawViewPart::findFacesOld(const std::vector<BaseGeomPtr> &goEdges)
     //HLR algo does not provide all edge intersections for edge endpoints.
     //need to split long edges touched by Vertex of another edge
     std::vector<splitPoint> splits;
-    std::vector<TopoDS_Edge>::iterator itOuter = nonZero.begin();
-    int iOuter = 0;
-    for (; itOuter != nonZero.end(); ++itOuter, iOuter++) {//*** itOuter != nonZero.end() - 1
-        TopoDS_Vertex v1 = TopExp::FirstVertex((*itOuter));
-        TopoDS_Vertex v2 = TopExp::LastVertex((*itOuter));
+    for (auto& outer: nonZero) {
+        TopoDS_Vertex v1 = TopExp::FirstVertex(outer);
+        TopoDS_Vertex v2 = TopExp::LastVertex(outer);
         Bnd_Box sOuter;
-        BRepBndLib::AddOptimal(*itOuter, sOuter);
+        BRepBndLib::AddOptimal(outer, sOuter);
         sOuter.SetGap(0.1);
         if (sOuter.IsVoid()) {
             continue;
         }
-        if (DrawUtil::isZeroEdge(*itOuter)) {
+        if (DrawUtil::isZeroEdge(outer)) {
             continue;                   //skip zero length edges. shouldn't happen ;)
         }
-        int iInner = 0;
-        std::vector<TopoDS_Edge>::iterator itInner = nonZero.begin();//***sb itOuter + 1;
-        for (; itInner != nonZero.end(); ++itInner, iInner++) {
-            if (iInner == iOuter) {
+        for (auto& inner: nonZero) {
+            if (&outer == &inner) {
                 continue;
             }
-            if (DrawUtil::isZeroEdge((*itInner))) {
+            if (DrawUtil::isZeroEdge(inner)) {
                 continue;//skip zero length edges. shouldn't happen ;)
             }
 
             Bnd_Box sInner;
-            BRepBndLib::AddOptimal(*itInner, sInner);
+            BRepBndLib::AddOptimal(inner, sInner);
             sInner.SetGap(0.1);
             if (sInner.IsVoid()) {
                 continue;
@@ -645,7 +630,7 @@ void DrawViewPart::findFacesOld(const std::vector<BaseGeomPtr> &goEdges)
             }
 
             double param = -1;
-            if (DrawProjectSplit::isOnEdge((*itInner), v1, param, false)) {
+            if (DrawProjectSplit::isOnEdge(inner, v1, param, false)) {
                 gp_Pnt pnt1 = BRep_Tool::Pnt(v1);
                 splitPoint s1;
                 s1.i = iInner;
@@ -653,7 +638,7 @@ void DrawViewPart::findFacesOld(const std::vector<BaseGeomPtr> &goEdges)
                 s1.param = param;
                 splits.push_back(s1);
             }
-            if (DrawProjectSplit::isOnEdge((*itInner), v2, param, false)) {
+            if (DrawProjectSplit::isOnEdge(inner, v2, param, false)) {
                 gp_Pnt pnt2 = BRep_Tool::Pnt(v2);
                 splitPoint s2;
                 s2.i = iInner;
@@ -676,40 +661,38 @@ void DrawViewPart::findFacesOld(const std::vector<BaseGeomPtr> &goEdges)
 
     newEdges = DrawProjectSplit::removeDuplicateEdges(newEdges);
 
-    geometryObject->clearFaceGeom();
-
     //find all the wires in the pile of faceEdges
     std::vector<TopoDS_Wire> sortedWires;
     EdgeWalker eWalker;
     sortedWires = eWalker.execute(newEdges);
+
+    auto lock = concurrentData.continueWriting();
+    if(!lock) {
+        return;
+    }
     if (sortedWires.empty()) {
+        lock->geometryObject->clearFaceGeom();
+        lock.release();
         Base::Console().Warning(
             "DVP::findFacesOld - %s -Can't make faces from projected edges\n",
             _getNameInDocument());
         return;
     }
-    else {
-        std::vector<TopoDS_Wire>::iterator itWire = sortedWires.begin();
-        for (; itWire != sortedWires.end(); itWire++) {
-            //version 1: 1 wire/face - no voids in face
-            TechDraw::FacePtr f(std::make_shared<TechDraw::Face>());
-            const TopoDS_Wire& wire = (*itWire);
-            TechDraw::Wire* w = new TechDraw::Wire(wire);
-            f->wires.push_back(w);
-            if (geometryObject) {
-                geometryObject->addFaceGeom(f);
-            }
-        }
+
+    lock->geometryObject->clearFaceGeom();
+    for (const auto& wire: sortedWires) {
+        //version 1: 1 wire/face - no voids in face
+        FacePtr f(std::make_shared<Face>());
+        TechDraw::Wire* w = new TechDraw::Wire(wire);
+        f->wires.push_back(w);
+        lock->geometryObject->addFaceGeom(f);
     }
 }
 
 //continue processing after extractFaces thread completes
-void DrawViewPart::onFacesFinished(void)
+void DrawViewPart::onFacesFinished()
 {
-    //    Base::Console().Message("DVP::onFacesFinished() - %s\n", _getNameInDocument());
-    waitingForFaces(false);
-    QObject::disconnect(connectFaceWatcher);
-    showProgressMessage(_getNameInDocument(), "has finished extracting faces");
+    showProgressMessage(getNameInDocument(), "has finished extracting faces");
 
     // Now we can recompute Dimensions and do other tasks possibly depending on Face extraction
     postFaceExtractionTasks();
@@ -781,8 +764,11 @@ std::vector<TechDraw::DrawViewBalloon*> DrawViewPart::getBalloons() const
     return result;
 }
 
-const std::vector<TechDraw::VertexPtr> DrawViewPart::getVertexGeometry() const
+const std::vector<VertexPtr> DrawViewPart::getVertexGeometry() const
 {
+    auto lock = concurrentData.lockForReading();
+    const auto& geometryObject = lock->geometryObject;
+
     if (geometryObject) {
         return geometryObject->getVertexGeometry();
     }
@@ -843,6 +829,9 @@ TechDraw::FacePtr DrawViewPart::getFace(std::string faceName) const
 
 const std::vector<TechDraw::FacePtr> DrawViewPart::getFaceGeometry() const
 {
+    auto lock = concurrentData.lockForReading();
+    const auto& geometryObject = lock->geometryObject;
+
     std::vector<TechDraw::FacePtr> result;
     if (waitingForFaces() || !geometryObject) {
         return std::vector<TechDraw::FacePtr>();
@@ -852,6 +841,9 @@ const std::vector<TechDraw::FacePtr> DrawViewPart::getFaceGeometry() const
 
 const BaseGeomPtrVector DrawViewPart::getEdgeGeometry() const
 {
+    auto lock = concurrentData.lockForReading();
+    const auto& geometryObject = lock->geometryObject;
+
     if (geometryObject) {
         return geometryObject->getEdgeGeometry();
     }
@@ -968,6 +960,9 @@ QRectF DrawViewPart::getRect() const
 //returns a compound of all the visible projected edges
 TopoDS_Shape DrawViewPart::getEdgeCompound() const
 {
+    auto lock = concurrentData.lockForReading();
+    const auto& geometryObject = lock->geometryObject;
+
     BRep_Builder builder;
     TopoDS_Compound result;
     builder.MakeCompound(result);
@@ -1057,6 +1052,9 @@ bool DrawViewPart::waitingForResult() const
 
 bool DrawViewPart::hasGeometry(void) const
 {
+    auto lock = concurrentData.lockForReading();
+    const auto& geometryObject = lock->geometryObject;
+
     if (!geometryObject) {
         return false;
     }
@@ -1064,15 +1062,8 @@ bool DrawViewPart::hasGeometry(void) const
     if (waitingForHlr()) {
         return false;
     }
-    const std::vector<TechDraw::VertexPtr>& verts = getVertexGeometry();
-    const std::vector<TechDraw::BaseGeomPtr>& edges = getEdgeGeometry();
-    if (verts.empty() && edges.empty()) {
-        return false;
-    }
-    else {
-        return true;
-    }
-    return false;
+
+    return (!getVertexGeometry().empty() || !getEdgeGeometry().empty());
 }
 
 //convert a vector in local XY coords into a coordinate system in global
@@ -1187,6 +1178,9 @@ std::vector<DrawViewDetail*> DrawViewPart::getDetailRefs() const
 
 const BaseGeomPtrVector DrawViewPart::getVisibleFaceEdges() const
 {
+    auto lock = concurrentData.lockForReading();
+    const auto& geometryObject = lock->geometryObject;
+
     return geometryObject->getVisibleFaceEdges(SmoothVisible.getValue(), SeamVisible.getValue());
 }
 
@@ -1205,7 +1199,6 @@ bool DrawViewPart::newFaceFinder(void)
 void DrawViewPart::unsetupObject()
 {
 //    Base::Console().Message("DVP::unsetupObject()\n");
-    nowUnsetting = true;
     App::Document* doc = getDocument();
     std::string docName = doc->getName();
 
@@ -1357,16 +1350,18 @@ void DrawViewPart::removeReferenceVertex(std::string tag)
 
 void DrawViewPart::removeAllReferencesFromGeom()
 {
-    //    Base::Console().Message("DVP::removeAllReferencesFromGeom()\n");
+    auto lock = concurrentData.lockForWriting();
+
     if (!m_referenceVerts.empty()) {
-        std::vector<TechDraw::VertexPtr> gVerts = getVertexGeometry();
-        std::vector<TechDraw::VertexPtr> newVerts;
-        for (auto& gv : gVerts) {
+        std::vector<VertexPtr> gVerts = getVertexGeometry();
+        std::vector<VertexPtr> newVerts;
+        for (auto& gv: gVerts) {
             if (!gv->isReference()) {
-                newVerts.push_back(gv);
+                newVerts.emplace_back(std::move(gv));
             }
         }
-        getGeometryObject()->setVertexGeometry(newVerts);
+        // TODO: newVerts should be moved!
+        lock->geometryObject->setVertexGeometry(newVerts);
     }
 }
 
@@ -1381,6 +1376,9 @@ void DrawViewPart::resetReferenceVerts()
 
 void DrawViewPart::dumpVerts(std::string text)
 {
+    auto lock = concurrentData.lockForReading();
+    const auto& geometryObject = lock->geometryObject;
+
     if (!geometryObject) {
         Base::Console().Message("no verts to dump yet\n");
         return;

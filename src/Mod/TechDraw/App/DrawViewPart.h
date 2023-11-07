@@ -25,8 +25,10 @@
 #ifndef DrawViewPart_h_
 #define DrawViewPart_h_
 
+#include <mutex>
+#include <chrono>
+
 #include <QFuture>
-#include <QFutureWatcher>
 
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Wire.hxx>
@@ -35,6 +37,7 @@
 #include <App/FeaturePython.h>
 #include <App/PropertyLinks.h>
 #include <Base/BoundBox.h>
+#include <Base/Threads/ThreadSafeStruct.h>
 #include <Mod/TechDraw/TechDrawGlobal.h>
 
 #include "CosmeticExtension.h"
@@ -132,7 +135,8 @@ public:
     const std::vector<TechDraw::FacePtr> getFaceGeometry() const;
 
     bool hasGeometry() const;
-    TechDraw::GeometryObjectPtr getGeometryObject() const { return geometryObject; }
+    auto getGeometryObject() const
+    { return concurrentData.lockPointerForReading<&ConcurrentData::geometryObject>(); }
 
     TechDraw::VertexPtr getVertex(std::string vertexName) const;
     TechDraw::BaseGeomPtr getEdge(std::string edgeName) const;
@@ -178,7 +182,6 @@ public:
     // switches
     bool handleFaces();
     bool newFaceFinder();
-    bool isUnsetting() { return nowUnsetting; }
 
     virtual TopoDS_Shape getSourceShape(bool fuse = false) const;
     virtual TopoDS_Shape getShapeForDetail() const;
@@ -198,60 +201,49 @@ public:
     void resetReferenceVerts();
 
     // routines related to multi-threading
-    virtual void postHlrTasks(void);
-    virtual void postFaceExtractionTasks(void);
-    bool waitingForFaces() const { return m_waitingForFaces; }
-    void waitingForFaces(bool s) { m_waitingForFaces = s; }
-    bool waitingForHlr() const { return m_waitingForHlr; }
-    void waitingForHlr(bool s) { m_waitingForHlr = s; }
-    virtual bool waitingForResult() const;
+    virtual void postHlrTasks();
+    virtual void postFaceExtractionTasks();
     void progressValueChanged(int v);
 
-public Q_SLOTS:
-    void onHlrFinished(void);
-    void onFacesFinished(void);
+    void onHlrFinished(std::shared_ptr<GeometryObject> go);
+    void onFacesFinished();
 
 protected:
     bool checkXDirection() const;
 
-    TechDraw::GeometryObjectPtr geometryObject;
-    TechDraw::GeometryObjectPtr m_tempGeometryObject;//holds the new GO until hlr is completed
-    Base::BoundBox3d bbox;
-
     void onChanged(const App::Property* prop) override;
     void unsetupObject() override;
 
-    virtual TechDraw::GeometryObjectPtr buildGeometryObject(TopoDS_Shape& shape,
-                                                            const gp_Ax2& viewAxis);
-    virtual TechDraw::GeometryObjectPtr makeGeometryForShape(TopoDS_Shape& shape);//const??
-    void partExec(TopoDS_Shape& shape);
-    virtual void addShapes2d(void);
+    /**
+     * @brief Deep copy shape and pass the new instance as movable object to
+     * buildGeometryObject.
+     * @param shape: A shape to be deep copied.
+     * @param viewAxis: Projection axis.
+     */
+    void buildGeometryObject(const TopoDS_Shape& shape, const gp_Ax2& viewAxis);
+    /**
+     * @brief builds geometry object from a movable shape.
+     * @param shape: A shape that does not share any information with any other shape.
+     * @param viewAxis: Projection axis.
+     */
+    void buildGeometryObject(TopoDS_Shape&& shape, const gp_Ax2& viewAxis);
+    void makeGeometryForShape(const TopoDS_Shape& shape);
+    void addShapes2d(void);
 
     void extractFaces();
-    void findFacesNew(const std::vector<TechDraw::BaseGeomPtr>& goEdges);
-    void findFacesOld(const std::vector<TechDraw::BaseGeomPtr>& goEdges);
-
-    Base::Vector3d shapeCentroid;
-
-    bool m_handleFaces;
-
-    TopoDS_Shape m_saveShape;     //TODO: make this a Property.  Part::TopoShapeProperty??
-    Base::Vector3d m_saveCentroid;//centroid before centering shape in origin
+    void findFacesNew(const std::vector<BaseGeomPtr>& goEdges);
+    void findFacesOld(const std::vector<BaseGeomPtr>& goEdges);
 
     std::vector<TechDraw::VertexPtr> m_referenceVerts;
 
-private:
-    bool nowUnsetting;
-    bool m_waitingForFaces;
-    bool m_waitingForHlr;
-
-    QMetaObject::Connection connectHlrWatcher;
-    QFutureWatcher<void> m_hlrWatcher;
-    QFuture<void> m_hlrFuture;
-    QMetaObject::Connection connectFaceWatcher;
-    QFutureWatcher<void> m_faceWatcher;
-    QFuture<void> m_faceFuture;
-
+    struct ConcurrentData
+    {
+        std::shared_ptr<GeometryObject> geometryObject;
+        Base::BoundBox3d bbox{0.,0.,0.,0.,0.,0.};
+        Base::Vector3d centroid;
+    };
+    using concurrentData_t = Base::Threads::ThreadSafeStruct<ConcurrentData>;
+    concurrentData_t concurrentData;
 };
 
 using DrawViewPartPython = App::FeaturePythonT<DrawViewPart>;

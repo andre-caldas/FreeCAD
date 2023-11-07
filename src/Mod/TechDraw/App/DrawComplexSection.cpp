@@ -232,17 +232,6 @@ TopoDS_Shape DrawComplexSection::makeCuttingTool(double dMax)
     return BRepPrimAPI_MakePrism(m_toolFaceShape, extrudeDir).Shape();
 }
 
-TopoDS_Shape DrawComplexSection::getShapeToPrepare() const
-{
-    //    Base::Console().Message("DCS::getShapeToPrepare()\n");
-    if (ProjectionStrategy.getValue() == 0) {
-        //Offset. Use regular section behaviour
-        return DrawViewSection::getShapeToPrepare();
-    }
-    //Aligned strategy
-    return m_saveShape;//the original input shape
-}
-
 //get the shape ready for projection and cut surface finding
 TopoDS_Shape DrawComplexSection::prepareShape(const TopoDS_Shape& cutShape, double shapeSize)
 {

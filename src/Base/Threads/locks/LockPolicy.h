@@ -34,7 +34,7 @@
 #include <unordered_set>
 #include <stack>
 
-#include "type_traits/Utils.h"
+#include "../type_traits/Utils.h"
 
 namespace Base::Threads
 {
@@ -48,6 +48,8 @@ namespace Base::Threads
  */
 struct MutexPair
 {
+    MutexPair() = default;
+    MutexPair(MutexPair* parent) : parent_pair(parent) {}
     std::shared_mutex mutex;
     MutexPair* parent_pair = nullptr;
 };
@@ -115,26 +117,30 @@ class ExclusiveLockBase {};
 /**
  * @brief Locks and gives access to locked classes of type "MutexHolder".
  * The MutexHolder must:
- * 1. Define a MutexHolder::ModifierGate class
+ * 1. Define a MutexHolder::WriterGate class
  *    that implements the container methods that demand ExclusiveLock.
  * 2. Define a method that takes an ExclusiveLock as argument,
- *    and returns a ModifierGate instance.
+ *    and returns a WriterGate instance.
  */
-template<typename... MutexHolder>
+template<typename FirstMutexHolder, typename... MutexHolder>
 class ExclusiveLock
     : public LockPolicy
     , public ExclusiveLockBase
 {
 public:
     [[nodiscard]]
-    ExclusiveLock(MutexHolder&... mutex_holder);
+    ExclusiveLock(FirstMutexHolder& first_holder, MutexHolder&... mutex_holder);
 
     // This could actually be static.
     template<typename SomeHolder>
     auto operator[](SomeHolder& tsc) const;
 
+    template<typename = std::enable_if_t<sizeof...(MutexHolder) == 0>>
+    auto operator->() const {return &firstMutexHolder;}
+
 private:
-    using locks_t = std::scoped_lock<ForEach_t<std::shared_mutex,MutexHolder>...>;
+    using locks_t = std::scoped_lock<std::shared_mutex,
+                                     ForEach_t<std::shared_mutex,MutexHolder>...>;
     /*
      * After constructed, std::scoped_lock cannot be changed.
      * So, we usa a unique_ptr.
@@ -144,6 +150,8 @@ private:
      * and we do not want the code full of ifs.
      */
     std::unique_ptr<locks_t> locks;
+
+    FirstMutexHolder& firstMutexHolder;
 };
 
 } //namespace Base::Threads

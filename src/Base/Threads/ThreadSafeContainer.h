@@ -27,7 +27,7 @@
 #include <type_traits>
 #include <shared_mutex>
 
-#include "LockPolicy.h"
+#include "locks/LockPolicy.h"
 
 namespace Base::Threads
 {
@@ -47,6 +47,11 @@ public:
     typedef LockedIterator<container_iterator> iterator;
     typedef LockedIterator<container_const_iterator> const_iterator;
 
+    ThreadSafeContainer() = default;
+
+    template<typename MutexHolder>
+    ThreadSafeContainer(MutexHolder& holder) : mutex(holder.getMutexPair()) {}
+
     auto begin();
     auto begin() const;
     auto cbegin() const;
@@ -59,22 +64,22 @@ public:
     bool empty() const;
     void clear();
 
-    struct ModifierGate
+    struct WriterGate
     {
-        ModifierGate(self_t* self) : self(self) {}
+        WriterGate(self_t* self) : self(self) {}
         self_t* self;
-        auto getMutexPtr() const {return &self->mutex;}
+        auto getMutexPair() const {return &self->mutex;}
         void clear() {self->container.clear();}
     };
-    ModifierGate getModifierGate(const ExclusiveLockBase*)
-    {assert(LockPolicy::isLockedExclusively(mutex)); return ModifierGate{this};}
+    WriterGate getWriterGate(const ExclusiveLockBase*)
+    {assert(LockPolicy::isLockedExclusively(mutex)); return WriterGate{this};}
 
     template<typename SomeHolder>
     void setParentMutex(SomeHolder& tsc);
 
 public:
     // TODO: eliminate this or the gate version.
-    auto getMutexPtr() const {return &mutex;}
+    auto getMutexPair() const {return &mutex;}
 
 protected:
     mutable MutexPair mutex;

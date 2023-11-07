@@ -119,10 +119,6 @@ App::DocumentObjectExecReturn *DrawProjGroupItem::execute(void)
         return DrawView::execute();
     }
 
-    if (waitingForHlr()) {
-        return DrawView::execute();
-    }
-
     bool haveX = checkXDirection();
     if (!haveX) {
         //block touch/onChanged stuff
@@ -140,14 +136,19 @@ App::DocumentObjectExecReturn *DrawProjGroupItem::execute(void)
     return DrawViewPart::execute();
 }
 
-void DrawProjGroupItem::postHlrTasks(void)
+void DrawProjGroupItem::postHlrTasks()
 {
 //    Base::Console().Message("DPGI::postHlrTasks() - %s\n", getNameInDocument());
     DrawViewPart::postHlrTasks();
 
+    auto lock = concurrentData.continueWriting()
+    if(!lock) {
+        return;
+    }
     //DPGI has no geometry until HLR has finished, and the DPG can not properly
     //AutoDistibute until all its items have geometry.
     autoPosition();
+    lock.release();
 
     getPGroup()->reportReady();     //tell the parent DPG we are ready
 }

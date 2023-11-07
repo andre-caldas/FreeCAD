@@ -27,7 +27,7 @@
 #include <type_traits>
 #include <shared_mutex>
 
-#include "LockPolicy.h"
+#include "locks/LockPolicy.h"
 
 namespace Base::Threads
 {

@@ -21,49 +21,61 @@
  *                                                                          *
  ***************************************************************************/
 
-#ifndef BASE_Threads_Exception_H
-#define BASE_Threads_Exception_H
+#ifndef BASE_Threads_ReaderLock_H
+#define BASE_Threads_ReaderLock_H
 
-#include <Base/Exception.h>
+#include "../type_traits/Utils.h"
+
+#include "LockPolicy.h"
 
 namespace Base::Threads
 {
 
-class ExceptionNoExclusiveOverNonExclusive : public Base::TypeError
+/**
+ * @brief Locks a classes of type "MutexHolder" for "reading".
+ * The MutexHolder must:
+ * 1. Define a MutexHolder::ReaderGate class that implements getStruct().
+ * 2. Define a method that takes a ReaderLock as argument,
+ *    and returns a ReaderGate instance.
+ */
+template<typename MutexHolder, auto LocalPointer = nullptr>
+class ReaderLock
+    : public SharedLock
 {
 public:
-    ExceptionNoExclusiveOverNonExclusive()
-        : Base::TypeError("Cannot lock exclusively a mutex that is already non-exclusive.") {}
+    using local_data_t = const MemberPointerTo_t<LocalPointer>;
+
+    [[nodiscard]]
+    ReaderLock(const MutexHolder& mutex_holder)
+        : SharedLock(*mutex_holder.getMutexPair())
+        , gate(mutex_holder.getReaderGate(this))
+        , localData((&*gate)->*LocalPointer)
+    {}
+
+    const auto* operator->() const {return &(StripSmartPointer{localData}());}
+
+private:
+    typename MutexHolder::ReaderGate gate;
+    local_data_t& localData;
 };
 
-class ExceptionExclusiveParentNotLocked : public Base::TypeError
+template<typename MutexHolder>
+class ReaderLock<MutexHolder, nullptr>
+    : public SharedLock
 {
 public:
-    ExceptionExclusiveParentNotLocked()
-        : Base::TypeError("An exclusive lock cannot come after non-chainable locks.") {}
-};
+    [[nodiscard]]
+    ReaderLock(const MutexHolder& mutex_holder)
+        : SharedLock(*mutex_holder.getMutexPair())
+        , gate(mutex_holder.getReaderGate(this))
+    {}
 
-class ExceptionNoLocksAfterExclusiveLock : public Base::TypeError
-{
-public:
-    ExceptionNoLocksAfterExclusiveLock()
-        : Base::TypeError("After an exclusive lock there can be no other locks.") {}
-};
+    auto operator->() const {return &*gate;}
 
-class ExceptionNeedLockToAccessContainer : public Base::TypeError
-{
-public:
-    ExceptionNeedLockToAccessContainer()
-        : Base::TypeError("You do not have a lock for the container you are trying to access.") {}
-};
-
-class ExceptionNewThreadRequiresLock : public Base::TypeError
-{
-public:
-    ExceptionNewThreadRequiresLock()
-        : Base::TypeError("To transfer a lock to a new thread, it has to be locked.") {}
+private:
+    typename MutexHolder::ReaderGate gate;
 };
 
 } //namespace Base::Threads
 
-#endif // BASE_Threads_Exception_H
+#endif // BASE_Threads_ReaderLock_H

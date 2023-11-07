@@ -84,11 +84,9 @@ void CosmeticExtension::clearCosmeticVertexes()
 /// add the cosmetic verts in the property list to view's vertex geometry list
 void CosmeticExtension::addCosmeticVertexesToGeom()
 {
-//    Base::Console().Message("CE::addCosmeticVertexesToGeom()\n");
-    const std::vector<TechDraw::CosmeticVertex*> cVerts = CosmeticVertexes.getValues();
-    for (auto& cv : cVerts) {
-        double scale = getOwner()->getScale();
-        double rotDegrees = getOwner()->Rotation.getValue();
+    double scale = getOwner()->getScale();
+    double rotDegrees = getOwner()->Rotation.getValue();
+    for (auto& cv : CosmeticVertexes.getValues()) {
         Base::Vector3d cvPosition = cv->rotatedAndScaled(scale, rotDegrees);
         int iGV = getOwner()->getGeometryObject()->addCosmeticVertex(cvPosition, cv->getTagAsString());
         cv->linkGeom = iGV;

@@ -45,6 +45,9 @@ template<typename Val>
 class ThreadSafeVector
     : public ThreadSafeContainer<std::vector<Val>>
 {
+public:
+    using parent_t = ThreadSafeContainer<std::vector<Val>>;
+    using parent_t::ThreadSafeContainer;
     friend class ExclusiveLock;
 };
 

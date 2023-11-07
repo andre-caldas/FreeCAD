@@ -54,7 +54,6 @@ class TechDrawExport DrawViewDetail : public DrawViewPart
 public:
     /// Constructor
     DrawViewDetail();
-    ~DrawViewDetail() override;
 
     App::PropertyLink   BaseView;
     App::PropertyVector AnchorPoint;
@@ -70,16 +69,18 @@ public:
     void unsetupObject() override;
 
 
-    void detailExec(TopoDS_Shape& s,
-                    DrawViewPart* baseView,
-                    DrawViewSection* sectionAlias);
-    void makeDetailShape(const TopoDS_Shape& shape,
-                         DrawViewPart* dvp,
-                         DrawViewSection* dvs);
-    void postHlrTasks(void) override;
-    void waitingForDetail(bool s) { m_waitingForDetail = s; }
-    bool waitingForDetail(void) const { return m_waitingForDetail; }
-    bool waitingForResult() const override;
+    /**
+     * @brief Deep copy shape and pass the new instance as movable object to
+     * makeDetailShape.
+     * @param shape: A shape to be deep copied.
+     */
+    void makeDetailShape(const TopoDS_Shape& shape, DrawViewPart* dvp, DrawViewSection* dvs);
+    /**
+     * @brief produces the "detail" from a movable shape.
+     * @param shape: A shape that does not share any information with any other shape.
+     */
+    void makeDetailShape(TopoDS_Shape&& shape, DrawViewPart* dvp, DrawViewSection* dvs);
+    void postHlrTasks() override;
 
     double getFudgeRadius(void);
     TopoDS_Shape projectEdgesOntoFace(TopoDS_Shape& edgeShape,
@@ -89,7 +90,6 @@ public:
     std::vector<DrawViewDetail*> getDetailRefs() const override;
     TopoDS_Shape getDetailShape() const { return m_detailShape; }
 
-public Q_SLOTS:
     void onMakeDetailFinished(void);
 
 protected:
@@ -97,18 +97,11 @@ protected:
     double m_fudge;
     bool debugDetail() const;
 
-    TopoDS_Shape m_scaledShape;
-    gp_Ax2 m_viewAxis;
-
-    QMetaObject::Connection connectDetailWatcher;
-    QFutureWatcher<void> m_detailWatcher;
-    QFuture<void> m_detailFuture;
-    bool m_waitingForDetail;
-
-    DrawViewPart* m_saveDvp;
-    DrawViewSection* m_saveDvs;
-
-    TopoDS_Shape m_detailShape;
+    struct ConcurrentData
+    {
+        std::shared_ptr<TopoDS_Shape> detailShape;
+    };
+    Base::Threads::ThreadSafeStruct<ConcurrentData> concurrentData{DrawViewPart::concurrentData};
 };
 
 using DrawViewDetailPython = App::FeaturePythonT<DrawViewDetail>;
