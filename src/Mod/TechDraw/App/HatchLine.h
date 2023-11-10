@@ -111,7 +111,6 @@ private:
 class TechDrawExport LineSet
 {
 public:
-    LineSet() {}
     ~LineSet() = default;
 
     void setPATLineSpec(const PATLineSpec& s) { m_hatchLine = s; }

@@ -316,18 +316,16 @@ TopoDS_Shape ShapeUtils::rotateShape(const TopoDS_Shape& input, const gp_Ax2& vi
 //!scales a shape about origin
 TopoDS_Shape ShapeUtils::scaleShape(const TopoDS_Shape& input, double scale)
 {
-    TopoDS_Shape transShape;
     try {
         gp_Trsf scaleTransform;
         scaleTransform.SetScale(gp_Pnt(0, 0, 0), scale);
 
         BRepBuilderAPI_Transform mkTrf(input, scaleTransform);
-        transShape = mkTrf.Shape();
+        return mkTrf.Shape();
     }
     catch (...) {
-        return transShape;
     }
-    return transShape;
+    return TopoDS_Shape{};
 }
 
 //!moves a shape

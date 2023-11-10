@@ -50,10 +50,8 @@ using ForEach_t = typename ForEach<Result, From>::type;
 namespace utils_detail {
 // https://stackoverflow.com/a/72263473/1290711
 template<typename T>
-struct MemberPointerToAux
-{
-    using type = void;
-};
+struct MemberPointerToAux;
+
 template<class C, typename T>
 struct MemberPointerToAux<T C::*>
 {
@@ -65,16 +63,16 @@ struct MemberPointerToAux<T C::*>
  * @brief Given a "member pointer" T that points to a member of X,
  * informs which type is X.
  */
-template<auto T>
+template<auto MP>
 struct MemberPointerTo
-    : utils_detail::MemberPointerToAux<std::remove_cv_t<decltype(T)>>
+    : utils_detail::MemberPointerToAux<std::remove_reference_t<decltype(MP)>>
 {};
 /**
  * @brief Given a "member pointer" T that points to a member of X,
  * the type X.
  */
-template<auto T>
-using MemberPointerTo_t = typename MemberPointerTo<T>::type;
+template<auto MP>
+using MemberPointerTo_t = typename MemberPointerTo<MP>::type;
 
 } //namespace Base::Threads
 
@@ -91,6 +89,15 @@ template<typename T>
 struct StripSmartPointerAux<std::shared_ptr<T>>
     : StripSmartPointerAux<T>
 {
+    StripSmartPointerAux(std::shared_ptr<T>& t)
+        : StripSmartPointerAux<T>(*t.get())
+    {}
+};
+
+template<typename T>
+struct StripSmartPointerAux<const std::shared_ptr<T>>
+    : StripSmartPointerAux<T>
+{
     StripSmartPointerAux(const std::shared_ptr<T>& t)
         : StripSmartPointerAux<T>(*t.get())
     {}
@@ -99,9 +106,9 @@ struct StripSmartPointerAux<std::shared_ptr<T>>
 
 template<typename T>
 struct StripSmartPointer
-    : strip_detail::StripSmartPointerAux<std::remove_cv_t<T>>
+    : strip_detail::StripSmartPointerAux<T>
 {
-    using parent_t = strip_detail::StripSmartPointerAux<std::remove_cv_t<T>>;
+    using parent_t = strip_detail::StripSmartPointerAux<T>;
     StripSmartPointer(T& t) : parent_t(t) {}
 };
 

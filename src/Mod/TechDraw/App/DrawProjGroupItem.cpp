@@ -141,7 +141,7 @@ void DrawProjGroupItem::postHlrTasks()
 //    Base::Console().Message("DPGI::postHlrTasks() - %s\n", getNameInDocument());
     DrawViewPart::postHlrTasks();
 
-    auto lock = concurrentData.continueWriting()
+    auto lock = concurrentData.continueWriting();
     if(!lock) {
         return;
     }
@@ -201,13 +201,11 @@ bool DrawProjGroupItem::isAnchor(void) const
 }
 
 /// get a coord system aligned with Direction and Rotation Vector
-gp_Ax2 DrawProjGroupItem::getViewAxis(const Base::Vector3d& pt,
-                                 const Base::Vector3d& axis,
-                                 const bool flip) const
+gp_Ax2 DrawProjGroupItem::getViewCS(const Base::Vector3d& pt,
+                                    const Base::Vector3d& axis,
+                                    const bool /*flip*/) const
 {
-    Base::Console().Message("DPGI::getViewAxis - deprecated. use getProjectionCS\n");
-    (void) flip;
-    gp_Ax2 viewAxis;
+    Base::Console().Message("DPGI::getCS - deprecated. use getProjectionCS\n");
     Base::Vector3d projDir = Direction.getValue();
     Base::Vector3d rotVec  = getXDirection();
 
@@ -221,17 +219,16 @@ gp_Ax2 DrawProjGroupItem::getViewAxis(const Base::Vector3d& pt,
                                  getNameInDocument());
     }
     try {
-        viewAxis = gp_Ax2(gp_Pnt(pt.x, pt.y, pt.z),
-                          gp_Dir(projDir.x, projDir.y, projDir.z),
-                          gp_Dir(rotVec.x, rotVec.y, rotVec.z));
+        return gp_Ax2(gp_Pnt(pt.x, pt.y, pt.z),
+                       gp_Dir(projDir.x, projDir.y, projDir.z),
+                       gp_Dir(rotVec.x, rotVec.y, rotVec.z));
     }
     catch (Standard_Failure& e4) {
         Base::Console().Message("PROBLEM - DPGI (%s) failed to create viewAxis: %s **\n",
                                 getNameInDocument(), e4.GetMessageString());
-        return ShapeUtils::getViewAxis(pt, axis, false);
     }
 
-    return viewAxis;
+    return ShapeUtils::getViewAxis(pt, axis, false);
 }
 
 Base::Vector3d DrawProjGroupItem::getXDirection(void) const
@@ -273,24 +270,16 @@ Base::Vector3d DrawProjGroupItem::getLegacyX(const Base::Vector3d& pt,
     if (prop) {
         Base::Vector3d result = RotationVector.getValue();
         if (DrawUtil::fpCompare(result.Length(), 0.0))  {  //have RotationVector property, but not set
-            gp_Ax2 va = getViewAxis(pt,
-                                    axis,
-                                    flip);
+            gp_Ax2 va = getViewCS(pt, axis, flip);
             gp_Dir gXDir = va.XDirection();
-            return Base::Vector3d(gXDir.X(),
-                                  gXDir.Y(),
-                                  gXDir.Z());
+            return Base::Vector3d(gXDir.X(), gXDir.Y(), gXDir.Z());
         }
         return result;
     }
 
-    gp_Ax2 va = getViewAxis(pt,
-                            axis,
-                            flip);
+    gp_Ax2 va = getViewCS(pt, axis, flip);
     gp_Dir gXDir = va.XDirection();
-    return Base::Vector3d(gXDir.X(),
-                            gXDir.Y(),
-                            gXDir.Z());
+    return Base::Vector3d(gXDir.X(), gXDir.Y(), gXDir.Z());
 }
 
 //get the angle between the current RotationVector vector and the original X dir angle

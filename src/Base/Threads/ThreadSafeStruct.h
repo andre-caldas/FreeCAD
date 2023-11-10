@@ -51,11 +51,10 @@ public:
     template<auto LocalPointer>
     using w_lock_local_pointer_t = WriterLock<ThreadSafeStruct<Struct>, LocalPointer>;
 
-    ThreadSafeStruct() = default;
+    template<typename... Args>
+    ThreadSafeStruct(Args&&... args) : theStruct(args...) {}
 
-    template<typename MutexHolder>
-    ThreadSafeStruct(MutexHolder& holder) : mutex(holder.getMutexPair()) {}
-
+    [[maybe_unused]]
     auto lockForReading() const
     {return r_lock_t{*this};}
 
@@ -79,7 +78,7 @@ public:
 
     template<auto LocalPointer>
     auto lockPointerForWriting()
-    {w_lock_local_pointer_t<LocalPointer>{*this};}
+    {return w_lock_local_pointer_t<LocalPointer>{*this};}
 
     struct ReaderGate
     {

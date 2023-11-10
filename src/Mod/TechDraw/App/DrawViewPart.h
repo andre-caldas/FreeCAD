@@ -40,6 +40,7 @@
 #include <Base/Threads/ThreadSafeStruct.h>
 #include <Mod/TechDraw/TechDrawGlobal.h>
 
+#include "GeometryObject.h"
 #include "CosmeticExtension.h"
 #include "DrawView.h"
 
@@ -56,8 +57,6 @@ class Part;
 
 namespace TechDraw
 {
-class GeometryObject;
-using GeometryObjectPtr = std::shared_ptr<GeometryObject>;
 class Vertex;
 class BaseGeom;
 class Face;
@@ -93,8 +92,8 @@ public:
 
     App::PropertyLinkList Source;
     App::PropertyXLinkList XSource;
-    App::PropertyVector
-        Direction;//TODO: Rename to YAxisDirection or whatever this actually is  (ProjectionDirection)
+    //TODO: Rename to YAxisDirection or whatever this actually is  (ProjectionDirection)
+    App::PropertyVector Direction;
     App::PropertyVector XDirection;
     App::PropertyBool Perspective;
     App::PropertyDistance Focus;
@@ -137,6 +136,8 @@ public:
     bool hasGeometry() const;
     auto getGeometryObject() const
     { return concurrentData.lockPointerForReading<&ConcurrentData::geometryObject>(); }
+    auto getGeometryObject()
+    { return concurrentData.lockPointerForWriting<&ConcurrentData::geometryObject>(); }
 
     TechDraw::VertexPtr getVertex(std::string vertexName) const;
     TechDraw::BaseGeomPtr getEdge(std::string edgeName) const;
@@ -166,8 +167,8 @@ public:
     virtual Base::Vector3d projectPoint(const Base::Vector3d& pt, bool invert = true) const;
     virtual BaseGeomPtr projectEdge(const TopoDS_Edge& e) const;
 
-    virtual gp_Ax2 getViewAxis(const Base::Vector3d& pt, const Base::Vector3d& direction,
-                               const bool flip = true) const;
+    virtual gp_Ax2 getViewCS(const Base::Vector3d& pt, const Base::Vector3d& direction,
+                             const bool flip = true) const;
     virtual gp_Ax2 getProjectionCS(Base::Vector3d pt = Base::Vector3d(0.0, 0.0, 0.0)) const;
     virtual gp_Ax2 getRotatedCS(Base::Vector3d basePoint = Base::Vector3d(0.0, 0.0, 0.0)) const;
     virtual Base::Vector3d getXDirection() const;//don't use XDirection.getValue()
@@ -183,7 +184,7 @@ public:
     bool handleFaces();
     bool newFaceFinder();
 
-    virtual TopoDS_Shape getSourceShape(bool fuse = false) const;
+    TopoDS_Shape getSourceShape(bool fuse = false) const;
     virtual TopoDS_Shape getShapeForDetail() const;
     std::vector<App::DocumentObject*> getAllSources() const;
 
@@ -205,7 +206,7 @@ public:
     virtual void postFaceExtractionTasks();
     void progressValueChanged(int v);
 
-    void onHlrFinished(std::shared_ptr<GeometryObject> go);
+    void onHlrFinished();
     void onFacesFinished();
 
 protected:
@@ -218,15 +219,16 @@ protected:
      * @brief Deep copy shape and pass the new instance as movable object to
      * buildGeometryObject.
      * @param shape: A shape to be deep copied.
-     * @param viewAxis: Projection axis.
+     * @param viewCS: Projection coordinate system.
      */
-    void buildGeometryObject(const TopoDS_Shape& shape, const gp_Ax2& viewAxis);
+    void buildGeometryObject(const TopoDS_Shape& shape, const gp_Ax2& viewCS);
     /**
-     * @brief builds geometry object from a movable shape.
-     * @param shape: A shape that does not share any information with any other shape.
-     * @param viewAxis: Projection axis.
+     * @brief builds geometry object from movable/temporary shape.
+     * @param shape: movable/temporary shape.
+     * @param viewCS: Projection coordinate system.
+     * @attention concurrentData's writing process needs to have already started.
      */
-    void buildGeometryObject(TopoDS_Shape&& shape, const gp_Ax2& viewAxis);
+    void buildGeometryObject(TopoDS_Shape&& shape, const gp_Ax2& viewCS);
     void makeGeometryForShape(const TopoDS_Shape& shape);
     void addShapes2d(void);
 
@@ -234,13 +236,14 @@ protected:
     void findFacesNew(const std::vector<BaseGeomPtr>& goEdges);
     void findFacesOld(const std::vector<BaseGeomPtr>& goEdges);
 
-    std::vector<TechDraw::VertexPtr> m_referenceVerts;
+    std::vector<VertexPtr> m_referenceVerts;
 
     struct ConcurrentData
     {
-        std::shared_ptr<GeometryObject> geometryObject;
+        ConcurrentData(DrawViewPart* self);
+        GeometryObject geometryObject;
         Base::BoundBox3d bbox{0.,0.,0.,0.,0.,0.};
-        Base::Vector3d centroid;
+        Base::Vector3d centroid{0.,0.,0.};
     };
     using concurrentData_t = Base::Threads::ThreadSafeStruct<ConcurrentData>;
     concurrentData_t concurrentData;

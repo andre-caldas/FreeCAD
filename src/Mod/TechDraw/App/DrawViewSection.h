@@ -35,6 +35,7 @@
 #include <App/PropertyLinks.h>
 #include <Mod/TechDraw/TechDrawGlobal.h>
 
+#include "HatchLine.h"
 #include "DrawViewPart.h"
 
 class Bnd_Box;
@@ -118,15 +119,18 @@ public:
     void unsetupObject() override;
     short mustExecute() const override;
 
-    void sectionExec(TopoDS_Shape& s);
-    virtual void makeSectionCut(const TopoDS_Shape& baseShape);
+    virtual void makeSectionCut();
     void postHlrTasks() override;
     virtual void postSectionCutTasks();
+
+    TopoDS_Shape getCutShapeRaw() const;
+    TopoDS_Shape getCutShape() const;
+    double getShapeSize() const;
 
     virtual TopoDS_Shape makeCuttingTool(double shapeSize);
     virtual TopoDS_Shape getShapeToCut();
     virtual bool isBaseValid() const;
-    virtual TopoDS_Shape prepareShape(const TopoDS_Shape& rawShape, double shapeSize);
+    virtual void prepareShape(double shapeSize);
 
     //CS related methods
     gp_Ax2 getProjectionCS(Base::Vector3d pt = Base::Vector3d(0.0, 0.0, 0.0)) const override;
@@ -137,22 +141,18 @@ public:
     gp_Ax2 getSectionCS() const;
     Base::Vector3d getXDirection() const override;//don't use XDirection.getValue()
 
-    TechDraw::DrawViewPart* getBaseDVP() const;
+    DrawViewPart* getBaseDVP() const;
 
     //section face related methods
-    std::vector<TechDraw::FacePtr> getTDFaceGeometry() { return m_tdSectionFaces; }
+    std::vector<FacePtr> getTDFaceGeometry();
     TopoDS_Face getSectionTopoDSFace(int i);
     virtual TopoDS_Compound alignSectionFaces(TopoDS_Shape faceIntersections);
     TopoDS_Compound mapToPage(TopoDS_Shape& shapeToAlign);
     virtual std::vector<TechDraw::FacePtr> makeTDSectionFaces(TopoDS_Compound topoDSFaces);
-    virtual TopoDS_Shape getShapeToIntersect() { return m_cutPieces; }
 
     void makeLineSets(void);
     std::vector<LineSet> getDrawableLines(int i = 0);
     std::vector<PATLineSpec> getDecodedSpecsFromFile(std::string fileSpec, std::string myPattern);
-
-    TopoDS_Shape getCutShape() const { return m_cutShape; }
-    TopoDS_Shape getCutShapeRaw() const { return m_cutShapeRaw; }
 
     TopoDS_Shape getShapeForDetail() const override;
 
@@ -166,14 +166,9 @@ public:
 
     TopoDS_Shape makeFaceFromWires(std::vector<TopoDS_Wire> &inWires);
 
-    virtual void onSectionCutFinished(void);
+    void onSectionCutFinished(void);
 
 protected:
-    TopoDS_Compound m_sectionTopoDSFaces;//needed for hatching
-    std::vector<LineSet> m_lineSets;
-    std::vector<TechDraw::FacePtr> m_tdSectionFaces;
-
-
     virtual gp_Pln getSectionPlane() const;
     virtual TopoDS_Compound findSectionPlaneIntersections(const TopoDS_Shape& shape);
     void getParameters();
@@ -181,20 +176,25 @@ protected:
     int prefCutSurface() const;
     bool trimAfterCut() const;
 
-    TopoDS_Shape m_cutShape;        // centered, scaled, rotated result of cut
-    TopoDS_Shape m_cutShapeRaw;     // raw result of cut w/o center/scale/rotate
-
     void onDocumentRestored() override;
     void setupObject() override;
     void replaceSvgIncluded(std::string newSvgFile);
     void replacePatIncluded(std::string newPatFile);
 
-    TopoDS_Shape m_cutPieces;//the shape after cutting, but before centering & scaling
-    gp_Ax2 m_projectionCS;
-    TopoDS_Shape m_preparedShape;//the shape after cutting, centering, scaling etc
+    struct ConcurrentData
+    {
+        TopoDS_Shape cutShape;
+        TopoDS_Shape cutShapeRaw;
 
-    TopoDS_Shape m_cuttingTool;
-    double m_shapeSize;
+        TopoDS_Shape cuttingTool;
+        double shapeSize = 0.;
+
+        TopoDS_Compound sectionTopoDSFaces; //needed for hatching
+        std::vector<LineSet> lineSets;
+        std::vector<FacePtr> tdSectionFaces;
+    };
+    using concurrentData_t = Base::Threads::ThreadSafeStruct<ConcurrentData>;
+    concurrentData_t concurrentData;
 };
 
 using DrawViewSectionPython = App::FeaturePythonT<DrawViewSection>;

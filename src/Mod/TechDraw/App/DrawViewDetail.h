@@ -46,7 +46,6 @@ class Face;
 namespace TechDraw
 {
 
-
 class TechDrawExport DrawViewDetail : public DrawViewPart
 {
     PROPERTY_HEADER_WITH_OVERRIDE(Part::DrawViewDetail);
@@ -60,6 +59,8 @@ public:
     App::PropertyFloat  Radius;
     App::PropertyString Reference;
 
+    TopoDS_Shape getDetailShape() const;
+
     short mustExecute() const override;
     App::DocumentObjectExecReturn *execute() override;
     void onChanged(const App::Property* prop) override;
@@ -67,7 +68,6 @@ public:
         return "TechDrawGui::ViewProviderViewPart";
     }
     void unsetupObject() override;
-
 
     /**
      * @brief Deep copy shape and pass the new instance as movable object to
@@ -80,6 +80,8 @@ public:
      * @param shape: A shape that does not share any information with any other shape.
      */
     void makeDetailShape(TopoDS_Shape&& shape, DrawViewPart* dvp, DrawViewSection* dvs);
+    void onMakeDetailFinished(void);
+
     void postHlrTasks() override;
 
     double getFudgeRadius(void);
@@ -88,9 +90,6 @@ public:
                                       gp_Dir& projDir);
 
     std::vector<DrawViewDetail*> getDetailRefs() const override;
-    TopoDS_Shape getDetailShape() const { return m_detailShape; }
-
-    void onMakeDetailFinished(void);
 
 protected:
     void getParameters(void);
@@ -99,9 +98,11 @@ protected:
 
     struct ConcurrentData
     {
-        std::shared_ptr<TopoDS_Shape> detailShape;
+        TopoDS_Shape detailShape;
+        gp_Ax2 detailCS;
     };
-    Base::Threads::ThreadSafeStruct<ConcurrentData> concurrentData{DrawViewPart::concurrentData};
+    using concurrentData_t = Base::Threads::ThreadSafeStruct<ConcurrentData>;
+    concurrentData_t concurrentData;
 };
 
 using DrawViewDetailPython = App::FeaturePythonT<DrawViewDetail>;

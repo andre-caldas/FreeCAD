@@ -63,8 +63,10 @@ class Vertex;
 class TechDrawExport GeometryObject
 {
 public:
-    /// Constructor
     GeometryObject(const std::string& parent, TechDraw::DrawView* parentObj);
+    GeometryObject(const GeometryObject&) = default;
+    GeometryObject& operator=(const GeometryObject&) = default;
+
     virtual ~GeometryObject();
 
     void clear();

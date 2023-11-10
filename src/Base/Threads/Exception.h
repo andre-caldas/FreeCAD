@@ -29,6 +29,13 @@
 namespace Base::Threads
 {
 
+class ExceptionNeedLock : public Base::TypeError
+{
+public:
+    ExceptionNeedLock()
+        : Base::TypeError("Cannot access unlocked data.") {}
+};
+
 class ExceptionNoExclusiveOverNonExclusive : public Base::TypeError
 {
 public:

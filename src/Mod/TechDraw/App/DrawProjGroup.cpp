@@ -168,8 +168,6 @@ void DrawProjGroup::onChanged(const App::Property* prop)
 
 App::DocumentObjectExecReturn* DrawProjGroup::execute()
 {
-    //    Base::Console().Message("DPG::execute() - %s - waitingForChildren: %d\n",
-    //                            getNameInDocument(), waitingForChildren());
     if (!keepUpdated())
         return App::DocumentObject::StdReturn;
 
@@ -180,10 +178,6 @@ App::DocumentObjectExecReturn* DrawProjGroup::execute()
     if (!Anchor.getValue())
         //no anchor yet.  nothing to do.
         return DrawViewCollection::execute();
-
-    if (waitingForChildren()) {
-        return DrawViewCollection::execute();
-    }
 
     if (ScaleType.isValue("Automatic") && !checkFit()) {
         if (!DrawUtil::fpCompare(getScale(), autoScale(), 0.00001)) {
@@ -226,39 +220,21 @@ short DrawProjGroup::mustExecute() const
 
 void DrawProjGroup::reportReady()
 {
-    //    Base::Console().Message("DPG::reportReady - waitingForChildren: %d\n", waitingForChildren());
-    if (waitingForChildren()) {
-        //not ready yet
-        return;
-    }
     //all the secondary views are ready so we can now figure out alignment
     if (AutoDistribute.getValue()) {
         recomputeFeature();
     }
 }
 
-bool DrawProjGroup::waitingForChildren() const
+TechDraw::DrawPage* DrawProjGroup::getPage() const
 {
-    for (const auto v : Views.getValues()) {
-        DrawProjGroupItem* dpgi = static_cast<DrawProjGroupItem*>(v);
-        if (dpgi->waitingForHlr() ||//dpgi is still thinking
-            dpgi->isTouched()) {    //dpgi needs to execute
-            return true;
-        }
-    }
-    return false;
+    return findParentPage();
 }
-
-TechDraw::DrawPage* DrawProjGroup::getPage() const { return findParentPage(); }
 
 //does the unscaled DPG fit on the page?
 bool DrawProjGroup::checkFit() const
 {
     //    Base::Console().Message("DPG::checkFit() - %s\n", getNameInDocument());
-    if (waitingForChildren()) {
-        //assume everything fits since we don't know what size the children are
-        return true;
-    }
     auto page = findParentPage();
     if (!page)
         throw Base::RuntimeError("No page is assigned to this feature");
@@ -268,10 +244,6 @@ bool DrawProjGroup::checkFit() const
 bool DrawProjGroup::checkFit(DrawPage* page) const
 {
     //    Base::Console().Message("DPG::checkFit(page) - %s\n", getNameInDocument());
-    if (waitingForChildren()) {
-        return true;
-    }
-
     QRectF bigBox = getRect(false);
     if (bigBox.width() <= page->getPageWidth() && bigBox.height() <= page->getPageHeight()) {
         return true;
@@ -1017,22 +989,17 @@ void DrawProjGroup::makeViewBbs(std::array<DrawProjGroupItem*, MAXPROJECTIONCOUN
 
 void DrawProjGroup::recomputeChildren()
 {
-    //    Base::Console().Message("DPG::recomputeChildren() - waiting: %d\n", waitingForChildren());
     for (const auto it : Views.getValues()) {
         auto view(dynamic_cast<DrawProjGroupItem*>(it));
         if (!view) {
             throw Base::TypeError("Error: projection in DPG list is not a DPGI!");
         }
-        else {
-            view->recomputeFeature();
-        }
+        view->recomputeFeature();
     }
 }
 
 void DrawProjGroup::autoPositionChildren()
 {
-    //    Base::Console().Message("DPG::autoPositionChildren() - %s - waiting: %d\n",
-    //                            getNameInDocument(), waitingForChildren());
     for (const auto it : Views.getValues()) {
         auto view(dynamic_cast<DrawProjGroupItem*>(it));
         if (!view) {
@@ -1050,7 +1017,6 @@ void DrawProjGroup::autoPositionChildren()
  */
 void DrawProjGroup::updateChildrenScale()
 {
-    //    Base::Console().Message("DPG::updateChildrenScale() - waiting: %d\n", waitingForChildren());
     for (const auto it : Views.getValues()) {
         auto view(dynamic_cast<DrawProjGroupItem*>(it));
         if (!view) {

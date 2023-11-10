@@ -142,7 +142,6 @@ public:
     bool checkFit() const override;
     bool checkFit(DrawPage* p) const override;
 
-    bool waitingForChildren() const;
     void reportReady();
 
     void dumpTouchedProps();

@@ -132,7 +132,6 @@ const char* DrawViewSection::CutSurfaceEnums[] = {"Hide", "Color", "SvgHatch", "
 PROPERTY_SOURCE(TechDraw::DrawViewSection, TechDraw::DrawViewPart)
 
 DrawViewSection::DrawViewSection()
-    : m_shapeSize(0.0)
 {
     static const char* sgroup = "Section";
     static const char* fgroup = "Cut Surface Format";
@@ -245,6 +244,25 @@ DrawViewSection::DrawViewSection()
     SectionDirection.setStatus(App::Property::ReadOnly, true);
 }
 
+TopoDS_Shape DrawViewSection::getCutShapeRaw() const
+{
+    auto lock = concurrentData.lockForReading();
+    return lock->cutShapeRaw;
+}
+
+TopoDS_Shape DrawViewSection::getCutShape() const
+{
+    auto lock = concurrentData.lockForReading();
+    return lock->cutShape;
+}
+
+double DrawViewSection::getShapeSize() const
+{
+    auto lock = concurrentData.lockForReading();
+    return lock->shapeSize;
+}
+
+
 short DrawViewSection::mustExecute() const
 {
     if (isRestoring()) {
@@ -326,42 +344,36 @@ void DrawViewSection::onChanged(const App::Property* prop)
 TopoDS_Shape DrawViewSection::getShapeToCut()
 {
     App::DocumentObject* base = BaseView.getValue();
-    DrawViewPart* dvp = nullptr;
-    DrawViewSection* dvs = nullptr;
-    DrawViewDetail* dvd = nullptr;
     if (!base) {
         return TopoDS_Shape();
     }
 
-    TopoDS_Shape shapeToCut;
     if (base->getTypeId().isDerivedFrom(DrawViewSection::getClassTypeId())) {
-        dvs = static_cast<DrawViewSection*>(base);
-        shapeToCut = dvs->getShapeToCut();
+        auto dvs = static_cast<DrawViewSection*>(base);
         if (UsePreviousCut.getValue()) {
-            shapeToCut = dvs->getCutShapeRaw();
+            return dvs->getCutShapeRaw();
         }
+        return dvs->getShapeToCut();
     }
-    else if (base->getTypeId().isDerivedFrom(DrawViewDetail::getClassTypeId())) {
-        dvd = static_cast<DrawViewDetail*>(base);
-        shapeToCut = dvd->getDetailShape();
+
+    if (base->getTypeId().isDerivedFrom(DrawViewDetail::getClassTypeId())) {
+        auto dvd = static_cast<DrawViewDetail*>(base);
+        return dvd->getDetailShape();
     }
-    else if (base->getTypeId().isDerivedFrom(DrawViewPart::getClassTypeId())) {
-        dvp = static_cast<DrawViewPart*>(base);
-        shapeToCut = dvp->getSourceShape();
-        if (FuseBeforeCut.getValue()) {
-            shapeToCut = dvp->getSourceShape(true);
-        }
+
+    if (base->getTypeId().isDerivedFrom(DrawViewPart::getClassTypeId())) {
+        auto dvp = static_cast<DrawViewPart*>(base);
+        return dvp->getSourceShape(FuseBeforeCut.getValue());
     }
-    else {
-        Base::Console().Message("DVS::getShapeToCut - base is weird\n");
-        return TopoDS_Shape();
-    }
-    return shapeToCut;
+
+    Base::Console().Message("DVS::getShapeToCut - base is weird\n");
+    return TopoDS_Shape();
 }
 
 TopoDS_Shape DrawViewSection::getShapeForDetail() const
 {
-    return ShapeUtils::rotateShape(getCutShape(), getProjectionCS(), Rotation.getValue());
+    auto lock = concurrentData.lockForReading();
+    return ShapeUtils::rotateShape(lock->cutShape, getProjectionCS(), Rotation.getValue());
 }
 
 App::DocumentObjectExecReturn* DrawViewSection::execute()
@@ -374,6 +386,8 @@ App::DocumentObjectExecReturn* DrawViewSection::execute()
         return new App::DocumentObjectExecReturn("BaseView object not found");
     }
 
+    auto lock = concurrentData.startWriting();
+    lock.release();
     TopoDS_Shape baseShape = getShapeToCut();
 
     if (baseShape.IsNull()) {
@@ -391,9 +405,13 @@ App::DocumentObjectExecReturn* DrawViewSection::execute()
                                 getNameInDocument());
     }
 
+    if(!lock.resume()) {
+        return StdReturn;
+    }
     // save important info for later use
-    m_shapeSize = sqrt(centerBox.SquareExtent());
-    m_saveShape = baseShape;
+    lock->shapeSize = sqrt(centerBox.SquareExtent());
+    lock->cutShape = baseShape;
+    lock.release();
 
     bool haveX = checkXDirection();
     if (!haveX) {
@@ -404,8 +422,20 @@ App::DocumentObjectExecReturn* DrawViewSection::execute()
                                   // unblock
     }
 
-    sectionExec(baseShape);
+    if(!lock.resume()) {
+        return StdReturn;
+    }
+    lock->cuttingTool = makeCuttingTool(lock->shapeSize);
+    lock.release();
+
+    makeSectionCut();
+    if(!lock) {
+        return StdReturn;
+    }
     addShapes2d();
+    if(!lock) {
+        return StdReturn;
+    }
 
     return DrawView::execute();
 }
@@ -419,47 +449,44 @@ bool DrawViewSection::isBaseValid() const
     return false;
 }
 
-void DrawViewSection::sectionExec(TopoDS_Shape& baseShape)
-{
-    if (baseShape.IsNull()) {
-        // should be caught before this
-        return;
-    }
-
-    m_cuttingTool = makeCuttingTool(m_shapeSize);
-    makeSectionCut(baseShape);
-}
-
-void DrawViewSection::makeSectionCut(const TopoDS_Shape& baseShape)
+void DrawViewSection::makeSectionCut()
 {
     showProgressMessage(getNameInDocument(), "is making section cut");
 
-    // We need to copy the shape to not modify the BRepstructure
-    BRepBuilderAPI_Copy BuilderCopy(baseShape);
-    TopoDS_Shape myShape = BuilderCopy.Shape();
-    m_saveShape = myShape;// save shape for 2nd pass
-
-    if (debugSection()) {
-        BRepTools::Write(myShape, "DVSCopy.brep");// debug
-    }
-
-    if (debugSection()) {
-        BRepTools::Write(m_cuttingTool, "DVSTool.brep");// debug
-    }
-
     // Although "self" is not used,
     // it warrants that "this" will not get destructed.
-    auto lambda = [self = SharedFromThis(), this, myShape = std::move(myShape)]
-    {
+    auto lambda = [self = SharedFromThis(), this]() noexcept
+    {try{
+        // We need to copy the shape to not modify the BRepstructure
+        BRepBuilderAPI_Copy BuilderCopy(getCutShape());
+        auto copyShape = BuilderCopy.Shape();
+
+        if (debugSection()) {
+            BRepTools::Write(copyShape, "DVSCopy.brep");// debug
+        }
+
+        auto lock = concurrentData.continueWriting();
+        if(!lock) {
+            return;
+        }
+        lock->cutShape = copyShape;
+        auto cuttingTool = lock->cuttingTool;
+
+        if (debugSection()) {
+            BRepTools::Write(cuttingTool, "DVSTool.brep");// debug
+        }
+
+        lock.release();
+
         // perform the cut. We cut each solid in myShape individually to avoid issues
         // where a compound BaseShape does not cut correctly.
         BRep_Builder builder;
         TopoDS_Compound cutPieces;
         builder.MakeCompound(cutPieces);
-        TopExp_Explorer expl(myShape, TopAbs_SOLID);
+        TopExp_Explorer expl(copyShape, TopAbs_SOLID);
         for (; expl.More(); expl.Next()) {
             const TopoDS_Solid& s = TopoDS::Solid(expl.Current());
-            BRepAlgoAPI_Cut mkCut(s, m_cuttingTool);
+            BRepAlgoAPI_Cut mkCut(s, cuttingTool);
             if (!mkCut.IsDone()) {
                 Base::Console().Warning("DVS: Section cut has failed in %s\n", getNameInDocument());
                 continue;
@@ -467,8 +494,12 @@ void DrawViewSection::makeSectionCut(const TopoDS_Shape& baseShape)
             builder.Add(cutPieces, mkCut.Shape());
         }
 
-                // cutPieces contains result of cutting each subshape in baseShape with tool
-        m_cutPieces = cutPieces;
+        if(!lock.resume()) {
+            return;
+        }
+        lock->cutShape = cutPieces;
+        lock.release();
+
         if (debugSection()) {
             BRepTools::Write(cutPieces, "DVSCutPieces1.brep");// debug
         }
@@ -476,18 +507,23 @@ void DrawViewSection::makeSectionCut(const TopoDS_Shape& baseShape)
         // second cut if requested.  Sometimes the first cut includes extra uncut
         // pieces.
         if (trimAfterCut()) {
-            BRepAlgoAPI_Cut mkCut2(cutPieces, m_cuttingTool);
+            BRepAlgoAPI_Cut mkCut2(cutPieces, cuttingTool);
             if (mkCut2.IsDone()) {
-                m_cutPieces = mkCut2.Shape();
+                if(!lock.resume()) {
+                    return;
+                }
+                lock->cutShape = mkCut2.Shape();
+                lock.release();
+
                 if (debugSection()) {
-                    BRepTools::Write(m_cutPieces, "DVSCutPieces2.brep");// debug
+                    BRepTools::Write(cutPieces, "DVSCutPieces2.brep");// debug
                 }
             }
         }
 
         // check for error in cut
         Bnd_Box testBox;
-        BRepBndLib::AddOptimal(m_cutPieces, testBox);
+        BRepBndLib::AddOptimal(cutPieces, testBox);
         testBox.SetGap(0.0);
         if (testBox.IsVoid()) {
             // prism & input don't intersect.  rawShape is garbage, don't bother.
@@ -495,44 +531,38 @@ void DrawViewSection::makeSectionCut(const TopoDS_Shape& baseShape)
                                     Label.getValue());
         }
 
-        onSectionCutFinished()
-    };
+        onSectionCutFinished();
+    }catch(...){}};
 
-    std::thread{std::move(lambda)}.detatch();
+    std::thread{std::move(lambda)}.detach();
 }
 
 //! position, scale and rotate shape for  buildGeometryObject
 //! save the cut shape for further processing
-TopoDS_Shape DrawViewSection::prepareShape(const TopoDS_Shape& rawShape, double shapeSize)
+void DrawViewSection::prepareShape(double)
 {
-    //    Base::Console().Message("DVS::prepareShape - %s - rawShape.IsNull: %d
-    //    shapeSize: %.3f\n",
-    //                            getNameInDocument(), rawShape.IsNull(),
-    //                            shapeSize);
-    (void)shapeSize;// shapeSize is not used in this base class, but is
-                    // interesting for derived classes
+    auto lock = concurrentData.continueWriting();
+    if(!lock) {
+        // Maybe, prepare could write directly to concurrentData::cutShape.
+        return;
+    }
     // build display geometry as in DVP, with minor mods
-    TopoDS_Shape preparedShape;
     try {
         Base::Vector3d origin(0.0, 0.0, 0.0);
-        m_projectionCS = getProjectionCS(origin);
+        auto projection_cs = getProjectionCS(origin);
         gp_Pnt inputCenter;
-        inputCenter = ShapeUtils::findCentroid(rawShape, m_projectionCS);
+        inputCenter = ShapeUtils::findCentroid(lock->cutShape, projection_cs);
         Base::Vector3d centroid(inputCenter.X(), inputCenter.Y(), inputCenter.Z());
 
-        m_cutShapeRaw = rawShape;
-        preparedShape = ShapeUtils::moveShape(rawShape, centroid * -1.0);
-        m_cutShape = preparedShape;
-        m_saveCentroid = centroid;
-
-        preparedShape = ShapeUtils::scaleShape(preparedShape, getScale());
+        lock->cutShape = ShapeUtils::moveShape(lock->cutShape, -centroid);
+        lock->cutShape = ShapeUtils::scaleShape(lock->cutShape, getScale());
 
         if (!DrawUtil::fpCompare(Rotation.getValue(), 0.0)) {
-            preparedShape =
-                ShapeUtils::rotateShape(preparedShape, m_projectionCS, Rotation.getValue());
+            lock->cutShape =
+                ShapeUtils::rotateShape(lock->cutShape, projection_cs, Rotation.getValue());
         }
         if (debugSection()) {
-            BRepTools::Write(m_cutShape, "DVSCutShape.brep");// debug
+            BRepTools::Write(lock->cutShape, "DVSCutShape.brep");// debug
             //            DrawUtil::dumpCS("DVS::makeSectionCut - CS to GO",
             //            viewAxis);
         }
@@ -542,7 +572,6 @@ TopoDS_Shape DrawViewSection::prepareShape(const TopoDS_Shape& rawShape, double 
                                 getNameInDocument(),
                                 e1.GetMessageString());
     }
-    return preparedShape;
 }
 
 TopoDS_Shape DrawViewSection::makeCuttingTool(double shapeSize)
@@ -566,27 +595,37 @@ TopoDS_Shape DrawViewSection::makeCuttingTool(double shapeSize)
 
 void DrawViewSection::onSectionCutFinished()
 {
-    QObject::disconnect(connectCutWatcher);
-
     showProgressMessage(getNameInDocument(), "has finished making section cut");
 
-    m_preparedShape = prepareShape(getShapeToPrepare(), m_shapeSize);
-    if (debugSection()) {
-        BRepTools::Write(m_preparedShape, "DVSPreparedShape.brep");// debug
+    auto lock = concurrentData.continueWriting();
+    if(!lock) {
+        return;
+    }
+    auto size = lock->shapeSize;
+    lock.release();
+
+    prepareShape(size);
+    if(!lock) {
+        return;
     }
 
     postSectionCutTasks();
+    if(!lock) {
+        return;
+    }
 
     // display geometry for cut shape is in geometryObject as in DVP
-    buildGeometryObject(m_preparedShape, getProjectionCS());
+    if(!lock.resume()) {
+        return;
+    }
+    auto shape = lock->cutShape;
+    lock.release();
+    buildGeometryObject(shape, getProjectionCS());
 }
 
 // activities that depend on updated geometry object
 void DrawViewSection::postHlrTasks()
 {
-    //    Base::Console().Message("DVS::postHlrTasks() - %s\n",
-    //    getNameInDocument());
-
     DrawViewPart::postHlrTasks();
 
     // second pass if required
@@ -594,33 +633,38 @@ void DrawViewSection::postHlrTasks()
         double newScale = autoScale();
         Scale.setValue(newScale);
         Scale.purgeTouched();
-        sectionExec(m_saveShape);
+//        sectionExec(m_saveShape);
     }
     overrideKeepUpdated(false);
 
+    auto lock = concurrentData.continueReading();
+    if(!lock) {
+        return;
+    }
     // build section face geometry
-    TopoDS_Compound faceIntersections = findSectionPlaneIntersections(getShapeToIntersect());
+    TopoDS_Compound faceIntersections = findSectionPlaneIntersections(lock->cutShape);
+    lock.release();
+
     if (faceIntersections.IsNull()) {
         requestPaint();
         return;
     }
+
     if (debugSection()) {
         BRepTools::Write(faceIntersections, "DVSFaceIntersections.brep");// debug
     }
 
-    TopoDS_Shape centeredFaces = ShapeUtils::moveShape(faceIntersections, m_saveCentroid * -1.0);
+    TopoDS_Shape centeredFaces = ShapeUtils::moveShape(faceIntersections, -getOriginalCentroid());
 
-    TopoDS_Shape scaledSection = ShapeUtils::scaleShape(centeredFaces, getScale());
-    if (!DrawUtil::fpCompare(Rotation.getValue(), 0.0)) {
-        scaledSection =
-            ShapeUtils::rotateShape(scaledSection, getProjectionCS(), Rotation.getValue());
+    if(!lock.resume()) {
+        return;
     }
-
-    m_sectionTopoDSFaces = alignSectionFaces(faceIntersections);
+    lock->sectionTopoDSFaces = alignSectionFaces(faceIntersections);
     if (debugSection()) {
-        BRepTools::Write(m_sectionTopoDSFaces, "DVSTopoSectionFaces.brep");// debug
+        BRepTools::Write(lock->sectionTopoDSFaces, "DVSTopoSectionFaces.brep");// debug
     }
-    m_tdSectionFaces = makeTDSectionFaces(m_sectionTopoDSFaces);
+    lock->tdSectionFaces = makeTDSectionFaces(lock->sectionTopoDSFaces);
+    lock.release();
 
     TechDraw::DrawViewPart* dvp = dynamic_cast<TechDraw::DrawViewPart*>(BaseView.getValue());
     if (dvp) {
@@ -641,14 +685,6 @@ void DrawViewSection::postSectionCutTasks()
             c->recomputeFeature();
         }
     }
-}
-
-bool DrawViewSection::waitingForResult() const
-{
-    if (DrawViewPart::waitingForResult() || waitingForCut()) {
-        return true;
-    }
-    return false;
 }
 
 gp_Pln DrawViewSection::getSectionPlane() const
@@ -679,11 +715,11 @@ TopoDS_Compound DrawViewSection::findSectionPlaneIntersections(const TopoDS_Shap
 
     gp_Pln plnSection = getSectionPlane();
     if (debugSection()) {
-        BRepBuilderAPI_MakeFace mkFace(plnSection,
-                                       -m_shapeSize,
-                                       m_shapeSize,
-                                       -m_shapeSize,
-                                       m_shapeSize);
+        auto lock = concurrentData.lockForReading();
+        auto shapeSize = lock->shapeSize;
+        lock.release();
+
+        BRepBuilderAPI_MakeFace mkFace(plnSection, -shapeSize, shapeSize, -shapeSize, shapeSize);
         BRepTools::Write(mkFace.Face(), "DVSSectionPlane.brep");// debug
         BRepTools::Write(shape, "DVSShapeToIntersect.brep)");
     }
@@ -715,7 +751,7 @@ TopoDS_Compound DrawViewSection::alignSectionFaces(TopoDS_Shape faceIntersection
     //                            faceIntersections.IsNull());
     TopoDS_Compound sectionFaces;
     TopoDS_Shape centeredShape =
-        ShapeUtils::moveShape(faceIntersections, getOriginalCentroid() * -1.0);
+        ShapeUtils::moveShape(faceIntersections, -getOriginalCentroid());
 
     TopoDS_Shape scaledSection = ShapeUtils::scaleShape(centeredShape, getScale());
     if (!DrawUtil::fpCompare(Rotation.getValue(), 0.0)) {
@@ -1118,20 +1154,25 @@ gp_Ax2 DrawViewSection::getProjectionCS(const Base::Vector3d pt) const
 
 std::vector<LineSet> DrawViewSection::getDrawableLines(int i)
 {
-    //    Base::Console().Message("DVS::getDrawableLines(%d) - lineSets: %d\n", i,
-    //    m_lineSets.size());
-    std::vector<LineSet> result;
+    auto lock = concurrentData.lockForReading();
     return DrawGeomHatch::getTrimmedLinesSection(this,
-                                                 m_lineSets,
+                                                 lock->lineSets,
                                                  getSectionTopoDSFace(i),
                                                  HatchScale.getValue(),
                                                  HatchRotation.getValue(),
                                                  HatchOffset.getValue());
 }
 
+std::vector<FacePtr> DrawViewSection::getTDFaceGeometry()
+{
+    auto lock = concurrentData.lockForReading();
+    return lock->tdSectionFaces;
+}
+
 TopoDS_Face DrawViewSection::getSectionTopoDSFace(int i)
 {
-    TopExp_Explorer expl(m_sectionTopoDSFaces, TopAbs_FACE);
+    auto lock = concurrentData.lockForReading();
+    TopExp_Explorer expl(lock->sectionTopoDSFaces, TopAbs_FACE);
     int count = 1;
     for (; expl.More(); expl.Next(), count++) {
         if (count == i + 1) {
@@ -1198,8 +1239,12 @@ void DrawViewSection::makeLineSets(void)
 
     if (fi.hasExtension("pat")) {
         if (!fileSpec.empty() && !NameGeomPattern.isEmpty()) {
-            m_lineSets.clear();
-            m_lineSets = DrawGeomHatch::makeLineSets(fileSpec, NameGeomPattern.getValue());
+            auto lock = concurrentData.continueWriting();
+            if(!lock) {
+                return;
+            }
+            lock->lineSets.clear();
+            lock->lineSets = DrawGeomHatch::makeLineSets(fileSpec, NameGeomPattern.getValue());
         }
     }
 }

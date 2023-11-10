@@ -355,6 +355,7 @@ SET(FreeCADBase_Threads_SRCS
     Threads/locks/LockPolicy.inl
     Threads/locks/LockPolicy.cpp
     Threads/locks/ReaderLock.h
+    Threads/locks/ReaderLock.inl
     Threads/locks/WriterLock.h
     Threads/locks/WriterLock.inl
     Threads/IteratorWrapper.h

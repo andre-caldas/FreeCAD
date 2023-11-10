@@ -202,12 +202,18 @@ TopoDS_Shape DrawComplexSection::makeCuttingTool(double dMax)
         validateOffsetProfile(profileWire, SectionNormal.getValue(), angleThresholdDeg);
     }
 
-    m_toolFaceShape = extrudeWireToFace(profileWire, gClosestBasis, 2.0 * dMax);
+    auto toolFaceShape = extrudeWireToFace(profileWire, gClosestBasis, 2.0 * dMax);
+    auto lock = concurrentData.continueWriting();
+    if(!lock) {
+        return TopoDS_Shape{};
+    }
+    lock->toolFaceShape = toolFaceShape;
+    lock.release();
     if (debugSection()) {
-        BRepTools::Write(m_toolFaceShape, "DCSToolFaceShape.brep");//debug
+        BRepTools::Write(toolFaceShape, "DCSToolFaceShape.brep");//debug
     }
     extrudeDir = dMax * sectionCS.Direction();
-    TopoDS_Shape roughTool = BRepPrimAPI_MakePrism(m_toolFaceShape, extrudeDir).Shape();
+    TopoDS_Shape roughTool = BRepPrimAPI_MakePrism(toolFaceShape, extrudeDir).Shape();
     if (roughTool.ShapeType() == TopAbs_COMPSOLID ||
         roughTool.ShapeType() == TopAbs_COMPOUND) {
         //Composite Solids do not cut well if they contain "solids" with no volume. This
@@ -229,79 +235,72 @@ TopoDS_Shape DrawComplexSection::makeCuttingTool(double dMax)
         return comp;
     }
 
-    return BRepPrimAPI_MakePrism(m_toolFaceShape, extrudeDir).Shape();
+    return BRepPrimAPI_MakePrism(toolFaceShape, extrudeDir).Shape();
 }
 
 //get the shape ready for projection and cut surface finding
-TopoDS_Shape DrawComplexSection::prepareShape(const TopoDS_Shape& cutShape, double shapeSize)
+void DrawComplexSection::prepareShape(double shapeSize)
 {
-    //    Base::Console().Message("DCS::prepareShape() - strategy: %d\n", ProjectionStrategy.getValue());
     if (ProjectionStrategy.getValue() == 0) {
         //Offset. Use regular section behaviour
-        return DrawViewSection::prepareShape(cutShape, shapeSize);
+        return DrawViewSection::prepareShape(shapeSize);
     }
 
+    auto shape = getCutShape();
     //"Aligned" projection (Aligned Section)
-    if (m_alignResult.IsNull()) {
-        return TopoDS_Shape();
+    if (shape.IsNull()) {
+        return;
     }
 
-    TopoDS_Shape centeredShape = ShapeUtils::centerShapeXY(m_alignResult, getProjectionCS());
-    m_preparedShape = ShapeUtils::scaleShape(centeredShape, getScale());
+    auto centeredShape = ShapeUtils::centerShapeXY(shape, getProjectionCS());
+    auto preparedShape = ShapeUtils::scaleShape(centeredShape, getScale());
     if (!DrawUtil::fpCompare(Rotation.getValue(), 0.0)) {
-        m_preparedShape =
-            ShapeUtils::rotateShape(m_preparedShape, getProjectionCS(), Rotation.getValue());
+        preparedShape =
+            ShapeUtils::rotateShape(preparedShape, getProjectionCS(), Rotation.getValue());
     }
 
-    return m_preparedShape;
+    auto dvs_lock = DrawViewSection::concurrentData.continueWriting();
+    if(!dvs_lock) {
+        return;
+    }
+    dvs_lock->cutShape = preparedShape;
+    dvs_lock.release();
+
+    auto lock = concurrentData.continueWriting();
+    if(!lock) {
+        return;
+    }
+    lock->preparedShape = std::move(preparedShape);
 }
 
 
-void DrawComplexSection::makeSectionCut(const TopoDS_Shape& baseShape)
+TopoDS_Shape DrawComplexSection::getToolFaceShape() const
 {
-    //    Base::Console().Message("DCS::makeSectionCut() - %s - baseShape.IsNull: %d\n",
-    //                            getNameInDocument(), baseShape.IsNull());
+    auto lock = concurrentData.lockForReading();
+    return lock->toolFaceShape;
+}
+
+
+void DrawComplexSection::makeSectionCut()
+{
     if (ProjectionStrategy.getValue() == 0) {
         //Offset. Use regular section behaviour
-        return DrawViewSection::makeSectionCut(baseShape);
+        return DrawViewSection::makeSectionCut();
     }
 
-    try {
-        connectAlignWatcher =
-            QObject::connect(&m_alignWatcher, &QFutureWatcherBase::finished, &m_alignWatcher,
-                             [this] { this->onSectionCutFinished(); });
-
-        // We create a lambda closure to hold a copy of baseShape.
-        // This is important because this variable might be local to the calling
-        // function and might get destructed before the parallel processing finishes.
-        auto lambda = [this, baseShape]{this->makeAlignedPieces(baseShape);};
-        m_alignFuture = QtConcurrent::run(std::move(lambda));
-        m_alignWatcher.setFuture(m_alignFuture);
-        waitingForAlign(true);
-    }
-    catch (...) {
-        Base::Console().Message("DCS::makeSectionCut - failed to make alignedPieces");
-        return;
-    }
-
-    return DrawViewSection::makeSectionCut(baseShape);
+    auto lambda = [self = SharedFromThis(), this]() noexcept
+    {
+        try {
+            auto baseShape = getCutShape();
+            makeAlignedPieces(baseShape);
+            DrawViewSection::makeSectionCut();
+        }
+        catch (...) {
+            Base::Console().Message("DCS::makeSectionCut - failed to make alignedPieces");
+        }
+    };
 }
 
-
-void DrawComplexSection::onSectionCutFinished()
-{
-    //    Base::Console().Message("DCS::onSectionCutFinished() - %s - cut: %d align: %d\n",
-    //                            getNameInDocument(), m_cutFuture.isRunning(), m_alignFuture.isRunning());
-    if (m_cutFuture.isRunning() ||  //waitingForCut()
-        m_alignFuture.isRunning()) {//waitingForAlign()
-        //can not continue yet.  return until the other thread ends
-        return;
-    }
-
-    DrawViewSection::onSectionCutFinished();
-
-    QObject::disconnect(connectAlignWatcher);
-}
 
 //for Aligned strategy, cut the rawShape by each segment of the tool
 //TODO: this process should replace the "makeSectionCut" from DVS
@@ -358,9 +357,12 @@ void DrawComplexSection::makeAlignedPieces(const TopoDS_Shape& rawShape)
         verticalReverser = -1.0;
     }
 
+    auto toolFaceShape = getToolFaceShape();
+    auto shapeSize = getShapeSize();
+
     //make a tool for each segment of the toolFaceShape and intersect it with the
     //raw shape
-    TopExp_Explorer expFaces(m_toolFaceShape, TopAbs_FACE);
+    TopExp_Explorer expFaces(toolFaceShape, TopAbs_FACE);
     for (int iPiece = 0; expFaces.More(); expFaces.Next(), iPiece++) {
         TopoDS_Face face = TopoDS::Face(expFaces.Current());
         gp_Vec segmentNormal = gp_Vec(getFaceNormal(face));
@@ -374,7 +376,7 @@ void DrawComplexSection::makeAlignedPieces(const TopoDS_Shape& rawShape)
             segmentNormal.Reverse();
         }
 
-        gp_Vec extrudeDir = segmentNormal * m_shapeSize;
+        gp_Vec extrudeDir = segmentNormal * shapeSize;
         BRepPrimAPI_MakePrism mkPrism(face, extrudeDir);
         TopoDS_Shape segmentTool = mkPrism.Shape();
         TopoDS_Shape intersect = shapeShapeIntersect(segmentTool, rawShape);
@@ -445,14 +447,20 @@ void DrawComplexSection::makeAlignedPieces(const TopoDS_Shape& rawShape)
     }
 
     if (pieces.empty()) {
-        m_alignResult = TopoDS_Compound();
+        auto lock = DrawViewSection::concurrentData.continueWriting();
+        if(lock) {
+            lock->cutShape = TopoDS_Compound{};
+        }
         return;
     }
 
     int pieceCount = pieces.size();
     if (pieceCount < 2) {
-        //no need to space out the pieces
-        m_alignResult = TopoDS::Compound(pieces.front());
+        auto lock = DrawViewSection::concurrentData.continueWriting();
+        if(lock) {
+            //no need to space out the pieces
+            lock->cutShape = TopoDS::Compound(pieces.front());
+        }
         return;
     }
 
@@ -503,7 +511,11 @@ void DrawComplexSection::makeAlignedPieces(const TopoDS_Shape& rawShape)
         BRepTools::Write(alignedCompound, "DCSmap50AlignedCompound.brep");//debug
     }
 
-    m_alignResult = alignedCompound;
+    auto lock = DrawViewSection::concurrentData.continueWriting();
+    if(!lock) {
+        return;
+    }
+    lock->cutShape = alignedCompound;
 }
 
 //! tries to find the intersection faces of the cut shape and the cutting tool.
@@ -541,22 +553,24 @@ TopoDS_Compound DrawComplexSection::singleToolIntersections(const TopoDS_Shape& 
     TopoDS_Compound result;
     builder.MakeCompound(result);
 
+    auto toolFaceShape = getToolFaceShape();
+
     if (debugSection()) {
         BRepTools::Write(cutShape, "DCSOffsetCutShape.brep");              //debug
-        BRepTools::Write(m_toolFaceShape, "DCSOffsetCuttingToolFace.brep");//debug
+        BRepTools::Write(toolFaceShape, "DCSOffsetCuttingToolFace.brep");//debug
     }
 
-    if (m_toolFaceShape.IsNull()) {
+    if (toolFaceShape.IsNull()) {
         return result;
     }
 
     TopExp_Explorer expFaces(cutShape, TopAbs_FACE);
     for (; expFaces.More(); expFaces.Next()) {
         TopoDS_Face face = TopoDS::Face(expFaces.Current());
-        if (!boxesIntersect(face, m_toolFaceShape)) {
+        if (!boxesIntersect(face, toolFaceShape)) {
             continue;
         }
-        std::vector<TopoDS_Face> commonFaces = faceShapeIntersect(face, m_toolFaceShape);
+        std::vector<TopoDS_Face> commonFaces = faceShapeIntersect(face, toolFaceShape);
         for (auto& cFace : commonFaces) {
             builder.Add(result, cFace);
         }
@@ -615,22 +629,13 @@ TopoDS_Compound DrawComplexSection::alignSectionFaces(TopoDS_Shape faceIntersect
     return TopoDS::Compound(mapToPage(faceIntersections));
 }
 
-TopoDS_Shape DrawComplexSection::getShapeToIntersect()
-{
-    if (ProjectionStrategy.getValue() == 0) {//Offset
-        return DrawViewSection::getShapeToIntersect();
-    }
-    //Aligned
-    return m_preparedShape;
-}
-
 TopoDS_Shape DrawComplexSection::getShapeForDetail() const
 {
     if (ProjectionStrategy.getValue() == 0) {//Offset
         return DrawViewSection::getShapeForDetail();
     }
-    //Aligned
-    return m_preparedShape;
+    auto lock = concurrentData.lockForReading();
+    return lock->preparedShape;
 }
 
 TopoDS_Wire DrawComplexSection::makeProfileWire() const
@@ -985,7 +990,7 @@ bool DrawComplexSection::validateProfilePosition(TopoDS_Wire profileWire, gp_Ax2
 
     Bnd_Box shapeBox;
     shapeBox.SetGap(0.0);
-    BRepBndLib::AddOptimal(m_saveShape, shapeBox);
+    BRepBndLib::AddOptimal(getCutShape(), shapeBox);
     double xMin = 0, xMax = 0, yMin = 0, yMax = 0, zMin = 0, zMax = 0;
     shapeBox.Get(xMin, yMin, zMin, xMax, yMax, zMax);
     double spanLow = xMin;

@@ -21,73 +21,44 @@
  *                                                                          *
  ***************************************************************************/
 
-#ifndef BASE_Threads_ReaderLock_H
-#define BASE_Threads_ReaderLock_H
-
 #include <memory>
 
-#include "../type_traits/Utils.h"
-
-#include "LockPolicy.h"
+#include "../Exception.h"
+#include "ReaderLock.h"
 
 namespace Base::Threads
 {
 
-/**
- * @brief Locks a classes of type "MutexHolder" for "reading".
- * The MutexHolder must:
- * 1. Define a MutexHolder::ReaderGate class that implements getStruct().
- * 2. Define a method that takes a ReaderLock as argument,
- *    and returns a ReaderGate instance.
- */
-template<typename MutexHolder, auto LocalPointer = nullptr>
-class ReaderLock
-    : public SharedLock
-{
-public:
-    using local_data_t = const MemberPointerTo_t<LocalPointer>;
+template<typename MutexHolder>
+ReaderLock<MutexHolder>::ReaderLock(const MutexHolder& mutex_holder)
+    : mutexPair(*mutex_holder.getMutexPair())
+    , sharedLock(std::make_unique<SharedLock>(mutexPair))
+    , gate(mutex_holder.getReaderGate(sharedLock.get()))
+{}
 
-    [[nodiscard]]
-    ReaderLock(const MutexHolder& mutex_holder)
-        : SharedLock(*mutex_holder.getMutexPair())
-        , gate(mutex_holder.getReaderGate(this))
-        , localData((&*gate)->*LocalPointer)
-    {}
-
-    const auto* operator->() const {return &(StripSmartPointer{localData}());}
-
-private:
-    typename MutexHolder::ReaderGate gate;
-    local_data_t& localData;
-};
 
 template<typename MutexHolder>
-class ReaderLock<MutexHolder, nullptr>
+void ReaderLock<MutexHolder, nullptr>::release()
 {
-public:
-    [[nodiscard]]
-    ReaderLock(const MutexHolder& mutex_holder);
+    assert(sharedLock);
+    sharedLock.reset();
+}
 
-    /**
-     * @brief Releases the lock.
-     */
-    void release();
+template<typename MutexHolder>
+void ReaderLock<MutexHolder>::resume()
+{
+    assert(!sharedLock);
+    sharedLock = std::make_unique<SharedLock>(mutexPair);
+}
 
-    /**
-     * @brief Acquires a shared lock and resumes processing.
-     */
-    void resume();
-
-    auto operator->() const;
-
-private:
-    MutexPair& mutexPair;
-    std::unique_ptr<SharedLock> sharedLock;
-    typename MutexHolder::ReaderGate gate;
-};
+template<typename MutexHolder>
+auto ReaderLock<MutexHolder>::operator->() const
+{
+    assert(sharedLock);
+    if(!sharedLock) {
+        throw ExceptionNeedLock{};
+    }
+    return &*gate;
+}
 
 } //namespace Base::Threads
-
-#include "ReaderLock.inl"
-
-#endif // BASE_Threads_ReaderLock_H

@@ -88,7 +88,7 @@ protected:
              std::enable_if_t<(std::is_same_v<MutexPair, MutN> && ...)>* = nullptr>
     LockPolicy(bool is_exclusive, MutN*... mutex);
     LockPolicy() = delete;
-    ~LockPolicy();
+    virtual ~LockPolicy();
 
     std::unordered_set<const MutexPair*> mutexes;
 

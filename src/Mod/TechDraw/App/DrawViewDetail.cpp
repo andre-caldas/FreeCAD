@@ -71,7 +71,7 @@ using namespace TechDraw;
 
 PROPERTY_SOURCE(TechDraw::DrawViewDetail, TechDraw::DrawViewPart)
 
-DrawViewDetail::DrawViewDetail() : m_saveDvp(nullptr), m_saveDvs(nullptr)
+DrawViewDetail::DrawViewDetail()
 {
     static const char* dgroup = "Detail";
 
@@ -90,6 +90,12 @@ DrawViewDetail::DrawViewDetail() : m_saveDvp(nullptr), m_saveDvs(nullptr)
     Direction.setStatus(App::Property::ReadOnly, true);//Should be same as BaseView
     Rotation.setStatus(App::Property::ReadOnly, true); //same as BaseView
     ScaleType.setValue("Custom");                      //dvd uses scale from BaseView
+}
+
+TopoDS_Shape DrawViewDetail::getDetailShape() const
+{
+    auto lock = concurrentData.lockForReading();
+    return lock->detailShape;
 }
 
 short DrawViewDetail::mustExecute() const
@@ -122,7 +128,6 @@ void DrawViewDetail::onChanged(const App::Property* prop)
 
 App::DocumentObjectExecReturn* DrawViewDetail::execute()
 {
-    //    Base::Console().Message("DVD::execute() - %s\n", getNameInDocument());
     if (!keepUpdated()) {
         return DrawView::execute();
     }
@@ -156,9 +161,20 @@ App::DocumentObjectExecReturn* DrawViewDetail::execute()
         XDirection.purgeTouched();//don't trigger updates!
         //unblock
     }
+    // Mark the start for when buildGeometryObject() is called.
+    DrawViewPart::concurrentData.startWriting();
+    auto lock = concurrentData.continueWriting();
+    lock.release();
 
-    makeDetailShape(shape, dvp, dvs);
+    makeDetailShape(std::move(shape), dvp, dvs);
+    if(!lock) {
+        return StdReturn;
+    }
+
     addShapes2d();
+    if(!lock) {
+        return StdReturn;
+    }
 
     dvp->requestPaint();//to refresh detail highlight in base view
     return DrawView::execute();
@@ -166,7 +182,8 @@ App::DocumentObjectExecReturn* DrawViewDetail::execute()
 
 void DrawViewDetail::makeDetailShape(const TopoDS_Shape& shape, DrawViewPart* dvp, DrawViewSection* dvs)
 {
-    // TODO: should we "markStart()" here, instead?
+    auto lock = concurrentData.startWriting();
+    lock.release();
     BRepBuilderAPI_Copy copier(shape);
     makeDetailShape(copier.Shape(), dvp, dvs);
 }
@@ -175,23 +192,35 @@ void DrawViewDetail::makeDetailShape(const TopoDS_Shape& shape, DrawViewPart* dv
 //the matting style)
 void DrawViewDetail::makeDetailShape(TopoDS_Shape&& shape, DrawViewPart* dvp, DrawViewSection* dvs)
 {
-    auto startTime = concurrentData.lockForWriting()->markStart();
-    auto shallAbort = [startTime, &concurrentData] {
-        // A newer thread is processing the data. Abort...
-        return concurrentData.lockForReading()->startedAfter(startTime);
-    };
+    auto lock = concurrentData.continueWriting();
+    if(!lock) {
+        return;
+    }
 
     // Although the "self" variable is not being accessed,
     // it warrants that "this" will not be destructed meanwhile.
-    auto lambda = [self = SharedFromThis(), this,
-                   shape = std::move(shape), dvp, dvs]
-    {
+    auto lambda = [self = SharedFromThis(), this, lock = std::move(lock),
+                   shape = std::move(shape), dvp, dvs] mutable noexcept
+    {try{
+        lock.release();
+
         Base::Vector3d dirDetail = dvp->Direction.getValue();
         double radius = getFudgeRadius();
 
         gp_Pnt gpCenter = ShapeUtils::findCentroid(shape, dirDetail);
         Base::Vector3d shapeCenter = Base::Vector3d(gpCenter.X(), gpCenter.Y(), gpCenter.Z());
-        m_saveCentroid = shapeCenter;//centroid of original shape
+        if(!lock.resume()) {
+            return;
+        }
+        lock->detailCS = dvp->getProjectionCS(shapeCenter);
+        lock.release();
+
+        auto part_lock = DrawViewPart::concurrentData.continueWriting();
+        if(!part_lock) {
+            return;
+        }
+        part_lock->centroid = shapeCenter;
+        part_lock.release();
 
         if (!dvs) {
             //section cutShape should already be on origin
@@ -201,24 +230,23 @@ void DrawViewDetail::makeDetailShape(TopoDS_Shape&& shape, DrawViewPart* dvp, Dr
 
         shapeCenter = Base::Vector3d(0.0, 0.0, 0.0);
 
-
-        m_viewAxis = dvp->getProjectionCS(shapeCenter);//save the CS for later
+        auto view_cs = dvp->getProjectionCS(shapeCenter);//save the CS for later
         Base::Vector3d anchor = AnchorPoint.getValue();//this is a 2D point in base view local coords
 
-        anchor = DrawUtil::toR3(m_viewAxis, anchor);//actual anchor coords in R3
+        anchor = DrawUtil::toR3(view_cs, anchor);//actual anchor coords in R3
 
         Bnd_Box bbxSource;
         bbxSource.SetGap(0.0);
         BRepBndLib::AddOptimal(shape, bbxSource);
         double diag = sqrt(bbxSource.SquareExtent());
 
-        Base::Vector3d toolPlaneOrigin = anchor + dirDetail * diag * -1.0;//center tool about anchor
+        Base::Vector3d toolPlaneOrigin = anchor - dirDetail * diag;//center tool about anchor
         double extrudeLength = 2.0 * toolPlaneOrigin.Length();
 
         gp_Pnt gpnt(toolPlaneOrigin.x, toolPlaneOrigin.y, toolPlaneOrigin.z);
         gp_Dir gdir(dirDetail.x, dirDetail.y, dirDetail.z);
 
-        if(shallAbort()) {
+        if(!lock) {
             return;
         }
 
@@ -255,7 +283,7 @@ void DrawViewDetail::makeDetailShape(TopoDS_Shape&& shape, DrawViewPart* dvp, Dr
             }
         }
 
-        if(shallAbort()) {
+        if(!lock) {
             return;
         }
 
@@ -266,68 +294,86 @@ void DrawViewDetail::makeDetailShape(TopoDS_Shape&& shape, DrawViewPart* dvp, Dr
             return;
         }
 
-                // save the detail shape for further processing
-        m_detailShape = mkCommon.Shape();
+        auto newShape = mkCommon.Shape();
+        if(!lock.resume()) {
+            return;
+        }
+        // save the detail shape for further processing
+        lock->detailShape = std::move(newShape);
+        lock.release();
 
-        if(shallAbort()) {
+        if(!lock.resume()) {
             return;
         }
 
         if (debugDetail()) {
             BRepTools::Write(tool, "DVDTool.brep");     //debug
             BRepTools::Write(shape, "DVDCopy.brep");//debug
-            BRepTools::Write(m_detailShape, "DVDCommon.brep"); //debug
+            BRepTools::Write(lock->detailShape, "DVDCommon.brep"); //debug
         }
 
-        gp_Pnt inputCenter = ShapeUtils::findCentroid(m_detailShape, dirDetail);
+        gp_Pnt inputCenter = ShapeUtils::findCentroid(lock->detailShape, dirDetail);
         Base::Vector3d centroid(inputCenter.X(), inputCenter.Y(), inputCenter.Z());
-        m_saveCentroid += centroid;//center of massaged shape
         //align shape with detail anchor
-        TopoDS_Shape centeredShape = ShapeUtils::moveShape(m_detailShape, anchor * -1.0);
-        m_scaledShape = ShapeUtils::scaleShape(centeredShape, getScale());
+        TopoDS_Shape centeredShape = ShapeUtils::moveShape(lock->detailShape, -anchor);
+        lock->detailShape = ShapeUtils::scaleShape(std::move(centeredShape), getScale());
+        lock.release();
 
-        if(shallAbort()) {
+        if(!part_lock.resume()) {
             return;
         }
-
-        if (debugDetail()) {
-            BRepTools::Write(m_scaledShape, "DVDScaled.brep");//debug
-        }
-
-        Base::Vector3d stdOrg(0.0, 0.0, 0.0);
-        m_viewAxis = dvp->getProjectionCS(stdOrg);
+        part_lock->centroid += centroid;//center of massaged shape
+        part_lock.release();
 
         if (!DrawUtil::fpCompare(Rotation.getValue(), 0.0)) {
-            m_scaledShape = ShapeUtils::rotateShape(m_scaledShape, m_viewAxis, Rotation.getValue());
+            if(!lock.resume()) {
+                return;
+            }
+            lock->detailShape = ShapeUtils::rotateShape(std::move(lock->detailShape),
+                                                        view_cs, Rotation.getValue());
+            lock.release();
         }
+
+        if(!lock.resume()) {
+            return;
+        }
+        lock->detailCS = dvp->getProjectionCS(Base::Vector3d{0.,0.,0.});
+        if (!DrawUtil::fpCompare(Rotation.getValue(), 0.0)) {
+            lock->detailShape = ShapeUtils::rotateShape(lock->detailShape,
+                                                        lock->detailCS, Rotation.getValue());
+        }
+        lock.release();
 
         showProgressMessage(getNameInDocument(), "has finished making detail shape");
 
-        if(shallAbort()) {
-            return;
-        }
-
         onMakeDetailFinished();
-    };
+    }catch(...){}};
 
-    std::thread{std::move(lambda)}.detatch();
+    std::thread{std::move(lambda)}.detach();
 }
 
 void DrawViewDetail::postHlrTasks(void)
 {
-    //    Base::Console().Message("DVD::postHlrTasks()\n");
     DrawViewPart::postHlrTasks();
 
-    geometryObject->pruneVertexGeom(Base::Vector3d(0.0, 0.0, 0.0),
-                                    Radius.getValue()
-                                        * getScale());//remove vertices beyond clipradius
+    auto lock = DrawViewPart::concurrentData.continueWriting();
+    if(!lock) {
+        return;
+    }
+    //remove vertices beyond clipradius
+    lock->geometryObject.pruneVertexGeom(Base::Vector3d(0.0, 0.0, 0.0),
+                                         Radius.getValue() * getScale());
+    lock.release();
 
     //second pass if required
     if (ScaleType.isValue("Automatic") && !checkFit()) {
         double newScale = autoScale();
         Scale.setValue(newScale);
         Scale.purgeTouched();
-        detailExec(m_saveShape, m_saveDvp, m_saveDvs);
+        // TODO: we should mark for update, not call recursivelly!
+        // If anyone answers...
+        // https://forum.freecad.org/viewtopic.php?t=82503
+        //detailExec(m_saveShape, m_saveDvp, m_saveDvs);
     }
     overrideKeepUpdated(false);
 }
@@ -335,17 +381,11 @@ void DrawViewDetail::postHlrTasks(void)
 //continue processing after makeDetailShape thread is finished
 void DrawViewDetail::onMakeDetailFinished(void)
 {
+    auto lock = concurrentData.lockForReading();
     //ancestor's buildGeometryObject will run HLR and face finding
-    buildGeometryObject(m_scaledShape, m_viewAxis);
+    buildGeometryObject(lock->detailShape, lock->detailCS);
 }
 
-bool DrawViewDetail::waitingForResult() const
-{
-    if (DrawViewPart::waitingForResult() || waitingForDetail()) {
-        return true;
-    }
-    return false;
-}
 TopoDS_Shape DrawViewDetail::projectEdgesOntoFace(TopoDS_Shape& edgeShape, TopoDS_Face& projFace,
                                                   gp_Dir& projDir)
 {

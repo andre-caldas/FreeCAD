@@ -25,6 +25,7 @@
 #define BASE_Threads_WriterLock_H
 
 #include <thread>
+#include <memory>
 
 #include "../type_traits/Utils.h"
 
@@ -53,6 +54,7 @@ public:
     {}
 
     auto* operator->() const {return &(StripSmartPointer{localData}());}
+    auto& operator*() const {return StripSmartPointer{localData}();}
 
 private:
     ExclusiveLock<MutexHolder> exclusiveLock;
@@ -86,6 +88,7 @@ public:
      * @param other: @class WriterLock to move.
      * @attention This is to be used ONLY to pass the lock to a new thread.
      */
+    [[nodiscard]]
     WriterLock(WriterLock<MutexHolder>&& other);
 
 

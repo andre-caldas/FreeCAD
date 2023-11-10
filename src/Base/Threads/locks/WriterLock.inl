@@ -33,7 +33,7 @@ template<typename MutexHolder>
 WriterLock<MutexHolder>::WriterLock(MutexHolder& mutex_holder, bool try_to_resume)
     : exclusiveLock(std::make_unique<ExclusiveLock<MutexHolder>>(mutex_holder))
     , mutexHolder(mutex_holder)
-    , gate(mutex_holder.getWriterGate(&exclusiveLock))
+    , gate(mutex_holder.getWriterGate(exclusiveLock.get()))
 {
     assert(!sharedLock && exclusiveLock);
 
@@ -43,7 +43,7 @@ WriterLock<MutexHolder>::WriterLock(MutexHolder& mutex_holder, bool try_to_resum
         }
     }
     else {
-        mutex_holder.markStart();
+        markStart();
     }
 }
 
@@ -88,7 +88,7 @@ template<typename MutexHolder>
 bool WriterLock<MutexHolder>::resumeReading()
 {
     assert(!sharedLock && !exclusiveLock);
-    sharedLock = std::make_unique<SharedLock>(mutexHolder.getMutexPair());
+    sharedLock = std::make_unique<SharedLock>(*mutexHolder.getMutexPair());
     if(isThreadObsolete())
     {
         release();
@@ -102,6 +102,10 @@ auto WriterLock<MutexHolder>::operator->() const
 {
     assert(!exclusiveLock || !sharedLock);
     assert(exclusiveLock || sharedLock);
+    if(!exclusiveLock && ! sharedLock)
+    {
+        throw ExceptionNeedLock{};
+    }
     return &*gate;
 }
 

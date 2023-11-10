@@ -49,18 +49,16 @@ public:
     gp_Ax2 getCSFromBase(const std::string sectionName) const override;
     bool isBaseValid() const override;
     TopoDS_Compound findSectionPlaneIntersections(const TopoDS_Shape& cutShape) override;
-    TopoDS_Shape prepareShape(const TopoDS_Shape& cutShape, double shapeSize) override;
-    TopoDS_Shape getShapeToIntersect() override;
+    void prepareShape(double shapeSize) override;
     gp_Pln getSectionPlane() const override;
     TopoDS_Compound alignSectionFaces(TopoDS_Shape faceIntersections) override;
     std::pair<Base::Vector3d, Base::Vector3d> sectionLineEnds() override;
 
-    void makeSectionCut(const TopoDS_Shape& baseShape) override;
+    TopoDS_Shape getToolFaceShape() const;
+
+    void makeSectionCut() override;
 
     TopoDS_Shape getShapeForDetail() const override;
-
-public Q_SLOTS:
-    void onSectionCutFinished(void) override;
 
     bool boxesIntersect(TopoDS_Face& face, TopoDS_Shape& shape);
     TopoDS_Shape shapeShapeIntersect(const TopoDS_Shape& shape0, const TopoDS_Shape& shape1);
@@ -97,9 +95,13 @@ private:
     bool validateOffsetProfile(TopoDS_Wire profile, Base::Vector3d direction, double angleThresholdDeg) const;
     std::pair<Base::Vector3d, Base::Vector3d> getSegmentEnds(TopoDS_Edge segment) const;
 
-    TopoDS_Shape m_toolFaceShape;
-    TopoDS_Shape m_alignResult;
-    TopoDS_Shape m_preparedShape;//saved for detail views
+    struct ConcurrentData
+    {
+        TopoDS_Shape toolFaceShape;
+        TopoDS_Shape preparedShape; //saved for detail views
+    };
+    using concurrentData_t = Base::Threads::ThreadSafeStruct<ConcurrentData>;
+    concurrentData_t concurrentData;
 
     static const char* ProjectionStrategyEnums[];
 };

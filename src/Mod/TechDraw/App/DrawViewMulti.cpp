@@ -102,19 +102,14 @@ App::DocumentObjectExecReturn *DrawViewMulti::execute()
 
     gp_Pnt inputCenter;
     try {
-        inputCenter = ShapeUtils::findCentroid(comp,
-                                                     Direction.getValue());
-        centroid = Base::Vector3d(inputCenter.X(), inputCenter.Y(), inputCenter.Z());
-        TopoDS_Shape mirroredShape = ShapeUtils::mirrorShape(comp,
-                                                    inputCenter,
-                                                    getScale());
-        gp_Ax2 viewAxis = getViewAxis(Base::Vector3d(inputCenter.X(), inputCenter.Y(), inputCenter.Z()), Direction.getValue());
+        inputCenter = ShapeUtils::findCentroid(comp, Direction.getValue());
+        TopoDS_Shape mirroredShape = ShapeUtils::mirrorShape(comp, inputCenter, getScale());
+        Base::Vector3d center{inputCenter.X(), inputCenter.Y(), inputCenter.Z()};
+        gp_Ax2 viewCS = getViewCS(center, Direction.getValue());
         if (!DrawUtil::fpCompare(Rotation.getValue(), 0.0)) {
-            mirroredShape = ShapeUtils::rotateShape(mirroredShape,
-                                                          viewAxis,
-                                                          Rotation.getValue());
+            mirroredShape = ShapeUtils::rotateShape(mirroredShape, viewCS, Rotation.getValue());
         }
-        geometryObject = buildGeometryObject(mirroredShape, viewAxis);
+        buildGeometryObject(mirroredShape, viewCS);
 
 #if MOD_TECHDRAW_HANDLE_FACES
         extractFaces();

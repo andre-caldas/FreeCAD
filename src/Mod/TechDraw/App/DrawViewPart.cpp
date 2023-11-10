@@ -99,6 +99,7 @@ using DU = DrawUtil;
 PROPERTY_SOURCE_WITH_EXTENSIONS(TechDraw::DrawViewPart, TechDraw::DrawView)
 
 DrawViewPart::DrawViewPart(void)
+    : concurrentData(this)
 {
     static const char* group = "Projection";
     static const char* sgroup = "HLR Parameters";
@@ -150,11 +151,15 @@ DrawViewPart::~DrawViewPart()
     removeAllReferencesFromGeom();
 }
 
+DrawViewPart::ConcurrentData::ConcurrentData(DrawViewPart* self)
+    : geometryObject(self->getNameInDocument(), self)
+{}
+
+
 //! returns a compound of all the shapes from the DocumentObjects in the Source &
 //!  XSource property lists
 TopoDS_Shape DrawViewPart::getSourceShape(bool fuse) const
 {
-//    Base::Console().Message("DVP::getSourceShape()\n");
     const std::vector<App::DocumentObject*>& links = getAllSources();
     if (links.empty()) {
         return TopoDS_Shape();
@@ -202,8 +207,6 @@ void DrawViewPart::addShapes2d(void)
     // or vertices.
     std::vector<TopoDS_Shape> shapes = ShapeExtractor::getShapes2d(getAllSources());
 
-    const auto& geometryObject = lock->geometryObject;
-
     for (auto& s : shapes) {
         if (s.ShapeType() == TopAbs_VERTEX) {
             gp_Pnt gp = BRep_Tool::Pnt(TopoDS::Vertex(s));
@@ -212,23 +215,20 @@ void DrawViewPart::addShapes2d(void)
             //need to offset the point to match the big projection
             Base::Vector3d projected = projectPoint(vp * getScale());
             TechDraw::VertexPtr v1(std::make_shared<TechDraw::Vertex>(projected));
-            lock->geometryObject->addVertex(v1);
+
+            lock->geometryObject.addVertex(v1);
         }
         else if (s.ShapeType() == TopAbs_EDGE) {
             Base::Console().Message("DVP::add2dShapes - found loose edge - isNull: %d\n", s.IsNull());
             TopoDS_Shape sTrans =
-                ShapeUtils::moveShape(s, - 1.0 * lock->);
+                ShapeUtils::moveShape(s, -lock->centroid);
             TopoDS_Shape sScale = ShapeUtils::scaleShape(sTrans,
                                                        getScale());
             TopoDS_Shape sMirror = ShapeUtils::mirrorShape(sScale);
             TopoDS_Edge edge = TopoDS::Edge(sMirror);
             BaseGeomPtr bg = projectEdge(edge);
 
-            geometryObject->addEdge(bg);
-
-        } else {
-            // message for developers.
-            //Base::Console().Message("DEVEL: DVP::addShapes2d - shape is not a vertex or edge\n");
+            lock->geometryObject.addEdge(bg);
         }
     }
 }
@@ -237,10 +237,6 @@ App::DocumentObjectExecReturn* DrawViewPart::execute(void)
 {
     //    Base::Console().Message("DVP::execute() - %s\n", _getNameInDocument());
     if (!keepUpdated()) {
-        return DrawView::execute();
-    }
-
-    if (waitingForHlr()) {
         return DrawView::execute();
     }
 
@@ -295,16 +291,19 @@ void DrawViewPart::onChanged(const App::Property* prop)
 //! prepare the shape for HLR processing by centering, scaling and rotating it
 void DrawViewPart::makeGeometryForShape(const TopoDS_Shape& shape)
 {
+    auto lock = concurrentData.startWriting();
+    gp_Pnt gCentroid = ShapeUtils::findCentroid(shape, getProjectionCS());
+    auto centroid = DU::toVector3d(gCentroid);
+    lock->centroid = centroid;
+    lock.release();
+
     // if we use the passed reference directly, the centering doesn't work.  Maybe the underlying OCC TShape
     // isn't modified?  using a copy works and the referenced shape (from getSourceShape in execute())
     // isn't used for anything anyway.
     BRepBuilderAPI_Copy copier(shape);
     auto localShape = copier.Shape();
 
-    // TODO: remove all those "m_saveXXX".
-    gp_Pnt gCentroid = ShapeUtils::findCentroid(localShape, getProjectionCS());
-    m_saveCentroid = DU::toVector3d(gCentroid);
-    m_saveShape = centerScaleRotate(this, localShape, m_saveCentroid);
+    localShape = centerScaleRotate(this, localShape, centroid);
 
     buildGeometryObject(std::move(localShape), getProjectionCS());
 }
@@ -313,68 +312,67 @@ void DrawViewPart::makeGeometryForShape(const TopoDS_Shape& shape)
 TopoDS_Shape DrawViewPart::centerScaleRotate(DrawViewPart* dvp, TopoDS_Shape& inOutShape,
                                              Base::Vector3d centroid)
 {
-//    Base::Console().Message("DVP::centerScaleRotate() - %s\n", dvp->_getNameInDocument());
-    gp_Ax2 viewAxis = dvp->getProjectionCS();
+    gp_Ax2 viewCS = dvp->getProjectionCS();
 
     //center shape on origin
-    TopoDS_Shape centeredShape = ShapeUtils::moveShape(inOutShape, centroid * -1.0);
+    TopoDS_Shape centeredShape = ShapeUtils::moveShape(inOutShape, -centroid);
 
     inOutShape = ShapeUtils::scaleShape(centeredShape, dvp->getScale());
     if (!DrawUtil::fpCompare(dvp->Rotation.getValue(), 0.0)) {
-        inOutShape = ShapeUtils::rotateShape(inOutShape, viewAxis,
+        inOutShape = ShapeUtils::rotateShape(inOutShape, viewCS,
                                            dvp->Rotation.getValue());//conventional rotation
     }
     //    BRepTools::Write(inOutShape, "DVPScaled.brep");            //debug
     return centeredShape;
 }
 
-void DrawViewPart::buildGeometryObject(const TopoDS_Shape& shape, const gp_Ax2& viewAxis)
+void DrawViewPart::buildGeometryObject(const TopoDS_Shape& shape, const gp_Ax2& viewCS)
 {
-    // TODO: should we "markStart()" here, instead?
+    auto lock = concurrentData.startWriting();
+    lock.release();
     BRepBuilderAPI_Copy copier(shape);
-    buildGeometryObject(copier.Shape(), viewAxis);
+
+    buildGeometryObject(copier.Shape(), viewCS);
 }
 
-void DrawViewPart::buildGeometryObject(TopoDS_Shape&& shape, const gp_Ax2& viewAxis)
+void DrawViewPart::buildGeometryObject(TopoDS_Shape&& shape, const gp_Ax2& viewCS)
 {
     showProgressMessage(getNameInDocument(), "is finding hidden lines");
 
-    auto lock = concurrentData.startWriting();
-    lock.release();
-
-    auto go = std::make_shared<GeometryObject>(_getNameInDocument(), this);
-    go->setIsoCount(IsoCount.getValue());
-    go->isPerspective(Perspective.getValue());
-    go->setFocus(Focus.getValue());
-    go->usePolygonHLR(CoarseView.getValue());
-    go->setScrubCount(ScrubCount.getValue());
-
-    lock.resume();
+    auto lock = concurrentData.continueWriting();
     if(!lock) {
         return;
     }
 
+    lock->geometryObject.setIsoCount(IsoCount.getValue());
+    lock->geometryObject.isPerspective(Perspective.getValue());
+    lock->geometryObject.setFocus(Focus.getValue());
+    lock->geometryObject.usePolygonHLR(CoarseView.getValue());
+    lock->geometryObject.setScrubCount(ScrubCount.getValue());
+
     // Although the "self" variable is not being accessed,
     // it warrants that "this" will not be destructed meanwhile.
     auto lambda = [self = SharedFromThis(), this, lock = std::move(lock),
-                   shape = std::move(shape), go, viewAxis] noexcept
-    {
+                   shape = std::move(shape), viewCS]() mutable noexcept
+    {try{
+        lock.registerNewThread();
+        GeometryObject go{lock->geometryObject};
         lock.release();
 
         //the polygon approximation HLR process runs quickly
-        go->projectShapeWithPolygonAlgo(shape, viewAxis);
-        if(!lock) {
-            return;
-        }
+        go.projectShapeWithPolygonAlgo(shape, viewCS);
 
         if (!CoarseView.getValue()) {
-            go->projectShape(shape, viewAxis);
-            if(!lock) {
-                return;
-            }
+            go.projectShape(shape, viewCS);
         }
 
-        onHlrFinished(go);
+        if(!lock.resume()) {
+            return;
+        }
+        lock->geometryObject = go;
+        lock.release();
+
+        onHlrFinished();
         if(!lock) {
             return;
         }
@@ -385,28 +383,19 @@ void DrawViewPart::buildGeometryObject(TopoDS_Shape&& shape, const gp_Ax2& viewA
         }
 
         onFacesFinished();
-        if(!lock) {
-            return;
-        }
+    }catch(...){}};
 
-        onGeometryObjectFinished();
-    };
-
-    std::thread{std::move(lambda)}.detatch();
+    std::thread{std::move(lambda)}.detach();
 }
 
 //! continue processing after hlr thread completes
-void DrawViewPart::onHlrFinished(std::shared_ptr<GeometryObject> go,
-                                 )
+void DrawViewPart::onHlrFinished()
 {
-    // If we can, we do stuff without holding the lock.
-    auto bbox = go->calcBoundingBox();
-
-    if(!lock.resume()) {
+    auto lock = concurrentData.continueWriting();
+    if(!lock) {
         return;
     }
-    lock->geometryObject = std::move(go);
-    lock->bbox = std::move(bbox);
+    lock->bbox = lock->geometryObject.calcBoundingBox();
     lock.release();
 
     showProgressMessage(getNameInDocument(), "has finished finding hidden lines");
@@ -418,15 +407,16 @@ void DrawViewPart::onHlrFinished(std::shared_ptr<GeometryObject> go,
 //! run any tasks that need to been done after geometry is available
 void DrawViewPart::postHlrTasks()
 {
-    if(!lock.resume()) {
-        return;
-    }
     //add geometry that doesn't come from HLR
     addCosmeticVertexesToGeom();
     addCosmeticEdgesToGeom();
     addReferencesToGeom();
     addShapes2d();
 
+    auto lock = concurrentData.continueWriting();
+    if(!lock) {
+        return;
+    }
     //balloons need to be recomputed here because their
     //references will be invalid until the geometry exists
     for (auto b: getBalloons()) {
@@ -462,7 +452,8 @@ void DrawViewPart::postHlrTasks()
 // Run any tasks that need to be done after faces are available
 void DrawViewPart::postFaceExtractionTasks()
 {
-    if(!lock.resume()) {
+    auto lock = concurrentData.continueWriting();
+    if(!lock) {
         return;
     }
     // Some centerlines depend on faces so we could not add CL geometry before now
@@ -497,8 +488,8 @@ void DrawViewPart::extractFaces()
         return;
     }
     const std::vector<BaseGeomPtr>& goEdges =
-        lock->geometryObject
-            ->getVisibleFaceEdges(SmoothVisible.getValue(), SeamVisible.getValue());
+        lock->geometryObject.getVisibleFaceEdges(SmoothVisible.getValue(),
+                                                 SeamVisible.getValue());
     lock.release();
 
     if (goEdges.empty()) {
@@ -553,7 +544,7 @@ void DrawViewPart::findFacesNew(const std::vector<BaseGeomPtr> &goEdges)
     if(!lock) {
         return;
     }
-    lock->geometryObject->clearFaceGeom();
+    lock->geometryObject.clearFaceGeom();
 
     if (sortedWires.empty()) {
         Base::Console().Warning(
@@ -574,7 +565,7 @@ void DrawViewPart::findFacesNew(const std::vector<BaseGeomPtr> &goEdges)
 
             FacePtr f(std::make_shared<Face>());
             f->wires.push_back(new Wire(wire));
-            lock->geometryObject->addFaceGeom(f);
+            lock->geometryObject.addFaceGeom(f);
         }
     }
 }
@@ -611,7 +602,9 @@ void DrawViewPart::findFacesOld(const std::vector<BaseGeomPtr> &goEdges)
         if (DrawUtil::isZeroEdge(outer)) {
             continue;                   //skip zero length edges. shouldn't happen ;)
         }
+        int innerCounter = -1; // TODO: get rid of this!
         for (auto& inner: nonZero) {
+            ++innerCounter;
             if (&outer == &inner) {
                 continue;
             }
@@ -633,7 +626,7 @@ void DrawViewPart::findFacesOld(const std::vector<BaseGeomPtr> &goEdges)
             if (DrawProjectSplit::isOnEdge(inner, v1, param, false)) {
                 gp_Pnt pnt1 = BRep_Tool::Pnt(v1);
                 splitPoint s1;
-                s1.i = iInner;
+                s1.i = innerCounter;
                 s1.v = Base::Vector3d(pnt1.X(), pnt1.Y(), pnt1.Z());
                 s1.param = param;
                 splits.push_back(s1);
@@ -641,7 +634,7 @@ void DrawViewPart::findFacesOld(const std::vector<BaseGeomPtr> &goEdges)
             if (DrawProjectSplit::isOnEdge(inner, v2, param, false)) {
                 gp_Pnt pnt2 = BRep_Tool::Pnt(v2);
                 splitPoint s2;
-                s2.i = iInner;
+                s2.i = innerCounter;
                 s2.v = Base::Vector3d(pnt2.X(), pnt2.Y(), pnt2.Z());
                 s2.param = param;
                 splits.push_back(s2);
@@ -671,7 +664,7 @@ void DrawViewPart::findFacesOld(const std::vector<BaseGeomPtr> &goEdges)
         return;
     }
     if (sortedWires.empty()) {
-        lock->geometryObject->clearFaceGeom();
+        lock->geometryObject.clearFaceGeom();
         lock.release();
         Base::Console().Warning(
             "DVP::findFacesOld - %s -Can't make faces from projected edges\n",
@@ -679,13 +672,13 @@ void DrawViewPart::findFacesOld(const std::vector<BaseGeomPtr> &goEdges)
         return;
     }
 
-    lock->geometryObject->clearFaceGeom();
+    lock->geometryObject.clearFaceGeom();
     for (const auto& wire: sortedWires) {
         //version 1: 1 wire/face - no voids in face
         FacePtr f(std::make_shared<Face>());
         TechDraw::Wire* w = new TechDraw::Wire(wire);
         f->wires.push_back(w);
-        lock->geometryObject->addFaceGeom(f);
+        lock->geometryObject.addFaceGeom(f);
     }
 }
 
@@ -767,12 +760,7 @@ std::vector<TechDraw::DrawViewBalloon*> DrawViewPart::getBalloons() const
 const std::vector<VertexPtr> DrawViewPart::getVertexGeometry() const
 {
     auto lock = concurrentData.lockForReading();
-    const auto& geometryObject = lock->geometryObject;
-
-    if (geometryObject) {
-        return geometryObject->getVertexGeometry();
-    }
-    return std::vector<TechDraw::VertexPtr>();
+    return lock->geometryObject.getVertexGeometry();
 }
 
 
@@ -830,24 +818,13 @@ TechDraw::FacePtr DrawViewPart::getFace(std::string faceName) const
 const std::vector<TechDraw::FacePtr> DrawViewPart::getFaceGeometry() const
 {
     auto lock = concurrentData.lockForReading();
-    const auto& geometryObject = lock->geometryObject;
-
-    std::vector<TechDraw::FacePtr> result;
-    if (waitingForFaces() || !geometryObject) {
-        return std::vector<TechDraw::FacePtr>();
-    }
-    return geometryObject->getFaceGeometry();
+    return lock->geometryObject.getFaceGeometry();
 }
 
 const BaseGeomPtrVector DrawViewPart::getEdgeGeometry() const
 {
     auto lock = concurrentData.lockForReading();
-    const auto& geometryObject = lock->geometryObject;
-
-    if (geometryObject) {
-        return geometryObject->getEdgeGeometry();
-    }
-    return BaseGeomPtrVector();
+    return lock->geometryObject.getEdgeGeometry();
 }
 
 //! returns existing BaseGeom of 2D Edge(idx)
@@ -935,7 +912,11 @@ std::vector<TopoDS_Wire> DrawViewPart::getWireForFace(int idx) const
     return result;
 }
 
-Base::BoundBox3d DrawViewPart::getBoundingBox() const { return bbox; }
+Base::BoundBox3d DrawViewPart::getBoundingBox() const
+{
+    auto lock = concurrentData.lockForReading();
+    return lock->bbox;
+}
 
 double DrawViewPart::getBoxX() const
 {
@@ -961,30 +942,36 @@ QRectF DrawViewPart::getRect() const
 TopoDS_Shape DrawViewPart::getEdgeCompound() const
 {
     auto lock = concurrentData.lockForReading();
-    const auto& geometryObject = lock->geometryObject;
 
     BRep_Builder builder;
     TopoDS_Compound result;
     builder.MakeCompound(result);
-    if (geometryObject) {
-        if (!geometryObject->getVisHard().IsNull()) {
-            builder.Add(result, geometryObject->getVisHard());
-        }
-        if (!geometryObject->getVisOutline().IsNull()) {
-            builder.Add(result, geometryObject->getVisOutline());
-        }
-        if (!geometryObject->getVisSeam().IsNull()) {
-            builder.Add(result, geometryObject->getVisSeam());
-        }
-        if (!geometryObject->getVisSmooth().IsNull()) {
-            builder.Add(result, geometryObject->getVisSmooth());
-        }
+
+    auto hard = lock->geometryObject.getVisHard();
+    if (!hard.IsNull()) {
+        builder.Add(result, hard);
     }
+
+    auto outline = lock->geometryObject.getVisOutline();
+    if (!outline.IsNull()) {
+        builder.Add(result, outline);
+    }
+
+    auto seam = lock->geometryObject.getVisSeam();
+    if (!seam.IsNull()) {
+        builder.Add(result, seam);
+    }
+
+    auto smooth = lock->geometryObject.getVisSmooth();
+    if (!smooth.IsNull()) {
+        builder.Add(result, smooth);
+    }
+
     //check for empty compound
-    if (!result.IsNull() && TopoDS_Iterator(result).More()) {
-        return result;
+    if (result.IsNull() || !TopoDS_Iterator(result).More()) {
+        return TopoDS_Shape();
     }
-    return TopoDS_Shape();
+    return result;
 }
 
 // returns the (unscaled) size of the visible lines along the alignment vector.
@@ -993,7 +980,7 @@ TopoDS_Shape DrawViewPart::getEdgeCompound() const
 double DrawViewPart::getSizeAlongVector(Base::Vector3d alignmentVector)
 {
     //    Base::Console().Message("DVP::GetSizeAlongVector(%s)\n", DrawUtil::formatVector(alignmentVector).c_str());
-    double alignmentAngle = atan2(alignmentVector.y, alignmentVector.x) * -1.0;
+    double alignmentAngle = -atan2(alignmentVector.y, alignmentVector.x);
     gp_Ax2 OXYZ;//shape has already been projected and we will rotate around Z
     if (getEdgeCompound().IsNull()) {
         return 1.0;
@@ -1014,10 +1001,10 @@ Base::Vector3d DrawViewPart::projectPoint(const Base::Vector3d& pt, bool invert)
     //    Base::Console().Message("DVP::projectPoint(%s, %d\n",
     //                            DrawUtil::formatVector(pt).c_str(), invert);
     Base::Vector3d stdOrg(0.0, 0.0, 0.0);
-    gp_Ax2 viewAxis = getProjectionCS(stdOrg);
+    gp_Ax2 viewCS = getProjectionCS(stdOrg);
     gp_Pnt gPt(pt.x, pt.y, pt.z);
 
-    HLRAlgo_Projector projector(viewAxis);
+    HLRAlgo_Projector projector(viewCS);
     gp_Pnt2d prjPnt;
     projector.Project(gPt, prjPnt);
     Base::Vector3d result(prjPnt.X(), prjPnt.Y(), 0.0);
@@ -1031,9 +1018,9 @@ Base::Vector3d DrawViewPart::projectPoint(const Base::Vector3d& pt, bool invert)
 BaseGeomPtr DrawViewPart::projectEdge(const TopoDS_Edge& e) const
 {
     Base::Vector3d stdOrg(0.0, 0.0, 0.0);
-    gp_Ax2 viewAxis = getProjectionCS(stdOrg);
+    gp_Ax2 viewCS = getProjectionCS(stdOrg);
 
-    gp_Pln plane(viewAxis);
+    gp_Pln plane(viewCS);
     TopoDS_Face paper = BRepBuilderAPI_MakeFace(plane);
     BRepAlgo_NormalProjection projector(paper);
     projector.Add(e);
@@ -1042,27 +1029,9 @@ BaseGeomPtr DrawViewPart::projectEdge(const TopoDS_Edge& e) const
     return BaseGeom::baseFactory(TopoDS::Edge(s));
 }
 
-bool DrawViewPart::waitingForResult() const
-{
-    if (waitingForHlr() || waitingForFaces()) {
-        return true;
-    }
-    return false;
-}
-
 bool DrawViewPart::hasGeometry(void) const
 {
     auto lock = concurrentData.lockForReading();
-    const auto& geometryObject = lock->geometryObject;
-
-    if (!geometryObject) {
-        return false;
-    }
-
-    if (waitingForHlr()) {
-        return false;
-    }
-
     return (!getVertexGeometry().empty() || !getEdgeGeometry().empty());
 }
 
@@ -1106,14 +1075,14 @@ gp_Ax2 DrawViewPart::getProjectionCS(const Base::Vector3d pt) const
     Base::Vector3d xDir = getXDirection();
     gp_Dir gXDir(xDir.x, xDir.y, xDir.z);
     gp_Pnt gOrg(pt.x, pt.y, pt.z);
-    gp_Ax2 viewAxis(gOrg, gDir);
+    gp_Ax2 viewCS(gOrg, gDir);
     try {
-        viewAxis = gp_Ax2(gOrg, gDir, gXDir);
+        viewCS = gp_Ax2(gOrg, gDir, gXDir);
     }
     catch (...) {
         Base::Console().Warning("DVP - %s - failed to create projection CS\n", _getNameInDocument());
     }
-    return viewAxis;
+    return viewCS;
 }
 
 gp_Ax2 DrawViewPart::getRotatedCS(const Base::Vector3d basePoint) const
@@ -1126,18 +1095,20 @@ gp_Ax2 DrawViewPart::getRotatedCS(const Base::Vector3d basePoint) const
     return rotated;
 }
 
-gp_Ax2 DrawViewPart::getViewAxis(const Base::Vector3d& pt, const Base::Vector3d& direction,
-                                 const bool flip) const
+gp_Ax2 DrawViewPart::getViewCS(const Base::Vector3d& pt, const Base::Vector3d& /*direction*/,
+                               const bool /*flip*/) const
 {
-    (void)direction;
-    (void)flip;
-    Base::Console().Message("DVP::getViewAxis - deprecated. Use getProjectionCS.\n");
+    Base::Console().Message("DVP::getviewCS - deprecated. Use getProjectionCS.\n");
     return getProjectionCS(pt);
 }
 
 //TODO: make saveShape a property
 
-Base::Vector3d DrawViewPart::getOriginalCentroid() const { return m_saveCentroid; }
+Base::Vector3d DrawViewPart::getOriginalCentroid() const
+{
+    auto lock = concurrentData.lockForReading();
+    return lock->centroid;
+}
 
 Base::Vector3d DrawViewPart::getCurrentCentroid() const
 {
@@ -1179,9 +1150,7 @@ std::vector<DrawViewDetail*> DrawViewPart::getDetailRefs() const
 const BaseGeomPtrVector DrawViewPart::getVisibleFaceEdges() const
 {
     auto lock = concurrentData.lockForReading();
-    const auto& geometryObject = lock->geometryObject;
-
-    return geometryObject->getVisibleFaceEdges(SmoothVisible.getValue(), SeamVisible.getValue());
+    return lock->geometryObject.getVisibleFaceEdges(SmoothVisible.getValue(), SeamVisible.getValue());
 }
 
 bool DrawViewPart::handleFaces()
@@ -1290,8 +1259,8 @@ Base::Vector3d DrawViewPart::getLegacyX(const Base::Vector3d& pt, const Base::Ve
                                         const bool flip) const
 {
     //    Base::Console().Message("DVP::getLegacyX() - %s\n", Label.getValue());
-    gp_Ax2 viewAxis = ShapeUtils::legacyViewAxis1(pt, axis, flip);
-    gp_Dir gXDir = viewAxis.XDirection();
+    gp_Ax2 viewCS = ShapeUtils::legacyViewAxis1(pt, axis, flip);
+    gp_Dir gXDir = viewCS.XDirection();
     return Base::Vector3d(gXDir.X(), gXDir.Y(), gXDir.Z());
 }
 
@@ -1313,7 +1282,9 @@ void DrawViewPart::addReferencesToGeom()
     //    Base::Console().Message("DVP::addReferencesToGeom() - %s\n", _getNameInDocument());
     std::vector<TechDraw::VertexPtr> gVerts = getVertexGeometry();
     gVerts.insert(gVerts.end(), m_referenceVerts.begin(), m_referenceVerts.end());
-    getGeometryObject()->setVertexGeometry(gVerts);
+
+    auto lock = concurrentData.continueWriting();
+    lock->geometryObject.setVertexGeometry(gVerts);
 }
 
 //add a vertex that is not part of the geometry, but is used by
@@ -1326,7 +1297,7 @@ std::string DrawViewPart::addReferenceVertex(Base::Vector3d v)
     //    Base::Vector3d scaledV = v * getScale();
     //    TechDraw::Vertex* ref = new TechDraw::Vertex(scaledV);
     Base::Vector3d scaledV = v;
-    TechDraw::VertexPtr ref(std::make_shared<TechDraw::Vertex>(scaledV));
+    VertexPtr ref(std::make_shared<TechDraw::Vertex>(scaledV));
     ref->isReference(true);
     refTag = ref->getTagAsString();
     m_referenceVerts.push_back(ref);
@@ -1335,13 +1306,10 @@ std::string DrawViewPart::addReferenceVertex(Base::Vector3d v)
 
 void DrawViewPart::removeReferenceVertex(std::string tag)
 {
-    std::vector<TechDraw::VertexPtr> newRefVerts;
+    std::vector<VertexPtr> newRefVerts;
     for (auto& v : m_referenceVerts) {
         if (v->getTagAsString() != tag) {
             newRefVerts.push_back(v);
-        }
-        else {
-            //            delete v;  //??? who deletes v?
         }
     }
     m_referenceVerts = newRefVerts;
@@ -1350,7 +1318,10 @@ void DrawViewPart::removeReferenceVertex(std::string tag)
 
 void DrawViewPart::removeAllReferencesFromGeom()
 {
-    auto lock = concurrentData.lockForWriting();
+    auto lock = concurrentData.continueWriting();
+    if(!lock) {
+        return;
+    }
 
     if (!m_referenceVerts.empty()) {
         std::vector<VertexPtr> gVerts = getVertexGeometry();
@@ -1361,7 +1332,7 @@ void DrawViewPart::removeAllReferencesFromGeom()
             }
         }
         // TODO: newVerts should be moved!
-        lock->geometryObject->setVertexGeometry(newVerts);
+        lock->geometryObject.setVertexGeometry(newVerts);
     }
 }
 
@@ -1379,10 +1350,6 @@ void DrawViewPart::dumpVerts(std::string text)
     auto lock = concurrentData.lockForReading();
     const auto& geometryObject = lock->geometryObject;
 
-    if (!geometryObject) {
-        Base::Console().Message("no verts to dump yet\n");
-        return;
-    }
     std::vector<TechDraw::VertexPtr> gVerts = getVertexGeometry();
     Base::Console().Message("%s - dumping %d vertGeoms\n", text.c_str(), gVerts.size());
     for (auto& gv : gVerts) {
