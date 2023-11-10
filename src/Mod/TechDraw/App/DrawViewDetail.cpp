@@ -200,7 +200,7 @@ void DrawViewDetail::makeDetailShape(TopoDS_Shape&& shape, DrawViewPart* dvp, Dr
     // Although the "self" variable is not being accessed,
     // it warrants that "this" will not be destructed meanwhile.
     auto lambda = [self = SharedFromThis(), this, lock = std::move(lock),
-                   shape = std::move(shape), dvp, dvs] mutable noexcept
+                   shape = std::move(shape), dvp, dvs]() mutable noexcept
     {try{
         lock.release();
 
