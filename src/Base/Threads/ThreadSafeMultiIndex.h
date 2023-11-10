@@ -53,7 +53,9 @@ public:
 
     using element_t = Record;
 
-    using parent_t::ThreadSafeContainer;
+    // TODO: remove "typename" in a few years. gcc-14 works. (2023, now)
+    // https://stackoverflow.com/questions/25940365/what-is-the-standard-conform-syntax-for-template-constructor-inheritance
+    using typename parent_t::ThreadSafeContainer;
 
     template<typename Key>
     auto find(const Key& key)
