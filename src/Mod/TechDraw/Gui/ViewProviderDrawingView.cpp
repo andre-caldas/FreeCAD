@@ -134,7 +134,7 @@ void ViewProviderDrawingView::show()
     if (!obj || obj->isRestoring())
         return;
 
-    if (obj->getTypeId().isDerivedFrom(TechDraw::DrawView::getClassTypeId())) {
+    if (obj->isDerivedFrom<TechDraw::DrawView>()) {
         QGIView* qView = getQView();
         if (qView) {
             qView->draw();
@@ -150,7 +150,7 @@ void ViewProviderDrawingView::hide()
     if (!obj || obj->isRestoring())
         return;
 
-    if (obj->getTypeId().isDerivedFrom(TechDraw::DrawView::getClassTypeId())) {
+    if (obj->isDerivedFrom<TechDraw::DrawView>()) {
         QGIView* qView = getQView();
         if (qView) {
             //note: hiding an item in the scene clears its selection status

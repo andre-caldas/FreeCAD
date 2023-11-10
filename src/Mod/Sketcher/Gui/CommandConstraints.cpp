@@ -43,6 +43,7 @@
 #include <Gui/SelectionObject.h>
 #include <Mod/Sketcher/App/GeometryFacade.h>
 #include <Mod/Sketcher/App/SketchObject.h>
+#include <Mod/Sketcher/App/SolverGeometryExtension.h>
 
 #include "CommandConstraints.h"
 #include "DrawSketchHandler.h"
@@ -238,8 +239,8 @@ bool SketcherGui::calculateAngle(Sketcher::SketchObject* Obj, int& GeoId1, int& 
     const Part::Geometry* geom1 = Obj->getGeometry(GeoId1);
     const Part::Geometry* geom2 = Obj->getGeometry(GeoId2);
 
-    if (!(geom1->getTypeId() == Part::GeomLineSegment::getClassTypeId()) ||
-        !(geom2->getTypeId() == Part::GeomLineSegment::getClassTypeId())) {
+    if (!(geom1->is<Part::GeomLineSegment>()) ||
+        !(geom2->is<Part::GeomLineSegment>())) {
         return false;
     }
 
@@ -787,18 +788,15 @@ int SketchSelection::setUp()
     // only one sketch with its subelements are allowed to be selected
     if (selection.size() == 1) {
         // if one selectetd, only sketch allowed. should be done by activity of command
-        if (!selection[0].getObject()->getTypeId().isDerivedFrom(
-                Sketcher::SketchObject::getClassTypeId())) {
+        if (!selection[0].getObject()->isDerivedFrom<Sketcher::SketchObject>()) {
             ErrorMsg = QObject::tr("Only sketch and its support are allowed to be selected.");
             return -1;
         }
 
-        SketchObj = static_cast<Sketcher::SketchObject*>(selection[0].getObject());
         SketchSubNames = selection[0].getSubNames();
     }
     else if (selection.size() == 2) {
-        if (selection[0].getObject()->getTypeId().isDerivedFrom(
-                Sketcher::SketchObject::getClassTypeId())) {
+        if (selection[0].getObject()->isDerivedFrom<Sketcher::SketchObject>()) {
             SketchObj = static_cast<Sketcher::SketchObject*>(selection[0].getObject());
             // check if the none sketch object is the support of the sketch
             if (selection[1].getObject() != SketchObj->Support.getValue()) {
@@ -806,13 +804,11 @@ int SketchSelection::setUp()
                 return -1;
             }
             // assume always a Part::Feature derived object as support
-            assert(selection[1].getObject()->getTypeId().isDerivedFrom(
-                Part::Feature::getClassTypeId()));
+            assert(selection[1].getObject()->isDerivedFrom<Part::Feature>());
             SketchSubNames = selection[0].getSubNames();
             SupportSubNames = selection[1].getSubNames();
         }
-        else if (selection[1].getObject()->getTypeId().isDerivedFrom(
-                     Sketcher::SketchObject::getClassTypeId())) {
+        else if (selection[1].getObject()->isDerivedFrom<Sketcher::SketchObject>()) {
             SketchObj = static_cast<Sketcher::SketchObject*>(selection[1].getObject());
             // check if the none sketch object is the support of the sketch
             if (selection[0].getObject() != SketchObj->Support.getValue()) {
@@ -820,8 +816,7 @@ int SketchSelection::setUp()
                 return -1;
             }
             // assume always a Part::Feature derived object as support
-            assert(selection[0].getObject()->getTypeId().isDerivedFrom(
-                Part::Feature::getClassTypeId()));
+            assert(selection[0].getObject()->isDerivedFrom<Part::Feature>());
             SketchSubNames = selection[1].getSubNames();
             SupportSubNames = selection[0].getSubNames();
         }
@@ -1268,7 +1263,7 @@ public:
 class DrawSketchHandlerDimension : public DrawSketchHandler
 {
 public:
-    DrawSketchHandlerDimension(std::vector<std::string> SubNames)
+    explicit DrawSketchHandlerDimension(std::vector<std::string> SubNames)
         : specialConstraint(SpecialConstraint::None)
         , availableConstraint(AvailableConstraint::FIRST)
         , previousOnSketchPos(Base::Vector2d(0.f, 0.f))
@@ -1920,21 +1915,48 @@ protected:
 
     void makeCts_1Circle(bool& selAllowed, Base::Vector2d onSketchPos)
     {
-        const Part::Geometry* geom = Obj->getGeometry(selCircleArc[0].GeoId);
-        Q_UNUSED(geom)
+        int geoId = selCircleArc[0].GeoId;
+        bool reverseOrder = isRadiusDoF(geoId);
 
-        if (availableConstraint == AvailableConstraint::FIRST
-            || availableConstraint == AvailableConstraint::SECOND) {
-            //Radius/diameter. Mode changes in createRadiusDiameterConstrain.
-            restartCommand(QT_TRANSLATE_NOOP("Command", "Add Radius constraint"));
-            createRadiusDiameterConstrain(selCircleArc[0].GeoId, onSketchPos);
+        if (availableConstraint == AvailableConstraint::FIRST) {
+            if (!reverseOrder) {
+                restartCommand(QT_TRANSLATE_NOOP("Command", "Add Radius constraint"));
+                createRadiusDiameterConstrain(geoId, onSketchPos, true);
+            }
+            else {
+                restartCommand(QT_TRANSLATE_NOOP("Command", "Add arc angle constraint"));
+                createArcAngleConstrain(geoId, onSketchPos);
+            }
             selAllowed = true;
         }
+        if (availableConstraint == AvailableConstraint::SECOND) {
+            restartCommand(QT_TRANSLATE_NOOP("Command", "Add Radius constraint"));
+            createRadiusDiameterConstrain(geoId, onSketchPos, reverseOrder);
+            if (!isArcOfCircle(*Obj->getGeometry(geoId))) {
+                //This way if key is pressed again it goes back to FIRST
+                availableConstraint = AvailableConstraint::RESET;
+            }
+        }
         if (availableConstraint == AvailableConstraint::THIRD) {
-            restartCommand(QT_TRANSLATE_NOOP("Command", "Add arc angle constraint"));
-            createArcAngleConstrain(selCircleArc[0].GeoId, onSketchPos);
+            if (!reverseOrder) {
+                restartCommand(QT_TRANSLATE_NOOP("Command", "Add arc angle constraint"));
+                createArcAngleConstrain(geoId, onSketchPos);
+            }
+            else {
+                restartCommand(QT_TRANSLATE_NOOP("Command", "Add Radius constraint"));
+                createRadiusDiameterConstrain(geoId, onSketchPos, false);
+            }
             availableConstraint = AvailableConstraint::RESET;
         }
+        /*
+            bool firstCstr = true;
+            if (availableConstraint != AvailableConstraint::FIRST) {
+                firstCstr = false;
+                if (!isArcOfCircle(*geom)) {
+                    //This way if key is pressed again it goes back to FIRST
+                    availableConstraint = AvailableConstraint::RESET;
+                }
+            }*/
     }
 
     void makeCts_2Circle(bool& selAllowed, Base::Vector2d onSketchPos)
@@ -2158,11 +2180,14 @@ protected:
         moveConstraint(ConStr.size() - 1, onSketchPos);
     }
 
-    void createRadiusDiameterConstrain(int GeoId, Base::Vector2d onSketchPos) {
+    void createRadiusDiameterConstrain(int GeoId, Base::Vector2d onSketchPos, bool firstCstr) {
         double radius = 0.0;
         bool isCircleGeom = true;
 
         const Part::Geometry* geom = Obj->getGeometry(GeoId);
+
+        if(!geom)
+            return;
 
         if (geom && isArcOfCircle(*geom)) {
             auto arc = static_cast<const Part::GeomArcOfCircle*>(geom);
@@ -2182,15 +2207,6 @@ protected:
             ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Mod/Sketcher/dimensioning");
             bool dimensioningDiameter = hGrp->GetBool("DimensioningDiameter", true);
             bool dimensioningRadius = hGrp->GetBool("DimensioningRadius", true);
-
-            bool firstCstr = true;
-            if (availableConstraint != AvailableConstraint::FIRST) {
-                firstCstr = false;
-                if (!isArcOfCircle(*geom)) {
-                    //This way if key is pressed again it goes back to FIRST
-                    availableConstraint = AvailableConstraint::RESET;
-                }
-            }
 
             if ((firstCstr && dimensioningRadius && !dimensioningDiameter) ||
                 (!firstCstr && !dimensioningRadius && dimensioningDiameter) ||
@@ -2484,6 +2500,28 @@ protected:
             //remove origin
             selPoints.pop_back();
         }
+    }
+
+    bool isRadiusDoF(int geoId)
+    {
+        const Part::Geometry* geo = Obj->getGeometry(geoId);
+        if (!isArcOfCircle(*geo)) {
+            return false;
+        }
+
+        //make sure we are not taking into account the constraint created in previous mode.
+        Gui::Command::abortCommand();
+        Obj->solve();
+
+        auto solvext = Obj->getSolvedSketch().getSolverExtension(geoId);
+
+        if (solvext) {
+            auto arcInfo = solvext->getArc();
+
+            return !arcInfo.isRadiusDoF();
+        }
+
+        return false;
     }
 
     void restartCommand(const char* cstrName) {
@@ -4497,9 +4535,7 @@ void CmdSketcherConstrainDistance::applyConstraint(std::vector<SelIdPair>& selSe
         case 2:// {SelEdge}
         case 3:// {SelExternalEdge}
         {
-            GeoId1 = GeoId2 = selSeq.at(0).GeoId;
-            PosId1 = Sketcher::PointPos::start;
-            PosId2 = Sketcher::PointPos::end;
+            GeoId1 = selSeq.at(0).GeoId;
 
             arebothpointsorsegmentsfixed = isPointOrSegmentFixed(Obj, GeoId1);
 
@@ -4547,7 +4583,6 @@ void CmdSketcherConstrainDistance::applyConstraint(std::vector<SelIdPair>& selSe
             GeoId1 = selSeq.at(0).GeoId;
             GeoId2 = selSeq.at(1).GeoId;
             PosId1 = selSeq.at(0).PosId;
-            PosId2 = selSeq.at(1).PosId;
 
             Base::Vector3d pnt = Obj->getPoint(GeoId1, PosId1);
             const Part::Geometry* geom = Obj->getGeometry(GeoId2);
@@ -5407,8 +5442,6 @@ void CmdSketcherConstrainDistanceY::activated(int iMsg)
 
         Base::Vector3d pnt = Obj->getPoint(GeoId1, PosId1);
         double ActY = pnt.y;
-
-        arebothpointsorsegmentsfixed = isPointOrSegmentFixed(Obj, GeoId1);
 
         openCommand(QT_TRANSLATE_NOOP("Command", "Add fixed y-coordinate constraint"));
         Gui::cmdAppObjectArgs(selection[0].getObject(),

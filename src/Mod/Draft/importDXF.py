@@ -706,7 +706,7 @@ def vec(pt):
     Base::Vector3 or float
         Each of the components of the vector, or the single numerical value,
         is rounded to the precision defined by `prec`,
-        and scaled by the amount of the global variable `dxfScaling`.
+        and scaled by the amount of the global variable `resolvedScale`.
 
     To do
     -----
@@ -714,14 +714,14 @@ def vec(pt):
     """
     if isinstance(pt, (int, float)):
         v = round(pt, prec())
-        if dxfScaling != 1:
-            v = v * dxfScaling
+        if resolvedScale != 1:
+            v = v * resolvedScale
     else:
         v = Vector(round(pt[0], prec()),
                    round(pt[1], prec()),
                    round(pt[2], prec()))
-        if dxfScaling != 1:
-            v.multiply(dxfScaling)
+        if resolvedScale != 1:
+            v.multiply(resolvedScale)
     return v
 
 
@@ -2076,6 +2076,89 @@ def addToBlock(obj, layer):
         layerBlocks[layer] = [obj]
 
 
+def getScaleFromDXF(header):
+    """Get the scale from the header of a drawing object.
+
+    Parameters
+    ----------
+    header : header object
+    """
+    data = header.data
+    insunits = 0
+    if [9, "$INSUNITS"] in data:
+        insunits = data[data.index([9, "$INSUNITS"]) + 1][1]
+    if insunits == 0 and [9, "$MEASUREMENT"] in data:
+        measurement = data[data.index([9, "$MEASUREMENT"]) + 1][1]
+        insunits = 1 if measurement == 0 else 4
+
+    if insunits == 0:
+        # Unspecified
+        return 1.0
+    if insunits == 1:
+        # Inches
+        return 25.4
+    if insunits == 2:
+        # Feet
+        return 25.4 * 12
+    if insunits == 3:
+        # Miles
+        return 1609344.0
+    if insunits == 4:
+        # Millimeters
+        return 1.0
+    if insunits == 5:
+        # Centimeters
+        return 10.0
+    if insunits == 6:
+        # Meters
+        return 1000.0
+    if insunits == 7:
+        # Kilometers
+        return 1000000.0
+    if insunits == 8:
+        # Microinches
+        return 25.4 / 1000.0
+    if insunits == 9:
+        # Mils
+        return 25.4 / 1000.0
+    if insunits == 10:
+        # Yards
+        return 3 * 12 * 25.4
+    if insunits == 11:
+        # Angstroms
+        return 0.0000001
+    if insunits == 12:
+        # Nanometers
+        return 0.000001
+    if insunits == 13:
+        # Microns
+        return 0.001
+    if insunits == 14:
+        # Decimeters
+        return 100.0
+    if insunits == 15:
+        # Decameters
+        return 10000.0
+    if insunits == 16:
+        # Hectometers
+        return 100000.0
+    if insunits == 17:
+        # Gigameters
+        return 1000000000000.0
+    if insunits == 18:
+        # AstronomicalUnits
+        return 149597870690000.0
+    if insunits == 19:
+        # LightYears
+        return 9454254955500000000.0
+    if insunits == 20:
+        # Parsecs
+        return 30856774879000000000.0
+
+    # Unsupported
+    return 1.0
+
+
 def processdxf(document, filename, getShapes=False, reComputeFlag=True):
     """Process the DXF file, creating Part objects in the document.
 
@@ -2137,6 +2220,8 @@ def processdxf(document, filename, getShapes=False, reComputeFlag=True):
         readPreferences()
     FCC.PrintMessage("opening " + filename + "...\n")
     drawing = dxfReader.readDXF(filename)
+    global resolvedScale
+    resolvedScale = getScaleFromDXF(drawing.header) * dxfScaling
     global layers
     layers = []
     global doc

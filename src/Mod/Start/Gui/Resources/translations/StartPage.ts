@@ -175,7 +175,7 @@
     </message>
     <message>
         <location filename="../../../StartPage/TranslationTexts.py" line="98"/>
-        <source>The &lt;a href=&quot;http://forum.freecad.org&quot;&gt;FreeCAD forum&lt;/a&gt; is a great place to get help from other FreeCAD users and developers. The forum has many sections for different types of issues and discussion subjects. If in doubt, post in the more general &lt;a href=&quot;https://forum.freecad.org/viewforum.php?f=3&quot;&gt;Help on using FreeCAD&lt;/a&gt; section.</source>
+        <source>The &lt;a href=&quot;https://forum.freecad.org&quot;&gt;FreeCAD forum&lt;/a&gt; is a great place to get help from other FreeCAD users and developers. The forum has many sections for different types of issues and discussion subjects. If in doubt, post in the more general &lt;a href=&quot;https://forum.freecad.org/viewforum.php?f=3&quot;&gt;Help on using FreeCAD&lt;/a&gt; section.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -287,7 +287,7 @@
 <context>
     <name>Workbench</name>
     <message>
-        <location filename="../../../StartPage/StartPage.py" line="826"/>
+        <location filename="../../../StartPage/StartPage.py" line="871"/>
         <location filename="../../Workbench.cpp" line="62"/>
         <source>Start page</source>
         <translation type="unfinished"></translation>
