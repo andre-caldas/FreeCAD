@@ -120,18 +120,38 @@ public:
     bool resumeReading();
 
     /**
-     * @brief Passes the ownership to the current thread.
+     * @brief First step in passing the ownership from the current thread.
+     * @attention Needs to be locked. Cannot be locked prior to this instance.
+     *
+     * @see resumeFromThread().
+     */
+    void moveFromThread();
+
+    /**
+     * @brief Passes the ownership to a new thread.
      * Otherwise, resume() will fail.
-     * New threads shall be created with the lock locked!
+     *
+     * @see releaseFromThread().
+     * @see resume().
+     *
+     * @attention Thread shall not have any other locks.
      *
      * @example
+     * lock.moveFromThread();
      * auto lambda = [lock = std::move(lock)] {
-     *   lock.registerNewThread();
+     *   lock.resumeInNewThread();
      *   // Use "lock" or simply release it.
      * };
      * std::thread(lambda);
      */
-    void registerNewThread();
+    void resumeInNewThread();
+
+    /**
+     * @brief Just like "resumeInNewThread()", but it also releases the lock.
+     * This is just a shortcut so the code becomes cleaner.
+     * @see resumeInNewThread();
+     */
+    void releaseInNewThread();
 
     auto operator->() const;
 

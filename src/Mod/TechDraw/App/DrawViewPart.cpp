@@ -350,40 +350,47 @@ void DrawViewPart::buildGeometryObject(TopoDS_Shape&& shape, const gp_Ax2& viewC
     lock->geometryObject.usePolygonHLR(CoarseView.getValue());
     lock->geometryObject.setScrubCount(ScrubCount.getValue());
 
+    lock.moveFromThread();
+
     // Although the "self" variable is not being accessed,
     // it warrants that "this" will not be destructed meanwhile.
     auto lambda = [self = SharedFromThis(), this, lock = std::move(lock),
                    shape = std::move(shape), viewCS]() mutable noexcept
-    {try{
-        lock.registerNewThread();
-        GeometryObject go{lock->geometryObject};
-        lock.release();
+    {
+        try{
+            lock.resumeInNewThread();
+            GeometryObject go{lock->geometryObject};
+            lock.release();
 
-        //the polygon approximation HLR process runs quickly
-        go.projectShapeWithPolygonAlgo(shape, viewCS);
+                    //the polygon approximation HLR process runs quickly
+            go.projectShapeWithPolygonAlgo(shape, viewCS);
 
-        if (!CoarseView.getValue()) {
-            go.projectShape(shape, viewCS);
+            if (!CoarseView.getValue()) {
+                go.projectShape(shape, viewCS);
+            }
+
+            if(!lock.resume()) {
+                return;
+            }
+            lock->geometryObject = go;
+            lock.release();
+
+            onHlrFinished();
+            if(!lock) {
+                return;
+            }
+
+            extractFaces();
+            if(!lock) {
+                return;
+            }
+
+            onFacesFinished();
         }
-
-        if(!lock.resume()) {
-            return;
+        catch(...) {
+            Base::Console().Message("DVP::buildGeometryObject - failed to build geometry object");
         }
-        lock->geometryObject = go;
-        lock.release();
-
-        onHlrFinished();
-        if(!lock) {
-            return;
-        }
-
-        extractFaces();
-        if(!lock) {
-            return;
-        }
-
-        onFacesFinished();
-    }catch(...){}};
+    };
 
     std::thread{std::move(lambda)}.detach();
 }

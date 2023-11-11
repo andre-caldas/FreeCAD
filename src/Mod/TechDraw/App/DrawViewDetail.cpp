@@ -196,158 +196,164 @@ void DrawViewDetail::makeDetailShape(TopoDS_Shape&& shape, DrawViewPart* dvp, Dr
     if(!lock) {
         return;
     }
+    lock.moveFromThread();
 
     // Although the "self" variable is not being accessed,
     // it warrants that "this" will not be destructed meanwhile.
     auto lambda = [self = SharedFromThis(), this, lock = std::move(lock),
                    shape = std::move(shape), dvp, dvs]() mutable noexcept
-    {try{
-        lock.release();
+    {
+        try{
+            lock.releaseInNewThread();
 
-        Base::Vector3d dirDetail = dvp->Direction.getValue();
-        double radius = getFudgeRadius();
+            Base::Vector3d dirDetail = dvp->Direction.getValue();
+            double radius = getFudgeRadius();
 
-        gp_Pnt gpCenter = ShapeUtils::findCentroid(shape, dirDetail);
-        Base::Vector3d shapeCenter = Base::Vector3d(gpCenter.X(), gpCenter.Y(), gpCenter.Z());
-        if(!lock.resume()) {
-            return;
-        }
-        lock->detailCS = dvp->getProjectionCS(shapeCenter);
-        lock.release();
-
-        auto part_lock = DrawViewPart::concurrentData.continueWriting();
-        if(!part_lock) {
-            return;
-        }
-        part_lock->centroid = shapeCenter;
-        part_lock.release();
-
-        if (!dvs) {
-            //section cutShape should already be on origin
-            //centre shape on origin
-            shape = ShapeUtils::moveShape(shape, -shapeCenter);
-        }
-
-        shapeCenter = Base::Vector3d(0.0, 0.0, 0.0);
-
-        auto view_cs = dvp->getProjectionCS(shapeCenter);//save the CS for later
-        Base::Vector3d anchor = AnchorPoint.getValue();//this is a 2D point in base view local coords
-
-        anchor = DrawUtil::toR3(view_cs, anchor);//actual anchor coords in R3
-
-        Bnd_Box bbxSource;
-        bbxSource.SetGap(0.0);
-        BRepBndLib::AddOptimal(shape, bbxSource);
-        double diag = sqrt(bbxSource.SquareExtent());
-
-        Base::Vector3d toolPlaneOrigin = anchor - dirDetail * diag;//center tool about anchor
-        double extrudeLength = 2.0 * toolPlaneOrigin.Length();
-
-        gp_Pnt gpnt(toolPlaneOrigin.x, toolPlaneOrigin.y, toolPlaneOrigin.z);
-        gp_Dir gdir(dirDetail.x, dirDetail.y, dirDetail.z);
-
-        if(!lock) {
-            return;
-        }
-
-        TopoDS_Face extrusionFace;
-        Base::Vector3d extrudeVec = dirDetail * extrudeLength;
-        gp_Vec extrudeDir(extrudeVec.x, extrudeVec.y, extrudeVec.z);
-        TopoDS_Shape tool;
-        if (Preferences::mattingStyle()) {
-            //square mat
-            gp_Pln gpln(gpnt, gdir);
-            BRepBuilderAPI_MakeFace mkFace(gpln, -radius, radius, -radius, radius);
-            extrusionFace = mkFace.Face();
-            if (extrusionFace.IsNull()) {
-                Base::Console().Warning("DVD::makeDetailShape - %s - failed to create tool base face\n",
-                                        getNameInDocument());
-                return;
-            }
-            tool = BRepPrimAPI_MakePrism(extrusionFace, extrudeDir, false, true).Shape();
-            if (tool.IsNull()) {
-                Base::Console().Warning("DVD::makeDetailShape - %s - failed to create tool (prism)\n",
-                                        getNameInDocument());
-                return;
-            }
-        }
-        else {
-            //circular mat
-            gp_Ax2 cs(gpnt, gdir);
-            BRepPrimAPI_MakeCylinder mkTool(cs, radius, extrudeLength);
-            tool = mkTool.Shape();
-            if (tool.IsNull()) {
-                Base::Console().Warning("DVD::detailExec - %s - failed to create tool (cylinder)\n",
-                                        getNameInDocument());
-                return;
-            }
-        }
-
-        if(!lock) {
-            return;
-        }
-
-        BRepAlgoAPI_Common mkCommon(shape, tool);
-        if (!mkCommon.IsDone() || mkCommon.Shape().IsNull()) {
-            Base::Console().Warning("DVD::detailExec - %s - failed to create detail shape\n",
-                                    getNameInDocument());
-            return;
-        }
-
-        auto newShape = mkCommon.Shape();
-        if(!lock.resume()) {
-            return;
-        }
-        // save the detail shape for further processing
-        lock->detailShape = std::move(newShape);
-        lock.release();
-
-        if(!lock.resume()) {
-            return;
-        }
-
-        if (debugDetail()) {
-            BRepTools::Write(tool, "DVDTool.brep");     //debug
-            BRepTools::Write(shape, "DVDCopy.brep");//debug
-            BRepTools::Write(lock->detailShape, "DVDCommon.brep"); //debug
-        }
-
-        gp_Pnt inputCenter = ShapeUtils::findCentroid(lock->detailShape, dirDetail);
-        Base::Vector3d centroid(inputCenter.X(), inputCenter.Y(), inputCenter.Z());
-        //align shape with detail anchor
-        TopoDS_Shape centeredShape = ShapeUtils::moveShape(lock->detailShape, -anchor);
-        lock->detailShape = ShapeUtils::scaleShape(std::move(centeredShape), getScale());
-        lock.release();
-
-        if(!part_lock.resume()) {
-            return;
-        }
-        part_lock->centroid += centroid;//center of massaged shape
-        part_lock.release();
-
-        if (!DrawUtil::fpCompare(Rotation.getValue(), 0.0)) {
+            gp_Pnt gpCenter = ShapeUtils::findCentroid(shape, dirDetail);
+            Base::Vector3d shapeCenter = Base::Vector3d(gpCenter.X(), gpCenter.Y(), gpCenter.Z());
             if(!lock.resume()) {
                 return;
             }
-            lock->detailShape = ShapeUtils::rotateShape(std::move(lock->detailShape),
-                                                        view_cs, Rotation.getValue());
+            lock->detailCS = dvp->getProjectionCS(shapeCenter);
             lock.release();
-        }
 
-        if(!lock.resume()) {
-            return;
-        }
-        lock->detailCS = dvp->getProjectionCS(Base::Vector3d{0.,0.,0.});
-        if (!DrawUtil::fpCompare(Rotation.getValue(), 0.0)) {
-            lock->detailShape = ShapeUtils::rotateShape(lock->detailShape,
-                                                        lock->detailCS, Rotation.getValue());
-        }
-        lock.release();
+            auto part_lock = DrawViewPart::concurrentData.continueWriting();
+            if(!part_lock) {
+                return;
+            }
+            part_lock->centroid = shapeCenter;
+            part_lock.release();
 
-        showProgressMessage(getNameInDocument(), "has finished making detail shape");
+            if (!dvs) {
+                //section cutShape should already be on origin
+                //centre shape on origin
+                shape = ShapeUtils::moveShape(shape, -shapeCenter);
+            }
 
-        onMakeDetailFinished();
-    }catch(...){}};
+            shapeCenter = Base::Vector3d(0.0, 0.0, 0.0);
+
+            auto view_cs = dvp->getProjectionCS(shapeCenter);//save the CS for later
+            Base::Vector3d anchor = AnchorPoint.getValue();//this is a 2D point in base view local coords
+
+            anchor = DrawUtil::toR3(view_cs, anchor);//actual anchor coords in R3
+
+            Bnd_Box bbxSource;
+            bbxSource.SetGap(0.0);
+            BRepBndLib::AddOptimal(shape, bbxSource);
+            double diag = sqrt(bbxSource.SquareExtent());
+
+            Base::Vector3d toolPlaneOrigin = anchor - dirDetail * diag;//center tool about anchor
+            double extrudeLength = 2.0 * toolPlaneOrigin.Length();
+
+            gp_Pnt gpnt(toolPlaneOrigin.x, toolPlaneOrigin.y, toolPlaneOrigin.z);
+            gp_Dir gdir(dirDetail.x, dirDetail.y, dirDetail.z);
+
+            if(!lock) {
+                return;
+            }
+
+            TopoDS_Face extrusionFace;
+            Base::Vector3d extrudeVec = dirDetail * extrudeLength;
+            gp_Vec extrudeDir(extrudeVec.x, extrudeVec.y, extrudeVec.z);
+            TopoDS_Shape tool;
+            if (Preferences::mattingStyle()) {
+                //square mat
+                gp_Pln gpln(gpnt, gdir);
+                BRepBuilderAPI_MakeFace mkFace(gpln, -radius, radius, -radius, radius);
+                extrusionFace = mkFace.Face();
+                if (extrusionFace.IsNull()) {
+                    Base::Console().Warning("DVD::makeDetailShape - %s - failed to create tool base face\n",
+                                            getNameInDocument());
+                    return;
+                }
+                tool = BRepPrimAPI_MakePrism(extrusionFace, extrudeDir, false, true).Shape();
+                if (tool.IsNull()) {
+                    Base::Console().Warning("DVD::makeDetailShape - %s - failed to create tool (prism)\n",
+                                            getNameInDocument());
+                    return;
+                }
+            }
+            else {
+                //circular mat
+                gp_Ax2 cs(gpnt, gdir);
+                BRepPrimAPI_MakeCylinder mkTool(cs, radius, extrudeLength);
+                tool = mkTool.Shape();
+                if (tool.IsNull()) {
+                    Base::Console().Warning("DVD::detailExec - %s - failed to create tool (cylinder)\n",
+                                            getNameInDocument());
+                    return;
+                }
+            }
+
+            if(!lock) {
+                return;
+            }
+
+            BRepAlgoAPI_Common mkCommon(shape, tool);
+            if (!mkCommon.IsDone() || mkCommon.Shape().IsNull()) {
+                Base::Console().Warning("DVD::detailExec - %s - failed to create detail shape\n",
+                                        getNameInDocument());
+                return;
+            }
+
+            auto newShape = mkCommon.Shape();
+            if(!lock.resume()) {
+                return;
+            }
+            // save the detail shape for further processing
+            lock->detailShape = std::move(newShape);
+            lock.release();
+
+            if(!lock.resume()) {
+                return;
+            }
+
+            if (debugDetail()) {
+                BRepTools::Write(tool, "DVDTool.brep");     //debug
+                BRepTools::Write(shape, "DVDCopy.brep");//debug
+                BRepTools::Write(lock->detailShape, "DVDCommon.brep"); //debug
+            }
+
+            gp_Pnt inputCenter = ShapeUtils::findCentroid(lock->detailShape, dirDetail);
+            Base::Vector3d centroid(inputCenter.X(), inputCenter.Y(), inputCenter.Z());
+            //align shape with detail anchor
+            TopoDS_Shape centeredShape = ShapeUtils::moveShape(lock->detailShape, -anchor);
+            lock->detailShape = ShapeUtils::scaleShape(std::move(centeredShape), getScale());
+            lock.release();
+
+            if(!part_lock.resume()) {
+                return;
+            }
+            part_lock->centroid += centroid;//center of massaged shape
+            part_lock.release();
+
+            if (!DrawUtil::fpCompare(Rotation.getValue(), 0.0)) {
+                if(!lock.resume()) {
+                    return;
+                }
+                lock->detailShape = ShapeUtils::rotateShape(std::move(lock->detailShape),
+                                                            view_cs, Rotation.getValue());
+                lock.release();
+            }
+
+            if(!lock.resume()) {
+                return;
+            }
+            lock->detailCS = dvp->getProjectionCS(Base::Vector3d{0.,0.,0.});
+            if (!DrawUtil::fpCompare(Rotation.getValue(), 0.0)) {
+                lock->detailShape = ShapeUtils::rotateShape(lock->detailShape,
+                                                            lock->detailCS, Rotation.getValue());
+            }
+            lock.release();
+
+            showProgressMessage(getNameInDocument(), "has finished making detail shape");
+
+            onMakeDetailFinished();
+        }
+        catch(...) {
+            Base::Console().Message("DVD::makeDetailShape - failed to make detail shape");
+        }
+    };
 
     std::thread{std::move(lambda)}.detach();
 }

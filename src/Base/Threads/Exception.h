@@ -64,11 +64,33 @@ public:
         : Base::TypeError("You do not have a lock for the container you are trying to access.") {}
 };
 
+class ExceptionCannotReleaseUnlocked : public Base::TypeError
+{
+public:
+    ExceptionCannotReleaseUnlocked()
+        : Base::TypeError("Cannot release lock that is not locked.") {}
+};
+
 class ExceptionNewThreadRequiresLock : public Base::TypeError
 {
 public:
     ExceptionNewThreadRequiresLock()
         : Base::TypeError("To transfer a lock to a new thread, it has to be locked.") {}
+};
+
+class ExceptionNewThreadRequiresReleaseableLock : public Base::TypeError
+{
+public:
+    ExceptionNewThreadRequiresReleaseableLock()
+        : Base::TypeError("Cannot move lock: thread remains locked even after release().") {}
+};
+
+class ExceptionNewThreadRequiresMovedLock : public Base::TypeError
+{
+public:
+    ExceptionNewThreadRequiresMovedLock()
+        : Base::TypeError("To be transfered to a new thread, "
+                          "you need to call moveFromThread() in the original thread.") {}
 };
 
 } //namespace Base::Threads

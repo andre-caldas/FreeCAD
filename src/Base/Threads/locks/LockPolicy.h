@@ -77,6 +77,12 @@ public:
     static bool isLockedExclusively(const MutexPair* mutex);
     static bool isLockedExclusively(const MutexPair& mutex);
 
+    bool thisInstanceLocks(const MutexPair* mutex) const;
+    bool thisInstanceLocks(const MutexPair& mutex) const;
+
+    void detachFromThread();
+    void attachToThread(bool is_exclusive);
+
 protected:
     /**
      * @brief Implements the lock policy.

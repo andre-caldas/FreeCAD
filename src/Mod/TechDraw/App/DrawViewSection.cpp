@@ -452,86 +452,96 @@ void DrawViewSection::makeSectionCut()
 {
     showProgressMessage(getNameInDocument(), "is making section cut");
 
+    auto lock = concurrentData.continueWriting();
+    if(!lock) {
+        return;
+    }
+    lock.moveFromThread();
+
     // Although "self" is not used,
     // it warrants that "this" will not get destructed.
-    auto lambda = [self = SharedFromThis(), this]() noexcept
-    {try{
-        // We need to copy the shape to not modify the BRepstructure
-        BRepBuilderAPI_Copy BuilderCopy(getCutShape());
-        auto copyShape = BuilderCopy.Shape();
+    auto lambda = [self = SharedFromThis(), this, lock = std::move(lock)]() mutable noexcept
+    {
+        try{
+            lock.releaseInNewThread();
+            // We need to copy the shape to not modify the BRepstructure
+            BRepBuilderAPI_Copy BuilderCopy(getCutShape());
+            auto copyShape = BuilderCopy.Shape();
 
-        if (debugSection()) {
-            BRepTools::Write(copyShape, "DVSCopy.brep");// debug
-        }
-
-        auto lock = concurrentData.continueWriting();
-        if(!lock) {
-            return;
-        }
-        lock->cutShape = copyShape;
-        auto cuttingTool = lock->cuttingTool;
-
-        if (debugSection()) {
-            BRepTools::Write(cuttingTool, "DVSTool.brep");// debug
-        }
-
-        lock.release();
-
-        // perform the cut. We cut each solid in myShape individually to avoid issues
-        // where a compound BaseShape does not cut correctly.
-        BRep_Builder builder;
-        TopoDS_Compound cutPieces;
-        builder.MakeCompound(cutPieces);
-        TopExp_Explorer expl(copyShape, TopAbs_SOLID);
-        for (; expl.More(); expl.Next()) {
-            const TopoDS_Solid& s = TopoDS::Solid(expl.Current());
-            BRepAlgoAPI_Cut mkCut(s, cuttingTool);
-            if (!mkCut.IsDone()) {
-                Base::Console().Warning("DVS: Section cut has failed in %s\n", getNameInDocument());
-                continue;
+            if (debugSection()) {
+                BRepTools::Write(copyShape, "DVSCopy.brep");// debug
             }
-            builder.Add(cutPieces, mkCut.Shape());
-        }
 
-        if(!lock.resume()) {
-            return;
-        }
-        lock->cutShape = cutPieces;
-        lock.release();
+            if(!lock.resume()) {
+                return;
+            }
+            lock->cutShape = copyShape;
+            auto cuttingTool = lock->cuttingTool;
 
-        if (debugSection()) {
-            BRepTools::Write(cutPieces, "DVSCutPieces1.brep");// debug
-        }
+            if (debugSection()) {
+                BRepTools::Write(cuttingTool, "DVSTool.brep");// debug
+            }
 
-        // second cut if requested.  Sometimes the first cut includes extra uncut
-        // pieces.
-        if (trimAfterCut()) {
-            BRepAlgoAPI_Cut mkCut2(cutPieces, cuttingTool);
-            if (mkCut2.IsDone()) {
-                if(!lock.resume()) {
-                    return;
+            lock.release();
+
+            // perform the cut. We cut each solid in myShape individually to avoid issues
+            // where a compound BaseShape does not cut correctly.
+            BRep_Builder builder;
+            TopoDS_Compound cutPieces;
+            builder.MakeCompound(cutPieces);
+            TopExp_Explorer expl(copyShape, TopAbs_SOLID);
+            for (; expl.More(); expl.Next()) {
+                const TopoDS_Solid& s = TopoDS::Solid(expl.Current());
+                BRepAlgoAPI_Cut mkCut(s, cuttingTool);
+                if (!mkCut.IsDone()) {
+                    Base::Console().Warning("DVS: Section cut has failed in %s\n", getNameInDocument());
+                    continue;
                 }
-                lock->cutShape = mkCut2.Shape();
-                lock.release();
+                builder.Add(cutPieces, mkCut.Shape());
+            }
 
-                if (debugSection()) {
-                    BRepTools::Write(cutPieces, "DVSCutPieces2.brep");// debug
+            if(!lock.resume()) {
+                return;
+            }
+            lock->cutShape = cutPieces;
+            lock.release();
+
+            if (debugSection()) {
+                BRepTools::Write(cutPieces, "DVSCutPieces1.brep");// debug
+            }
+
+            // second cut if requested.  Sometimes the first cut includes extra uncut
+            // pieces.
+            if (trimAfterCut()) {
+                BRepAlgoAPI_Cut mkCut2(cutPieces, cuttingTool);
+                if (mkCut2.IsDone()) {
+                    if(!lock.resume()) {
+                        return;
+                    }
+                    lock->cutShape = mkCut2.Shape();
+                    lock.release();
+
+                    if (debugSection()) {
+                        BRepTools::Write(cutPieces, "DVSCutPieces2.brep");// debug
+                    }
                 }
             }
-        }
 
-        // check for error in cut
-        Bnd_Box testBox;
-        BRepBndLib::AddOptimal(cutPieces, testBox);
-        testBox.SetGap(0.0);
-        if (testBox.IsVoid()) {
-            // prism & input don't intersect.  rawShape is garbage, don't bother.
-            Base::Console().Warning("DVS::makeSectionCut - prism & input don't intersect - %s\n",
-                                    Label.getValue());
-        }
+            // check for error in cut
+            Bnd_Box testBox;
+            BRepBndLib::AddOptimal(cutPieces, testBox);
+            testBox.SetGap(0.0);
+            if (testBox.IsVoid()) {
+                // prism & input don't intersect.  rawShape is garbage, don't bother.
+                Base::Console().Warning("DVS::makeSectionCut - prism & input don't intersect - %s\n",
+                                        Label.getValue());
+            }
 
-        onSectionCutFinished();
-    }catch(...){}};
+            onSectionCutFinished();
+        }
+        catch(...) {
+            Base::Console().Message("DVS::makeSectionCut - failed to make section cut");
+        }};
 
     std::thread{std::move(lambda)}.detach();
 }

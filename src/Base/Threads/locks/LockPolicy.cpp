@@ -62,6 +62,48 @@ bool LockPolicy::isLockedExclusively(const MutexPair& mutex)
     return isLockedExclusively(&mutex);
 }
 
+bool LockPolicy::thisInstanceLocks(const MutexPair* mutex) const
+{
+    return (mutexes.find(mutex) != mutexes.end());
+}
+
+bool LockPolicy::thisInstanceLocks(const MutexPair& mutex) const
+{
+    return thisInstanceLocks(&mutex);
+}
+
+
+void LockPolicy::detachFromThread()
+{
+    if(mutexes.empty())
+    {
+        return;
+    }
+
+    for(auto mutex: mutexes)
+    {
+        threadExclusiveMutexes.erase(mutex);
+        threadNonExclusiveMutexes.erase(mutex);
+        threadMutexLayers.top().erase(mutex);
+    }
+
+    assert(!threadMutexLayers.empty());
+    if(!threadMutexLayers.empty() && threadMutexLayers.top().empty())
+    {
+        threadMutexLayers.pop();
+    }
+}
+
+void LockPolicy::attachToThread(bool is_exclusive)
+{
+    assert(!hasAnyLock());
+    assert(!mutexes.empty());
+    _processLock(is_exclusive);
+    assert(mutexes.size() == threadExclusiveMutexes.size()
+           || mutexes.size() == threadNonExclusiveMutexes.size());
+}
+
+
 bool LockPolicy::_areParentsLocked() const
 {
     assert(!threadMutexLayers.empty());
@@ -206,23 +248,7 @@ void LockPolicy::_processNonExclusiveLock()
 
 LockPolicy::~LockPolicy()
 {
-    if(mutexes.empty())
-    {
-        return;
-    }
-
-    for(auto mutex: mutexes)
-    {
-        threadExclusiveMutexes.erase(mutex);
-        threadNonExclusiveMutexes.erase(mutex);
-        threadMutexLayers.top().erase(mutex);
-    }
-
-    assert(!threadMutexLayers.empty());
-    if(!threadMutexLayers.empty() && threadMutexLayers.top().empty())
-    {
-        threadMutexLayers.pop();
-    }
+    detachFromThread();
 }
 
 
