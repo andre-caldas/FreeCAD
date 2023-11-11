@@ -36,6 +36,8 @@
 
 #include "../type_traits/Utils.h"
 
+#include "YesItIsAMutex.h"
+
 namespace Base::Threads
 {
 
@@ -50,7 +52,7 @@ struct MutexPair
 {
     MutexPair() = default;
     MutexPair(MutexPair* parent) : parent_pair(parent) {}
-    std::shared_mutex mutex;
+    YesItIsAMutex mutex;
     MutexPair* parent_pair = nullptr;
 };
 
@@ -114,7 +116,7 @@ public:
     SharedLock(MutexPair& mutex);
 
 private:
-    std::shared_lock<std::shared_mutex> lock;
+    std::shared_lock<YesItIsAMutex> lock;
 };
 
 
@@ -145,8 +147,8 @@ public:
     auto operator->() const {return &firstMutexHolder;}
 
 private:
-    using locks_t = std::scoped_lock<std::shared_mutex,
-                                     ForEach_t<std::shared_mutex,MutexHolder>...>;
+    using locks_t = std::scoped_lock<YesItIsAMutex,
+                                     ForEach_t<YesItIsAMutex,MutexHolder>...>;
     /*
      * After constructed, std::scoped_lock cannot be changed.
      * So, we usa a unique_ptr.

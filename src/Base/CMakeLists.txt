@@ -351,6 +351,8 @@ SET(FreeCADBase_Threads_SRCS
     Threads/type_traits/IndexTraits.h
     Threads/type_traits/MultiIndexRecordInfo.h
     Threads/Exception.h
+    Threads/locks/YesItIsAMutex.h
+    Threads/locks/YesItIsAMutex.cpp
     Threads/locks/LockPolicy.h
     Threads/locks/LockPolicy.inl
     Threads/locks/LockPolicy.cpp
