@@ -63,6 +63,7 @@ private:
      * @brief Locking consists of trying to lock and waiting for the condition to change.
      */
     std::condition_variable released;
+    std::mutex released_condition_lock;
 };
 
 } //namespace Base::Threads

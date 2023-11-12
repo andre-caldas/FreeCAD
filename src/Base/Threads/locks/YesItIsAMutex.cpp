@@ -35,7 +35,7 @@ void YesItIsAMutex::lock()
     {
         return;
     }
-    std::unique_lock lock{pivot};
+    std::unique_lock lock{released_condition_lock};
     released.wait(lock, std::bind(&YesItIsAMutex::try_lock, this));
 }
 
@@ -67,7 +67,7 @@ void YesItIsAMutex::lock_shared()
     {
         return;
     }
-    std::unique_lock lock{pivot};
+    std::unique_lock lock{released_condition_lock};
     released.wait(lock, std::bind(&YesItIsAMutex::try_lock_shared, this));
 }
 
