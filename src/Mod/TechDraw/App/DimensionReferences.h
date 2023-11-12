@@ -25,6 +25,7 @@
 
 #include <Mod/TechDraw/TechDrawGlobal.h>
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -56,13 +57,13 @@ public:
         setSubName(subName);
     }
     ReferenceEntry(const ReferenceEntry& other) {
-        setObject(other.getObject());
+        setObject(other.getObject().get());
         setSubName(other.getSubName());
     }
     ~ReferenceEntry() = default;
 
-    App::DocumentObject* getObject() const;
-    void setObject(App::DocumentObject* docObj) { m_object = docObj; }
+    std::shared_ptr<App::DocumentObject> getObject() const;
+    void setObject(App::DocumentObject* docObj);
     std::string getSubName(bool longForm = false) const;
     void setSubName(std::string subName) { m_subName = subName; }
     TopoDS_Shape getGeometry() const;
@@ -77,7 +78,7 @@ public:
     bool isValid() const;
 
 private:
-    App::DocumentObject* m_object;
+    std::weak_ptr<App::DocumentObject> m_object;
     std::string m_subName;
 };
 

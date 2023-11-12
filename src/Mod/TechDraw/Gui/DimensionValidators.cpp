@@ -114,9 +114,9 @@ DimensionGeometryType TechDraw::validateDimSelection(
     std::vector<DimensionGeometryType> acceptableDimensionGeometrys)//isVertical, isHorizontal, ...
 {
     StringVector subNames;
-    TechDraw::DrawViewPart* dvpSave(nullptr);
+    std::shared_ptr<DrawViewPart> dvpSave;
     for (auto& ref : references) {
-        TechDraw::DrawViewPart* dvp = dynamic_cast<TechDraw::DrawViewPart*>(ref.getObject());
+        auto dvp = std::dynamic_pointer_cast<DrawViewPart>(ref.getObject());
         if (dvp) {
             dvpSave = dvp;
             if (!ref.getSubName().empty()) {
@@ -159,7 +159,7 @@ DimensionGeometryType TechDraw::validateDimSelection(
     //we have a (potentially valid collection of 2d geometry
     ReferenceVector valid2dReferences;
     for (auto& sub : subNames) {
-        ReferenceEntry validEntry(dvpSave, sub);
+        ReferenceEntry validEntry(dvpSave.get(), sub);
         valid2dReferences.push_back(validEntry);
     }
 
@@ -365,7 +365,7 @@ GeomCountMap TechDraw::loadRequiredCounts(StringVector& acceptableGeometry,
 //! verify that Selection contains a valid Geometry for a single Edge Dimension
 DimensionGeometryType TechDraw::isValidSingleEdge(ReferenceEntry ref)
 {
-    auto objFeat(dynamic_cast<TechDraw::DrawViewPart*>(ref.getObject()));
+    auto objFeat = std::dynamic_pointer_cast<DrawViewPart>(ref.getObject());
     if (!objFeat) {
         return isInvalid;
     }
@@ -469,7 +469,7 @@ DimensionGeometryType TechDraw::isValidMultiEdge(ReferenceVector refs)
         return isInvalid;
     }
 
-    auto objFeat0(dynamic_cast<TechDraw::DrawViewPart*>(refs.at(0).getObject()));
+    auto objFeat0 = std::dynamic_pointer_cast<DrawViewPart>(refs.at(0).getObject());
     if (!objFeat0) {
         //probably redundant
         throw Base::RuntimeError("Logic error in isValidMultiEdge");
@@ -477,7 +477,7 @@ DimensionGeometryType TechDraw::isValidMultiEdge(ReferenceVector refs)
 
     //they all must start with "Edge"
     for (auto& ref : refs) {
-        if (TechDraw::DrawUtil::getGeomTypeFromName(ref.getSubName()) != "Edge") {
+        if (DrawUtil::getGeomTypeFromName(ref.getSubName()) != "Edge") {
             return isInvalid;
         }
     }
@@ -526,7 +526,8 @@ DimensionGeometryType TechDraw::isValidMultiEdge3d(DrawViewPart* dvp, ReferenceV
 
     std::vector<TopoDS_Edge> edges;
     for (auto& ref : refs) {
-        std::vector<TopoDS_Shape> shapesAll = ShapeExtractor::getShapesFromObject(ref.getObject());
+        std::vector<TopoDS_Shape> shapesAll =
+            ShapeExtractor::getShapesFromObject(ref.getObject().get());
         if (shapesAll.empty()) {
             //reference has no geometry
             return isInvalid;
@@ -578,7 +579,7 @@ DimensionGeometryType TechDraw::isValidMultiEdge3d(DrawViewPart* dvp, ReferenceV
 //! verify that the vertex references can make a dimension
 DimensionGeometryType TechDraw::isValidVertexes(ReferenceVector refs)
 {
-    TechDraw::DrawViewPart* dvp(dynamic_cast<TechDraw::DrawViewPart*>(refs.front().getObject()));
+    auto dvp = std::dynamic_pointer_cast<DrawViewPart>(refs.front().getObject());
     if (!dvp) {
         //probably redundant
         throw Base::RuntimeError("Logic error in isValidMultiEdge");

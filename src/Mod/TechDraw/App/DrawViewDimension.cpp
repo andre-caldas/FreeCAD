@@ -618,7 +618,7 @@ double DrawViewDimension::getDimValue()
 pointPair DrawViewDimension::getPointsOneEdge(ReferenceVector references)
 {
     //    Base::Console().Message("DVD::getPointsOneEdge()\n");
-    App::DocumentObject* refObject = references.front().getObject();
+    auto refObject = references.front().getObject();
     int iSubelement = DrawUtil::getIndexFromName(references.front().getSubName());
     if (refObject->isDerivedFrom(TechDraw::DrawViewPart::getClassTypeId())
         && !references.at(0).getSubName().empty()) {
@@ -659,7 +659,7 @@ pointPair DrawViewDimension::getPointsOneEdge(ReferenceVector references)
 pointPair DrawViewDimension::getPointsTwoEdges(ReferenceVector references)
 {
     //    Base::Console().Message("DVD::getPointsTwoEdges() - %s\n", getNameInDocument());
-    App::DocumentObject* refObject = references.front().getObject();
+    auto refObject = references.front().getObject();
     int iSubelement0 = DrawUtil::getIndexFromName(references.at(0).getSubName());
     int iSubelement1 = DrawUtil::getIndexFromName(references.at(1).getSubName());
     if (refObject->isDerivedFrom(TechDraw::DrawViewPart::getClassTypeId())
@@ -692,7 +692,7 @@ pointPair DrawViewDimension::getPointsTwoEdges(ReferenceVector references)
 pointPair DrawViewDimension::getPointsTwoVerts(ReferenceVector references)
 {
     //    Base::Console().Message("DVD::getPointsTwoVerts() - %s\n", getNameInDocument());
-    App::DocumentObject* refObject = references.front().getObject();
+    auto refObject = references.front().getObject();
     int iSubelement0 = DrawUtil::getIndexFromName(references.at(0).getSubName());
     int iSubelement1 = DrawUtil::getIndexFromName(references.at(1).getSubName());
     if (refObject->isDerivedFrom(TechDraw::DrawViewPart::getClassTypeId())
@@ -730,7 +730,7 @@ pointPair DrawViewDimension::getPointsTwoVerts(ReferenceVector references)
 pointPair DrawViewDimension::getPointsEdgeVert(ReferenceVector references)
 {
     //    Base::Console().Message("DVD::getPointsEdgeVert() - %s\n", getNameInDocument());
-    App::DocumentObject* refObject = references.front().getObject();
+    auto refObject = references.front().getObject();
     int iSubelement0 = DrawUtil::getIndexFromName(references.at(0).getSubName());
     int iSubelement1 = DrawUtil::getIndexFromName(references.at(1).getSubName());
     if (refObject->isDerivedFrom(TechDraw::DrawViewPart::getClassTypeId())
@@ -793,7 +793,7 @@ pointPair DrawViewDimension::getPointsEdgeVert(ReferenceVector references)
 arcPoints DrawViewDimension::getArcParameters(ReferenceVector references)
 {
     //    Base::Console().Message("DVD::getArcParameters()\n");
-    App::DocumentObject* refObject = references.front().getObject();
+    auto refObject = references.front().getObject();
     int iSubelement = DrawUtil::getIndexFromName(references.front().getSubName());
     if (refObject->isDerivedFrom(TechDraw::DrawViewPart::getClassTypeId())
         && !references.at(0).getSubName().empty()) {
@@ -1021,7 +1021,7 @@ arcPoints DrawViewDimension::arcPointsFromEdge(TopoDS_Edge occEdge)
 anglePoints DrawViewDimension::getAnglePointsTwoEdges(ReferenceVector references)
 {
     //Base::Console().Message("DVD::getAnglePointsTwoEdges() - %s\n", getNameInDocument());
-    App::DocumentObject* refObject = references.front().getObject();
+    auto refObject = references.front().getObject();
     int iSubelement0 = DrawUtil::getIndexFromName(references.at(0).getSubName());
     int iSubelement1 = DrawUtil::getIndexFromName(references.at(1).getSubName());
     if (refObject->isDerivedFrom(TechDraw::DrawViewPart::getClassTypeId())
@@ -1152,7 +1152,7 @@ anglePoints DrawViewDimension::getAnglePointsThreeVerts(ReferenceVector referenc
     if (references.size() < 3) {
         throw Base::RuntimeError("Not enough references to make angle dimension");
     }
-    App::DocumentObject* refObject = references.front().getObject();
+    auto refObject = references.front().getObject();
     int iSubelement0 = DrawUtil::getIndexFromName(references.at(0).getSubName());
     int iSubelement1 = DrawUtil::getIndexFromName(references.at(1).getSubName());
     int iSubelement2 = DrawUtil::getIndexFromName(references.at(2).getSubName());
@@ -1596,9 +1596,9 @@ std::string DrawViewDimension::recoverChangedEdge3d(int iReference)
 //    Base::Console().Message("DVD::recoverChangedEdge3d(%d)\n", iReference);
     Part::TopoShape savedGeometryItem = SavedGeometry.getValues().at(iReference);
     ReferenceVector references = getEffectiveReferences();
-    App::DocumentObject* searchObject = references.at(iReference).getObject();
-    Part::TopoShape shape = Part::Feature::getTopoShape(searchObject);
-    App::GeoFeature* geoFeat = dynamic_cast<App::GeoFeature*>(searchObject);
+    auto searchObject = references.at(iReference).getObject();
+    Part::TopoShape shape = Part::Feature::getTopoShape(searchObject.get());
+    App::GeoFeature* geoFeat = dynamic_cast<App::GeoFeature*>(searchObject.get());
     //does a feature in a body get the body's globalPlacement??
     if (geoFeat) {
         shape.setPlacement(geoFeat->globalPlacement());
@@ -1641,9 +1641,9 @@ std::string DrawViewDimension::recoverChangedVertex3d(int iReference)
 //    Base::Console().Message("DVD::recoverChangedVertex3d(%d)\n", iReference);
     Part::TopoShape savedGeometryItem = SavedGeometry.getValues().at(iReference);
     ReferenceVector references = getEffectiveReferences();
-    App::DocumentObject* searchObject = references.at(iReference).getObject();
-    Part::TopoShape shape = Part::Feature::getTopoShape(searchObject);
-    App::GeoFeature* geoFeat = dynamic_cast<App::GeoFeature*>(searchObject);
+    auto searchObject = references.at(iReference).getObject();
+    Part::TopoShape shape = Part::Feature::getTopoShape(searchObject.get());
+    App::GeoFeature* geoFeat = dynamic_cast<App::GeoFeature*>(searchObject.get());
     if (geoFeat) {
         shape.setPlacement(geoFeat->globalPlacement());
     }
@@ -1709,7 +1709,7 @@ void DrawViewDimension::setReferences2d(ReferenceVector refs)
     }
 
     for (size_t iRef = 0; iRef < refs.size(); iRef++) {
-        objects.push_back(refs.at(iRef).getObject());
+        objects.push_back(refs.at(iRef).getObject().get());
         subNames.push_back(refs.at(iRef).getSubName());
     }
 
@@ -1731,7 +1731,7 @@ void DrawViewDimension::setReferences3d(ReferenceVector refs)
     }
 
     for (size_t iRef = 0; iRef < refs.size(); iRef++) {
-        objects.push_back(refs.at(iRef).getObject());
+        objects.push_back(refs.at(iRef).getObject().get());
         subNames.push_back(refs.at(iRef).getSubName());
     }
 

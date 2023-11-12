@@ -155,7 +155,7 @@ void DrawDimHelper::makeExtentDim3d(DrawViewPart* dvp, ReferenceVector reference
     std::vector<App::DocumentObject*> objs3d;
     std::vector<std::string> subs3d;
     for (auto& ref : references) {
-        objs3d.push_back(ref.getObject());
+        objs3d.push_back(ref.getObject().get());
         subs3d.push_back(ref.getSubName());
     }
     dimExt->Source3d.setValues(objs3d, subs3d);

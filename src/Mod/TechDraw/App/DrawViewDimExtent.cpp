@@ -112,10 +112,10 @@ bool DrawViewDimExtent::checkReferences2D() const
 pointPair DrawViewDimExtent::getPointsExtent(ReferenceVector references)
 {
 //    Base::Console().Message("DVD::getPointsExtent() - %s\n", getNameInDocument());
-    App::DocumentObject* refObject = references.front().getObject();
+    auto refObject = references.front().getObject();
     int direction = DirExtent.getValue();
     if (refObject->isDerivedFrom(TechDraw::DrawViewPart::getClassTypeId())) {
-        auto dvp = static_cast<TechDraw::DrawViewPart*>(refObject);
+        auto dvp = std::static_pointer_cast<DrawViewPart>(refObject);
 
         std::vector<std::string> edgeNames;     //empty list means we are using all the edges
         if (!references.at(0).getSubName().empty()) {
@@ -131,9 +131,7 @@ pointPair DrawViewDimExtent::getPointsExtent(ReferenceVector references)
             }
         }
         std::pair<Base::Vector3d, Base::Vector3d> endPoints =
-            DrawDimHelper::minMax(dvp,
-                                  edgeNames,
-                                  direction);
+            DrawDimHelper::minMax(dvp.get(), edgeNames, direction);
         return pointPair(endPoints.first, endPoints.second);
     }
 

@@ -46,12 +46,10 @@ using DU = DrawUtil;
 
 TopoDS_Shape ReferenceEntry::getGeometry() const
 {
-//    Base::Console().Message("RE::getGeometry() - obj: %s  sub: %s\n",
-//                            getObject()->getNameInDocument(), getSubName());
-    if ( getObject()->isDerivedFrom(TechDraw::DrawViewPart::getClassTypeId()) ) {
+    auto dvp = std::dynamic_pointer_cast<DrawViewPart>(getObject());
+    if(dvp) {
         std::string gType;
         try {
-            auto dvp = static_cast<TechDraw::DrawViewPart*>(getObject());
             gType = geomType();
             if (gType == "Vertex") {
                 auto vgeom = dvp->getVertex(getSubName());
@@ -72,8 +70,9 @@ TopoDS_Shape ReferenceEntry::getGeometry() const
         }
     }
 
-    Part::TopoShape shape = Part::Feature::getTopoShape(getObject());
-    auto geoFeat = dynamic_cast<App::GeoFeature*>(getObject());
+    auto object = getObject();
+    Part::TopoShape shape = Part::Feature::getTopoShape(object.get());
+    auto geoFeat = std::dynamic_pointer_cast<App::GeoFeature>(object);
     if (geoFeat) {
         shape.setPlacement(geoFeat->globalPlacement());
     }
@@ -98,15 +97,25 @@ std::string ReferenceEntry::getSubName(bool longForm) const
     return workingSubName;
 }
 
-App::DocumentObject* ReferenceEntry::getObject() const
+std::shared_ptr<App::DocumentObject> ReferenceEntry::getObject() const
 {
+    auto object = m_object.lock();
+    if(!object) {
+        throw Base::RuntimeError("Object was already destroyed.");
+    }
+
     // For PartDesign objects, when the reference is created from a selection,
     // the SelectionObject is a Feature within the Body.
-    PartDesign::Body* pdBody = PartDesign::Body::findBodyOf(m_object);
+    PartDesign::Body* pdBody = PartDesign::Body::findBodyOf(object.get());
     if (pdBody && pdBody->Tip.getValue()) {
-        return pdBody->Tip.getValue();
+        return pdBody->Tip.getValue()->SharedFromThis<App::DocumentObject>();
     }
-    return m_object;
+    return object;
+}
+
+void ReferenceEntry::setObject(App::DocumentObject* docObj)
+{
+    m_object = docObj->SharedFromThis<App::DocumentObject>();
 }
 
 Part::TopoShape ReferenceEntry::asTopoShape() const
@@ -131,7 +140,7 @@ Part::TopoShape ReferenceEntry::asTopoShapeVertex(TopoDS_Vertex& vert) const
 {
     Base::Vector3d point = DU::toVector3d(BRep_Tool::Pnt(vert));
     if (!is3d()) {
-        auto dvp = static_cast<TechDraw::DrawViewPart*>(getObject());
+        auto dvp = std::static_pointer_cast<DrawViewPart>(getObject());
         point = point / dvp->getScale();
     }
     BRepBuilderAPI_MakeVertex mkVert(DU::togp_Pnt(point));
@@ -144,7 +153,7 @@ Part::TopoShape ReferenceEntry::asTopoShapeEdge(TopoDS_Edge &edge) const
     TopoDS_Edge unscaledEdge = edge;
     if (!is3d()) {
         // 2d reference - projected and scaled. scale might have changed, so we need to unscale
-        auto dvp = static_cast<TechDraw::DrawViewPart*>(getObject());
+        auto dvp = std::static_pointer_cast<DrawViewPart>(getObject());
         TopoDS_Shape unscaledShape = ShapeUtils::scaleShape(edge, 1.0 / dvp->getScale());
         unscaledEdge = TopoDS::Edge(unscaledShape);
     }
