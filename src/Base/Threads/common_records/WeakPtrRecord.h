@@ -21,73 +21,47 @@
  *                                                                          *
  ***************************************************************************/
 
-#ifndef BASE_Threads_ReaderLock_H
-#define BASE_Threads_ReaderLock_H
+#ifndef BASE_Threads_WeakPtrRecord_H
+#define BASE_Threads_WeakPtrRecord_H
 
 #include <memory>
 
-#include "../type_traits/Utils.h"
-
-#include "LockPolicy.h"
+#include "../ThreadSafeMultiIndex.h"
 
 namespace Base::Threads
 {
 
-/**
- * @brief Locks a classes of type "MutexHolder" for "reading".
- * The MutexHolder must:
- * 1. Define a MutexHolder::ReaderGate class that implements getStruct().
- * 2. Define a method that takes a ReaderLock as argument,
- *    and returns a ReaderGate instance.
- */
-template<typename MutexHolder, auto LocalPointer = nullptr>
-class ReaderLock
-    : public SharedLock
+template<typename T>
+struct WeakPtrRecord
 {
-public:
-    using local_data_t = const MemberPointerTo_t<LocalPointer>;
-
-    [[nodiscard]]
-    ReaderLock(const MutexHolder& mutex_holder)
-        : SharedLock(*mutex_holder.getMutexPair())
-        , gate(mutex_holder.getReaderGate(this))
-        , localData((&*gate)->*LocalPointer)
+    WeakPtrRecord(std::shared_ptr<T> smart)
+        : raw_pointer(smart.get())
+        , smart_pointer(std::move(smart))
     {}
 
-    const auto* operator->() const {return &(StripSmartPointer{localData}());}
+    T* raw_pointer;
+    std::weak_ptr<T> smart_pointer;
 
-private:
-    typename MutexHolder::ReaderGate gate;
-    local_data_t& localData;
+    std::shared_ptr<T> lock() const
+    {return smart_pointer.lock();}
+
+    // TODO: use <=> when we pass to C++20
+    bool operator==(WeakPtrRecord& other)
+    {return raw_pointer == other.raw_pointer;}
+
+    // TODO: use <=> when we pass to C++20
+    bool operator==(T* other)
+    {return raw_pointer == other;}
 };
 
-template<typename MutexHolder>
-class ReaderLock<MutexHolder, nullptr>
-{
-public:
-    [[nodiscard]]
-    ReaderLock(const MutexHolder& mutex_holder);
+/**
+ * @brief A list of weak_ptr that can be iterated in insertion order,
+ * and can be searched by raw pointer.
+ */
+template<typename T>
+using ThreadSafeWeakPtrList = ThreadSafeMultiIndex<WeakPtrRecord<T>,
+                                                   &WeakPtrRecord<T>::raw_pointer>;
 
-    /**
-     * @brief Releases the lock.
-     */
-    void release();
+} // namespace Base::Threads
 
-    /**
-     * @brief Acquires a shared lock and resumes processing.
-     */
-    void resume();
-
-    auto operator->() const;
-
-private:
-    MutexPair& mutexPair;
-    std::unique_ptr<SharedLock> sharedLock;
-    const typename MutexHolder::ReaderGate gate;
-};
-
-} //namespace Base::Threads
-
-#include "ReaderLock.inl"
-
-#endif // BASE_Threads_ReaderLock_H
+#endif // BASE_Threads_WeakPtrRecord_H

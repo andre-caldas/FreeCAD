@@ -25,6 +25,7 @@
 #define BASE_Threads_MultiIndexContainer_H
 
 #include "type_traits/MultiIndexRecordInfo.h"
+#include "type_traits/IsIterator.h"
 #include "IteratorWrapper.h"
 
 namespace Base::Threads
@@ -39,7 +40,11 @@ public:
     using map_const_iterator_t = typename std::map<long, Record*>::const_iterator;
     using iterator = IteratorSecondPtrAsRef<self_t, map_iterator_t>;
     using const_iterator = IteratorSecondPtrAsRef<self_t, map_const_iterator_t>;
+    using node_type = typename std::unordered_map<const Record*,
+                                                  std::unique_ptr<Record>>::node_type;
 
+    template<std::size_t ...In>
+    void axert(const std::index_sequence<In...>&) const;
     auto begin();
     auto begin() const;
     auto cbegin() const;
@@ -71,17 +76,23 @@ public:
     bool contains(const Key& key) const;
 
     template<typename ...Vn>
-    auto emplace(Vn&& ...vn);
+    auto emplace_back(Vn&& ...vn);
 
     auto erase(const Record& record);
 
-    template<typename ItType>
-    auto erase(ItType it);
+    template<typename ItType, std::enable_if_t<IsIterator<ItType>::value, bool> = true>
+    auto erase(const ItType& it);
+
+    template<typename Key, std::enable_if_t<!IsIterator<Key>::value, int> = 1>
+    auto erase(const Key& key);
 
     auto extract(const Record& record);
 
-    template<typename ItType>
-    auto extract(ItType it);
+    template<typename ItType, std::enable_if_t<IsIterator<ItType>::value, bool> = true>
+    auto extract(const ItType& it);
+
+    template<typename Key, std::enable_if_t<!IsIterator<Key>::value, int> = 1>
+    auto extract(const Key& key);
 
     auto move_back(const Record& record);
 
@@ -91,7 +102,6 @@ public:
 
     using RecordInfo = MultiIndexRecordInfo<Record, LocalPointers...>;
 
-    using record_t = Record;
     template<typename X>
     static constexpr auto index_from_raw_v = RecordInfo::template index_from_raw_v<X>;
     template<std::size_t I>
@@ -100,7 +110,7 @@ public:
     using type_from_index_t = typename RecordInfo::template type_from_index_t<I>;
 
 private:
-    std::unordered_map<const record_t*, std::unique_ptr<record_t>> data;
+    std::unordered_map<const Record*, std::unique_ptr<Record>> data;
 
     /// @brief Incremented on every insertion.
     std::atomic_long counter;
@@ -108,13 +118,13 @@ private:
     /**
      * @brief Items oredered (in principle) by insetion order.
      */
-    std::map<long, record_t*> ordered_data;
+    std::map<long, Record*> ordered_data;
 
     /**
      * @brief Reverse of ordered_data.
      * It is used to get the key for "ordered_data".
      */
-    std::map<const record_t*, long> ordered_data_reverse;
+    std::unordered_map<const Record*, long> ordered_data_reverse;
 
 
     /**
@@ -124,17 +134,17 @@ private:
     typename RecordInfo::indexes_tuple_t indexes;
 
     template<std::size_t ...In>
-    void insertIndexes(const record_t& record, const std::index_sequence<In...>&);
+    void insertIndexes(const Record& record, const std::index_sequence<In...>&);
 
     template<std::size_t I>
-    void insertIndex(const record_t& record);
+    void insertIndex(const Record& record);
 
 
     template<std::size_t ...In>
-    void eraseIndexes(const record_t& record, const std::index_sequence<In...>&);
+    void deleteIndexes(const Record& record, const std::index_sequence<In...>&);
 
     template<std::size_t I>
-    void eraseIndex(const record_t& record);
+    void deleteIndex(const Record& record);
 
 
     template<std::size_t ...In>

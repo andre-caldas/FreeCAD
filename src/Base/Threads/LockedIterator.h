@@ -40,6 +40,12 @@ class LockedIterator
     : private ItType
 {
 public:
+    using value_type = typename ItType::value_type;
+    using difference_type = typename ItType::difference_type;
+    using pointer = typename ItType::pointer;
+    using reference = typename ItType::reference;
+    using iterator_category = typename ItType::iterator_category;
+
     // Attention: do not lock mutex again!
     LockedIterator(const LockedIterator& other) : ItType(other) {}
 

@@ -294,7 +294,7 @@ void DrawView::validateScale()
 int DrawView::countParentPages() const
 {
     int count = 0;
-    std::vector<App::DocumentObject*> parentAll = getInList();
+    auto parentAll = getInListNew();
 
     //it can happen that a page is repeated in the InList, so we need to
     //prune the duplicates
@@ -366,9 +366,8 @@ std::vector<DrawPage*> DrawView::findAllParentPages() const
 
 bool DrawView::isInClip()
 {
-    std::vector<App::DocumentObject*> parent = getInList();
-    for (std::vector<App::DocumentObject*>::iterator it = parent.begin(); it != parent.end(); ++it) {
-        if ((*it)->isDerivedFrom<DrawViewClip>()) {
+    for (auto& parent: getInListNew()) {
+        if (parent->isDerivedFrom<DrawViewClip>()) {
             return true;
         }
     }

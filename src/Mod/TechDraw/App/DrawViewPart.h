@@ -123,8 +123,8 @@ public:
 
     std::vector<TechDraw::DrawHatch*> getHatches() const;
     std::vector<TechDraw::DrawGeomHatch*> getGeomHatches() const;
-    std::vector<TechDraw::DrawViewDimension*> getDimensions() const;
-    std::vector<TechDraw::DrawViewBalloon*> getBalloons() const;
+    std::vector<std::shared_ptr<DrawViewDimension>> getDimensions() const;
+    std::vector<std::shared_ptr<DrawViewBalloon>> getBalloons() const;
     virtual std::vector<DrawViewSection*> getSectionRefs() const;
     virtual std::vector<DrawViewDetail*> getDetailRefs() const;
 

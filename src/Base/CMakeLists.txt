@@ -346,9 +346,11 @@ SET(FreeCADBase_HPP_SRCS
 )
 
 SET(FreeCADBase_Threads_SRCS
+    Threads/common_records/WeakPtrRecord.h
     Threads/type_traits/Utils.h
     Threads/type_traits/ReduceToRaw.h
     Threads/type_traits/IndexTraits.h
+    Threads/type_traits/IsIterator.h
     Threads/type_traits/MultiIndexRecordInfo.h
     Threads/Exception.h
     Threads/locks/YesItIsAMutex.h

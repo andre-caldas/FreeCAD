@@ -77,40 +77,6 @@ public:
     bool contains(const Key& key) const
     {SharedLock l(mutex); return container.template contains<>(key);}
 
-    struct WriterGate
-        : parent_t::WriterGate
-    {
-        WriterGate(self_t* self) : parent_t::WriterGate(self), self(self) {}
-        self_t* self;
-
-        template<typename ...Vn>
-        auto emplace(Vn&& ...vn)
-        {return self->container.template emplace<>(std::forward<Vn>(vn)...);}
-
-        auto erase(const element_t& element)
-        {return self->container.template erase<>(element);}
-
-        template<typename ItType>
-        auto erase(ItType& iterator)
-        {return self->container.template erase<>(iterator);}
-
-        auto extract(const element_t& element)
-        {return self->container.template extract<>(element);}
-
-        template<typename ItType>
-        auto extract(ItType& iterator)
-        {return self->container.template extract<>(iterator);}
-
-        auto move_back(const element_t& element)
-        {return self->container.template move_back<>(element);}
-
-        template<typename ItType>
-        auto move_back(const ItType& iterator)
-        {return self->container.template move_back<>(iterator);}
-    };
-    WriterGate getWriterGate(const ExclusiveLockBase*)
-    {assert(LockPolicy::isLockedExclusively(mutex));return WriterGate{this};}
-
 protected:
     using parent_t::mutex;
     using parent_t::container;

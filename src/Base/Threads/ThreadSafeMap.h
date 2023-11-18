@@ -55,10 +55,10 @@ public:
     using parent_t::ThreadSafeContainer;
 
     auto find(const Key& key)
-    {return LockedIterator(mutex, container.find(key), container.end());}
+    {return LockedIterator(mutex, container.find(key));}
 
     auto find(const Key& key) const
-    {return LockedIterator(mutex, container.find(key), container.end());}
+    {return LockedIterator(mutex, container.find(key));}
 
     size_t count(const Key& key) const
     {SharedLock l(mutex); return container.count(key);}
@@ -71,27 +71,6 @@ public:
 
     auto& at(const Key& key) const
     {SharedLock l(mutex); return container.at(key);}
-
-    struct WriterGate
-        : parent_t::WriterGate
-    {
-        WriterGate(self_t* self) : parent_t::WriterGate(self), self(self) {}
-        self_t* self;
-
-        auto erase(const Key& key)
-        {return self->container.erase(key);}
-
-        auto erase(const iterator& it)
-        {return self->container.erase(it.getIterator());}
-
-        auto erase(const const_iterator& it)
-        {return self->container.erase(it.getIterator());}
-
-        auto& operator[](const Key& key)
-        {return self->container[key];}
-    };
-    WriterGate getWriterGate(const ExclusiveLockBase*)
-    {assert(LockPolicy::isLockedExclusively(mutex));return WriterGate{this};}
 
 protected:
     using parent_t::mutex;

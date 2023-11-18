@@ -30,6 +30,8 @@
 #include <App/PropertyLinks.h>
 #include <App/PropertyStandard.h>
 #include <Base/SmartPtrPy.h>
+#include <Base/Threads/ThreadSafeStruct.h>
+#include <Base/Threads/common_records/WeakPtrRecord.h>
 
 #include <bitset>
 #include <unordered_map>
@@ -243,7 +245,8 @@ public:
     /// get all objects link to this object
     std::vector<App::DocumentObject*> getInList(void) const
 #else
-    const std::vector<App::DocumentObject*> &getInList() const;
+    std::vector<DocumentObject*> getInList() const;
+    std::vector<std::shared_ptr<DocumentObject>> getInListNew() const;
 #endif
     /// get all objects link directly or indirectly to this object
     std::vector<App::DocumentObject*> getInListRecursive() const;
@@ -254,8 +257,8 @@ public:
      * @param inList [in, out]: optional pointer to a vector holding the output
      * objects, with the furthest linking object ordered last.
      */
-    void getInListEx(std::set<App::DocumentObject*> &inSet,
-            bool recursive, std::vector<App::DocumentObject*> *inList=nullptr) const;
+    void getInListEx(std::set<App::DocumentObject*>& inSet,
+            bool recursive, std::vector<App::DocumentObject*>* inList=nullptr) const;
     /** Return a set of all objects linking to this object, including possible external parent objects
      * @param recursive [in]: whether to obtain recursive in list
      */
@@ -647,8 +650,9 @@ private:
 
 private:
     // Back pointer to all the fathers in a DAG of the document
-    // this is used by the document (via friend) to have a effective DAG handling
-    std::vector<App::DocumentObject*> _inList;
+    // this is used by the document to have a effective DAG handling
+    Base::Threads::ThreadSafeWeakPtrList<DocumentObject> _inList;
+
     mutable std::vector<App::DocumentObject *> _outList;
     mutable std::unordered_map<const char *, App::DocumentObject*, CStringHasher, CStringHasher> _outListMap;
     mutable bool _outListCached = false;

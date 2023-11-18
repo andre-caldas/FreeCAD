@@ -26,6 +26,7 @@
 #ifndef _PreComp_
 #include <stack>
 #endif
+#include <algorithm>
 
 #include <App/DocumentObjectPy.h>
 #include <Base/Console.h>
@@ -427,11 +428,32 @@ std::vector<App::DocumentObject*> DocumentObject::getInList(void) const
 
 #else // ifndef USE_OLD_DAG
 
-const std::vector<App::DocumentObject*> &DocumentObject::getInList() const
+std::vector<App::DocumentObject*> DocumentObject::getInList() const
 {
-    return _inList;
+    std::vector<DocumentObject*> result;
+    result.reserve(_inList.size());
+    for(auto const& weak: _inList) {
+        auto smart = weak.lock();
+        if(smart) {
+            result.push_back(smart.get());
+        }
+    }
+    return result;
 }
 
+// TODO: deprecate getInList and rename this to getInList.
+std::vector<std::shared_ptr<DocumentObject>> DocumentObject::getInListNew() const
+{
+    std::vector<std::shared_ptr<DocumentObject>> result;
+    result.reserve(_inList.size());
+    for(auto const& weak: _inList) {
+        auto smart = weak.lock();
+        if(smart) {
+            result.emplace_back(std::move(smart));
+        }
+    }
+    return result;
+}
 #endif // if USE_OLD_DAG
 
 
@@ -454,8 +476,8 @@ std::vector<App::DocumentObject*> DocumentObject::getInListRecursive() const {
 // More efficient algorithm to find the recursive inList of an object,
 // including possible external parents.  One shortcoming of this algorithm is
 // it does not detect cyclic reference, althgouth it won't crash either.
-void DocumentObject::getInListEx(std::set<App::DocumentObject*> &inSet, 
-        bool recursive, std::vector<App::DocumentObject*> *inList) const
+void DocumentObject::getInListEx(std::set<App::DocumentObject*>& inSet,
+        bool recursive, std::vector<App::DocumentObject*>* inList) const
 {
 #ifdef USE_OLD_DAG
     std::map<DocumentObject*,std::set<App::DocumentObject*> > outLists;
@@ -492,10 +514,11 @@ void DocumentObject::getInListEx(std::set<App::DocumentObject*> &inSet,
     }
 #else // USE_OLD_DAG
 
+    auto internal_inList = getInList();
     if(!recursive) {
-        inSet.insert(_inList.begin(),_inList.end());
+        inSet.insert(internal_inList.begin(),internal_inList.end());
         if(inList)
-            *inList = _inList;
+            *inList = internal_inList;
         return;
     }
 
@@ -1049,9 +1072,11 @@ void App::DocumentObject::_removeBackLink(DocumentObject* rmvObj)
 #ifndef USE_OLD_DAG
     //do not use erase-remove idom, as this erases ALL entries that match. we only want to remove a
     //single one.
+    Base::Threads::ExclusiveLock lock{_inList};
     auto it = std::find(_inList.begin(), _inList.end(), rmvObj);
-    if(it != _inList.end())
-        _inList.erase(it);
+    if(it != _inList.end()) {
+        lock->erase(it);
+    }
 #else
     (void)rmvObj;
 #endif
@@ -1064,7 +1089,8 @@ void App::DocumentObject::_addBackLink(DocumentObject* newObj)
     //removal: If a link loses this object it removes the backlink. If we would have added it only once
     //this removal would clear the object from the inlist, even though there may be other link properties 
     //from this object that link to us.
-    _inList.push_back(newObj);
+    Base::Threads::ExclusiveLock lock{_inList};
+    lock->emplace_back(newObj->SharedFromThis<DocumentObject>());
 #else
     (void)newObj;
 #endif //USE_OLD_DAG    

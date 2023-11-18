@@ -27,25 +27,41 @@
 #include "ThreadSafeContainer.h"
 
 #include "ThreadSafeMultiIndex.h"
+#include <iostream>
 
 namespace Base::Threads
 {
 
 template<typename Record, auto ...LocalPointers>
+template<std::size_t ...In>
+void MultiIndexContainer<Record, LocalPointers...>::axert(const std::index_sequence<In...>&) const
+{
+    auto size = ordered_data.size();
+    assert(data.size() == size);
+    assert(ordered_data_reverse.size() == size);
+    // If you know a better way... please, tell me! :-)
+    int _[] = {(assert(std::template get<In>(indexes).size() == size),0)...};
+    (void)_;
+}
+
+template<typename Record, auto ...LocalPointers>
 auto MultiIndexContainer<Record, LocalPointers...>::begin()
 {
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
     return iterator(ordered_data.begin());
 }
 
 template<typename Record, auto ...LocalPointers>
 auto MultiIndexContainer<Record, LocalPointers...>::begin() const
 {
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
     return cbegin();
 }
 
 template<typename Record, auto ...LocalPointers>
 auto MultiIndexContainer<Record, LocalPointers...>::cbegin() const
 {
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
     return const_iterator(ordered_data.cbegin());
 }
 
@@ -53,18 +69,21 @@ auto MultiIndexContainer<Record, LocalPointers...>::cbegin() const
 template<typename Record, auto ...LocalPointers>
 auto MultiIndexContainer<Record, LocalPointers...>::end()
 {
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
     return iterator(ordered_data.end());
 }
 
 template<typename Record, auto ...LocalPointers>
 auto MultiIndexContainer<Record, LocalPointers...>::end() const
 {
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
     return cend();
 }
 
 template<typename Record, auto ...LocalPointers>
 auto MultiIndexContainer<Record, LocalPointers...>::cend() const
 {
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
     return const_iterator(ordered_data.cend());
 }
 
@@ -73,18 +92,21 @@ auto MultiIndexContainer<Record, LocalPointers...>::cend() const
 template<typename Record, auto ...LocalPointers>
 auto MultiIndexContainer<Record, LocalPointers...>::size() const
 {
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
     return ordered_data.size();
 }
 
 template<typename Record, auto ...LocalPointers>
 bool MultiIndexContainer<Record, LocalPointers...>::empty() const
 {
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
     return ordered_data.empty();
 }
 
 template<typename Record, auto ...LocalPointers>
 void MultiIndexContainer<Record, LocalPointers...>::clear()
 {
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
     ordered_data_reverse.clear();
     ordered_data.clear();
     data.clear();
@@ -95,6 +117,7 @@ template<typename Record, auto ...LocalPointers>
 template<typename Key>
 auto MultiIndexContainer<Record, LocalPointers...>::find(const Key& key)
 {
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
     return find<index_from_raw_v<Key>>(key);
 }
 
@@ -102,6 +125,7 @@ template<typename Record, auto ...LocalPointers>
 template<std::size_t I, typename Key>
 auto MultiIndexContainer<Record, LocalPointers...>::find(const Key& key)
 {
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
     return _find<iterator, I>(key);
 }
 
@@ -109,6 +133,7 @@ template<typename Record, auto ...LocalPointers>
 template<typename Key>
 auto MultiIndexContainer<Record, LocalPointers...>::find(const Key& key) const
 {
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
     return find<index_from_raw_v<Key>>(key);
 }
 
@@ -116,6 +141,7 @@ template<typename Record, auto ...LocalPointers>
 template<std::size_t I, typename Key>
 auto MultiIndexContainer<Record, LocalPointers...>::find(const Key& key) const
 {
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
     auto self = const_cast<self_t*>(this);
     return self->template _find<const_iterator, I>(key);
 }
@@ -124,6 +150,7 @@ template<typename Record, auto ...LocalPointers>
 template<typename ItType, std::size_t I, typename Key>
 auto MultiIndexContainer<Record, LocalPointers...>::_find(const Key& key)
 {
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
     auto& map = std::template get<I>(indexes);
     auto it_ptr = map.find(ReduceToRaw<Key>::reduce(key));
     if(it_ptr == map.end())
@@ -148,6 +175,7 @@ template<typename Record, auto ...LocalPointers>
 template<std::size_t I, typename Key>
 bool MultiIndexContainer<Record, LocalPointers...>::contains(const Key& key) const
 {
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
     auto it = find<I>(key);
     return it != end();
 }
@@ -156,14 +184,17 @@ template<typename Record, auto ...LocalPointers>
 template<typename Key>
 bool MultiIndexContainer<Record, LocalPointers...>::contains(const Key& key) const
 {
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
     auto it = find(key);
     return it != end();
 }
 
 template<typename Record, auto ...LocalPointers>
 template<typename ...Vn>
-auto MultiIndexContainer<Record, LocalPointers...>::emplace(Vn&& ...vn)
+auto MultiIndexContainer<Record, LocalPointers...>::emplace_back(Vn&& ...vn)
 {
+std::cerr << "------------ emplace back." << std::endl;
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
     auto unique_ptr = std::make_unique<Record>(std::forward<Vn>(vn)...);
     Record* inserted_record = unique_ptr.get();
     auto res1 = data.emplace(unique_ptr.get(), std::move(unique_ptr));
@@ -185,24 +216,51 @@ auto MultiIndexContainer<Record, LocalPointers...>::emplace(Vn&& ...vn)
 template<typename Record, auto ...LocalPointers>
 auto MultiIndexContainer<Record, LocalPointers...>::erase(const Record& record)
 {
+std::cerr << "------------ erase record." << std::endl;
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
     auto nh = extract(record);
+std::cerr << "------------ DID erase record? " << (bool)nh << std::endl;
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
     return (bool)nh;
 }
 
 template<typename Record, auto ...LocalPointers>
-template<typename ItType>
-auto MultiIndexContainer<Record, LocalPointers...>::erase(ItType it)
+template<typename ItType, std::enable_if_t<IsIterator<ItType>::value, bool>>
+auto MultiIndexContainer<Record, LocalPointers...>::erase(const ItType& it)
 {
+std::cerr << "------------ erase iterator." << std::endl;
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
     ItType next = it;
     ++next; // Attention: assuming it != end!
     erase(*it);
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
     return next;
+}
+
+template<typename Record, auto ...LocalPointers>
+template<typename Key, std::enable_if_t<!IsIterator<Key>::value, int>>
+auto MultiIndexContainer<Record, LocalPointers...>::erase(const Key& key)
+{
+std::cerr << "------------ erase key." << std::endl;
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
+    std::size_t count = 0;
+    for(auto it = find(key); it != end(); it = find(key))
+    {
+std::cerr << "------------ erase key.... iterating." << std::endl;
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
+        ++count;
+        erase(*it);
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
+    }
+    return count;
 }
 
 
 template<typename Record, auto ...LocalPointers>
 auto MultiIndexContainer<Record, LocalPointers...>::extract(const Record& record)
 {
+std::cerr << "------------ extract record." << std::endl;
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
     auto pos = ordered_data_reverse.find(&record);
     assert(pos != ordered_data_reverse.end());
     if(pos == ordered_data_reverse.end())
@@ -210,7 +268,7 @@ auto MultiIndexContainer<Record, LocalPointers...>::extract(const Record& record
         return typename decltype(data)::node_type{};
     }
 
-    eraseIndexes(record, std::make_index_sequence<sizeof...(LocalPointers)>{});
+    deleteIndexes(record, std::make_index_sequence<sizeof...(LocalPointers)>{});
 
     long key = pos->second;
     ordered_data_reverse.erase(&record);
@@ -219,13 +277,30 @@ auto MultiIndexContainer<Record, LocalPointers...>::extract(const Record& record
     assert(ordered_data.size() == data.size() - 1);
     auto nh = data.extract(&record);
     assert(data.size() == ordered_data.size());
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
     return nh;
 }
 
 template<typename Record, auto ...LocalPointers>
-template<typename ItType>
-auto MultiIndexContainer<Record, LocalPointers...>::extract(ItType it)
+template<typename ItType, std::enable_if_t<IsIterator<ItType>::value, bool>>
+auto MultiIndexContainer<Record, LocalPointers...>::extract(const ItType& it)
 {
+std::cerr << "------------ extract iterator." << std::endl;
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
+    return extract(*it);
+}
+
+template<typename Record, auto ...LocalPointers>
+template<typename Key, std::enable_if_t<!IsIterator<Key>::value, int>>
+auto MultiIndexContainer<Record, LocalPointers...>::extract(const Key& key)
+{
+std::cerr << "------------ extract key?" << std::endl;
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
+    auto it = find(key);
+    if(it == end())
+    {
+        return node_type{};
+    }
     return extract(*it);
 }
 
@@ -233,6 +308,7 @@ auto MultiIndexContainer<Record, LocalPointers...>::extract(ItType it)
 template<typename Record, auto ...LocalPointers>
 auto MultiIndexContainer<Record, LocalPointers...>::move_back(const Record& record)
 {
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
     long old_count = ordered_data_reverse.at(&record);
     long new_count = ++counter;
     ordered_data_reverse.at(&record) = new_count;
@@ -240,6 +316,7 @@ auto MultiIndexContainer<Record, LocalPointers...>::move_back(const Record& reco
     auto nh = ordered_data.extract(old_count);
     nh.key() = new_count;
     ordered_data.insert(std::move(nh));
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
     return new_count;
 }
 
@@ -248,6 +325,7 @@ template<typename Record, auto ...LocalPointers>
 template<typename ItType>
 auto MultiIndexContainer<Record, LocalPointers...>::move_back(const ItType& it)
 {
+axert(std::make_index_sequence<sizeof...(LocalPointers)>{});
     return move_back(*it);
 }
 
@@ -258,7 +336,7 @@ auto MultiIndexContainer<Record, LocalPointers...>::move_back(const ItType& it)
  */
 template<typename Record, auto ...LocalPointers>
 template<std::size_t ...In>
-void MultiIndexContainer<Record, LocalPointers...>::insertIndexes(const record_t& record, const std::index_sequence<In...>&)
+void MultiIndexContainer<Record, LocalPointers...>::insertIndexes(const Record& record, const std::index_sequence<In...>&)
 {
     // If you know a better way... please, tell me! :-)
     int _[] = {(insertIndex<In>(record),0)...};
@@ -267,9 +345,10 @@ void MultiIndexContainer<Record, LocalPointers...>::insertIndexes(const record_t
 
 template<typename Record, auto ...LocalPointers>
 template<std::size_t I>
-void MultiIndexContainer<Record, LocalPointers...>::insertIndex(const record_t& record)
+void MultiIndexContainer<Record, LocalPointers...>::insertIndex(const Record& record)
 {
     auto& map = std::template get<I>(indexes);
+    assert(map.size() == data.size() - 1);
     auto& value = record.*(RecordInfo::template pointer_v<I>);
     auto raw_value = ReduceToRaw<decltype(value)>::reduce(value);
     map.emplace(raw_value, &record);
@@ -279,22 +358,33 @@ void MultiIndexContainer<Record, LocalPointers...>::insertIndex(const record_t& 
 
 template<typename Record, auto ...LocalPointers>
 template<std::size_t ...In>
-void MultiIndexContainer<Record, LocalPointers...>::eraseIndexes(const record_t& record, const std::index_sequence<In...>&)
+void MultiIndexContainer<Record, LocalPointers...>::deleteIndexes(const Record& record, const std::index_sequence<In...>&)
 {
+std::cerr << "------------ delete indexes." << std::endl;
     // If you know a better way... please, tell me! :-)
-    int _[] = {(eraseIndex<In>(record),0)...};
+    int _[] = {(deleteIndex<In>(record),0)...};
     (void)_;
 }
 
 template<typename Record, auto ...LocalPointers>
 template<std::size_t I>
-void MultiIndexContainer<Record, LocalPointers...>::eraseIndex(const record_t& record)
+void MultiIndexContainer<Record, LocalPointers...>::deleteIndex(const Record& record)
 {
+std::cerr << "------------ delete index (" << I << ")." << std::endl;
     auto& map = std::template get<I>(indexes);
     auto& value = record.*(RecordInfo::template pointer_v<I>);
     auto raw_value = ReduceToRaw<decltype(value)>::reduce(value);
-    map.erase(raw_value);
-    assert(map.size() == data.size()-1);
+    auto [begin,end] = map.equal_range(raw_value);
+    for(auto it = begin; it != end; ++it)
+    {
+        if(it->second == &record)
+        {
+            map.extract(it);
+            assert(map.size() == data.size()-1);
+            return;
+        }
+    }
+    assert(false);
 }
 
 

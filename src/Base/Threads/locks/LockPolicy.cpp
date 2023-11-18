@@ -21,6 +21,8 @@
  *                                                                          *
  ***************************************************************************/
 
+#include "../Exception.h"
+
 #include "LockPolicy.h"
 
 namespace Base::Threads
@@ -62,22 +64,29 @@ bool LockPolicy::isLockedExclusively(const MutexPair& mutex)
     return isLockedExclusively(&mutex);
 }
 
-bool LockPolicy::thisInstanceLocks(const MutexPair* mutex) const
-{
-    return (mutexes.find(mutex) != mutexes.end());
-}
-
-bool LockPolicy::thisInstanceLocks(const MutexPair& mutex) const
-{
-    return thisInstanceLocks(&mutex);
-}
-
-
 void LockPolicy::detachFromThread()
 {
+    if(has_ignored_mutexes)
+    {
+        assert(false);
+        throw ExceptionNewThreadRequiresReleaseableLock{};
+    }
+
     if(mutexes.empty())
     {
         return;
+    }
+
+    // Confirm all mutexes are in the topmost layer.
+    assert(!threadMutexLayers.empty());
+    auto layer = threadMutexLayers.top();
+    for(auto mutex: mutexes)
+    {
+        if(!layer.count(mutex))
+        {
+            assert(false);
+            throw ExceptionNewThreadRequiresReleaseableLock{};
+        }
     }
 
     for(auto mutex: mutexes)
@@ -92,12 +101,19 @@ void LockPolicy::detachFromThread()
     {
         threadMutexLayers.pop();
     }
+    is_detached = true;
 }
 
 void LockPolicy::attachToThread(bool is_exclusive)
 {
     assert(!hasAnyLock());
     assert(!mutexes.empty());
+    assert(!has_ignored_mutexes);
+    if(!is_detached)
+    {
+        assert(false);
+        throw ExceptionNewThreadRequiresMovedLock{};
+    }
     _processLock(is_exclusive);
     assert(mutexes.size() == threadExclusiveMutexes.size()
            || mutexes.size() == threadNonExclusiveMutexes.size());
@@ -107,12 +123,11 @@ void LockPolicy::attachToThread(bool is_exclusive)
 bool LockPolicy::_areParentsLocked() const
 {
     assert(!threadMutexLayers.empty());
-
     for(auto mutex: mutexes)
     {
         if(!mutex->parent_pair)
         {
-            return false;
+            continue;
         }
         bool parent_locked = false;
         parent_locked = parent_locked || threadExclusiveMutexes.count(mutex->parent_pair);
@@ -128,6 +143,9 @@ bool LockPolicy::_areParentsLocked() const
 
 void LockPolicy::_processLock(bool is_exclusive)
 {
+    assert(is_detached);
+    is_detached = false;
+
     if(mutexes.empty())
     {
         // A container.end() does this!
@@ -175,13 +193,14 @@ void LockPolicy::_processExclusiveLock()
     // remove already locked "exclusive" mutexes from the list.
     for(auto element: threadExclusiveMutexes)
     {
-        mutexes.erase(element);
+        bool removed = mutexes.erase(element);
+        has_ignored_mutexes |= removed;
     }
 
     // do not allow already locked "non-exclusive" mutexes in the list.
-    for(auto element: threadNonExclusiveMutexes)
+    for(auto mutex: mutexes)
     {
-        if(mutexes.count(element))
+        if(threadNonExclusiveMutexes.count(mutex))
         {
             // We cannot exclusively lock if it is already shared.
             throw ExceptionNoExclusiveOverNonExclusive();
@@ -213,16 +232,13 @@ void LockPolicy::_processNonExclusiveLock()
     assert(!threadExclusiveMutexes.empty() || !threadNonExclusiveMutexes.empty());
     assert(!threadMutexLayers.empty());
 
-    // remove already locked "exclusive" mutexes from the list.
-    for(auto element: threadExclusiveMutexes)
+    // remove already locked "exclusive" and "non-exclusive" mutexes from the list.
+    for(auto mutex: mutexes)
     {
-        mutexes.erase(element);
-    }
-
-    // remove already locked "non-exclusive" mutexes from the list.
-    for(auto element: threadNonExclusiveMutexes)
-    {
-        mutexes.erase(element);
+        if(threadExclusiveMutexes.count(mutex) || threadNonExclusiveMutexes.count(mutex))
+        {
+            mutexes.erase(mutex);
+        }
     }
 
     if(mutexes.empty())
@@ -232,6 +248,7 @@ void LockPolicy::_processNonExclusiveLock()
         return;
     }
 
+    assert(!isLayerExclusive.empty());
     if(isLayerExclusive.top())
     {
         if(!_areParentsLocked())
@@ -259,10 +276,10 @@ SharedLock::SharedLock()
 SharedLock::SharedLock(MutexPair& mutex)
     : LockPolicy(false, &mutex)
 {
-    if(!mutexes.empty())
+    if(!getMutexes().empty())
     {
-        assert(mutexes.size() == 1);
-        assert(mutexes.count(&mutex));
+        assert(getMutexes().size() == 1);
+        assert(getMutexes().count(&mutex));
         lock = std::shared_lock(mutex.mutex);
     }
 }

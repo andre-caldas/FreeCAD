@@ -408,9 +408,9 @@ bool DrawProjGroup::canDelete(const char* viewProjType) const
             continue;
         }
 
-        auto linkedItems = view->getInList();
-        for (auto& item : linkedItems) {
-            if (item == this) {
+        auto linkedItems = view->getInListNew();
+        for (auto& item: linkedItems) {
+            if (item.get() == this) {
                 continue;
             }
             if (item->isDerivedFrom(TechDraw::DrawView::getClassTypeId())) {

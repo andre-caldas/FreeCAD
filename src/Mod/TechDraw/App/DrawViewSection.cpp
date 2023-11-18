@@ -686,9 +686,8 @@ void DrawViewSection::postHlrTasks()
 // activities that depend on a valid section cut
 void DrawViewSection::postSectionCutTasks()
 {
-    //    Base::Console().Message("DVS::postSectionCutTasks()\n");
-    std::vector<App::DocumentObject*> children = getInList();
-    for (auto& c : children) {
+    auto children = getInListNew();
+    for (auto& c: children) {
         if (c->isDerivedFrom<DrawViewPart>()) {
             // details or sections of this need cut shape
             c->recomputeFeature();

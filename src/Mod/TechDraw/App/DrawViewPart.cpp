@@ -420,23 +420,18 @@ void DrawViewPart::postHlrTasks()
     addReferencesToGeom();
     addShapes2d();
 
-    auto lock = concurrentData.continueWriting();
-    if(!lock) {
-        return;
-    }
     //balloons need to be recomputed here because their
     //references will be invalid until the geometry exists
-    for (auto b: getBalloons()) {
+    for (auto& b: getBalloons()) {
         b->recomputeFeature();
     }
     // Dimensions need to be recomputed now if face finding is not going to take place.
     if (!handleFaces() || CoarseView.getValue()) {
-        std::vector<TechDraw::DrawViewDimension*> dims = getDimensions();
+        auto dims = getDimensions();
         for (auto& d : dims) {
             d->recomputeFeature();
         }
     }
-    lock.release();
 
     //second pass if required
     if (ScaleType.isValue("Automatic") && !checkFit()) {
@@ -468,7 +463,7 @@ void DrawViewPart::postFaceExtractionTasks()
 
     // Dimensions need to be recomputed because their references will be invalid
     //  until all the geometry (including centerlines dependent on faces) exists.
-    std::vector<TechDraw::DrawViewDimension*> dims = getDimensions();
+    auto dims = getDimensions();
     for (auto& d : dims) {
         d->recomputeFeature();
     }
@@ -732,33 +727,32 @@ std::vector<TechDraw::DrawGeomHatch*> DrawViewPart::getGeomHatches() const
 //return *unique* list of Dimensions which reference this DVP
 //if the dimension has two references to this dvp, it will appear twice in
 //the inlist
-std::vector<TechDraw::DrawViewDimension*> DrawViewPart::getDimensions() const
+std::vector<std::shared_ptr<DrawViewDimension>> DrawViewPart::getDimensions() const
 {
-    std::vector<TechDraw::DrawViewDimension*> result;
-    std::vector<App::DocumentObject*> children = getInList();
-    std::sort(children.begin(), children.end(), std::less<>());
-    std::vector<App::DocumentObject*>::iterator newEnd =
-        std::unique(children.begin(), children.end());
-    for (std::vector<App::DocumentObject*>::iterator it = children.begin(); it != newEnd; ++it) {
+    std::vector<std::shared_ptr<DrawViewDimension>> result;
+    auto children = getInListNew();
+    std::sort(children.begin(), children.end());
+    // TODO: is it not unique? if it is not... shouldn't it be?
+    auto newEnd = std::unique(children.begin(), children.end());
+    for (auto it = children.begin(); it != newEnd; ++it) {
         if ((*it)->isDerivedFrom<DrawViewDimension>()) {
-            TechDraw::DrawViewDimension* dim = dynamic_cast<TechDraw::DrawViewDimension*>(*it);
-            result.push_back(dim);
+            auto dim = std::dynamic_pointer_cast<DrawViewDimension>(std::move(*it));
+            result.emplace_back(std::move(dim));
         }
     }
     return result;
 }
 
-std::vector<TechDraw::DrawViewBalloon*> DrawViewPart::getBalloons() const
+std::vector<std::shared_ptr<DrawViewBalloon>> DrawViewPart::getBalloons() const
 {
-    std::vector<TechDraw::DrawViewBalloon*> result;
-    std::vector<App::DocumentObject*> children = getInList();
-    std::sort(children.begin(), children.end(), std::less<>());
-    std::vector<App::DocumentObject*>::iterator newEnd =
-        std::unique(children.begin(), children.end());
-    for (std::vector<App::DocumentObject*>::iterator it = children.begin(); it != newEnd; ++it) {
+    std::vector<std::shared_ptr<DrawViewBalloon>> result;
+    auto children = getInListNew();
+    std::sort(children.begin(), children.end());
+    auto newEnd = std::unique(children.begin(), children.end());
+    for (auto it = children.begin(); it != newEnd; ++it) {
         if ((*it)->isDerivedFrom<DrawViewBalloon>()) {
-            TechDraw::DrawViewBalloon* balloon = dynamic_cast<TechDraw::DrawViewBalloon*>(*it);
-            result.push_back(balloon);
+            auto balloon = std::dynamic_pointer_cast<DrawViewBalloon>(std::move(*it));
+            result.emplace_back(std::move(balloon));
         }
     }
     return result;
@@ -1200,14 +1194,12 @@ void DrawViewPart::unsetupObject()
     // must use page->removeObject first
     TechDraw::DrawPage* page = findParentPage();
     if (page) {
-        std::vector<TechDraw::DrawViewDimension*> dims = getDimensions();
-        std::vector<TechDraw::DrawViewDimension*>::iterator it3 = dims.begin();
-        for (; it3 != dims.end(); it3++) {
-            page->removeView(*it3);
-            const char* name = (*it3)->_getNameInDocument();
-            if (name) {
+        auto dims = getDimensions();
+        for(auto& dim: dims) {
+            page->removeView(dim.get());
+            if (dim->isAttachedToDocument()) {
                 Base::Interpreter().runStringArg("App.getDocument(\"%s\").removeObject(\"%s\")",
-                                                 docName.c_str(), name);
+                                                 docName.c_str(), dim->_getNameInDocument());
             }
         }
     }
@@ -1216,14 +1208,11 @@ void DrawViewPart::unsetupObject()
     // must use page->removeObject first
     page = findParentPage();
     if (page) {
-        std::vector<TechDraw::DrawViewBalloon*> balloons = getBalloons();
-        std::vector<TechDraw::DrawViewBalloon*>::iterator it3 = balloons.begin();
-        for (; it3 != balloons.end(); it3++) {
-            page->removeView(*it3);
-            const char* name = (*it3)->_getNameInDocument();
-            if (name) {
+        for (auto& ballon: getBalloons()) {
+            page->removeView(ballon.get());
+            if (ballon->isAttachedToDocument()) {
                 Base::Interpreter().runStringArg("App.getDocument(\"%s\").removeObject(\"%s\")",
-                                                 docName.c_str(), name);
+                                                 docName.c_str(), ballon->_getNameInDocument());
             }
         }
     }

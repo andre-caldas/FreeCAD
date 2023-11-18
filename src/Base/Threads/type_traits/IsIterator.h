@@ -21,75 +21,31 @@
  *                                                                          *
  ***************************************************************************/
 
-#ifndef BASE_Threads_ThreadSafeContainer_H
-#define BASE_Threads_ThreadSafeContainer_H
+#ifndef BASE_Threads_IsIterator_H
+#define BASE_Threads_IsIterator_H
 
 #include <type_traits>
-#include <shared_mutex>
-
-#include "locks/LockPolicy.h"
+#include <iterator>
 
 namespace Base::Threads
 {
 
-template<typename ItType>
-class LockedIterator;
+/*
+ * See:
+ * https://stackoverflow.com/questions/25290462/how-to-define-is-iterator-type-trait
+ */
 
-template<typename ContainerType>
-class ThreadSafeContainer
-{
-public:
-    using self_t = ThreadSafeContainer;
-    typedef ContainerType unsafe_container_t;
-    typedef typename unsafe_container_t::iterator container_iterator;
-    typedef typename unsafe_container_t::const_iterator container_const_iterator;
+template<typename T, typename Enable = void>
+struct IsIterator : std::false_type {};
 
-    typedef LockedIterator<container_iterator> iterator;
-    typedef LockedIterator<container_const_iterator> const_iterator;
+template<typename T>
+struct IsIterator<
+    T,
+    std::enable_if_t<
+        std::is_base_of_v<std::input_iterator_tag, typename std::iterator_traits<T>::iterator_category>
+    >
+> : std::true_type {};
 
-    ThreadSafeContainer() = default;
+} //namespace ::Threads
 
-    template<typename MutexHolder>
-    ThreadSafeContainer(MutexHolder& holder) : mutex(holder.getMutexPair()) {}
-
-    auto begin();
-    auto begin() const;
-    auto cbegin() const;
-
-    auto end();
-    auto end() const;
-    auto cend() const;
-
-    size_t size() const;
-    bool empty() const;
-    void clear();
-
-    struct WriterGate
-    {
-        WriterGate(self_t* self) : self(self) {}
-        self_t* self;
-        auto operator->() const {return &self->container;}
-        auto& operator*() const {return self->container;}
-    };
-    WriterGate& getWriterGate(const ExclusiveLockBase*)
-    {assert(LockPolicy::isLockedExclusively(mutex)); return gate;}
-
-    template<typename SomeHolder>
-    void setParentMutex(SomeHolder& tsc);
-
-public:
-    // TODO: eliminate this or the gate version.
-    auto getMutexPair() const {return &mutex;}
-
-protected:
-    WriterGate gate{this};
-
-    mutable MutexPair mutex;
-    ContainerType container;
-};
-
-} //namespace Base::Threads
-
-#include "ThreadSafeContainer.inl"
-
-#endif // BASE_Threads_ThreadSafeContainer_H
+#endif // BASE_Threads_type_traits_H

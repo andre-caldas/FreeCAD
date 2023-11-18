@@ -79,9 +79,6 @@ public:
     static bool isLockedExclusively(const MutexPair* mutex);
     static bool isLockedExclusively(const MutexPair& mutex);
 
-    bool thisInstanceLocks(const MutexPair* mutex) const;
-    bool thisInstanceLocks(const MutexPair& mutex) const;
-
     void detachFromThread();
     void attachToThread(bool is_exclusive);
 
@@ -95,12 +92,22 @@ protected:
     template<typename... MutN,
              std::enable_if_t<(std::is_same_v<MutexPair, MutN> && ...)>* = nullptr>
     LockPolicy(bool is_exclusive, MutN*... mutex);
+
     LockPolicy() = delete;
     virtual ~LockPolicy();
 
-    std::unordered_set<const MutexPair*> mutexes;
+    bool isDetached() const
+    {return is_detached;}
+    bool hasIgnoredMutexes() const
+    {return has_ignored_mutexes;}
+    const std::unordered_set<const MutexPair*>& getMutexes() const
+    {return mutexes;}
 
 private:
+    bool is_detached = true;
+    bool has_ignored_mutexes = false;
+    std::unordered_set<const MutexPair*> mutexes;
+
     bool _areParentsLocked() const;
     void _processLock(bool is_exclusive);
     void _processExclusiveLock();
@@ -141,10 +148,10 @@ public:
 
     // This could actually be static.
     template<typename SomeHolder>
-    auto operator[](SomeHolder& tsc) const;
+    auto& operator[](SomeHolder& tsc) const;
 
     template<typename = std::enable_if_t<sizeof...(MutexHolder) == 0>>
-    auto operator->() const {return &firstMutexHolder;}
+    auto operator->() const;
 
 private:
     using locks_t = std::scoped_lock<YesItIsAMutex,

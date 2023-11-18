@@ -153,7 +153,7 @@ public:
      */
     void releaseInNewThread();
 
-    auto operator->() const;
+    auto& operator->() const;
 
     /**
      * @brief Indicates if we shall continue processing: !isThreadObsolete().

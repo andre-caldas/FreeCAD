@@ -84,8 +84,8 @@ ExclusiveLock<FirstMutexHolder, MutexHolder...>
      * ExclusiveLock l1(m1, m2);
      * ExclusiveLock l2(m1); // Does nothing.
      */
-    assert(mutexes.empty() || mutexes.size() == 1+sizeof...(MutexHolder));
-    if(mutexes.size() == 1+sizeof...(MutexHolder))
+    assert(getMutexes().empty() || getMutexes().size() == 1+sizeof...(MutexHolder));
+    if(getMutexes().size() == 1+sizeof...(MutexHolder))
     {
         /*
          * It would be more natural if we could pass "mutexes" to the constructor.
@@ -99,14 +99,26 @@ ExclusiveLock<FirstMutexHolder, MutexHolder...>
 
 template<typename FirstMutexHolder, typename... MutexHolder>
 template<typename SomeHolder>
-auto ExclusiveLock<FirstMutexHolder, MutexHolder...>::operator[](SomeHolder& tsc) const
+auto& ExclusiveLock<FirstMutexHolder, MutexHolder...>::operator[](SomeHolder& tsc) const
 {
-    auto gate = tsc.getWriterGate(this);
-    if(!isLockedExclusively(gate.getMutexPair()))
+    if(!isLockedExclusively(tsc.getMutexPair()))
     {
         throw ExceptionNeedLockToAccessContainer();
     }
-    return gate;
+    auto& gate = tsc.getWriterGate(this);
+    return *gate;
+}
+
+template<typename FirstMutexHolder, typename... MutexHolder>
+template<typename>
+auto ExclusiveLock<FirstMutexHolder, MutexHolder...>::operator->() const
+{
+    if(!isLockedExclusively(firstMutexHolder.getMutexPair()))
+    {
+        throw ExceptionNeedLockToAccessContainer();
+    }
+    auto& gate = firstMutexHolder.getWriterGate(this);
+    return &*gate;
 }
 
 } //namespace Base::Threads

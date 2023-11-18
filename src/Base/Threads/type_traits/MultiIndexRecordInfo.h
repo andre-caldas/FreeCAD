@@ -25,6 +25,8 @@
 #define BASE_Threads_MultiIndexRecordInfo_H
 
 #include <type_traits>
+#include <map>
+#include <unordered_map>
 
 #include "Utils.h"
 #include "IndexTraits.h"
@@ -74,8 +76,8 @@ struct MultiIndexRecordInfo
     using type_from_index_t = typename types_info_t::template type_from_index_t<I>;
 
     using indexes_tuple_t = std::tuple<
-        std::map<typename ReduceToRaw<MemberPointerTo_t<LocalPointers>>::type,
-                 const Record*
+        std::multimap<typename ReduceToRaw<MemberPointerTo_t<LocalPointers>>::type,
+                      const Record*
         >...
     >;
 };

@@ -88,8 +88,8 @@ public:
         const element_t& operator*() const {return self->theStruct;}
         const element_t* operator->() const {return &self->theStruct;}
     };
-    ReaderGate getReaderGate(const SharedLock*) const
-    {assert(LockPolicy::isLocked(mutex)); return ReaderGate{this};}
+    const ReaderGate& getReaderGate(const SharedLock*) const
+    {assert(LockPolicy::isLocked(mutex)); return reader_gate;}
 
     struct WriterGate
     {
@@ -99,8 +99,8 @@ public:
         element_t& operator*() const {return self->theStruct;}
         element_t* operator->() const {return &self->theStruct;}
     };
-    WriterGate getWriterGate(const ExclusiveLockBase*)
-    {assert(LockPolicy::isLockedExclusively(mutex)); return WriterGate{this};}
+    WriterGate& getWriterGate(const ExclusiveLockBase*)
+    {assert(LockPolicy::isLockedExclusively(mutex)); return writer_gate;}
 
     void cancelThreads()
     {activeThread = std::thread::id{};}
@@ -110,6 +110,9 @@ public:
     auto getMutexPair() const {return &mutex;}
 
 private:
+    ReaderGate reader_gate{this};
+    WriterGate writer_gate{this};
+
     mutable MutexPair mutex;
     element_t theStruct;
 

@@ -3270,7 +3270,7 @@ DocumentObject * Document::addObject(const char* sType, const char* pObjectName,
         // generate object id and add to id map;
         sharedObject->_Id = ++d->lastObjectId;
         // store object information;
-        auto [info,success] = lock[d->objectInfo].emplace(sharedObject, ObjectName);
+        auto [info,success] = lock[d->objectInfo].emplace_back(sharedObject, ObjectName);
         assert(success);
         // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
         sharedObject->pcNameInDocument = &info->name;
@@ -3381,7 +3381,7 @@ Document::addObjects(const char* sType, const std::vector<std::string>& objectNa
             // generate object id and add to id map;
             sharedObject->_Id = ++d->lastObjectId;
             // store object information;
-            auto [info,success] = lock[d->objectInfo].emplace(sharedObject, ObjectName);
+            auto [info,success] = lock[d->objectInfo].emplace_back(sharedObject, ObjectName);
             assert(success);
             // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
             sharedObject->pcNameInDocument = &info->name;
@@ -3447,7 +3447,7 @@ void Document::addObject(DocumentObject* pcObject, const char* pObjectName)
         // generate object id and add to id map;
         sharedObject->_Id = ++d->lastObjectId;
         // store object information;
-        auto [info,success] = lock[d->objectInfo].emplace(sharedObject, ObjectName);
+        auto [info,success] = lock[d->objectInfo].emplace_back(sharedObject, ObjectName);
         assert(success);
         // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
         sharedObject->pcNameInDocument = &info->name;
@@ -3484,7 +3484,7 @@ void Document::_addObject(std::shared_ptr<DocumentObject> sharedObject, const ch
         // generate object id and add to id map;
         if(!sharedObject->_Id) sharedObject->_Id = ++d->lastObjectId;
         // store object information;
-        auto [info,success] = lock[d->objectInfo].emplace(sharedObject, ObjectName);
+        auto [info,success] = lock[d->objectInfo].emplace_back(sharedObject, ObjectName);
         assert(success);
         // cache the pointer to the name string in the Object (for performance of DocumentObject::getNameInDocument())
         sharedObject->pcNameInDocument = &info->name;

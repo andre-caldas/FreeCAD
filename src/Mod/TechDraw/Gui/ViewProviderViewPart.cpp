@@ -425,7 +425,7 @@ void ViewProviderViewPart::fixSceneDependencies()
 
     auto dimensions =  getViewPart()->getDimensions();
     for (auto& dim : dimensions) {
-        auto dimQView = dynamic_cast<QGIViewDimension *>(scene->findQViewForDocObj(dim));
+        auto dimQView = dynamic_cast<QGIViewDimension *>(scene->findQViewForDocObj(dim.get()));
         if (dimQView && dimQView->parentItem() != partQView) {
             // need to add the dim QView to this QGIViewPart
             scene->addDimToParent(dimQView, partQView);
@@ -434,7 +434,7 @@ void ViewProviderViewPart::fixSceneDependencies()
 
     auto balloons = getViewPart()->getBalloons();
     for (auto& bal : balloons) {
-        auto balQView = dynamic_cast<QGIViewBalloon*>(scene->findQViewForDocObj(bal));
+        auto balQView = dynamic_cast<QGIViewBalloon*>(scene->findQViewForDocObj(bal.get()));
         if (balQView && balQView->parentItem() != partQView) {
             // need to add the balloon QView to this QGIViewPart
             scene->addBalloonToParent(balQView, partQView);
