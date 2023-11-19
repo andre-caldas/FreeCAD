@@ -91,7 +91,7 @@ public:
     operator ItType&() {return *this;}
 
 private:
-    mutable SharedLock lock;
+    mutable SharedLockFreeLock lock;
 
     /**
      * @brief A wrapper that does not actually lock anything.

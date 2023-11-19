@@ -34,10 +34,10 @@ namespace Base::Threads
 
 template<typename... MutN,
          std::enable_if_t<(std::is_same_v<MutexPair, MutN> && ...)>*>
-LockPolicy::LockPolicy(bool is_exclusive, MutN*... mutex)
+LockPolicy::LockPolicy(bool is_exclusive, bool is_lock_free, MutN*... mutex)
     : mutexes{mutex...}
 {
-    _processLock(is_exclusive);
+    _processLock(is_exclusive, is_lock_free);
 }
 
 
@@ -66,8 +66,8 @@ struct MutexPairPointer<MutexPair> : MutexPairPointer<MutexPair*>
 
 template<typename FirstMutexHolder, typename... MutexHolder>
 ExclusiveLock<FirstMutexHolder, MutexHolder...>
-    ::ExclusiveLock(FirstMutexHolder& first_holder, MutexHolder&... holder)
-    : LockPolicy(true,
+    ::ExclusiveLock(bool is_lock_free, FirstMutexHolder& first_holder, MutexHolder&... holder)
+    : LockPolicy(true, is_lock_free,
                  MutexPairPointer{first_holder}.getPair(),
                  MutexPairPointer{holder}.getPair()...)
     , firstMutexHolder(first_holder)

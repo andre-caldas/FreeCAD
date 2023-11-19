@@ -61,16 +61,16 @@ public:
     {return LockedIterator(mutex, container.find(key));}
 
     size_t count(const Key& key) const
-    {SharedLock l(mutex); return container.count(key);}
+    {SharedLockFreeLock l(mutex); return container.count(key);}
 
     bool contains(const Key& key) const
-    {SharedLock l(mutex); return container.count(key);}
+    {SharedLockFreeLock l(mutex); return container.count(key);}
 
     auto& at(const Key& key)
-    {SharedLock l(mutex); return container.at(key);}
+    {SharedLockFreeLock l(mutex); return container.at(key);}
 
     auto& at(const Key& key) const
-    {SharedLock l(mutex); return container.at(key);}
+    {SharedLockFreeLock l(mutex); return container.at(key);}
 
 protected:
     using parent_t::mutex;

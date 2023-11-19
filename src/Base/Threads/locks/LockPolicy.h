@@ -86,12 +86,14 @@ protected:
     /**
      * @brief Implements the lock policy.
      * @param is_exclusive - Is it an exclusive lock?
+     * @param is_lock_free - Is the programmer sure that
+     * no other lock will be waited for while holding this one?
      * @param mutex - Each pair is composed of the mutex to be locked (first)
      * and a mutex that if already locked imposes a new layer for threadMutexesLayers.
      */
     template<typename... MutN,
              std::enable_if_t<(std::is_same_v<MutexPair, MutN> && ...)>* = nullptr>
-    LockPolicy(bool is_exclusive, MutN*... mutex);
+    LockPolicy(bool is_exclusive, bool is_lock_free, MutN*... mutex);
 
     LockPolicy() = delete;
     virtual ~LockPolicy();
@@ -109,9 +111,13 @@ private:
     std::unordered_set<const MutexPair*> mutexes;
 
     bool _areParentsLocked() const;
-    void _processLock(bool is_exclusive);
-    void _processExclusiveLock();
-    void _processNonExclusiveLock();
+    void _processLock(bool is_exclusive, bool is_lock_free);
+    void _processExclusiveLock(bool is_lock_free);
+    void _processNonExclusiveLock(bool is_lock_free);
+    /**
+     * @brief Removes information from thread_local variables.
+     */
+    void _detachFromThread();
 };
 
 
@@ -119,11 +125,26 @@ class BaseExport SharedLock : public LockPolicy
 {
 public:
     SharedLock();
+
     [[nodiscard]]
-    SharedLock(MutexPair& mutex);
+    SharedLock(MutexPair& mutex) : SharedLock(false, mutex) {}
+
+protected:
+    [[nodiscard]]
+    SharedLock(bool is_lock_free, MutexPair& mutex);
 
 private:
     std::shared_lock<YesItIsAMutex> lock;
+};
+
+
+class BaseExport SharedLockFreeLock : public SharedLock
+{
+public:
+    SharedLockFreeLock() = default;
+
+    [[nodiscard]]
+    SharedLockFreeLock(MutexPair& mutex);
 };
 
 
@@ -144,7 +165,9 @@ class ExclusiveLock
 {
 public:
     [[nodiscard]]
-    ExclusiveLock(FirstMutexHolder& first_holder, MutexHolder&... mutex_holder);
+    ExclusiveLock(FirstMutexHolder& first_holder, MutexHolder&... mutex_holder)
+        : ExclusiveLock(false, first_holder, mutex_holder...)
+    {}
 
     // This could actually be static.
     template<typename SomeHolder>
@@ -152,6 +175,10 @@ public:
 
     template<typename = std::enable_if_t<sizeof...(MutexHolder) == 0>>
     auto operator->() const;
+
+protected:
+    [[nodiscard]]
+    ExclusiveLock(bool is_lock_free, FirstMutexHolder& first_holder, MutexHolder&... mutex_holder);
 
 private:
     using locks_t = std::scoped_lock<YesItIsAMutex,
@@ -167,6 +194,17 @@ private:
     std::unique_ptr<locks_t> locks;
 
     FirstMutexHolder& firstMutexHolder;
+};
+
+template<typename FirstMutexHolder, typename... MutexHolder>
+class ExclusiveLockFreeLock
+    : public ExclusiveLock<FirstMutexHolder, MutexHolder...>
+{
+public:
+    [[nodiscard]]
+    ExclusiveLockFreeLock(FirstMutexHolder& first_holder, MutexHolder&... mutex_holder)
+        : ExclusiveLock<FirstMutexHolder, MutexHolder...>(true, first_holder, mutex_holder...)
+    {}
 };
 
 } //namespace Base::Threads

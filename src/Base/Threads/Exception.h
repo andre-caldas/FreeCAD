@@ -57,6 +57,13 @@ public:
         : Base::TypeError("After an exclusive lock there can be no other locks.") {}
 };
 
+class ExceptionNoLocksAfterLockFree : public Base::TypeError
+{
+public:
+    ExceptionNoLocksAfterLockFree()
+        : Base::TypeError("You cannot lock anything while holding a 'lock free' lock.") {}
+};
+
 class ExceptionNeedLockToAccessContainer : public Base::TypeError
 {
 public:

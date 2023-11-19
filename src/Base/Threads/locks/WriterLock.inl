@@ -128,7 +128,7 @@ WriterLock<MutexHolder>::operator bool() const
 template<typename MutexHolder>
 void WriterLock<MutexHolder>::markStart()
 {
-    ExclusiveLock l{mutexHolder};
+    ExclusiveLockFreeLock l{mutexHolder};
     mutexHolder.activeThread = std::this_thread::get_id();
 }
 

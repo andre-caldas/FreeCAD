@@ -392,7 +392,8 @@ void DrawViewPart::buildGeometryObject(TopoDS_Shape&& shape, const gp_Ax2& viewC
         }
     };
 
-    std::thread{std::move(lambda)}.detach();
+//    std::thread{std::move(lambda)}.detach();
+    std::thread{std::move(lambda)}.join();
 }
 
 //! continue processing after hlr thread completes
@@ -460,6 +461,7 @@ void DrawViewPart::postFaceExtractionTasks()
     }
     // Some centerlines depend on faces so we could not add CL geometry before now
     addCenterLinesToGeom();
+    lock.release();
 
     // Dimensions need to be recomputed because their references will be invalid
     //  until all the geometry (including centerlines dependent on faces) exists.
@@ -467,7 +469,6 @@ void DrawViewPart::postFaceExtractionTasks()
     for (auto& d : dims) {
         d->recomputeFeature();
     }
-    lock.release();
 
     requestPaint();
 }
@@ -1344,7 +1345,6 @@ void DrawViewPart::resetReferenceVerts()
 void DrawViewPart::dumpVerts(std::string text)
 {
     auto lock = concurrentData.lockForReading();
-    const auto& geometryObject = lock->geometryObject;
 
     std::vector<TechDraw::VertexPtr> gVerts = getVertexGeometry();
     Base::Console().Message("%s - dumping %d vertGeoms\n", text.c_str(), gVerts.size());

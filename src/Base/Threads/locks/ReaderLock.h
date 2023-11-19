@@ -83,7 +83,7 @@ public:
 private:
     MutexPair& mutexPair;
     std::unique_ptr<SharedLock> sharedLock;
-    const typename MutexHolder::ReaderGate gate;
+    const typename MutexHolder::ReaderGate& gate;
 };
 
 } //namespace Base::Threads

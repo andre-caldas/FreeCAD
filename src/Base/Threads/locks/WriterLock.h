@@ -174,7 +174,7 @@ private:
     std::unique_ptr<SharedLock> sharedLock;
 
     MutexHolder& mutexHolder;
-    typename MutexHolder::WriterGate gate;
+    const typename MutexHolder::WriterGate& gate;
 
     /**
      * @brief The idea is to allow for the write lock to be released and acquired again.

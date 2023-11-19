@@ -71,11 +71,11 @@ public:
 
     template<std::size_t I, typename Key>
     bool contains(const Key& key) const
-    {SharedLock l(mutex); return container.template contains<>(key);}
+    {SharedLockFreeLock l(mutex); return container.template contains<>(key);}
 
     template<typename Key>
     bool contains(const Key& key) const
-    {SharedLock l(mutex); return container.template contains<>(key);}
+    {SharedLockFreeLock l(mutex); return container.template contains<>(key);}
 
 protected:
     using parent_t::mutex;

@@ -99,7 +99,7 @@ public:
         element_t& operator*() const {return self->theStruct;}
         element_t* operator->() const {return &self->theStruct;}
     };
-    WriterGate& getWriterGate(const ExclusiveLockBase*)
+    const WriterGate& getWriterGate(const ExclusiveLockBase*)
     {assert(LockPolicy::isLockedExclusively(mutex)); return writer_gate;}
 
     void cancelThreads()
@@ -110,8 +110,8 @@ public:
     auto getMutexPair() const {return &mutex;}
 
 private:
-    ReaderGate reader_gate{this};
-    WriterGate writer_gate{this};
+    const ReaderGate reader_gate{this};
+    const WriterGate writer_gate{this};
 
     mutable MutexPair mutex;
     element_t theStruct;

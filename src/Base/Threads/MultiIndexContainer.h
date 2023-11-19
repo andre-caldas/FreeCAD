@@ -44,7 +44,7 @@ public:
                                                   std::unique_ptr<Record>>::node_type;
 
     template<std::size_t ...In>
-    void axert(const std::index_sequence<In...>&) const;
+    bool axert(const std::index_sequence<In...>&) const;
     auto begin();
     auto begin() const;
     auto cbegin() const;

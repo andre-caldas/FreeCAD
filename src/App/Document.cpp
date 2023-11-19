@@ -3266,7 +3266,7 @@ DocumentObject * Document::addObject(const char* sType, const char* pObjectName,
         ObjectName = getUniqueObjectName(sType);
 
     {
-        ExclusiveLock lock(d->objectInfo);
+        ExclusiveLockFreeLock lock(d->objectInfo);
         // generate object id and add to id map;
         sharedObject->_Id = ++d->lastObjectId;
         // store object information;
@@ -3377,7 +3377,7 @@ Document::addObjects(const char* sType, const std::vector<std::string>& objectNa
         reservedNames.push_back(ObjectName);
 
         {
-            ExclusiveLock lock(d->objectInfo);
+            ExclusiveLockFreeLock lock(d->objectInfo);
             // generate object id and add to id map;
             sharedObject->_Id = ++d->lastObjectId;
             // store object information;
@@ -3443,7 +3443,7 @@ void Document::addObject(DocumentObject* pcObject, const char* pObjectName)
     d->activeObject = sharedObject;
 
     {
-        ExclusiveLock lock(d->objectInfo);
+        ExclusiveLockFreeLock lock(d->objectInfo);
         // generate object id and add to id map;
         sharedObject->_Id = ++d->lastObjectId;
         // store object information;
@@ -3480,7 +3480,7 @@ void Document::_addObject(std::shared_ptr<DocumentObject> sharedObject, const ch
     std::string ObjectName = getUniqueObjectName(pObjectName);
 
     {
-        ExclusiveLock lock(d->objectInfo);
+        ExclusiveLockFreeLock lock(d->objectInfo);
         // generate object id and add to id map;
         if(!sharedObject->_Id) sharedObject->_Id = ++d->lastObjectId;
         // store object information;
@@ -3949,11 +3949,15 @@ std::string Document::getUniqueObjectName(const char *Name) const
     //assert(ExclusiveLock::hasLock(d->objectInfo) &&
     //       "You should hold an ExclusiveLock before calling Document::getUniqueObjectName");
 
-    // name in use?
-    auto info = d->objectInfo.find(CleanName);
-    if (info == d->objectInfo.end()) {
-        // if not, name is OK
-        return CleanName;
+    {
+        // ExclusiveLock block.
+        ExclusiveLockFreeLock lock{d->objectInfo};
+        // name in use?
+        auto info = lock->find(CleanName);
+        if (info == lock->end()) {
+            // if not, name is OK
+            return CleanName;
+        }
     }
 
     // remove also trailing digits from clean name which is to avoid to create lengthy names

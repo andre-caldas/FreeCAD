@@ -75,21 +75,21 @@ auto ThreadSafeContainer<ContainerType>::cend() const
 template<typename ContainerType>
 size_t ThreadSafeContainer<ContainerType>::size() const
 {
-    SharedLock lock(mutex);
+    SharedLockFreeLock lock(mutex);
     return container.size();
 }
 
 template<typename ContainerType>
 bool ThreadSafeContainer<ContainerType>::empty() const
 {
-    SharedLock lock(mutex);
+    SharedLockFreeLock lock(mutex);
     return container.empty();
 }
 
 template<typename ContainerType>
 void ThreadSafeContainer<ContainerType>::clear()
 {
-    ExclusiveLock lock(*this);
+    ExclusiveLockFreeLock lock(*this);
     container.clear();
 }
 
