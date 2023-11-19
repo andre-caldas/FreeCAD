@@ -543,8 +543,8 @@ void DrawViewSection::makeSectionCut()
             Base::Console().Message("DVS::makeSectionCut - failed to make section cut");
         }};
 
-//    std::thread{std::move(lambda)}.detach();
-    std::thread{std::move(lambda)}.join();
+    std::thread{std::move(lambda)}.detach();
+//    std::thread{std::move(lambda)}.join();
 }
 
 //! position, scale and rotate shape for  buildGeometryObject

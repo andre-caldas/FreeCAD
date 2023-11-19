@@ -392,8 +392,8 @@ void DrawViewPart::buildGeometryObject(TopoDS_Shape&& shape, const gp_Ax2& viewC
         }
     };
 
-//    std::thread{std::move(lambda)}.detach();
-    std::thread{std::move(lambda)}.join();
+    std::thread{std::move(lambda)}.detach();
+//    std::thread{std::move(lambda)}.join();
 }
 
 //! continue processing after hlr thread completes

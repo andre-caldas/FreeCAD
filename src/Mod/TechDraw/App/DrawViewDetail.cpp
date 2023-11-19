@@ -355,8 +355,8 @@ void DrawViewDetail::makeDetailShape(TopoDS_Shape&& shape, DrawViewPart* dvp, Dr
         }
     };
 
-//    std::thread{std::move(lambda)}.detach();
-    std::thread{std::move(lambda)}.join();
+    std::thread{std::move(lambda)}.detach();
+//    std::thread{std::move(lambda)}.join();
 }
 
 void DrawViewDetail::postHlrTasks(void)
