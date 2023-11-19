@@ -166,8 +166,8 @@ protected:
             ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath(
                 "User parameter:BaseApp/Preferences/View");
 
-            dimConstrColor = SbColor(1.0f, 0.149f, 0.0f);
-            dimConstrDeactivatedColor = SbColor(0.8f, 0.8f, 0.8f);
+            dimConstrColor = SbColor(1.0f, 0.149f, 0.0f);           // NOLINT
+            dimConstrDeactivatedColor = SbColor(0.8f, 0.8f, 0.8f);  // NOLINT
 
             float transparency = 0.f;
             unsigned long color = (unsigned long)(dimConstrColor.getPackedValue());
@@ -195,12 +195,17 @@ protected:
             init();
         }
 
-        OnViewParameterVisibility visibility()
+        OnViewParameterVisibility visibility() const
         {
             return onViewParameterVisibility;
         }
 
-        bool isVisible(Gui::EditableDatumLabel* ovp)
+        bool isVisibility(OnViewParameterVisibility visibility) const
+        {
+            return onViewParameterVisibility == visibility;
+        }
+
+        bool isVisible(Gui::EditableDatumLabel* ovp) const
         {
             switch (onViewParameterVisibility) {
 
@@ -229,14 +234,15 @@ protected:
             dynamicOverride = false;
         }
 
+
     private:
         void init()
         {
             ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath(
                 "User parameter:BaseApp/Preferences/Mod/Sketcher/Tools");
 
-            onViewParameterVisibility =
-                static_cast<OnViewParameterVisibility>(hGrp->GetInt("OnViewParameterVisibility"));
+            onViewParameterVisibility = static_cast<OnViewParameterVisibility>(
+                hGrp->GetInt("OnViewParameterVisibility", 1));
         }
 
         OnViewParameterVisibility onViewParameterVisibility;
@@ -452,6 +458,37 @@ public:
         }
     }
 
+    void drawPositionAtCursor(const Base::Vector2d& position)
+    {
+        if (shouldDrawPositionAtCursor()) {
+            handler->drawPositionAtCursor(position);
+        }
+    }
+
+    void drawDirectionAtCursor(const Base::Vector2d& position, const Base::Vector2d& origin)
+    {
+        if (shouldDrawDimensionsAtCursor()) {
+            handler->drawDirectionAtCursor(position, origin);
+        }
+    }
+
+    void
+    drawWidthHeightAtCursor(const Base::Vector2d& position, const double val1, const double val2)
+    {
+        if (shouldDrawDimensionsAtCursor()) {
+            handler->drawWidthHeightAtCursor(position, val1, val2);
+        }
+    }
+
+    void drawDoubleAtCursor(const Base::Vector2d& position,
+                            const double radius,
+                            Base::Unit unit = Base::Unit::Length)
+    {
+        if (shouldDrawDimensionsAtCursor()) {
+            handler->drawDoubleAtCursor(position, radius, unit);
+        }
+    }
+
 protected:
     /** @name NVI for extension of controller functionality in derived classes */
     //@{
@@ -589,7 +626,7 @@ protected:
             else {
 
                 if (firstOfMode) {
-                    onViewIndexWithFocus = i;
+                    onViewIndexWithFocus = static_cast<int>(i);
                     firstOfMode = false;
                 }
 
@@ -619,7 +656,7 @@ protected:
                 onViewParameters[onviewparameterindex]->setFocusToSpinbox();
             }
 
-            onViewIndexWithFocus = onviewparameterindex;
+            onViewIndexWithFocus = static_cast<int>(onviewparameterindex);
         }
     }
 
@@ -687,8 +724,24 @@ protected:
     //@}
 
 private:
-    ColorManager colorManager;
+    /** @name helper functions */
+    //@{
+    bool shouldDrawPositionAtCursor() const
+    {
+        return !(ovpVisibilityManager.isVisibility(
+            OnViewParameterVisibilityManager::OnViewParameterVisibility::ShowAll));
+    }
+
+    bool shouldDrawDimensionsAtCursor() const
+    {
+        return (ovpVisibilityManager.isVisibility(
+            OnViewParameterVisibilityManager::OnViewParameterVisibility::Hidden));
+    }
+    //@}
+
+private:
     OnViewParameterVisibilityManager ovpVisibilityManager;
+    ColorManager colorManager;
     std::unique_ptr<DrawSketchKeyboardManager> keymanager;
 };
 
