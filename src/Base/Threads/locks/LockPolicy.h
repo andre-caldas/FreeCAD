@@ -51,7 +51,9 @@ namespace Base::Threads
 struct MutexPair
 {
     MutexPair() = default;
-    MutexPair(MutexPair* parent) : parent_pair(parent) {}
+    MutexPair(MutexPair* parent)
+        : parent_pair(parent)
+    {}
     YesItIsAMutex mutex;
     MutexPair* parent_pair = nullptr;
 };
@@ -59,11 +61,14 @@ struct MutexPair
 
 /**
  * @brief Implements the following policy: (see README.md)
- * 1. A `ExclusiveLock` is allowed to be called if the same thread already has a `ExclusiveLock`.
- *    But only if all mutexes being  are in fact already .
- *    Otherwise, a `ExclusiveLock` cannot be constructed by a thread that already owns any kind of lock on any mutex.
- *    This is a programming error and should not happen. An exception will be thrown.
- * 2. If `SharedLock` requests a mutex G and the thread already has a `ExclusiveLock U`:
+ * 1. A `ExclusiveLock` is allowed to be called if the same thread
+ *    already has an `ExclusiveLock`.
+ *    But only if all mutexes being locked are in fact already locked.
+ *    Otherwise, an `ExclusiveLock` cannot be constructed by a thread
+ *    that already owns any kind of lock on any mutex.
+ *    This is a programming error and should not happen.
+ *    An exception will be thrown.
+ * 2. If `SharedLock` requests a mutex G and the thread already has an `ExclusiveLock U`:
  *    2.1. If U **does not own** G, throw and exception.
  *         This is a programming error and should not happen.
  *    2.2. If U **owns** G, do nothing. Just pretend we acquired the lock.
@@ -98,12 +103,9 @@ protected:
     LockPolicy() = delete;
     virtual ~LockPolicy();
 
-    bool isDetached() const
-    {return is_detached;}
-    bool hasIgnoredMutexes() const
-    {return has_ignored_mutexes;}
-    const std::unordered_set<const MutexPair*>& getMutexes() const
-    {return mutexes;}
+    bool isDetached() const;
+    bool hasIgnoredMutexes() const;
+    const std::unordered_set<const MutexPair*>& getMutexes() const;
 
 private:
     bool is_detached = true;
@@ -120,35 +122,45 @@ private:
     void _detachFromThread();
 };
 
+/*
+ * TODO: It hurts my feelings to disable clang-format.
+ * Please, remove it if you find it inappropriate.
+ * It is used here to avoid [[nodiscard]] being put in the same line as
+ * the constructor/method declaration.
+ */
 
-class BaseExport SharedLock : public LockPolicy
+class BaseExport SharedLock: public LockPolicy
 {
 public:
     SharedLock();
 
+    // clang-format off
     [[nodiscard]]
-    SharedLock(MutexPair& mutex) : SharedLock(false, mutex) {}
+    SharedLock(MutexPair& mutex)
+        : SharedLock(false, mutex)
+    {}
+    // clang-format on
 
 protected:
-    [[nodiscard]]
-    SharedLock(bool is_lock_free, MutexPair& mutex);
+    [[nodiscard]] SharedLock(bool is_lock_free, MutexPair& mutex);
 
 private:
     std::shared_lock<YesItIsAMutex> lock;
 };
 
 
-class BaseExport SharedLockFreeLock : public SharedLock
+class BaseExport SharedLockFreeLock: public SharedLock
 {
 public:
     SharedLockFreeLock() = default;
 
-    [[nodiscard]]
-    SharedLockFreeLock(MutexPair& mutex);
+    [[nodiscard]] SharedLockFreeLock(MutexPair& mutex);
 };
 
 
-class ExclusiveLockBase {};
+class ExclusiveLockBase
+{
+};
 
 /**
  * @brief Locks and gives access to locked classes of type "MutexHolder".
@@ -159,15 +171,15 @@ class ExclusiveLockBase {};
  *    and returns a WriterGate instance.
  */
 template<typename FirstMutexHolder, typename... MutexHolder>
-class ExclusiveLock
-    : public LockPolicy
-    , public ExclusiveLockBase
+class ExclusiveLock: public LockPolicy, public ExclusiveLockBase
 {
 public:
+    // clang-format off
     [[nodiscard]]
     ExclusiveLock(FirstMutexHolder& first_holder, MutexHolder&... mutex_holder)
         : ExclusiveLock(false, first_holder, mutex_holder...)
     {}
+    // clang-format on
 
     // This could actually be static.
     template<typename SomeHolder>
@@ -176,13 +188,16 @@ public:
     template<typename = std::enable_if_t<sizeof...(MutexHolder) == 0>>
     auto operator->() const;
 
+    void release();
+
 protected:
+    // clang-format off
     [[nodiscard]]
     ExclusiveLock(bool is_lock_free, FirstMutexHolder& first_holder, MutexHolder&... mutex_holder);
+    // clang-format on
 
 private:
-    using locks_t = std::scoped_lock<YesItIsAMutex,
-                                     ForEach_t<YesItIsAMutex,MutexHolder>...>;
+    using locks_t = std::scoped_lock<YesItIsAMutex, ForEach_t<YesItIsAMutex, MutexHolder>...>;
     /*
      * After constructed, std::scoped_lock cannot be changed.
      * So, we usa a unique_ptr.
@@ -197,18 +212,19 @@ private:
 };
 
 template<typename FirstMutexHolder, typename... MutexHolder>
-class ExclusiveLockFreeLock
-    : public ExclusiveLock<FirstMutexHolder, MutexHolder...>
+class ExclusiveLockFreeLock: public ExclusiveLock<FirstMutexHolder, MutexHolder...>
 {
 public:
+    // clang-format off
     [[nodiscard]]
     ExclusiveLockFreeLock(FirstMutexHolder& first_holder, MutexHolder&... mutex_holder)
         : ExclusiveLock<FirstMutexHolder, MutexHolder...>(true, first_holder, mutex_holder...)
     {}
+    // clang-format on
 };
 
-} //namespace Base::Threads
+}  // namespace Base::Threads
 
 #include "LockPolicy.inl"
 
-#endif // BASE_Threads_LockPolicy_H
+#endif  // BASE_Threads_LockPolicy_H

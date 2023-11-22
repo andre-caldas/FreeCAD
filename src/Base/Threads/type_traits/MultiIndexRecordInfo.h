@@ -35,13 +35,14 @@
 namespace Base::Threads
 {
 
-template<typename ...Vn>
+template<typename... Vn>
 struct TypesInfo
 {
     template<std::size_t I>
     using type_from_index_t = typename TypeFromIndex<I, Vn...>::type;
     template<std::size_t I>
     using raw_from_index_t = typename RawFromIndex<I, Vn...>::type;
+
     template<typename X>
     static constexpr auto index_from_raw_v = IndexFromRaw<X, Vn...>::value;
     template<typename X>
@@ -49,12 +50,11 @@ struct TypesInfo
 };
 
 
-
 /**
  * @brief Collects the information on "multi index records".
  * Pass a struct Record and the member pointers to be indexed.
  */
-template<typename Record, auto ...LocalPointers>
+template<typename Record, auto... LocalPointers>
 struct MultiIndexRecordInfo
 {
     static constexpr auto tuple_size = sizeof...(LocalPointers);
@@ -70,18 +70,20 @@ struct MultiIndexRecordInfo
     static constexpr auto index_from_raw_v = types_info_t::template index_from_raw_v<X>;
     template<typename V>
     static constexpr auto index_from_type_v = types_info_t::template index_from_raw_v<V>;
+    template<auto V>
+    static constexpr auto index_from_local_pointer_v =
+        types_info_t::template index_from_local_pointer_v<V>;
+
     template<std::size_t I>
     using raw_from_index_t = typename types_info_t::template raw_from_index_t<I>;
     template<std::size_t I>
     using type_from_index_t = typename types_info_t::template type_from_index_t<I>;
 
-    using indexes_tuple_t = std::tuple<
-        std::multimap<typename ReduceToRaw<MemberPointerTo_t<LocalPointers>>::type,
-                      const Record*
-        >...
-    >;
+    using indexes_tuple_t =
+        std::tuple<std::multimap<typename ReduceToRaw<MemberPointerTo_t<LocalPointers>>::type,
+                                 const Record*>...>;
 };
 
-} //namespace ::Threads
+}  // namespace Base::Threads
 
-#endif // BASE_Threads_type_traits_H
+#endif  // BASE_Threads_type_traits_H

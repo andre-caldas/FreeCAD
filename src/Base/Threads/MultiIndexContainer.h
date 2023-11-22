@@ -31,7 +31,7 @@
 namespace Base::Threads
 {
 
-template<typename Record, auto ...LocalPointers>
+template<typename Record, auto... LocalPointers>
 class MultiIndexContainer
 {
 public:
@@ -40,10 +40,10 @@ public:
     using map_const_iterator_t = typename std::map<long, Record*>::const_iterator;
     using iterator = IteratorSecondPtrAsRef<self_t, map_iterator_t>;
     using const_iterator = IteratorSecondPtrAsRef<self_t, map_const_iterator_t>;
-    using node_type = typename std::unordered_map<const Record*,
-                                                  std::unique_ptr<Record>>::node_type;
+    using node_type =
+        typename std::unordered_map<const Record*, std::unique_ptr<Record>>::node_type;
 
-    template<std::size_t ...In>
+    template<std::size_t... In>
     bool axert(const std::index_sequence<In...>&) const;
     auto begin();
     auto begin() const;
@@ -60,12 +60,22 @@ public:
     template<typename Key>
     auto find(const Key& key);
 
+    template<auto MemberPointer,
+             typename Key,
+             typename = std::enable_if_t<std::is_member_pointer_v<decltype(MemberPointer)>>>
+    auto find(const Key& key);
+
     template<std::size_t I, typename Key>
     auto find(const Key& key);
 
     template<typename Key>
     auto find(const Key& key) const;
 
+    template<auto MemberPointer,
+             typename Key,
+             typename = std::enable_if_t<std::is_member_pointer_v<decltype(MemberPointer)>>>
+    auto find(const Key& key) const;
+
     template<std::size_t I, typename Key>
     auto find(const Key& key) const;
 
@@ -75,8 +85,8 @@ public:
     template<typename Key>
     bool contains(const Key& key) const;
 
-    template<typename ...Vn>
-    auto emplace_back(Vn&& ...vn);
+    template<typename... Vn>
+    auto emplace_back(Vn&&... vn);
 
     auto erase(const Record& record);
 
@@ -104,6 +114,9 @@ public:
 
     template<typename X>
     static constexpr auto index_from_raw_v = RecordInfo::template index_from_raw_v<X>;
+    template<auto X>
+    static constexpr auto index_from_local_pointer_v =
+        IndexFromLocalPointer<X, LocalPointers...>::value;
     template<std::size_t I>
     using raw_from_index_t = typename RecordInfo::template raw_from_index_t<I>;
     template<std::size_t I>
@@ -133,21 +146,21 @@ private:
      */
     typename RecordInfo::indexes_tuple_t indexes;
 
-    template<std::size_t ...In>
+    template<std::size_t... In>
     void insertIndexes(const Record& record, const std::index_sequence<In...>&);
 
     template<std::size_t I>
     void insertIndex(const Record& record);
 
 
-    template<std::size_t ...In>
+    template<std::size_t... In>
     void deleteIndexes(const Record& record, const std::index_sequence<In...>&);
 
     template<std::size_t I>
     void deleteIndex(const Record& record);
 
 
-    template<std::size_t ...In>
+    template<std::size_t... In>
     void clearIndexes(const std::index_sequence<In...>&);
 
     template<std::size_t I>
@@ -157,8 +170,8 @@ private:
     auto _find(const Key& key);
 };
 
-} //namespace ::Threads
+}  // namespace Base::Threads
 
 #include "MultiIndexContainer.inl"
 
-#endif // BASE_Threads_MultiIndexContainer_H
+#endif  // BASE_Threads_MultiIndexContainer_H
