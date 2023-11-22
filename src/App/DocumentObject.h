@@ -151,7 +151,20 @@ public:
     bool isAttachedToDocument() const override;
     const char* detachFromDocument() override;
     /// gets the document in which this Object is handled
-    App::Document *getDocument() const;
+    Document* getDocument() const;
+    /**
+     * @brief Gets the document that owns this object.
+     * @throws RuntimeError when the object is not owned.
+     * @return A shared_ptr to the @class Document instance.
+     * @todo Rename this to getDocument() and eliminate the old getDocument().
+     */
+    std::shared_ptr<Document> getDocumentNew() const;
+    /**
+     * @brief Gets the document that owns this object.
+     * @return A (possibly empty) shared_ptr to the @class Document instance.
+     * @attention The caller is responsible for checking the validity of the resulting pointer.
+     */
+    std::shared_ptr<Document> getDocumentOrNull() const;
 
     /** Set the property touched -> changed, cause recomputation in Update()
      */
@@ -633,7 +646,7 @@ private:
 protected: // attributes
     Py::SmartPtr PythonObject;
     /// pointer to the document this object belongs to
-    App::Document* _pDoc{nullptr};
+    std::weak_ptr<Document> _pDoc;
 
     /// Old label; used for renaming expressions
     std::string oldLabel;

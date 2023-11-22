@@ -32,10 +32,11 @@
 #include "PropertyContainer.h"
 #include "PropertyLinks.h"
 #include "PropertyStandard.h"
+#include "SharedFromThis.h"
 
+#include <memory>
 #include <map>
 #include <vector>
-#include <QString>
 
 namespace Base {
     class Writer;
@@ -58,7 +59,9 @@ namespace App
 {
 
 /// The document class
-class AppExport Document : public App::PropertyContainer
+class AppExport Document
+    : public App::PropertyContainer
+    , public EnableSharedFromThis<Document>
 {
     PROPERTY_HEADER_WITH_OVERRIDE(App::Document);
 

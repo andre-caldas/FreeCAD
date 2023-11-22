@@ -286,7 +286,7 @@ PyObject* Application::sNewDocument(PyObject * /*self*/, PyObject *args, PyObjec
     }
 
     PY_TRY {
-        App::Document* doc = GetApplication().newDocument(docName, usrName, !Base::asBoolean(hidden), Base::asBoolean(temp));
+        auto doc = GetApplication().newDocument(docName, usrName, !Base::asBoolean(hidden), Base::asBoolean(temp));
         PyMem_Free(docName);
         PyMem_Free(usrName);
         return doc->getPyObject();
@@ -316,7 +316,7 @@ PyObject* Application::sCloseDocument(PyObject * /*self*/, PyObject *args)
     if (!PyArg_ParseTuple(args, "s", &pstr))
         return nullptr;
 
-    Document* doc = GetApplication().getDocument(pstr);
+    auto doc = GetApplication().getDocumentOrNull(pstr);
     if (!doc) {
         PyErr_Format(PyExc_NameError, "Unknown document '%s'", pstr);
         return nullptr;
@@ -340,8 +340,8 @@ PyObject* Application::sSaveDocument(PyObject * /*self*/, PyObject *args)
     if (!PyArg_ParseTuple(args, "s", &pDoc))
         return nullptr;
 
-    Document* doc = GetApplication().getDocument(pDoc);
-    if ( doc ) {
+    auto doc = GetApplication().getDocumentOrNull(pDoc);
+    if (doc) {
         if (!doc->save()) {
             PyErr_Format(Base::PyExc_FC_GeneralError, "Cannot save document '%s'", pDoc);
             return nullptr;
@@ -360,7 +360,7 @@ PyObject* Application::sActiveDocument(PyObject * /*self*/, PyObject *args)
     if (!PyArg_ParseTuple(args, ""))
         return nullptr;
 
-    Document* doc = GetApplication().getActiveDocument();
+    auto doc = GetApplication().getActiveDocument();
     if (doc) {
         return doc->getPyObject();
     }
@@ -376,8 +376,8 @@ PyObject* Application::sGetDocument(PyObject * /*self*/, PyObject *args)
     if (!PyArg_ParseTuple(args, "s", &pstr))
         return nullptr;
 
-    Document* doc = GetApplication().getDocument(pstr);
-    if ( !doc ) {
+    auto doc = GetApplication().getDocumentOrNull(pstr);
+    if (!doc) {
         PyErr_Format(PyExc_NameError, "Unknown document '%s'", pstr);
         return nullptr;
     }

@@ -192,7 +192,7 @@ App::DocumentObjectExecReturn* DocumentObject::executeExtensions()
 
 bool DocumentObject::recomputeFeature(bool recursive)
 {
-    Document* doc = this->getDocument();
+    auto doc = getDocumentOrNull();
     if (doc)
         return doc->recomputeFeature(this,recursive);
     return isValid();
@@ -210,8 +210,11 @@ void DocumentObject::touch(bool noRecompute)
     if(!noRecompute)
         StatusBits.set(ObjectStatus::Enforce);
     StatusBits.set(ObjectStatus::Touch);
-    if (_pDoc)
-        _pDoc->signalTouchedObject(*this);
+
+    auto doc = getDocumentOrNull();
+    if(doc) {
+        doc->signalTouchedObject(*this);
+    }
 }
 
 /**
@@ -265,7 +268,7 @@ short DocumentObject::mustExecute() const
 const char* DocumentObject::getStatusString() const
 {
     if (isError()) {
-        const char* text = getDocument()->getErrorDescription(this);
+        const char* text = getDocumentNew()->getErrorDescription(this);
         return text ? text : "Error";
     }
     else if (isTouched())
@@ -275,19 +278,21 @@ const char* DocumentObject::getStatusString() const
 }
 
 std::string DocumentObject::getFullName() const {
-    if(!getDocument() || !isAttachedToDocument())
+    auto doc = getDocumentOrNull();
+    if(!doc || !isAttachedToDocument())
         return "?";
-    std::string name(getDocument()->getName());
+    std::string name(doc->getName());
     name += '#';
     name += getNameInDocument();
     return name;
 }
 
 std::string DocumentObject::getFullLabel() const {
-    if(!getDocument())
+    auto doc = getDocumentOrNull();
+    if(!doc)
         return "?";
 
-    auto name = getDocument()->Label.getStrValue();
+    auto name = doc->Label.getStrValue();
     name += "#";
     name += Label.getStrValue();
     return name;
@@ -330,9 +335,11 @@ const char* DocumentObject::_getNameInDocument() const
 }
 
 int DocumentObject::isExporting() const {
-    if(!getDocument() || !isAttachedToDocument())
+    auto doc = getDocumentOrNull();
+    // TODO: remove isAttachedToDocument().
+    if(!doc || !isAttachedToDocument())
         return 0;
-    return getDocument()->isExporting(this);
+    return doc->isExporting(this);
 }
 
 std::string DocumentObject::getExportName(bool forced) const {
@@ -420,8 +427,9 @@ std::vector<App::DocumentObject*> DocumentObject::getOutListOfProperty(App::Prop
 #ifdef USE_OLD_DAG
 std::vector<App::DocumentObject*> DocumentObject::getInList(void) const
 {
-    if (_pDoc)
-        return _pDoc->getInList(this);
+    auto doc = getDocumentOrNull();
+    if (doc)
+        return doc->getInList(this);
     else
         return std::vector<App::DocumentObject*>();
 }
@@ -654,7 +662,11 @@ bool DocumentObject::isInOutListRecursive(DocumentObject *linkTo) const
 std::vector<std::list<App::DocumentObject*> >
 DocumentObject::getPathsByOutList(App::DocumentObject* to) const
 {
-    return _pDoc->getPathsByOutList(this, to);
+    auto doc = getDocumentOrNull();
+    if(!doc) {
+        throw Base::RuntimeError("DocumentObject not atached to a document.");
+    }
+    return doc->getPathsByOutList(this, to);
 }
 
 DocumentObjectGroup* DocumentObject::getGroup() const
@@ -698,20 +710,36 @@ void DocumentObject::onLostLinkToObject(DocumentObject*)
 
 }
 
-App::Document *DocumentObject::getDocument() const
+App::Document* DocumentObject::getDocument() const
 {
-    return _pDoc;
+    auto doc = getDocumentOrNull();
+    return doc.get();
+}
+
+std::shared_ptr<Document> DocumentObject::getDocumentNew() const
+{
+    auto doc = getDocumentOrNull();
+    if(!doc) {
+        throw Base::RuntimeError("DocumentObject not atached to a document.");
+    }
+    return doc;
+}
+
+std::shared_ptr<Document> DocumentObject::getDocumentOrNull() const
+{
+    return _pDoc.lock();
 }
 
 void DocumentObject::setDocument(App::Document* doc)
 {
-    _pDoc=doc;
+    _pDoc = doc->SharedFromThis();
     onSettingDocument();
 }
 
 bool DocumentObject::removeDynamicProperty(const char* name)
 {
-    if (!_pDoc || testStatus(ObjectStatus::Destroy)) 
+    auto doc = getDocumentOrNull();
+    if (!doc || testStatus(ObjectStatus::Destroy))
         return false;
 
     Property* prop = getDynamicPropertyByName(name);
@@ -721,7 +749,7 @@ bool DocumentObject::removeDynamicProperty(const char* name)
     if(prop->isDerivedFrom(PropertyLinkBase::getClassTypeId()))
         clearOutListCache();
 
-    _pDoc->addOrRemovePropertyOfObject(this, prop, false);
+    doc->addOrRemovePropertyOfObject(this, prop, false);
 
     auto expressions = ExpressionEngine.getExpressions();
     std::vector<App::ObjectIdentifier> removeExpr;
@@ -740,12 +768,14 @@ bool DocumentObject::removeDynamicProperty(const char* name)
 }
 
 App::Property* DocumentObject::addDynamicProperty(
-    const char* type, const char* name, const char* group, const char* doc,
+    const char* type, const char* name, const char* group, const char* doc_name,
     short attr, bool ro, bool hidden)
 {
-    auto prop = TransactionalObject::addDynamicProperty(type,name,group,doc,attr,ro,hidden);
-    if(prop && _pDoc)
-        _pDoc->addOrRemovePropertyOfObject(this, prop, true);
+    auto prop = TransactionalObject::addDynamicProperty(type,name,group,doc_name,attr,ro,hidden);
+    auto doc = getDocumentOrNull();
+    if(prop && doc) {
+        doc->addOrRemovePropertyOfObject(this, prop, true);
+    }
     return prop;
 }
 
@@ -756,8 +786,9 @@ void DocumentObject::onBeforeChange(const Property* prop)
     if (prop == &Label)
         oldLabel = Label.getStrValue();
 
-    if (_pDoc)
-        onBeforeChangeProperty(_pDoc, prop);
+    auto doc = getDocumentOrNull();
+    if (doc)
+        onBeforeChangeProperty(doc.get(), prop);
 
     signalBeforeChange(*this,*prop);
 }
@@ -768,14 +799,14 @@ void DocumentObject::onChanged(const Property* prop)
     if(GetApplication().isClosingAll())
         return;
 
+    auto doc = getDocumentOrNull();
     if(!GetApplication().isRestoring() && 
        !prop->testStatus(Property::PartialTrigger) &&
-       getDocument() && 
-       getDocument()->testStatus(Document::PartialDoc))
+       doc && doc->testStatus(Document::PartialDoc))
     {
-        static App::Document *warnedDoc;
-        if(warnedDoc != getDocument()) {
-            warnedDoc = getDocument();
+        static Document* warnedDoc = nullptr;
+        if(warnedDoc != doc.get()) {
+            warnedDoc = doc.get();
             FC_WARN("Changes to partial loaded document will not be saved: "
                     << getFullName() << '.' << prop->getName());
         }
@@ -783,11 +814,13 @@ void DocumentObject::onChanged(const Property* prop)
 
     // Delay signaling view provider until the document object has handled the
     // change
-    // if (_pDoc)
-    //     _pDoc->onChangedProperty(this,prop);
+    // auto doc = getDocumentOrNull();
+    // if (doc) {
+    //     doc->onChangedProperty(this, prop);
+    // }
 
-    if (prop == &Label && _pDoc && oldLabel != Label.getStrValue())
-        _pDoc->signalRelabelObject(*this);
+    if (prop == &Label && doc && oldLabel != Label.getStrValue())
+        doc->signalRelabelObject(*this);
 
     // set object touched if it is an input property
     if (!testStatus(ObjectStatus::NoTouch) 
@@ -807,8 +840,8 @@ void DocumentObject::onChanged(const Property* prop)
     TransactionalObject::onChanged(prop);
 
     // Now signal the view provider
-    if (_pDoc)
-        _pDoc->onChangedProperty(this,prop);
+    if (doc)
+        doc->onChangedProperty(this,prop);
 
     signalChanged(*this,*prop);
 }
@@ -913,7 +946,7 @@ std::vector<std::pair<App::DocumentObject *,std::string>> DocumentObject::getPar
 
     std::string name(getNameInDocument());
     name += ".";
-    for (auto parent : getInList()) {
+    for (auto& parent: getInListNew()) {
         if (!parent || !parent->isAttachedToDocument()) {
             continue;
         }
@@ -927,7 +960,7 @@ std::vector<std::pair<App::DocumentObject *,std::string>> DocumentObject::getPar
             continue;
         }
 
-        auto links = GetApplication().getLinksTo(parent, App::GetLinkRecursive);
+        auto links = GetApplication().getLinksTo(*parent, App::GetLinkRecursive);
         links.insert(parent);
 
         for (auto parent : links) {
@@ -1317,8 +1350,9 @@ bool DocumentObject::redirectSubName(std::ostringstream &, DocumentObject *, Doc
     return false;
 }
 
-void DocumentObject::onPropertyStatusChanged(const Property &prop, unsigned long oldStatus) {
-    (void)oldStatus;
-    if(!Document::isAnyRestoring() && isAttachedToDocument() && getDocument())
-        getDocument()->signalChangePropertyEditor(*getDocument(),prop);
+void DocumentObject::onPropertyStatusChanged(const Property &prop, unsigned long /*oldStatus*/) {
+    auto doc = getDocumentOrNull();
+    if(!Document::isAnyRestoring() && isAttachedToDocument() && doc) {
+        doc->signalChangePropertyEditor(*doc, prop);
+    }
 }
