@@ -28,14 +28,14 @@
 namespace Base::Threads
 {
 
-namespace
-{
+// namespace
+//{
 thread_local std::unordered_set<const MutexPair*> threadExclusiveMutexes;
 thread_local std::unordered_set<const MutexPair*> threadNonExclusiveMutexes;
 thread_local std::stack<bool> isLayerExclusive;
 thread_local std::stack<std::unordered_set<const MutexPair*>> threadMutexLayers;
 thread_local bool isExecutingLockFree = false;
-}  // namespace
+//}  // namespace
 
 bool LockPolicy::hasAnyLock()
 {
@@ -127,6 +127,8 @@ void LockPolicy::_detachFromThread()
     assert(!threadMutexLayers.empty());
     if (!threadMutexLayers.empty() && threadMutexLayers.top().empty()) {
         threadMutexLayers.pop();
+        isLayerExclusive.pop();
+        assert(isLayerExclusive.size() == threadMutexLayers.size());
     }
     else {
         assert(!isExecutingLockFree);
@@ -192,8 +194,9 @@ void LockPolicy::_processLock(bool is_exclusive, bool is_lock_free)
         assert(threadNonExclusiveMutexes.empty());
 
         // Lock everything that was requested.
-        isLayerExclusive.push(is_exclusive);
         threadMutexLayers.push(mutexes);
+        isLayerExclusive.push(is_exclusive);
+        assert(isLayerExclusive.size() == threadMutexLayers.size());
         if (is_exclusive) {
             threadExclusiveMutexes = mutexes;
         }
@@ -215,6 +218,7 @@ void LockPolicy::_processExclusiveLock(bool is_lock_free)
 {
     assert(!threadExclusiveMutexes.empty() || !threadNonExclusiveMutexes.empty());
     assert(!threadMutexLayers.empty());
+    assert(isLayerExclusive.size() == threadMutexLayers.size());
 
     // remove already locked "exclusive" mutexes from the list.
     for (auto it = mutexes.begin(); it != mutexes.end();) {
@@ -254,9 +258,10 @@ void LockPolicy::_processExclusiveLock(bool is_lock_free)
         throw ExceptionExclusiveParentNotLocked();
     }
 
-    threadMutexLayers.push(mutexes);
     threadExclusiveMutexes.insert(mutexes.cbegin(), mutexes.cend());
+    threadMutexLayers.push(mutexes);
     isLayerExclusive.push(true);
+    assert(isLayerExclusive.size() == threadMutexLayers.size());
     assert(!threadMutexLayers.top().empty());
     assert(!threadExclusiveMutexes.empty());
 }
@@ -265,6 +270,7 @@ void LockPolicy::_processNonExclusiveLock(bool is_lock_free)
 {
     assert(!threadExclusiveMutexes.empty() || !threadNonExclusiveMutexes.empty());
     assert(!threadMutexLayers.empty());
+    assert(isLayerExclusive.size() == threadMutexLayers.size());
 
     // remove already locked "exclusive" and "non-exclusive" mutexes from the list.
     for (auto it = mutexes.begin(); it != mutexes.end();) {
@@ -298,6 +304,7 @@ void LockPolicy::_processNonExclusiveLock(bool is_lock_free)
         }
         threadMutexLayers.emplace();
         isLayerExclusive.push(false);
+        assert(isLayerExclusive.size() == threadMutexLayers.size());
     }
 
     threadMutexLayers.top().insert(mutexes.cbegin(), mutexes.cend());

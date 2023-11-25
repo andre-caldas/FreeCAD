@@ -193,8 +193,9 @@ App::DocumentObjectExecReturn* DocumentObject::executeExtensions()
 bool DocumentObject::recomputeFeature(bool recursive)
 {
     auto doc = getDocumentOrNull();
-    if (doc)
-        return doc->recomputeFeature(this,recursive);
+    if (doc) {
+        return doc->recomputeFeature(this, recursive);
+    }
     return isValid();
 }
 
@@ -300,6 +301,11 @@ std::string DocumentObject::getFullLabel() const {
 
 const char* DocumentObject::getDagKey() const
 {
+    auto lock = _pDoc.lock();
+    if (!lock) {
+        return nullptr;
+    }
+
     if(!pcNameInDocument)
     {
         return nullptr;
@@ -309,6 +315,13 @@ const char* DocumentObject::getDagKey() const
 
 const std::string& DocumentObject::getNameInDocument() const
 {
+    static std::string default_name("(?=Object not in a document=?)");
+
+    auto lock = _pDoc.lock();
+    if (!lock) {
+        return default_name;
+    }
+
     // Note: It can happen that we query the internal name of an object even if it is not
     // part of a document (anymore). This is the case e.g. if we have a reference in Python
     // to an object that has been removed from the document. In this case we should rather
@@ -316,7 +329,6 @@ const std::string& DocumentObject::getNameInDocument() const
     //assert(pcNameInDocument);
     if(pcNameInDocument == nullptr)
     {
-        static std::string default_name("(?=Object not in a document=?)");
         return default_name;
     }
     return *pcNameInDocument;
@@ -324,13 +336,19 @@ const std::string& DocumentObject::getNameInDocument() const
 
 const char* DocumentObject::_getNameInDocument() const
 {
+    auto lock = _pDoc.lock();
+    if (!lock) {
+        return nullptr;
+    }
+
     // Note: It can happen that we query the internal name of an object even if it is not
     // part of a document (anymore). This is the case e.g. if we have a reference in Python
     // to an object that has been removed from the document. In this case we should rather
     // return 0.
     //assert(pcNameInDocument);
-    if(pcNameInDocument == nullptr)
+    if (pcNameInDocument == nullptr) {
         return nullptr;
+    }
     return pcNameInDocument->c_str();
 }
 

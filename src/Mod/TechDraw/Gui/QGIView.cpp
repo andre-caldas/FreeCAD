@@ -161,7 +161,7 @@ QVariant QGIView::itemChange(GraphicsItemChange change, const QVariant &value)
         // this is just a pair isn't it?
         if (viewObj->isDerivedFrom(TechDraw::DrawProjGroupItem::getClassTypeId())) {
             TechDraw::DrawProjGroupItem* dpgi = static_cast<TechDraw::DrawProjGroupItem*>(viewObj);
-            auto dpg = dpgi->getPGroup();
+            auto dpg = dpgi->getPGroupOrNull();
             if (dpg) {
                 if(alignHash.size() == 1) {   //if aligned.
                     QGraphicsItem* item = alignHash.begin().value();

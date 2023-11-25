@@ -80,7 +80,7 @@ void DrawProjGroupItem::onChanged(const App::Property *prop)
 {
     if ((prop == &X) ||
         (prop == &Y)) {
-        auto parent = getPGroup();
+        auto parent = getPGroupOrNull();
         if (parent) {
             parent->touch(false);
         }
@@ -98,13 +98,13 @@ bool DrawProjGroupItem::isLocked(void) const
 
 bool DrawProjGroupItem::showLock(void) const
 {
-    auto parent = getPGroup();
+    auto parent = getPGroupOrNull();
     bool parentLock = false;
     if (parent) {
         parentLock = parent->LockPosition.getValue();
     }
 
-    if (isAnchor() &&                         //don't show lock for Front if DPG is not locked
+    if (isAnchor() &&  // don't show lock for Front if DPG is not locked
         !parentLock) {
         return false;
     }
@@ -138,35 +138,31 @@ App::DocumentObjectExecReturn *DrawProjGroupItem::execute(void)
 
 void DrawProjGroupItem::postHlrTasks()
 {
-//    Base::Console().Message("DPGI::postHlrTasks() - %s\n", getNameInDocument());
+    //    Base::Console().Message("DPGI::postHlrTasks() - %s\n", getNameInDocument());
     DrawViewPart::postHlrTasks();
 
-    auto lock = concurrentData.continueWriting();
-    if(!lock) {
-        return;
-    }
-    //DPGI has no geometry until HLR has finished, and the DPG can not properly
-    //AutoDistibute until all its items have geometry.
+    // DPGI has no geometry until HLR has finished, and the DPG can not properly
+    // AutoDistibute until all its items have geometry.
     autoPosition();
-    lock.release();
 
-    getPGroup()->reportReady();     //tell the parent DPG we are ready
+    getPGroup()->reportReady();  // tell the parent DPG we are ready
 }
 
 void DrawProjGroupItem::autoPosition()
 {
-//    Base::Console().Message("DPGI::autoPosition(%s)\n", Label.getValue());
     if (LockPosition.getValue()) {
         return;
     }
+
     Base::Vector3d newPos;
-    if (getPGroup() && getPGroup()->AutoDistribute.getValue()) {
-        newPos = getPGroup()->getXYPosition(Type.getValueAsString());
+    auto parent = getPGroupOrNull();
+    if (parent && parent->AutoDistribute.getValue()) {
+        newPos = parent->getXYPosition(Type.getValueAsString());
         X.setValue(newPos.x);
         Y.setValue(newPos.y);
         requestPaint();
         purgeTouched();               //prevents "still touched after recompute" message
-        getPGroup()->purgeTouched();  //changing dpgi x, y marks parent dpg as touched
+        parent->purgeTouched();  //changing dpgi x, y marks parent dpg as touched
     }
 }
 
@@ -182,6 +178,15 @@ void DrawProjGroupItem::onDocumentRestored()
 
 std::shared_ptr<DrawProjGroup> DrawProjGroupItem::getPGroup() const
 {
+    auto result = getPGroupOrNull();
+    if(!result) {
+        throw Base::RuntimeError("PGroup does not exist anymore!");
+    }
+    return result;
+}
+
+std::shared_ptr<DrawProjGroup> DrawProjGroupItem::getPGroupOrNull() const
+{
     auto parents = getInListNew();
     for (const auto& parent : parents) {
         if (parent->isDerivedFrom<DrawProjGroup>()) {
@@ -193,7 +198,8 @@ std::shared_ptr<DrawProjGroup> DrawProjGroupItem::getPGroup() const
 
 bool DrawProjGroupItem::isAnchor(void) const
 {
-    if (getPGroup() && (getPGroup()->getAnchor() == this) ) {
+    auto parent = getPGroupOrNull();
+    if (parent && (parent->getAnchor() == this)) {
         return true;
     }
     return false;
@@ -307,11 +313,11 @@ double DrawProjGroupItem::getRotateAngle()
 
 double DrawProjGroupItem::getScale(void) const
 {
-    auto pgroup = getPGroup();
-    if (pgroup) {
-        double result = pgroup->getScale();
+    auto parent = getPGroupOrNull();
+    if (parent) {
+        double result = parent->getScale();
         if (!(result > 0.0)) {
-            return 1.0;                                   //kludgy protective fix. autoscale sometimes serves up 0.0!
+            return 1.0;  // kludgy protective fix. autoscale sometimes serves up 0.0!
         }
         return result;
     }
@@ -320,21 +326,18 @@ double DrawProjGroupItem::getScale(void) const
 
 void DrawProjGroupItem::unsetupObject()
 {
-    if (!getPGroup()) {
+    auto parent = getPGroupOrNull();
+    if (!parent || !parent->hasProjection(Type.getValueAsString())) {
         DrawViewPart::unsetupObject();
         return;
     }
 
-    if (!getPGroup()->hasProjection(Type.getValueAsString()) ) {
-        DrawViewPart::unsetupObject();
-        return;
-    }
-
-    if ( getPGroup()->getAnchor() == this &&
-         !getPGroup()->isUnsetting() )         {
-           Base::Console().Warning("Warning - DPG (%s/%s) may be corrupt - Anchor deleted\n",
-                                   getPGroup()->getNameInDocument(), getPGroup()->Label.getValue());
-           getPGroup()->Anchor.setValue(nullptr);    //this catches situation where DPGI is deleted w/o DPG::removeProjection
+    if (parent->getAnchor() == this && !parent->isUnsetting()) {
+        Base::Console().Warning("Warning - DPG (%s/%s) may be corrupt - Anchor deleted\n",
+                                parent->getNameInDocument(),
+                                parent->Label.getValue());
+        // this catches situation where DPGI is deleted w/o DPG::removeProjection
+        parent->Anchor.setValue(nullptr);
     }
 
     DrawViewPart::unsetupObject();
@@ -343,7 +346,7 @@ void DrawProjGroupItem::unsetupObject()
 //DPGIs have DPG as parent, not Page, so we need to ask the DPG how many Pages own it.
 int DrawProjGroupItem::countParentPages() const
 {
-    auto dpg = getPGroup();
+    auto dpg = getPGroupOrNull();
     if (dpg) {
         return dpg->countParentPages();
     }
@@ -352,7 +355,7 @@ int DrawProjGroupItem::countParentPages() const
 
 DrawPage* DrawProjGroupItem::findParentPage() const
 {
-    auto dpg = getPGroup();
+    auto dpg = getPGroupOrNull();
     if (dpg) {
         return dpg->findParentPage();
     }
@@ -361,11 +364,11 @@ DrawPage* DrawProjGroupItem::findParentPage() const
 
 std::vector<DrawPage*> DrawProjGroupItem::findAllParentPages() const
 {
-    auto dpg = getPGroup();
+    auto dpg = getPGroupOrNull();
     if (dpg) {
         return dpg->findAllParentPages();
     }
-    return std::vector<DrawPage*>();
+    return {};
 }
 
 PyObject *DrawProjGroupItem::getPyObject(void)
