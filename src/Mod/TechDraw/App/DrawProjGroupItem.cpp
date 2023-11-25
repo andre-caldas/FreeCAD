@@ -80,7 +80,7 @@ void DrawProjGroupItem::onChanged(const App::Property *prop)
 {
     if ((prop == &X) ||
         (prop == &Y)) {
-        DrawProjGroup* parent = getPGroup();
+        auto parent = getPGroup();
         if (parent) {
             parent->touch(false);
         }
@@ -98,7 +98,7 @@ bool DrawProjGroupItem::isLocked(void) const
 
 bool DrawProjGroupItem::showLock(void) const
 {
-    DrawProjGroup* parent = getPGroup();
+    auto parent = getPGroup();
     bool parentLock = false;
     if (parent) {
         parentLock = parent->LockPosition.getValue();
@@ -180,13 +180,12 @@ void DrawProjGroupItem::onDocumentRestored()
     }
 }
 
-DrawProjGroup* DrawProjGroupItem::getPGroup() const
+std::shared_ptr<DrawProjGroup> DrawProjGroupItem::getPGroup() const
 {
-    std::vector<App::DocumentObject*> parent = getInList();
-    for (std::vector<App::DocumentObject*>::iterator it = parent.begin(); it != parent.end(); ++it) {
-        if ((*it)->isDerivedFrom<DrawProjGroup>()) {
-            DrawProjGroup* result = dynamic_cast<TechDraw::DrawProjGroup *>(*it);
-            return result;
+    auto parents = getInListNew();
+    for (const auto& parent : parents) {
+        if (parent->isDerivedFrom<DrawProjGroup>()) {
+            return std::dynamic_pointer_cast<DrawProjGroup>(parent);
         }
     }
     return nullptr;
@@ -344,7 +343,7 @@ void DrawProjGroupItem::unsetupObject()
 //DPGIs have DPG as parent, not Page, so we need to ask the DPG how many Pages own it.
 int DrawProjGroupItem::countParentPages() const
 {
-    DrawProjGroup* dpg = getPGroup();
+    auto dpg = getPGroup();
     if (dpg) {
         return dpg->countParentPages();
     }
@@ -353,7 +352,7 @@ int DrawProjGroupItem::countParentPages() const
 
 DrawPage* DrawProjGroupItem::findParentPage() const
 {
-    DrawProjGroup* dpg = getPGroup();
+    auto dpg = getPGroup();
     if (dpg) {
         return dpg->findParentPage();
     }
@@ -362,7 +361,7 @@ DrawPage* DrawProjGroupItem::findParentPage() const
 
 std::vector<DrawPage*> DrawProjGroupItem::findAllParentPages() const
 {
-    DrawProjGroup* dpg = getPGroup();
+    auto dpg = getPGroup();
     if (dpg) {
         return dpg->findAllParentPages();
     }

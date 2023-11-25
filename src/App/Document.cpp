@@ -784,7 +784,7 @@ void Document::setTransactionMode(int iMode)
 //--------------------------------------------------------------------------
 // constructor
 //--------------------------------------------------------------------------
-Document::Document(const char* documentName)
+Document::Document(Private, const char* documentName)
     : myName(documentName)
 {
     // Remark: In a constructor we should never increment a Python object as we cannot be sure
@@ -2238,6 +2238,16 @@ const char* Document::getName() const
 
 std::string Document::getFullName() const {
     return myName;
+}
+
+std::shared_ptr<Document> Document::factory(const char* documentName)
+{
+    return std::make_shared<Document>(Private {}, documentName);
+}
+
+Document::Document() : Document(Private{}, "")
+{
+    assert(false && "Cannot call this constructor. Use the factory.");
 }
 
 const char* Document::getProgramVersion() const

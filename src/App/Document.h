@@ -548,9 +548,22 @@ public:
     /// Destruction
     ~Document() override;
 
-protected:
+    static std::shared_ptr<Document> factory(const char* documentName = "");
+
+private:
+    /// This make the constructor only available through the factory().
+    /// This is to make sure all documents are managed by a shared_ptr.
+    struct Private {};
+
+public:
     /// Construction
-    explicit Document(const char *documentName = "");
+    explicit Document(Private , const char *documentName);
+
+protected:
+    /// This is just to make FreeCAD's create() "happy".
+    /// But Document creation must be made only through Document::factory().
+    /// This asures all Document instances are managed by a shared_ptr.
+    Document();
 
     std::shared_ptr<DocumentObject> _removeObject(DocumentObject* pcObject);
     void _addObject(std::shared_ptr<DocumentObject> pcObject, const char* pObjectName);

@@ -81,17 +81,15 @@ double DrawTemplate::getHeight() const
 }
 
 //find the (first) DrawPage which points to this template
-DrawPage* DrawTemplate::getParentPage() const
+std::shared_ptr<DrawPage> DrawTemplate::getParentPage() const
 {
-    TechDraw::DrawPage* page(nullptr);
-    std::vector<App::DocumentObject*> parents = getInList();
+    auto parents = getInListNew();
     for (auto& obj : parents) {
         if (obj->isDerivedFrom<DrawPage>()) {
-            page = static_cast<TechDraw::DrawPage *>(obj);
-            break;
+            return std::static_pointer_cast<DrawPage>(obj);
         }
     }
-    return page;
+    return {};
 }
 
 // Python Template feature ---------------------------------------------------------

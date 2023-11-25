@@ -94,8 +94,10 @@ public:
      * The second name is a UTF8 name of any kind. It's that name normally shown to
      * the user and stored in the App::Document::Name property.
      */
-    App::Document* newDocument(const char * Name=nullptr, const char * UserName=nullptr,
-            bool createView=true, bool tempDoc=false);
+    Document* newDocument(const char* Name = "",
+                          const char* UserName = "",
+                          bool createView = true,
+                          bool tempDoc = false);
     /// Closes the document \a name and removes it from the application.
     bool closeDocument(const char* name);
     /// find a unique document name
@@ -119,15 +121,25 @@ public:
      *
      * This function will also open any external referenced files.
      */
-    std::vector<Document*> openDocuments(const std::vector<std::string> &filenames,
-            const std::vector<std::string> *paths=nullptr,
-            const std::vector<std::string> *labels=nullptr,
-            std::vector<std::string> *errs=nullptr,
-            bool createView = true);
+    std::vector<Document*> openDocuments(const std::vector<std::string>& filenames,
+                                         const std::vector<std::string>* paths = nullptr,
+                                         const std::vector<std::string>* labels = nullptr,
+                                         std::vector<std::string>* errs = nullptr,
+                                         bool createView = true);
     /// Retrieve the active document
-    App::Document* getActiveDocument() const;
+    /// @todo Return a shared_ptr.
+    Document* getActiveDocument() const;
     /// Retrieve a named document
-    App::Document* getDocument(const char *Name) const;
+    /// @todo Deprecate getDocument() and substitute every use by getDocumentNew() or
+    /// getDocumentNull(). After that, eliminate getDocument() and replace it with getDocumentNew().
+    Document* getDocument(const char* Name) const;
+    /// Retrieve a named document
+    /// @throw Base::RuntimeError() if document not found.
+    /// @return A valid std::shared_ptr.
+    std::shared_ptr<Document> getDocumentNew(const char* Name) const;
+    /// Retrieve a named document
+    /// @return A possibly invalid std::shared_ptr.
+    std::shared_ptr<Document> getDocumentOrNull(const char* Name) const;
 
     /// Path matching mode for getDocumentByPath()
     enum class PathMatchMode {
@@ -152,16 +164,19 @@ public:
      * @param checkCanonical: file path matching mode, @sa PathMatchMode.
      * @return Return the document found by matching with the given path
      */
-    App::Document* getDocumentByPath(const char *path,
-                                     PathMatchMode checkCanonical = PathMatchMode::MatchAbsolute) const;
+    std::shared_ptr<Document>
+    getDocumentByPath(const std::string& path,
+                      PathMatchMode checkCanonical = PathMatchMode::MatchAbsolute) const;
 
     /// gets the (internal) name of the document
-    const char * getDocumentName(const App::Document* ) const;
+    const char* getDocumentName(const App::Document*) const;
     /// get a list of all documents in the application
     std::vector<App::Document*> getDocuments() const;
     /// Set the active document
-    void setActiveDocument(App::Document* pDoc);
-    void setActiveDocument(const char *Name);
+    void setActiveDocument(std::shared_ptr<Document> doc);
+    /// TODO: shall we deprecate this? People should not hold just a pointer...
+    void setActiveDocument(Document* pDoc);
+    void setActiveDocument(const char* Name);
     /// close all documents (without saving)
     void closeAllDocuments();
     /// Add pending document to open together with the current opening document
@@ -481,8 +496,12 @@ protected:
     //@}
 
     /// open single document only
-    App::Document* openDocumentPrivate(const char * FileName, const char *propFileName,
-            const char *label, bool isMainDoc, bool createView, std::vector<std::string> &&objNames);
+    Document* openDocumentPrivate(const char* FileName,
+                                  const char* propFileName,
+                                  const char* label,
+                                  bool isMainDoc,
+                                  bool createView,
+                                  std::vector<std::string>&& objNames);
 
     /// Helper class for App::Document to signal on close/abort transaction
     class AppExport TransactionSignaller {
@@ -603,11 +622,11 @@ private:
     /// open ending information
     std::vector<FileTypeItem> _mImportTypes;
     std::vector<FileTypeItem> _mExportTypes;
-    std::map<std::string,Document*> DocMap;
+    std::map<std::string, std::shared_ptr<Document>> DocMap;
     mutable std::map<std::string,Document*> DocFileMap;
     std::map<std::string,Base::Reference<ParameterManager>> mpcPramManager;
     std::map<std::string,std::string> &_mConfig;
-    App::Document* _pActiveDoc{nullptr};
+    std::weak_ptr<Document> _pActiveDoc;
 
     std::deque<std::string> _pendingDocs;
     std::deque<std::string> _pendingDocsReopen;

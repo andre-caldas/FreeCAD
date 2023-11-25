@@ -946,7 +946,7 @@ std::vector<std::pair<App::DocumentObject *,std::string>> DocumentObject::getPar
 
     std::string name(getNameInDocument());
     name += ".";
-    for (auto& parent: getInListNew()) {
+    for (auto& parent : getInListNew()) {
         if (!parent || !parent->isAttachedToDocument()) {
             continue;
         }
@@ -960,8 +960,8 @@ std::vector<std::pair<App::DocumentObject *,std::string>> DocumentObject::getPar
             continue;
         }
 
-        auto links = GetApplication().getLinksTo(*parent, App::GetLinkRecursive);
-        links.insert(parent);
+        auto links = GetApplication().getLinksTo(parent.get(), App::GetLinkRecursive);
+        links.insert(parent.get());
 
         for (auto parent : links) {
             auto parents = parent->getParents(depth + 1);

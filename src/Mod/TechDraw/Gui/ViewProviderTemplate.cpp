@@ -85,8 +85,8 @@ void ViewProviderTemplate::updateData(const App::Property* prop)
         auto t = static_cast<TechDraw::DrawSVGTemplate*>(getTemplate());
         if (prop == &(t->Template)) {
             auto page = t->getParentPage();
-            Gui::ViewProvider* vp =
-                Gui::Application::Instance->getDocument(t->getDocument())->getViewProvider(page);
+            Gui::ViewProvider* vp = Gui::Application::Instance->getDocument(t->getDocument())
+                                        ->getViewProvider(page.get());
             TechDrawGui::ViewProviderPage* vpp = dynamic_cast<TechDrawGui::ViewProviderPage*>(vp);
             if (vpp) {
                 vpp->getQGSPage()->attachTemplate(t);
@@ -154,7 +154,7 @@ QGITemplate* ViewProviderTemplate::getQTemplate()
     if (dt) {
         auto page = dt->getParentPage();
         Gui::ViewProvider* vp =
-            Gui::Application::Instance->getDocument(dt->getDocument())->getViewProvider(page);
+            Gui::Application::Instance->getDocument(dt->getDocument())->getViewProvider(page.get());
         TechDrawGui::ViewProviderPage* vpp = dynamic_cast<TechDrawGui::ViewProviderPage*>(vp);
         if (vpp)
             return vpp->getQGSPage()->getTemplate();
@@ -215,7 +215,7 @@ MDIViewPage* ViewProviderTemplate::getMDIViewPage() const
     auto t = getTemplate();
     auto page = t->getParentPage();
     Gui::ViewProvider* vp =
-        Gui::Application::Instance->getDocument(t->getDocument())->getViewProvider(page);
+        Gui::Application::Instance->getDocument(t->getDocument())->getViewProvider(page.get());
     TechDrawGui::ViewProviderPage* dvp = dynamic_cast<TechDrawGui::ViewProviderPage*>(vp);
     if (dvp) {
         return dvp->getMDIViewPage();

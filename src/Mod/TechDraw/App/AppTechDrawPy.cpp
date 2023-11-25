@@ -548,7 +548,7 @@ private:
         double offY = 0.0;
         if (dvp->isDerivedFrom(TechDraw::DrawProjGroupItem::getClassTypeId())) {
             TechDraw::DrawProjGroupItem* dpgi = static_cast<TechDraw::DrawProjGroupItem*>(dvp);
-            TechDraw::DrawProjGroup*      dpg = dpgi->getPGroup();
+            auto dpg = dpgi->getPGroup();
             if (dpg) {
                 offX = dpg->X.getValue();
                 offY = dpg->Y.getValue();
@@ -706,7 +706,7 @@ private:
                         double grandParentY = 0.0;
                         if (dvp->isDerivedFrom(TechDraw::DrawProjGroupItem::getClassTypeId())) {
                             TechDraw::DrawProjGroupItem* dpgi = static_cast<TechDraw::DrawProjGroupItem*>(dvp);
-                            TechDraw::DrawProjGroup* dpg = dpgi->getPGroup();
+                            auto dpg = dpgi->getPGroup();
                             if (!dpg) {
                                 continue;
                             }

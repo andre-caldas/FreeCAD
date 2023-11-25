@@ -222,7 +222,7 @@ void TaskCosVertex::onTrackerFinished(std::vector<QPointF> pts, QGIView* qgParen
     DrawViewPart* dvp = m_baseFeat;
     DrawProjGroupItem* dpgi = dynamic_cast<DrawProjGroupItem*>(dvp);
     if (dpgi) {
-        DrawProjGroup* dpg = dpgi->getPGroup();
+        auto dpg = dpgi->getPGroup();
         if (!dpg) {
             Base::Console().Message("TCV:onTrackerFinished - projection group is confused\n");
             //TODO::throw something.

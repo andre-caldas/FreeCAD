@@ -427,120 +427,120 @@ void Application::renameDocument(const char *OldName, const char *NewName)
     throw Base::RuntimeError("Renaming document internal name is no longer allowed!");
 }
 
-Document* Application::newDocument(const char * Name, const char * UserName, bool createView, bool tempDoc)
+Document*
+Application::newDocument(const char* Name, const char* UserName, bool createView, bool tempDoc)
 {
-    auto getNameAndLabel = [this](const char * Name, const char * UserName) -> std::tuple<std::string, std::string> {
-        bool defaultName = (!Name || Name[0] == '\0');
+    // TODO: substitute those ifs by assert(Name) and assert(UserName).
+    // Now, in special python code uses nullptr as default.
+    // Those need to be changed to "".
+    if (!Name) {
+        Name = "";
+    }
+    if (!UserName) {
+        UserName = "";
+    }
+
+    auto getNameAndLabel = [this](std::string Name,
+                                  std::string UserName) -> std::tuple<std::string, std::string> {
+        bool defaultName = Name.empty();
 
         // get a valid name anyway!
         if (defaultName) {
             Name = "Unnamed";
         }
 
-        std::string userName;
-        if (UserName && UserName[0] != '\0') {
-            userName = UserName;
-        }
-        else {
-            userName = defaultName ? QObject::tr("Unnamed").toStdString() : Name;
+        if (UserName.empty()) {
+            UserName = defaultName ? QObject::tr("Unnamed").toStdString() : Name;
 
             std::vector<std::string> names;
             names.reserve(DocMap.size());
-            for (const auto& pos : DocMap) {
-                names.emplace_back(pos.second->Label.getValue());
+            for (const auto& [name, ptr] : DocMap) {
+                names.emplace_back(ptr->Label.getValue());
             }
 
             if (!names.empty()) {
-                userName = Base::Tools::getUniqueName(userName, names);
+                UserName = Base::Tools::getUniqueName(UserName, names);
             }
         }
 
-        return std::make_tuple(std::string(Name), userName);
+        return std::make_tuple(std::move(Name), std::move(UserName));
     };
 
-    auto tuple = getNameAndLabel(Name, UserName);
-    std::string name = std::get<0>(tuple);
-    std::string userName = std::get<1>(tuple);
+    auto [name, userName] = getNameAndLabel(Name, UserName);
     name = getUniqueDocumentName(name.c_str(), tempDoc);
 
     // return the temporary document if it exists
     if (tempDoc) {
         auto it = DocMap.find(name);
         if (it != DocMap.end() && it->second->testStatus(Document::TempDoc))
-            return it->second;
+            return it->second.get();
     }
 
     // create the FreeCAD document
-    std::unique_ptr<Document> newDoc(new Document(name.c_str()));
-    newDoc->setStatus(Document::TempDoc, tempDoc);
-
-    auto oldActiveDoc = _pActiveDoc;
-    auto doc = newDoc.release(); // now owned by the Application
+    auto doc = Document::factory(name.c_str());
+    doc->setStatus(Document::TempDoc, tempDoc);
 
     // add the document to the internal list
     DocMap[name] = doc;
-    _pActiveDoc = doc;
 
+    // clang-format off
     //NOLINTBEGIN
     // connect the signals to the application for the new document
-    _pActiveDoc->signalBeforeChange.connect(std::bind(&App::Application::slotBeforeChangeDocument, this, sp::_1, sp::_2));
-    _pActiveDoc->signalChanged.connect(std::bind(&App::Application::slotChangedDocument, this, sp::_1, sp::_2));
-    _pActiveDoc->signalNewObject.connect(std::bind(&App::Application::slotNewObject, this, sp::_1));
-    _pActiveDoc->signalDeletedObject.connect(std::bind(&App::Application::slotDeletedObject, this, sp::_1));
-    _pActiveDoc->signalBeforeChangeObject.connect(std::bind(&App::Application::slotBeforeChangeObject, this, sp::_1, sp::_2));
-    _pActiveDoc->signalChangedObject.connect(std::bind(&App::Application::slotChangedObject, this, sp::_1, sp::_2));
-    _pActiveDoc->signalRelabelObject.connect(std::bind(&App::Application::slotRelabelObject, this, sp::_1));
-    _pActiveDoc->signalActivatedObject.connect(std::bind(&App::Application::slotActivatedObject, this, sp::_1));
-    _pActiveDoc->signalUndo.connect(std::bind(&App::Application::slotUndoDocument, this, sp::_1));
-    _pActiveDoc->signalRedo.connect(std::bind(&App::Application::slotRedoDocument, this, sp::_1));
-    _pActiveDoc->signalRecomputedObject.connect(std::bind(&App::Application::slotRecomputedObject, this, sp::_1));
-    _pActiveDoc->signalRecomputed.connect(std::bind(&App::Application::slotRecomputed, this, sp::_1));
-    _pActiveDoc->signalBeforeRecompute.connect(std::bind(&App::Application::slotBeforeRecompute, this, sp::_1));
-    _pActiveDoc->signalOpenTransaction.connect(std::bind(&App::Application::slotOpenTransaction, this, sp::_1, sp::_2));
-    _pActiveDoc->signalCommitTransaction.connect(std::bind(&App::Application::slotCommitTransaction, this, sp::_1));
-    _pActiveDoc->signalAbortTransaction.connect(std::bind(&App::Application::slotAbortTransaction, this, sp::_1));
-    _pActiveDoc->signalStartSave.connect(std::bind(&App::Application::slotStartSaveDocument, this, sp::_1, sp::_2));
-    _pActiveDoc->signalFinishSave.connect(std::bind(&App::Application::slotFinishSaveDocument, this, sp::_1, sp::_2));
-    _pActiveDoc->signalChangePropertyEditor.connect(std::bind(&App::Application::slotChangePropertyEditor, this, sp::_1, sp::_2));
+    doc->signalBeforeChange.connect(std::bind(&App::Application::slotBeforeChangeDocument, this, sp::_1, sp::_2));
+    doc->signalChanged.connect(std::bind(&App::Application::slotChangedDocument, this, sp::_1, sp::_2));
+    doc->signalNewObject.connect(std::bind(&App::Application::slotNewObject, this, sp::_1));
+    doc->signalDeletedObject.connect(std::bind(&App::Application::slotDeletedObject, this, sp::_1));
+    doc->signalBeforeChangeObject.connect(std::bind(&App::Application::slotBeforeChangeObject, this, sp::_1, sp::_2));
+    doc->signalChangedObject.connect(std::bind(&App::Application::slotChangedObject, this, sp::_1, sp::_2));
+    doc->signalRelabelObject.connect(std::bind(&App::Application::slotRelabelObject, this, sp::_1));
+    doc->signalActivatedObject.connect(std::bind(&App::Application::slotActivatedObject, this, sp::_1));
+    doc->signalUndo.connect(std::bind(&App::Application::slotUndoDocument, this, sp::_1));
+    doc->signalRedo.connect(std::bind(&App::Application::slotRedoDocument, this, sp::_1));
+    doc->signalRecomputedObject.connect(std::bind(&App::Application::slotRecomputedObject, this, sp::_1));
+    doc->signalRecomputed.connect(std::bind(&App::Application::slotRecomputed, this, sp::_1));
+    doc->signalBeforeRecompute.connect(std::bind(&App::Application::slotBeforeRecompute, this, sp::_1));
+    doc->signalOpenTransaction.connect(std::bind(&App::Application::slotOpenTransaction, this, sp::_1, sp::_2));
+    doc->signalCommitTransaction.connect(std::bind(&App::Application::slotCommitTransaction, this, sp::_1));
+    doc->signalAbortTransaction.connect(std::bind(&App::Application::slotAbortTransaction, this, sp::_1));
+    doc->signalStartSave.connect(std::bind(&App::Application::slotStartSaveDocument, this, sp::_1, sp::_2));
+    doc->signalFinishSave.connect(std::bind(&App::Application::slotFinishSaveDocument, this, sp::_1, sp::_2));
+    doc->signalChangePropertyEditor.connect(std::bind(&App::Application::slotChangePropertyEditor, this, sp::_1, sp::_2));
     //NOLINTEND
+    // clang-format on
 
-    // make sure that the active document is set in case no GUI is up
-    {
-        Base::PyGILStateLocker lock;
-        Py::Object active(_pActiveDoc->getPyObject(), true);
-        Py::Module("FreeCAD").setAttr(std::string("ActiveDocument"), active);
-    }
-
-    signalNewDocument(*_pActiveDoc, createView);
+    // TODO: oldActiveDoc is completely non thread safe.
+    auto oldActiveDoc = _pActiveDoc.lock();
+    setActiveDocument(doc);
+    signalNewDocument(*doc, createView);
 
     // set the UserName after notifying all observers
-    _pActiveDoc->Label.setValue(userName);
+    doc->Label.setValue(userName);
 
     // set the old document active again if the new is temporary
-    if (tempDoc && oldActiveDoc)
+    if (tempDoc && oldActiveDoc) {
+        // TODO: non thread safe.
         setActiveDocument(oldActiveDoc);
+    }
 
-    return doc;
+    return doc.get();
 }
 
 bool Application::closeDocument(const char* name)
 {
-    map<string,Document*>::iterator pos = DocMap.find( name );
-    if (pos == DocMap.end()) // no such document
+    auto pos = DocMap.find(name);
+    if (pos == DocMap.end()) {
         return false;
+    }
+    auto& [key, ptr] = *pos;
 
     Base::ConsoleRefreshDisabler disabler;
 
     // Trigger observers before removing the document from the internal map.
     // Some observers might rely on this document still being there.
-    signalDeleteDocument(*pos->second);
+    signalDeleteDocument(*ptr);
 
-    // For exception-safety use a smart pointer
-    if (_pActiveDoc == pos->second)
-        setActiveDocument(static_cast<Document*>(nullptr));
-    std::unique_ptr<Document> delDoc (pos->second);
-    DocMap.erase( pos );
-    DocFileMap.erase(FileInfo(delDoc->FileName.getValue()).filePath());
+    [[maybe_unused]] auto nh = DocMap.extract(pos);
+    DocFileMap.erase(FileInfo(ptr->FileName.getValue()).filePath());
 
     _objCount = -1;
 
@@ -553,65 +553,79 @@ bool Application::closeDocument(const char* name)
 void Application::closeAllDocuments()
 {
     Base::FlagToggler<bool> flag(_isClosingAll);
-    std::map<std::string,Document*>::iterator pos;
-    while((pos = DocMap.begin()) != DocMap.end())
-        closeDocument(pos->first.c_str());
+    while (!DocMap.empty()) {
+        const auto& [key, doc] = *DocMap.cbegin();
+        closeDocument(key.c_str());
+    }
 }
 
-App::Document* Application::getDocument(const char *Name) const
+Document* Application::getDocument(const char* Name) const
 {
-    std::map<std::string,Document*>::const_iterator pos;
+    return getDocumentOrNull(Name).get();
+}
 
-    pos = DocMap.find(Name);
+std::shared_ptr<Document> Application::getDocumentNew(const char* Name) const
+{
+    auto doc = getDocumentOrNull(Name);
+    if(!doc) {
+        throw Base::RuntimeError(std::string("Document not found: ") + Name + ".");
+    }
+    return doc;
+}
 
-    if (pos == DocMap.end())
+std::shared_ptr<Document> Application::getDocumentOrNull(const char* Name) const
+{
+    auto pos = DocMap.find(Name);
+    if (pos == DocMap.end()) {
         return nullptr;
-
+    }
     return pos->second;
 }
 
-const char * Application::getDocumentName(const App::Document* doc) const
+const char* Application::getDocumentName(const Document* doc) const
 {
-    for (const auto & it : DocMap) {
-        if (it.second == doc) {
-            return it.first.c_str();
+    for (const auto& [name, ptr] : DocMap) {
+        if (ptr.get() == doc) {
+            return name.c_str();
         }
     }
 
-    return nullptr;
+    return "";
 }
 
-std::vector<App::Document*> Application::getDocuments() const
+std::vector<Document*> Application::getDocuments() const
 {
-    std::vector<App::Document*> docs;
-    for (const auto & it : DocMap)
-        docs.push_back(it.second);
+    std::vector<Document*> docs;
+    for (const auto& [name, ptr] : DocMap) {
+        docs.push_back(ptr.get());
+    }
     return docs;
 }
 
-std::string Application::getUniqueDocumentName(const char *Name, bool tempDoc) const
+std::string Application::getUniqueDocumentName(const char* Name, bool tempDoc) const
 {
-    if (!Name || *Name == '\0')
+    if (!Name || *Name == '\0') {
         return {};
+    }
+
     std::string CleanName = Base::Tools::getIdentifier(Name);
 
     // name in use?
-    std::map<string,Document*>::const_iterator pos;
-    pos = DocMap.find(CleanName);
+    auto pos = DocMap.find(CleanName);
 
     if (pos == DocMap.end() || (tempDoc && pos->second->testStatus(Document::TempDoc))) {
         // if not, name is OK
         return CleanName;
     }
-    else {
-        std::vector<std::string> names;
-        names.reserve(DocMap.size());
-        for (pos = DocMap.begin(); pos != DocMap.end(); ++pos) {
-            if (!tempDoc || !pos->second->testStatus(Document::TempDoc))
-                names.push_back(pos->first);
+
+    std::vector<std::string> names;
+    names.reserve(DocMap.size());
+    for (auto const& [key, document] : DocMap) {
+        if (!tempDoc || !document->testStatus(Document::TempDoc)) {
+            names.push_back(key);
         }
-        return Base::Tools::getUniqueName(CleanName, names);
     }
+    return Base::Tools::getUniqueName(CleanName, names);
 }
 
 int Application::addPendingDocument(const char *FileName, const char *objName, bool allowPartial)
@@ -674,60 +688,73 @@ public:
 };
 
 Document* Application::openDocument(const char * FileName, bool createView) {
-    std::vector<std::string> filenames(1,FileName);
+    std::vector<std::string> filenames(1, FileName);
     auto docs = openDocuments(filenames, nullptr, nullptr, nullptr, createView);
     if(!docs.empty())
         return docs.front();
     return nullptr;
 }
 
-Document *Application::getDocumentByPath(const char *path, PathMatchMode checkCanonical) const {
-    if(!path || !path[0])
+std::shared_ptr<Document> Application::getDocumentByPath(const std::string& path,
+                                                         PathMatchMode checkCanonical) const
+{
+    if (path.empty()) {
         return nullptr;
-    if(DocFileMap.empty()) {
-        for(const auto &v : DocMap) {
-            const auto &file = v.second->FileName.getStrValue();
-            if(!file.empty())
-                DocFileMap[FileInfo(file.c_str()).filePath()] = v.second;
+    }
+
+    if (DocFileMap.empty()) {
+        for (const auto& [name, ptr] : DocMap) {
+            const auto& file = ptr->FileName.getStrValue();
+            if (!file.empty()) {
+                DocFileMap[FileInfo(file).filePath()] = ptr.get();
+            }
         }
     }
-    auto it = DocFileMap.find(FileInfo(path).filePath());
-    if(it != DocFileMap.end())
-        return it->second;
 
-    if (checkCanonical == PathMatchMode::MatchAbsolute)
+    auto it = DocFileMap.find(FileInfo(path.c_str()).filePath());
+    if (it != DocFileMap.end()) {
+        return it->second->SharedFromThis();
+    }
+
+    if (checkCanonical == PathMatchMode::MatchAbsolute) {
         return nullptr;
+    }
 
-    std::string filepath = FileInfo(path).filePath();
-    QString canonicalPath = QFileInfo(QString::fromUtf8(path)).canonicalFilePath();
-    for (const auto &v : DocMap) {
-        QFileInfo fi(QString::fromUtf8(v.second->FileName.getValue()));
+    std::string filepath = FileInfo(path.c_str()).filePath();
+    QString canonicalPath = QFileInfo(QString::fromUtf8(path.c_str())).canonicalFilePath();
+    for (const auto& [name, ptr] : DocMap) {
+        QFileInfo fi(QString::fromUtf8(ptr->FileName.getValue()));
         if (canonicalPath == fi.canonicalFilePath()) {
-            if (checkCanonical == PathMatchMode::MatchCanonical)
-                return v.second;
+            if (checkCanonical == PathMatchMode::MatchCanonical) {
+                return ptr;
+            }
             bool samePath = (canonicalPath == QString::fromUtf8(filepath.c_str()));
-            FC_WARN("Identical physical path '" << canonicalPath.toUtf8().constData() << "'\n"
-                    << (samePath?"":"  for file '") << (samePath?"":filepath.c_str()) << (samePath?"":"'\n")
-                    << "  with existing document '" << v.second->Label.getValue()
-                    << "' in path: '" << v.second->FileName.getValue() << "'");
+            FC_WARN("Identical physical path '"
+                    << canonicalPath.toUtf8().constData() << "'\n"
+                    << (samePath ? "" : "  for file '") << (samePath ? "" : filepath.c_str())
+                    << (samePath ? "" : "'\n") << "  with existing document '"
+                    << ptr->Label.getValue() << "' in path: '" << ptr->FileName.getValue()
+                    << "'");
             break;
         }
     }
     return nullptr;
 }
 
-std::vector<Document*> Application::openDocuments(const std::vector<std::string> &filenames,
-                                                  const std::vector<std::string> *paths,
-                                                  const std::vector<std::string> *labels,
-                                                  std::vector<std::string> *errs,
+std::vector<Document*> Application::openDocuments(const std::vector<std::string>& filenames,
+                                                  const std::vector<std::string>* paths,
+                                                  const std::vector<std::string>* labels,
+                                                  std::vector<std::string>* errs,
                                                   bool createView)
 {
     std::vector<Document*> res(filenames.size(), nullptr);
-    if (filenames.empty())
+    if (filenames.empty()) {
         return res;
+    }
 
-    if (errs)
+    if (errs) {
         errs->resize(filenames.size());
+    }
 
     DocOpenGuard guard(_isRestoring, signalFinishOpenDocument);
     _pendingDocs.clear();
@@ -737,11 +764,13 @@ std::vector<Document*> Application::openDocuments(const std::vector<std::string>
 
     signalStartOpenDocument();
 
-    ParameterGrp::handle hGrp = GetParameterGroupByPath("User parameter:BaseApp/Preferences/Document");
-    _allowPartial = !hGrp->GetBool("NoPartialLoading",false);
+    ParameterGrp::handle hGrp =
+        GetParameterGroupByPath("User parameter:BaseApp/Preferences/Document");
+    _allowPartial = !hGrp->GetBool("NoPartialLoading", false);
 
-    for (auto &name : filenames)
+    for (auto& name : filenames) {
         _pendingDocs.emplace_back(name.c_str());
+    }
 
     std::map<DocumentT, DocTiming> timings;
 
@@ -750,9 +779,9 @@ std::vector<Document*> Application::openDocuments(const std::vector<std::string>
     std::vector<DocumentT> openedDocs;
 
     int pass = 0;
-    do {
-        std::set<App::DocumentT> newDocs;
-        for (std::size_t count=0;; ++count) {
+    while (!_pendingDocs.empty()) {
+        std::set<DocumentT> newDocs;
+        for (std::size_t count = 0;; ++count) {
             std::string name = std::move(_pendingDocs.front());
             _pendingDocs.pop_front();
             bool isMainDoc = (pass == 0 && count < filenames.size());
@@ -763,10 +792,12 @@ std::vector<Document*> Application::openDocuments(const std::vector<std::string>
                 if (_allowPartial) {
                     auto it = _pendingDocMap.find(name);
                     if (it != _pendingDocMap.end()) {
-                        if(isMainDoc)
+                        if (isMainDoc) {
                             it->second.clear();
-                        else
+                        }
+                        else {
                             objNames.swap(it->second);
+                        }
                         _pendingDocMap.erase(it);
                     }
                 }
@@ -774,48 +805,67 @@ std::vector<Document*> Application::openDocuments(const std::vector<std::string>
                 FC_TIME_INIT(t1);
                 DocTiming timing;
 
-                const char *path = name.c_str();
-                const char *label = nullptr;
+                const char* path = name.c_str();
+                const char* label = nullptr;
                 if (isMainDoc) {
-                    if (paths && paths->size()>count)
+                    if (paths && paths->size() > count) {
                         path = (*paths)[count].c_str();
+                    }
 
-                    if (labels && labels->size()>count)
+                    if (labels && labels->size() > count) {
                         label = (*labels)[count].c_str();
+                    }
                 }
 
-                auto doc = openDocumentPrivate(path, name.c_str(), label, isMainDoc, createView, std::move(objNames));
-                FC_DURATION_PLUS(timing.d1,t1);
+                auto doc = openDocumentPrivate(path,
+                                               name.c_str(),
+                                               label,
+                                               isMainDoc,
+                                               createView,
+                                               std::move(objNames));
+                FC_DURATION_PLUS(timing.d1, t1);
                 if (doc) {
                     timings[doc].d1 += timing.d1;
                     newDocs.emplace(doc);
                 }
 
-                if (isMainDoc)
+                if (isMainDoc) {
                     res[count] = doc;
+                }
                 _objCount = -1;
             }
-            catch (const Base::Exception &e) {
+            catch (const Base::Exception& e) {
                 e.ReportException();
-                if (!errs && isMainDoc)
+                if (!errs && isMainDoc) {
                     throw;
-                if (errs && isMainDoc)
+                }
+                if (errs && isMainDoc) {
                     (*errs)[count] = e.what();
-                else
-                    Base::Console().Error("Exception opening file: %s [%s]\n", name.c_str(), e.what());
+                }
+                else {
+                    Base::Console().Error("Exception opening file: %s [%s]\n",
+                                          name.c_str(),
+                                          e.what());
+                }
             }
-            catch (const std::exception &e) {
-                if (!errs && isMainDoc)
+            catch (const std::exception& e) {
+                if (!errs && isMainDoc) {
                     throw;
-                if (errs && isMainDoc)
+                }
+                if (errs && isMainDoc) {
                     (*errs)[count] = e.what();
-                else
-                    Base::Console().Error("Exception opening file: %s [%s]\n", name.c_str(), e.what());
+                }
+                else {
+                    Base::Console().Error("Exception opening file: %s [%s]\n",
+                                          name.c_str(),
+                                          e.what());
+                }
             }
             catch (...) {
                 if (errs) {
-                    if (isMainDoc)
+                    if (isMainDoc) {
                         (*errs)[count] = "unknown error";
+                    }
                 }
                 else {
                     _pendingDocs.clear();
@@ -826,14 +876,16 @@ std::vector<Document*> Application::openDocuments(const std::vector<std::string>
             }
 
             if (_pendingDocs.empty()) {
-                if(_pendingDocsReopen.empty())
+                if (_pendingDocsReopen.empty()) {
                     break;
+                }
                 _pendingDocs = std::move(_pendingDocsReopen);
                 _pendingDocsReopen.clear();
-                for(const auto &file : _pendingDocs) {
-                    auto doc = getDocumentByPath(file.c_str());
-                    if(doc)
+                for (const auto& file : _pendingDocs) {
+                    auto doc = getDocumentByPath(file);
+                    if (doc) {
                         closeDocument(doc->getName());
+                    }
                 }
             }
         }
@@ -843,10 +895,11 @@ std::vector<Document*> Application::openDocuments(const std::vector<std::string>
 
         std::vector<Document*> docs;
         docs.reserve(newDocs.size());
-        for(const auto &d : newDocs) {
+        for (const auto& d : newDocs) {
             auto doc = d.getDocument();
-            if(!doc)
+            if (!doc) {
                 continue;
+            }
             // Notify PropertyXLink to attach newly opened documents and restore
             // relevant external links
             PropertyXLink::restoreDocument(*doc);
@@ -859,27 +912,29 @@ std::vector<Document*> Application::openDocuments(const std::vector<std::string>
         // according to their dependency order.
         try {
             docs = Document::getDependentDocuments(docs, true);
-        } catch (Base::Exception &e) {
+        }
+        catch (Base::Exception& e) {
             e.ReportException();
         }
-        for(auto it=docs.begin(); it!=docs.end();) {
+        for (auto it = docs.begin(); it != docs.end();) {
             auto doc = *it;
 
             // It is possible that the newly opened document depends on an existing
             // document, which will be included with the above call to
             // Document::getDependentDocuments(). Make sure to exclude that.
-            if(!newDocs.count(doc)) {
+            if (!newDocs.count(doc)) {
                 it = docs.erase(it);
                 continue;
             }
 
-            auto &timing = timings[doc];
+            auto& timing = timings[doc];
             FC_TIME_INIT(t1);
             // Finalize document restoring with the correct order
-            if(doc->afterRestore(true)) {
+            if (doc->afterRestore(true)) {
                 openedDocs.emplace_back(doc);
                 it = docs.erase(it);
-            } else {
+            }
+            else {
                 ++it;
                 // Here means this is a partial loaded document, and we need to
                 // reload it fully because of touched objects. The reason of
@@ -891,14 +946,15 @@ std::vector<Document*> Application::openDocuments(const std::vector<std::string>
                 _pendingDocs.emplace_back(doc->FileName.getValue());
                 _pendingDocMap.erase(doc->FileName.getValue());
             }
-            FC_DURATION_PLUS(timing.d2,t1);
+            FC_DURATION_PLUS(timing.d2, t1);
             seq.next();
         }
         // Close the document for reloading
-        for(const auto doc : docs)
+        for (const auto doc : docs) {
             closeDocument(doc->getName());
+        }
 
-    }while(!_pendingDocs.empty());
+    }
 
     // Set the active document using the first successfully restored main
     // document (i.e. documents explicitly asked for by caller).
@@ -909,49 +965,52 @@ std::vector<Document*> Application::openDocuments(const std::vector<std::string>
         }
     }
 
-    for (auto &doc : openedDocs) {
-        auto &timing = timings[doc];
+    for (auto& doc : openedDocs) {
+        auto& timing = timings[doc];
         FC_DURATION_LOG(timing.d1, doc.getDocumentName() << " restore");
         FC_DURATION_LOG(timing.d2, doc.getDocumentName() << " postprocess");
     }
-    FC_TIME_LOG(t,"total");
+    FC_TIME_LOG(t, "total");
     _isRestoring = false;
 
     signalFinishOpenDocument();
     return res;
 }
 
-Document* Application::openDocumentPrivate(const char * FileName,
-        const char *propFileName, const char *label,
-        bool isMainDoc, bool createView,
-        std::vector<std::string> &&objNames)
+Document* Application::openDocumentPrivate(const char* FileName,
+                                           const char* propFileName,
+                                           const char* label,
+                                           bool isMainDoc,
+                                           bool createView,
+                                           std::vector<std::string>&& objNames)
 {
     FileInfo File(FileName);
 
     if (!File.exists()) {
         std::stringstream str;
         str << "File '" << FileName << "' does not exist!";
-        throw Base::FileSystemError(str.str().c_str());
+        throw Base::FileSystemError(str.str());
     }
 
     // Before creating a new document we check whether the document is already open
-    auto doc = getDocumentByPath(File.filePath().c_str(), PathMatchMode::MatchCanonicalWarning);
-    if(doc) {
-        if(doc->testStatus(App::Document::PartialDoc)
-                || doc->testStatus(App::Document::PartialRestore)) {
+    auto doc = getDocumentByPath(File.filePath(), PathMatchMode::MatchCanonicalWarning);
+    if (doc) {
+        if (doc->testStatus(App::Document::PartialDoc)
+            || doc->testStatus(App::Document::PartialRestore)) {
             // Here means a document is already partially loaded, but the document
             // is requested again, either partial or not. We must check if the
             // document contains the required object
 
-            if(isMainDoc) {
+            if (isMainDoc) {
                 // Main document must be open fully, so close and reopen
                 closeDocument(doc->getName());
                 doc = nullptr;
-            } else if(_allowPartial) {
+            }
+            else if (_allowPartial) {
                 bool reopen = false;
-                for(const auto &name : objNames) {
+                for (const auto& name : objNames) {
                     auto obj = doc->getObject(name.c_str());
-                    if(!obj || obj->testStatus(App::PartialObject)) {
+                    if (!obj || obj->testStatus(App::PartialObject)) {
                         reopen = true;
                         // NOTE: We are about to reload this document with
                         // extra objects. However, it is possible to repeat
@@ -960,49 +1019,58 @@ Document* Application::openDocumentPrivate(const char * FileName,
                         // objects. To partially solve this problem, we do not
                         // close and reopen the document immediately here, but
                         // add it to _pendingDocsReopen to delay reloading.
-                        for(auto obj : doc->getObjects())
+                        for (auto obj : doc->getObjects()) {
                             objNames.emplace_back(obj->getNameInDocument());
+                        }
                         _pendingDocMap[doc->FileName.getValue()] = std::move(objNames);
                         break;
                     }
                 }
-                if(!reopen)
+                if (!reopen) {
                     return nullptr;
+                }
             }
 
-            if(doc) {
+            if (doc) {
                 _pendingDocsReopen.emplace_back(FileName);
                 return nullptr;
             }
         }
 
-        if(!isMainDoc)
+        if (!isMainDoc) {
             return nullptr;
-        else if(doc)
-            return doc;
+        }
+
+        if (doc) {
+            return doc.get();
+        }
     }
 
     std::string name;
-    if(propFileName != FileName) {
+    if (propFileName != FileName) {
         FileInfo fi(propFileName);
         name = fi.fileNamePure();
-    }else
+    }
+    else {
         name = File.fileNamePure();
+    }
 
     // Use the same name for the internal and user name.
     // The file name is UTF-8 encoded which means that the internal name will be modified
     // to only contain valid ASCII characters but the user name will be kept.
-    if(!label)
+    if (label) {
         label = name.c_str();
-    Document* newDoc = newDocument(name.c_str(),label,isMainDoc && createView);
+    }
+    auto newDoc = newDocument(name.c_str(), label, isMainDoc && createView);
 
-    newDoc->FileName.setValue(propFileName==FileName?File.filePath():propFileName);
+    newDoc->FileName.setValue(propFileName == FileName ? File.filePath() : propFileName);
 
     try {
         // read the document
-        newDoc->restore(File.filePath().c_str(),true,objNames);
-        if(!DocFileMap.empty())
+        newDoc->restore(File.filePath().c_str(), true, objNames);
+        if (!DocFileMap.empty()) {
             DocFileMap[FileInfo(newDoc->FileName.getValue()).filePath()] = newDoc;
+        }
         return newDoc;
     }
     // if the project file itself is corrupt then
@@ -1024,47 +1092,51 @@ Document* Application::openDocumentPrivate(const char * FileName,
 
 Document* Application::getActiveDocument() const
 {
-    return _pActiveDoc;
+    // TODO: make it thread safe: return shared_ptr.
+    return _pActiveDoc.lock().get();
+}
+
+void Application::setActiveDocument(std::shared_ptr<Document> doc)
+{
+    // make sure that the active document is set in case no GUI is up
+    if (doc) {
+        Base::PyGILStateLocker lock;
+        _pActiveDoc = doc;
+        Py::Object active(doc->getPyObject(), true);
+        Py::Module("FreeCAD").setAttr(std::string("ActiveDocument"), active);
+    }
+    else {
+        Base::PyGILStateLocker lock;
+        _pActiveDoc = {};
+        Py::Module("FreeCAD").setAttr(std::string("ActiveDocument"), Py::None());
+    }
+
+    // Without holding the lock.
+    if (doc) {
+        signalActiveDocument(*doc);
+    }
 }
 
 void Application::setActiveDocument(Document* pDoc)
 {
-    _pActiveDoc = pDoc;
-
-    // make sure that the active document is set in case no GUI is up
-    if (pDoc) {
-        Base::PyGILStateLocker lock;
-        Py::Object active(pDoc->getPyObject(), true);
-        Py::Module("FreeCAD").setAttr(std::string("ActiveDocument"),active);
-    }
-    else {
-        Base::PyGILStateLocker lock;
-        Py::Module("FreeCAD").setAttr(std::string("ActiveDocument"),Py::None());
-    }
-
-    if (pDoc)
-        signalActiveDocument(*pDoc);
+    setActiveDocument(pDoc ? pDoc->SharedFromThis() : std::shared_ptr<Document> {});
 }
 
-void Application::setActiveDocument(const char *Name)
+void Application::setActiveDocument(const char* Name)
 {
     // If no active document is set, resort to a default.
     if (*Name == '\0') {
-        _pActiveDoc = nullptr;
+        setActiveDocument(std::shared_ptr<Document> {});
         return;
     }
 
-    std::map<std::string,Document*>::iterator pos;
-    pos = DocMap.find(Name);
-
-    if (pos != DocMap.end()) {
-        setActiveDocument(pos->second);
-    }
-    else {
+    auto pos = DocMap.find(Name);
+    if (pos == DocMap.end()) {
         std::stringstream s;
         s << "Try to activate unknown document '" << Name << "'";
         throw Base::RuntimeError(s.str());
     }
+    setActiveDocument(pos->second);
 }
 
 static int _TransSignalCount;

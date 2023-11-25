@@ -66,7 +66,7 @@ public:
 
     void postHlrTasks() override;
 
-    DrawProjGroup* getPGroup() const;
+    std::shared_ptr<DrawProjGroup> getPGroup() const;
     double getRotateAngle();
     Base::Vector3d getXDirection() const override;
     Base::Vector3d getLegacyX(const Base::Vector3d& pt,

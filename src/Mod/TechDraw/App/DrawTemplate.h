@@ -55,7 +55,7 @@ public:
     /// Returns template height in mm
     virtual double getHeight() const;
 
-    virtual DrawPage* getParentPage() const;
+    virtual std::shared_ptr<DrawPage> getParentPage() const;
 
     /// returns the type name of the ViewProvider
     const char* getViewProviderName(void) const override{
