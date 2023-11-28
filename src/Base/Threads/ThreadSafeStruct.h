@@ -26,7 +26,6 @@
 
 #include <thread>
 
-#include "Exception.h"
 #include "locks/ReaderLock.h"
 #include "locks/WriterLock.h"
 
@@ -52,74 +51,66 @@ public:
     using w_lock_local_pointer_t = WriterLock<ThreadSafeStruct<Struct>, LocalPointer>;
 
     template<typename... Args>
-    ThreadSafeStruct(Args&&... args) : theStruct(args...) {}
+    ThreadSafeStruct(Args&&... args);
 
-    [[maybe_unused]]
-    auto lockForReading() const
-    {return r_lock_t{*this};}
+    virtual ~ThreadSafeStruct();
 
-    auto continueReading()
-    {
-        w_lock_t lock{*this, true};
-        lock.release();
-        lock.resumeReading();
-        return lock;
-    }
+    [[maybe_unused]] auto lockForReading() const;
+
+    auto continueReading();
 
     template<auto LocalPointer>
-    auto lockPointerForReading() const
-    {return r_lock_local_pointer_t<LocalPointer>{*this};}
+    auto lockPointerForReading() const;
 
-    auto startWriting()
-    {return w_lock_t{*this};}
+    auto startWriting();
 
-    auto continueWriting()
-    {return w_lock_t{*this, true};}
+    auto continueWriting();
 
     template<auto LocalPointer>
-    auto lockPointerForWriting()
-    {return w_lock_local_pointer_t<LocalPointer>{*this};}
+    auto lockPointerForWriting();
 
     struct ReaderGate
     {
-        ReaderGate(const self_t* self) : self(self) {}
+        ReaderGate(const self_t* self);
         const self_t* self;
 
-        const element_t& operator*() const {return self->theStruct;}
-        const element_t* operator->() const {return &self->theStruct;}
+        const Struct& operator*() const;
+        const Struct* operator->() const;
     };
-    const ReaderGate& getReaderGate(const SharedLock*) const
-    {assert(LockPolicy::isLocked(mutex)); return reader_gate;}
+    const ReaderGate& getReaderGate(const SharedLock*) const;
 
     struct WriterGate
     {
-        WriterGate(self_t* self) : self(self) {}
+        WriterGate(self_t* self);
         self_t* self;
 
-        element_t& operator*() const {return self->theStruct;}
-        element_t* operator->() const {return &self->theStruct;}
+        Struct& operator*() const;
+        Struct* operator->() const;
     };
-    const WriterGate& getWriterGate(const ExclusiveLockBase*)
-    {assert(LockPolicy::isLockedExclusively(mutex)); return writer_gate;}
+    const WriterGate& getWriterGate(const ExclusiveLockBase*);
 
-    void cancelThreads()
-    {activeThread = std::thread::id{};}
+    void cancelThreads();
+
+    std::thread& getDedicatedThread();
 
 public:
     // TODO: eliminate this or the gate version.
-    auto getMutexPair() const {return &mutex;}
+    auto getMutexPair() const;
 
 private:
-    const ReaderGate reader_gate{this};
-    const WriterGate writer_gate{this};
+    const ReaderGate reader_gate {this};
+    const WriterGate writer_gate {this};
 
     mutable MutexPair mutex;
-    element_t theStruct;
+    Struct theStruct;
 
     std::thread::id activeThread;
+    std::thread dedicatedThread;
     friend class WriterLock<ThreadSafeStruct<Struct>>;
 };
 
-} //namespace ::Threads
+}  // namespace Base::Threads
 
-#endif // BASE_Threads_ThreadSafeStruct_H
+#include "ThreadSafeStruct.inl"
+
+#endif  // BASE_Threads_ThreadSafeStruct_H

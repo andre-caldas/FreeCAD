@@ -509,7 +509,7 @@ Application::newDocument(const char* Name, const char* UserName, bool createView
     // clang-format on
 
     // TODO: oldActiveDoc is completely non thread safe.
-    auto oldActiveDoc = _pActiveDoc.lock();
+    auto oldActiveDoc = _pActiveDoc;
     setActiveDocument(doc);
     signalNewDocument(*doc, createView);
 
@@ -538,6 +538,10 @@ bool Application::closeDocument(const char* name)
     // Trigger observers before removing the document from the internal map.
     // Some observers might rely on this document still being there.
     signalDeleteDocument(*ptr);
+
+    if (_pActiveDoc == pos->second) {
+        setActiveDocument(nullptr);
+    }
 
     [[maybe_unused]] auto nh = DocMap.extract(pos);
     DocFileMap.erase(FileInfo(ptr->FileName.getValue()).filePath());
@@ -1093,7 +1097,7 @@ Document* Application::openDocumentPrivate(const char* FileName,
 Document* Application::getActiveDocument() const
 {
     // TODO: make it thread safe: return shared_ptr.
-    return _pActiveDoc.lock().get();
+    return _pActiveDoc.get();
 }
 
 void Application::setActiveDocument(std::shared_ptr<Document> doc)
@@ -1122,10 +1126,10 @@ void Application::setActiveDocument(Document* pDoc)
     setActiveDocument(pDoc ? pDoc->SharedFromThis() : std::shared_ptr<Document> {});
 }
 
-void Application::setActiveDocument(const char* Name)
+void Application::setActiveDocument(const std::string& Name)
 {
     // If no active document is set, resort to a default.
-    if (*Name == '\0') {
+    if (Name.empty()) {
         setActiveDocument(std::shared_ptr<Document> {});
         return;
     }

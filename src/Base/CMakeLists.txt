@@ -364,9 +364,14 @@ SET(FreeCADBase_Threads_SRCS
     Threads/locks/ReaderLock.inl
     Threads/locks/WriterLock.h
     Threads/locks/WriterLock.inl
+    Threads/ThrowingSharedPtr.h
+    Threads/ThrowingSharedPtr.inl
+    Threads/ThrowingOptional.h
+    Threads/ThrowingOptional.inl
     Threads/IteratorWrapper.h
     Threads/LockedIterator.h
     Threads/ThreadSafeStruct.h
+    Threads/ThreadSafeStruct.inl
     Threads/ThreadSafeContainer.h
     Threads/ThreadSafeContainer.inl
     Threads/ThreadSafeVector.h

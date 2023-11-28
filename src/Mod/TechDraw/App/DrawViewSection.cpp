@@ -456,11 +456,10 @@ void DrawViewSection::makeSectionCut()
     if(!lock) {
         return;
     }
-    lock.moveFromThread();
 
     // Although "self" is not used,
     // it warrants that "this" will not get destructed.
-    auto lambda = [self = SharedFromThis(), this, lock = std::move(lock)]() mutable noexcept
+    auto lambda = [self = SharedFromThis(), this](auto lock) mutable noexcept
     {
         try{
             lock.releaseInNewThread();
@@ -543,8 +542,7 @@ void DrawViewSection::makeSectionCut()
             Base::Console().Message("DVS::makeSectionCut - failed to make section cut");
         }};
 
-    std::thread{std::move(lambda)}.detach();
-//    std::thread{std::move(lambda)}.join();
+    std::move(lock).startNewThread(std::move(lambda));
 }
 
 //! position, scale and rotate shape for  buildGeometryObject

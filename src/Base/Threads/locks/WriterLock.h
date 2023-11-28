@@ -46,15 +46,20 @@ class WriterLock
 public:
     using local_data_t = MemberPointerTo_t<LocalPointer>;
 
-    [[nodiscard]]
-    WriterLock(MutexHolder& mutex_holder)
+    [[nodiscard]] WriterLock(MutexHolder& mutex_holder)
         : exclusiveLock(mutex_holder)
         , gate(mutex_holder.getWriterGate(&exclusiveLock))
         , localData((&*gate)->*LocalPointer)
     {}
 
-    auto* operator->() const {return &(StripSmartPointer{localData}());}
-    auto& operator*() const {return StripSmartPointer{localData}();}
+    auto* operator->() const
+    {
+        return &(StripSmartPointer {localData}());
+    }
+    auto& operator*() const
+    {
+        return StripSmartPointer {localData}();
+    }
 
 private:
     ExclusiveLock<MutexHolder> exclusiveLock;
@@ -77,8 +82,7 @@ template<typename MutexHolder>
 class WriterLock<MutexHolder, nullptr>
 {
 public:
-    [[nodiscard]]
-    WriterLock(MutexHolder& mutex_holder, bool try_to_resume = false);
+    [[nodiscard]] WriterLock(MutexHolder& mutex_holder, bool try_to_resume = false);
 
     /**
      * @brief We allow move constructor only when already "locked".
@@ -88,8 +92,7 @@ public:
      * @param other: @class WriterLock to move.
      * @attention This is to be used ONLY to pass the lock to a new thread.
      */
-    [[nodiscard]]
-    WriterLock(WriterLock<MutexHolder>&& other);
+    [[nodiscard]] WriterLock(WriterLock<MutexHolder>&& other);
 
 
     /**
@@ -120,12 +123,12 @@ public:
     bool resumeReading();
 
     /**
-     * @brief First step in passing the ownership from the current thread.
-     * @attention Needs to be locked. Cannot be locked prior to this instance.
-     *
-     * @see resumeFromThread().
+     * @brief Start a new thread and moves the mutex to this newly created thread.
+     * @param f: Callable.
+     * @param args: Arguments to the callable.
      */
-    void moveFromThread();
+    template<class Function, class... Args>
+    void startNewThread(Function&& f, Args&&... args) &&;
 
     /**
      * @brief Passes the ownership to a new thread.
@@ -149,6 +152,7 @@ public:
     /**
      * @brief Just like "resumeInNewThread()", but it also releases the lock.
      * This is just a shortcut so the code becomes cleaner.
+     *
      * @see resumeInNewThread();
      */
     void releaseInNewThread();
@@ -170,7 +174,9 @@ public:
     operator bool() const;
 
 private:
-    std::unique_ptr<ExclusiveLock<MutexHolder>> exclusiveLock;
+    // We use a shared_ptr, so we can keep the lock when setting
+    // MutexHolder::thread
+    std::shared_ptr<ExclusiveLock<MutexHolder>> exclusiveLock;
     std::unique_ptr<SharedLock> sharedLock;
 
     MutexHolder& mutexHolder;
@@ -187,10 +193,25 @@ private:
      * the data shall be in a consistent state.
      */
     void markStart();
+
+    /**
+     * @brief First step in passing the ownership from the current thread.
+     * This is a little low level. Consider using startNewThread() instead.
+     *
+     * @return A shared_ptr to the exclusive mutex,
+     * so that the calling context can hold the lock
+     * to save the thread information (i.e.: std::tread).
+     *
+     * @attention Needs to be exclusively locked.
+     * Cannot be locked prior to this instance.
+     *
+     * @see resumeFromThread().
+     */
+    [[maybe_unused]] std::shared_ptr<ExclusiveLock<MutexHolder>> moveFromThread();
 };
 
-} //namespace Base::Threads
+}  // namespace Base::Threads
 
 #include "WriterLock.inl"
 
-#endif // BASE_Threads_WriterLock_H
+#endif  // BASE_Threads_WriterLock_H

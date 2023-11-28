@@ -29,77 +29,95 @@
 namespace Base::Threads
 {
 
-class ExceptionNeedLock : public Base::TypeError
+class ExceptionNeedLock: public Base::TypeError
 {
 public:
     ExceptionNeedLock()
-        : Base::TypeError("Cannot access unlocked data.") {}
+        : Base::TypeError("Cannot access unlocked data.")
+    {}
 };
 
-class ExceptionNoExclusiveOverNonExclusive : public Base::TypeError
+class ExceptionNoExclusiveOverNonExclusive: public Base::TypeError
 {
 public:
     ExceptionNoExclusiveOverNonExclusive()
-        : Base::TypeError("Cannot lock exclusively a mutex that is already non-exclusive.") {}
+        : Base::TypeError("Cannot lock exclusively a mutex that is already non-exclusive.")
+    {}
 };
 
-class ExceptionExclusiveParentNotLocked : public Base::TypeError
+class ExceptionExclusiveParentNotLocked: public Base::TypeError
 {
 public:
     ExceptionExclusiveParentNotLocked()
-        : Base::TypeError("An exclusive lock cannot come after non-chainable locks.") {}
+        : Base::TypeError("An exclusive lock cannot come after non-chainable locks.")
+    {}
 };
 
-class ExceptionNoLocksAfterExclusiveLock : public Base::TypeError
+class ExceptionNoLocksAfterExclusiveLock: public Base::TypeError
 {
 public:
     ExceptionNoLocksAfterExclusiveLock()
-        : Base::TypeError("After an exclusive lock there can be no other locks.") {}
+        : Base::TypeError("After an exclusive lock there can be no other locks.")
+    {}
 };
 
-class ExceptionNoLocksAfterLockFree : public Base::TypeError
+class ExceptionNoLocksAfterLockFree: public Base::TypeError
 {
 public:
     ExceptionNoLocksAfterLockFree()
-        : Base::TypeError("You cannot lock anything while holding a 'lock free' lock.") {}
+        : Base::TypeError("You cannot lock anything while holding a 'lock free' lock.")
+    {}
 };
 
-class ExceptionNeedLockToAccessContainer : public Base::TypeError
+class ExceptionNeedLockToAccessContainer: public Base::TypeError
 {
 public:
     ExceptionNeedLockToAccessContainer()
-        : Base::TypeError("You do not have a lock for the container you are trying to access.") {}
+        : Base::TypeError("You do not have a lock for the container you are trying to access.")
+    {}
 };
 
-class ExceptionCannotReleaseUnlocked : public Base::TypeError
+class ExceptionCannotReleaseUnlocked: public Base::TypeError
 {
 public:
     ExceptionCannotReleaseUnlocked()
-        : Base::TypeError("Cannot release lock that is not locked.") {}
+        : Base::TypeError("Cannot release lock that is not locked.")
+    {}
 };
 
-class ExceptionNewThreadRequiresLock : public Base::TypeError
+class ExceptionNewThreadRequiresLock: public Base::TypeError
 {
 public:
     ExceptionNewThreadRequiresLock()
-        : Base::TypeError("To transfer a lock to a new thread, it has to be locked.") {}
+        : Base::TypeError("To transfer a lock to a new thread, it has to be locked.")
+    {}
 };
 
-class ExceptionNewThreadRequiresReleaseableLock : public Base::TypeError
+class ExceptionNewThreadRequiresReleaseableLock: public Base::TypeError
 {
 public:
     ExceptionNewThreadRequiresReleaseableLock()
-        : Base::TypeError("Cannot move lock: thread remains locked even after release().") {}
+        : Base::TypeError("Cannot move lock: thread remains locked even after release().")
+    {}
 };
 
-class ExceptionNewThreadRequiresMovedLock : public Base::TypeError
+class ExceptionNewThreadRequiresMovedLock: public Base::TypeError
 {
 public:
     ExceptionNewThreadRequiresMovedLock()
         : Base::TypeError("To be transfered to a new thread, "
-                          "you need to call moveFromThread() in the original thread.") {}
+                          "you need to call moveFromThread() in the original thread.")
+    {}
 };
 
-} //namespace Base::Threads
+class ExceptionNoNestedThreads: public Base::TypeError
+{
+public:
+    ExceptionNoNestedThreads()
+        : Base::TypeError("Threads to process the same locked resource cannot be nested.")
+    {}
+};
 
-#endif // BASE_Threads_Exception_H
+}  // namespace Base::Threads
+
+#endif  // BASE_Threads_Exception_H

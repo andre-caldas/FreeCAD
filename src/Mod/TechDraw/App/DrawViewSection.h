@@ -192,6 +192,12 @@ protected:
         TopoDS_Compound sectionTopoDSFaces; //needed for hatching
         std::vector<LineSet> lineSets;
         std::vector<FacePtr> tdSectionFaces;
+
+        /**
+         * @brief The joinable thread (if any) that is processing
+         * the most recent request.
+         */
+        std::thread thread;
     };
     using concurrentData_t = Base::Threads::ThreadSafeStruct<ConcurrentData>;
     concurrentData_t concurrentData;

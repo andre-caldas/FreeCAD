@@ -176,7 +176,7 @@ public:
     void setActiveDocument(std::shared_ptr<Document> doc);
     /// TODO: shall we deprecate this? People should not hold just a pointer...
     void setActiveDocument(Document* pDoc);
-    void setActiveDocument(const char* Name);
+    void setActiveDocument(const std::string& Name);
     /// close all documents (without saving)
     void closeAllDocuments();
     /// Add pending document to open together with the current opening document
@@ -626,7 +626,12 @@ private:
     mutable std::map<std::string,Document*> DocFileMap;
     std::map<std::string,Base::Reference<ParameterManager>> mpcPramManager;
     std::map<std::string,std::string> &_mConfig;
-    std::weak_ptr<Document> _pActiveDoc;
+
+    // This actually should be a weak_ptr.
+    // But python code does not hold its own shared_ptr (thread unsafe).
+    // TODO: fix python code to make it hold its own shared_ptr,
+    // and possibly make this a weak_ptr.
+    std::shared_ptr<Document> _pActiveDoc;
 
     std::deque<std::string> _pendingDocs;
     std::deque<std::string> _pendingDocsReopen;

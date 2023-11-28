@@ -189,11 +189,12 @@ std::shared_ptr<DrawProjGroup> DrawProjGroupItem::getPGroupOrNull() const
 {
     auto parents = getInListNew();
     for (const auto& parent : parents) {
-        if (parent->isDerivedFrom<DrawProjGroup>()) {
-            return std::dynamic_pointer_cast<DrawProjGroup>(parent);
+        auto result = std::dynamic_pointer_cast<DrawProjGroup>(parent);
+        if (result) {
+            return result;
         }
     }
-    return nullptr;
+    return {};
 }
 
 bool DrawProjGroupItem::isAnchor(void) const

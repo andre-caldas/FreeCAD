@@ -350,12 +350,10 @@ void DrawViewPart::buildGeometryObject(TopoDS_Shape&& shape, const gp_Ax2& viewC
     lock->geometryObject.usePolygonHLR(CoarseView.getValue());
     lock->geometryObject.setScrubCount(ScrubCount.getValue());
 
-    lock.moveFromThread();
-
     // Although the "self" variable is not being accessed,
     // it warrants that "this" will not be destructed meanwhile.
-    auto lambda = [self = SharedFromThis(), this, lock = std::move(lock),
-                   shape = std::move(shape), viewCS]() mutable noexcept
+    auto lambda = [self = SharedFromThis(), this,
+                   shape = std::move(shape), viewCS](auto lock) mutable noexcept
     {
         try{
             lock.resumeInNewThread();
@@ -392,8 +390,7 @@ void DrawViewPart::buildGeometryObject(TopoDS_Shape&& shape, const gp_Ax2& viewC
         }
     };
 
-    std::thread{std::move(lambda)}.detach();
-//    std::thread{std::move(lambda)}.join();
+    std::move(lock).startNewThread(std::move(lambda));
 }
 
 //! continue processing after hlr thread completes

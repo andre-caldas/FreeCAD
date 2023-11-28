@@ -196,12 +196,11 @@ void DrawViewDetail::makeDetailShape(TopoDS_Shape&& shape, DrawViewPart* dvp, Dr
     if(!lock) {
         return;
     }
-    lock.moveFromThread();
 
     // Although the "self" variable is not being accessed,
     // it warrants that "this" will not be destructed meanwhile.
-    auto lambda = [self = SharedFromThis(), this, lock = std::move(lock),
-                   shape = std::move(shape), dvp, dvs]() mutable noexcept
+    auto lambda = [self = SharedFromThis(), this,
+                   shape = std::move(shape), dvp, dvs](auto lock) mutable noexcept
     {
         try{
             lock.releaseInNewThread();
@@ -355,8 +354,7 @@ void DrawViewDetail::makeDetailShape(TopoDS_Shape&& shape, DrawViewPart* dvp, Dr
         }
     };
 
-    std::thread{std::move(lambda)}.detach();
-//    std::thread{std::move(lambda)}.join();
+    std::move(lock).startNewThread(std::move(lambda));
 }
 
 void DrawViewDetail::postHlrTasks(void)
