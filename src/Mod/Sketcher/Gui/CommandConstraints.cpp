@@ -2681,7 +2681,6 @@ void horVerActivated(CmdSketcherConstraint* cmd, std::string type)
     // get the needed lists and objects
     const std::vector<std::string>& SubNames = selection[0].getSubNames();
     auto* Obj = static_cast<Sketcher::SketchObject*>(selection[0].getObject());
-    const std::vector<Sketcher::Constraint*>& vals = Obj->Constraints.getValues();
 
     std::vector<int> edgegeoids;
     std::vector<int> pointgeoids;
@@ -2800,8 +2799,9 @@ void horVerApplyConstraint(CmdSketcherConstraint* cmd, std::string type, std::ve
     switch (seqIndex) {
     case 0:// {Edge}
     {
-        // create the constraint
-        const std::vector<Sketcher::Constraint*>& vals = Obj->Constraints.getValues();
+        if (selSeq.empty()) {
+            return;
+        }
 
         int CrvId = selSeq.front().GeoId;
         if (CrvId != -1) {
@@ -3244,6 +3244,10 @@ void CmdSketcherConstrainLock::applyConstraint(std::vector<SelIdPair>& selSeq, i
             // check if the edge already has a Block constraint
             bool pointfixed = false;
 
+            if (selSeq.empty()) {
+                return;
+            }
+
             if (isPointOrSegmentFixed(Obj, selSeq.front().GeoId)) {
                 pointfixed = true;
             }
@@ -3455,6 +3459,10 @@ void CmdSketcherConstrainBlock::applyConstraint(std::vector<SelIdPair>& selSeq, 
 
             // check if the edge already has a Block constraint
             const std::vector<Sketcher::Constraint*>& vals = Obj->Constraints.getValues();
+
+            if (selSeq.empty()) {
+                return;
+            }
 
             if (checkConstraint(vals,
                                 Sketcher::Block,
@@ -9688,7 +9696,7 @@ bool CmdSketcherConstrainSnellsLaw::isActive()
 
 // ======================================================================================
 /*** Creation Mode / Toggle to or from Reference ***/
-DEF_STD_CMD_A(CmdSketcherToggleDrivingConstraint)
+DEF_STD_CMD_AU(CmdSketcherToggleDrivingConstraint)
 
 CmdSketcherToggleDrivingConstraint::CmdSketcherToggleDrivingConstraint()
     : Command("Sketcher_ToggleDrivingConstraint")
@@ -9718,7 +9726,23 @@ CmdSketcherToggleDrivingConstraint::CmdSketcherToggleDrivingConstraint()
     rcCmdMgr.addCommandMode("ToggleDrivingConstraint", "Sketcher_CompConstrainRadDia");
     rcCmdMgr.addCommandMode("ToggleDrivingConstraint", "Sketcher_Dimension");
     rcCmdMgr.addCommandMode("ToggleDrivingConstraint", "Sketcher_CompDimensionTools");
+    rcCmdMgr.addCommandMode("ToggleDrivingConstraint", "Sketcher_ToggleDrivingConstraint");
     // rcCmdMgr.addCommandMode("ToggleDrivingConstraint", "Sketcher_ConstrainSnellsLaw");
+}
+
+void CmdSketcherToggleDrivingConstraint::updateAction(int mode)
+{
+    auto act = getAction();
+    if (act) {
+        switch (static_cast<ConstraintCreationMode>(mode)) {
+        case ConstraintCreationMode::Driving:
+            act->setIcon(Gui::BitmapFactory().iconFromTheme("Sketcher_ToggleConstraint"));
+            break;
+        case ConstraintCreationMode::Reference:
+            act->setIcon(Gui::BitmapFactory().iconFromTheme("Sketcher_ToggleConstraint_Driven"));
+            break;
+        }
+    }
 }
 
 void CmdSketcherToggleDrivingConstraint::activated(int iMsg)
