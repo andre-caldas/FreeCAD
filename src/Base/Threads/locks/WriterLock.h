@@ -175,7 +175,7 @@ public:
 
 private:
     // We use a shared_ptr, so we can keep the lock when setting
-    // MutexHolder::thread
+    // MutexHolder::dedicatedThread
     std::shared_ptr<ExclusiveLock<MutexHolder>> exclusiveLock;
     std::unique_ptr<SharedLock> sharedLock;
 

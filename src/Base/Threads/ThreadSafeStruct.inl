@@ -35,10 +35,20 @@ ThreadSafeStruct<Struct>::ThreadSafeStruct(Args&&... args)
 template<typename Struct>
 ThreadSafeStruct<Struct>::~ThreadSafeStruct()
 {
-    // We join on destruction.
-    // If you don't want to join, use getDedicatedThread().detach().
+    /*
+     * This is very subtle...
+     * Usually, a shared_ptr that holds the structure that holds
+     * this ThreadSafeStruct is passed to the dedicatedThread.
+     * This means that:
+     *
+     * 1. We cannot join() on destruction,
+     * because we might be joining from the thread we want to join to!
+     *
+     * 2. We do not need to join, because the all the lambdas have certainly
+     * finished processing.
+     */
     if (dedicatedThread.joinable()) {
-        dedicatedThread.join();
+        dedicatedThread.detach();
     }
 }
 

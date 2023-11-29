@@ -111,7 +111,11 @@ const std::unordered_set<const MutexPair*>& LockPolicy::getMutexes() const
 
 void LockPolicy::_detachFromThread()
 {
+    if (is_detached) {
+        return;
+    }
     is_detached = true;
+
     if (mutexes.empty()) {
         return;
     }
