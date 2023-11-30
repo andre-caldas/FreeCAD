@@ -340,26 +340,26 @@ void DrawViewPart::buildGeometryObject(TopoDS_Shape&& shape, const gp_Ax2& viewC
 {
     showProgressMessage(getNameInDocument(), "is finding hidden lines");
 
+    GeometryObject go(getNameInDocument(), this);
+
+    go.setIsoCount(IsoCount.getValue());
+    go.isPerspective(Perspective.getValue());
+    go.setFocus(Focus.getValue());
+    go.usePolygonHLR(CoarseView.getValue());
+    go.setScrubCount(ScrubCount.getValue());
+
     auto lock = concurrentData.continueWriting();
     if(!lock) {
         return;
     }
 
-    lock->geometryObject.setIsoCount(IsoCount.getValue());
-    lock->geometryObject.isPerspective(Perspective.getValue());
-    lock->geometryObject.setFocus(Focus.getValue());
-    lock->geometryObject.usePolygonHLR(CoarseView.getValue());
-    lock->geometryObject.setScrubCount(ScrubCount.getValue());
-
     // Although the "self" variable is not being accessed,
     // it warrants that "this" will not be destructed meanwhile.
-    auto lambda = [self = SharedFromThis(), this,
+    auto lambda = [self = SharedFromThis(), this, go = std::move(go),
                    shape = std::move(shape), viewCS](auto lock) mutable noexcept
     {
         try{
-            lock.resumeInNewThread();
-            GeometryObject go{lock->geometryObject};
-            lock.release();
+            lock.releaseInNewThread();
 
                     //the polygon approximation HLR process runs quickly
             go.projectShapeWithPolygonAlgo(shape, viewCS);
