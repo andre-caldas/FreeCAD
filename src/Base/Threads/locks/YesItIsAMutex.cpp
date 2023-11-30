@@ -31,20 +31,17 @@ namespace Base::Threads
 
 void YesItIsAMutex::lock()
 {
-    if(try_lock())
-    {
+    if (try_lock()) {
         return;
     }
-    std::unique_lock lock{released_condition_lock};
+    std::unique_lock lock {released_condition_lock};
     released.wait(lock, std::bind(&YesItIsAMutex::try_lock, this));
 }
 
 bool YesItIsAMutex::try_lock()
 {
-    [[maybe_unused]]
-    std::lock_guard lock{pivot};
-    if(shared_counter > 0 || is_exclusively_locked)
-    {
+    [[maybe_unused]] std::lock_guard lock {pivot};
+    if (shared_counter > 0 || is_exclusively_locked) {
         return false;
     }
     is_exclusively_locked = true;
@@ -53,30 +50,28 @@ bool YesItIsAMutex::try_lock()
 
 void YesItIsAMutex::unlock()
 {
-    [[maybe_unused]]
-    std::lock_guard lock{pivot};
-    assert(is_exclusively_locked);
-    is_exclusively_locked = false;
+    {
+        [[maybe_unused]] std::lock_guard lock {pivot};
+        assert(is_exclusively_locked);
+        is_exclusively_locked = false;
+    }
     released.notify_one();
 }
 
 
 void YesItIsAMutex::lock_shared()
 {
-    if(try_lock_shared())
-    {
+    if (try_lock_shared()) {
         return;
     }
-    std::unique_lock lock{released_condition_lock};
+    std::unique_lock lock {released_condition_lock};
     released.wait(lock, std::bind(&YesItIsAMutex::try_lock_shared, this));
 }
 
 bool YesItIsAMutex::try_lock_shared()
 {
-    [[maybe_unused]]
-    std::lock_guard lock{pivot};
-    if(is_exclusively_locked)
-    {
+    [[maybe_unused]] std::lock_guard lock {pivot};
+    if (is_exclusively_locked) {
         return false;
     }
     ++shared_counter;
@@ -85,14 +80,12 @@ bool YesItIsAMutex::try_lock_shared()
 
 void YesItIsAMutex::unlock_shared()
 {
-    [[maybe_unused]]
-    std::lock_guard lock{pivot};
+    [[maybe_unused]] std::lock_guard lock {pivot};
     assert(shared_counter > 0);
     --shared_counter;
-    if(shared_counter <= 0)
-    {
+    if (shared_counter <= 0) {
         released.notify_one();
     }
 }
 
-} // namespace Base::Threads
+}  // namespace Base::Threads
