@@ -510,7 +510,14 @@ Application::newDocument(const char* Name, const char* UserName, bool createView
 
     // TODO: oldActiveDoc is completely non thread safe.
     auto oldActiveDoc = _pActiveDoc;
-    setActiveDocument(doc);
+    // make sure that the active document is set in case no GUI is up
+    {
+        // TODO: We should call setActiveDocument() instead of doing this by hand.
+        Base::PyGILStateLocker lock;
+        _pActiveDoc = doc;
+        Py::Object active(doc->getPyObject(), true);
+        Py::Module("FreeCAD").setAttr(std::string("ActiveDocument"), active);
+    }
     signalNewDocument(*doc, createView);
 
     // set the UserName after notifying all observers
