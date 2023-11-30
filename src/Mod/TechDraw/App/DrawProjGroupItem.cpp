@@ -143,7 +143,8 @@ void DrawProjGroupItem::postHlrTasks()
 
     // DPGI has no geometry until HLR has finished, and the DPG can not properly
     // AutoDistibute until all its items have geometry.
-    autoPosition();
+// FIXME: Cannot repaint outside main thread. This causes a repaint. :-(
+//    autoPosition();
 
     getPGroup()->reportReady();  // tell the parent DPG we are ready
 }

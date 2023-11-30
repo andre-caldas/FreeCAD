@@ -331,8 +331,9 @@ void DrawViewPart::buildGeometryObject(const TopoDS_Shape& shape, const gp_Ax2& 
     auto lock = concurrentData.startWriting();
     lock.release();
     BRepBuilderAPI_Copy copier(shape);
+    auto new_shape = copier.Shape();
 
-    buildGeometryObject(copier.Shape(), viewCS);
+    buildGeometryObject(std::move(new_shape), viewCS);
 }
 
 void DrawViewPart::buildGeometryObject(TopoDS_Shape&& shape, const gp_Ax2& viewCS)
@@ -446,7 +447,8 @@ void DrawViewPart::postHlrTasks()
     // Sounds like a very complicated way to avoid infinite recursions.
     overrideKeepUpdated(false);
 
-    requestPaint();
+// It seems, this needs to be in the main thread. :-(
+//    requestPaint();
 }
 
 // Run any tasks that need to be done after faces are available
@@ -467,7 +469,8 @@ void DrawViewPart::postFaceExtractionTasks()
         d->recomputeFeature();
     }
 
-    requestPaint();
+// When to call this? Cannot repaint in this thread. :-(
+//    requestPaint();
 }
 
 
@@ -690,7 +693,8 @@ void DrawViewPart::onFacesFinished()
     // Now we can recompute Dimensions and do other tasks possibly depending on Face extraction
     postFaceExtractionTasks();
 
-    requestPaint();
+// Cannot repaint outside the main thread. :-(
+//    requestPaint();
 }
 
 //retrieve all the face hatches associated with this dvp

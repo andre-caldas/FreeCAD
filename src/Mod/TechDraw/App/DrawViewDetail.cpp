@@ -164,6 +164,9 @@ App::DocumentObjectExecReturn* DrawViewDetail::execute()
     // Mark the start for when buildGeometryObject() is called.
     DrawViewPart::concurrentData.startWriting();
     auto lock = concurrentData.continueWriting();
+    if(!lock) {
+        return StdReturn;
+    }
     lock.release();
 
     makeDetailShape(std::move(shape), dvp, dvs);
