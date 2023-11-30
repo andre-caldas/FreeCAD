@@ -52,12 +52,14 @@ class ThrowingSharedPtr: private std::shared_ptr<T>
 public:
     using value_type = T;
     using std::shared_ptr<T>::shared_ptr;
+    ThrowingSharedPtr(const std::shared_ptr<T>& shared);
+    ThrowingSharedPtr(std::shared_ptr<T>&& shared);
 
     constexpr T* operator->();
     constexpr T& operator*() &;
 
-    using get;
-    using operator bool;
+    using std::shared_ptr<T>::get;
+    using std::shared_ptr<T>::operator bool;
 
     operator std::shared_ptr<T>() const;
 };

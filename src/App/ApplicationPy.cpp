@@ -316,7 +316,7 @@ PyObject* Application::sCloseDocument(PyObject * /*self*/, PyObject *args)
     if (!PyArg_ParseTuple(args, "s", &pstr))
         return nullptr;
 
-    auto doc = GetApplication().getDocumentOrNull(pstr);
+    auto doc = GetApplication().getDocumentNew(pstr);
     if (!doc) {
         PyErr_Format(PyExc_NameError, "Unknown document '%s'", pstr);
         return nullptr;
@@ -340,7 +340,7 @@ PyObject* Application::sSaveDocument(PyObject * /*self*/, PyObject *args)
     if (!PyArg_ParseTuple(args, "s", &pDoc))
         return nullptr;
 
-    auto doc = GetApplication().getDocumentOrNull(pDoc);
+    auto doc = GetApplication().getDocumentNew(pDoc);
     if (doc) {
         if (!doc->save()) {
             PyErr_Format(Base::PyExc_FC_GeneralError, "Cannot save document '%s'", pDoc);
@@ -376,7 +376,7 @@ PyObject* Application::sGetDocument(PyObject * /*self*/, PyObject *args)
     if (!PyArg_ParseTuple(args, "s", &pstr))
         return nullptr;
 
-    auto doc = GetApplication().getDocumentOrNull(pstr);
+    auto doc = GetApplication().getDocumentNew(pstr);
     if (!doc) {
         PyErr_Format(PyExc_NameError, "Unknown document '%s'", pstr);
         return nullptr;

@@ -80,7 +80,7 @@ void DrawProjGroupItem::onChanged(const App::Property *prop)
 {
     if ((prop == &X) ||
         (prop == &Y)) {
-        auto parent = getPGroupOrNull();
+        auto parent = getPGroup();
         if (parent) {
             parent->touch(false);
         }
@@ -98,7 +98,7 @@ bool DrawProjGroupItem::isLocked(void) const
 
 bool DrawProjGroupItem::showLock(void) const
 {
-    auto parent = getPGroupOrNull();
+    auto parent = getPGroup();
     bool parentLock = false;
     if (parent) {
         parentLock = parent->LockPosition.getValue();
@@ -155,7 +155,7 @@ void DrawProjGroupItem::autoPosition()
     }
 
     Base::Vector3d newPos;
-    auto parent = getPGroupOrNull();
+    auto parent = getPGroup();
     if (parent && parent->AutoDistribute.getValue()) {
         newPos = parent->getXYPosition(Type.getValueAsString());
         X.setValue(newPos.x);
@@ -176,16 +176,7 @@ void DrawProjGroupItem::onDocumentRestored()
     }
 }
 
-std::shared_ptr<DrawProjGroup> DrawProjGroupItem::getPGroup() const
-{
-    auto result = getPGroupOrNull();
-    if(!result) {
-        throw Base::RuntimeError("PGroup does not exist anymore!");
-    }
-    return result;
-}
-
-std::shared_ptr<DrawProjGroup> DrawProjGroupItem::getPGroupOrNull() const
+Base::Threads::ThrowingSharedPtr<DrawProjGroup> DrawProjGroupItem::getPGroup() const
 {
     auto parents = getInListNew();
     for (const auto& parent : parents) {
@@ -199,7 +190,7 @@ std::shared_ptr<DrawProjGroup> DrawProjGroupItem::getPGroupOrNull() const
 
 bool DrawProjGroupItem::isAnchor(void) const
 {
-    auto parent = getPGroupOrNull();
+    auto parent = getPGroup();
     if (parent && (parent->getAnchor() == this)) {
         return true;
     }
@@ -314,7 +305,7 @@ double DrawProjGroupItem::getRotateAngle()
 
 double DrawProjGroupItem::getScale(void) const
 {
-    auto parent = getPGroupOrNull();
+    auto parent = getPGroup();
     if (parent) {
         double result = parent->getScale();
         if (!(result > 0.0)) {
@@ -327,7 +318,7 @@ double DrawProjGroupItem::getScale(void) const
 
 void DrawProjGroupItem::unsetupObject()
 {
-    auto parent = getPGroupOrNull();
+    auto parent = getPGroup();
     if (!parent || !parent->hasProjection(Type.getValueAsString())) {
         DrawViewPart::unsetupObject();
         return;
@@ -347,7 +338,7 @@ void DrawProjGroupItem::unsetupObject()
 //DPGIs have DPG as parent, not Page, so we need to ask the DPG how many Pages own it.
 int DrawProjGroupItem::countParentPages() const
 {
-    auto dpg = getPGroupOrNull();
+    auto dpg = getPGroup();
     if (dpg) {
         return dpg->countParentPages();
     }
@@ -356,7 +347,7 @@ int DrawProjGroupItem::countParentPages() const
 
 DrawPage* DrawProjGroupItem::findParentPage() const
 {
-    auto dpg = getPGroupOrNull();
+    auto dpg = getPGroup();
     if (dpg) {
         return dpg->findParentPage();
     }
@@ -365,7 +356,7 @@ DrawPage* DrawProjGroupItem::findParentPage() const
 
 std::vector<DrawPage*> DrawProjGroupItem::findAllParentPages() const
 {
-    auto dpg = getPGroupOrNull();
+    auto dpg = getPGroup();
     if (dpg) {
         return dpg->findAllParentPages();
     }

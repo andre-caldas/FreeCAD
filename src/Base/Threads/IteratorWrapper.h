@@ -40,41 +40,74 @@ public:
     using pointer = typename GetReference::pointer;
     using reference = typename GetReference::reference;
 
-    IteratorWrapper(const IteratorWrapper& other) : it(other.it) {}
-    IteratorWrapper(const ItType& it) : it(it) {}
+    IteratorWrapper(const IteratorWrapper& other)
+        : it(other.it)
+    {}
+    IteratorWrapper(ItType it)
+        : it(std::move(it))
+    {}
 
     IteratorWrapper& operator=(const IteratorWrapper& other)
-    {it = other.it; return *this;}
+    {
+        it = other.it;
+        return *this;
+    }
     IteratorWrapper& operator=(const ItType& other)
-    {it = other; return *this;}
+    {
+        it = other;
+        return *this;
+    }
 
     constexpr bool operator==(const IteratorWrapper& other) const
-    {return it == other.it;}
+    {
+        return it == other.it;
+    }
     constexpr bool operator!=(const IteratorWrapper& other) const
-    {return it != other.it;}
+    {
+        return it != other.it;
+    }
 
     constexpr bool operator==(const ItType& other) const
-    {return it == other;}
+    {
+        return it == other;
+    }
     constexpr bool operator!=(const ItType& other) const
-    {return it != other;}
+    {
+        return it != other;
+    }
 
     IteratorWrapper& operator++()
-    {++it; return *this;}
+    {
+        ++it;
+        return *this;
+    }
     IteratorWrapper operator++(int)
-    {IteratorWrapper result(*this); ++it; return result;}
+    {
+        IteratorWrapper result(*this);
+        ++it;
+        return result;
+    }
 
     auto& operator*() const
-    {return GetReference{it}();}
+    {
+        return GetReference {}(it);
+    }
     auto* operator->() const
-    {return &GetReference{it}();}
+    {
+        return &GetReference {}(it);
+    }
 
-    ItType& getIterator() {return it;}
+    ItType& getIterator()
+    {
+        return it;
+    }
 
 private:
     ItType it;
 };
 
-namespace ReferenceGetter {
+namespace ReferenceGetter
+{
 
 template<typename, typename ItType>
 struct Identity
@@ -83,9 +116,11 @@ struct Identity
     using pointer = typename ItType::pointer;
     using reference = typename ItType::reference;
 
-    Identity(const ItType& it) : it(it) {}
-    auto& operator()() {return *it;}
-    const ItType& it;
+    template<typename It>
+    auto& operator()(const It& it)
+    {
+        return *it;
+    }
 };
 
 template<typename ContainerType, typename ItType>
@@ -101,9 +136,11 @@ struct GetSecond
     using pointer = std::conditional<is_const_v, const value_type*, value_type*>;
     using reference = std::conditional<is_const_v, const value_type&, value_type&>;
 
-    GetSecond(const ItType& it) : it(it) {}
-    reference operator()() {return it->second;}
-    const ItType& it;
+    template<typename It>
+    reference operator()(const It& it)
+    {
+        return it->second;
+    }
 };
 
 template<typename, typename ItType>
@@ -113,25 +150,24 @@ struct GetSecondPointerAsReference
 
     using pointer = typename it_value_type::second_type;
     using reference = std::remove_pointer_t<pointer>&;
-    using value_type =  std::remove_cv_t<std::remove_pointer_t<pointer>>;
+    using value_type = std::remove_cv_t<std::remove_pointer_t<pointer>>;
 
-    GetSecondPointerAsReference(const ItType& it) : it(it) {}
-    reference operator()() {return *it->second;}
-    const ItType& it;
+    template<typename It>
+    reference operator()(const It& it)
+    {
+        return *it->second;
+    }
 };
 
-} //namespace: ReferenceGetter
+}  // namespace ReferenceGetter
 
 template<typename ContainerType, typename ItType>
-using IteratorSecond =
-    IteratorWrapper<ItType,
-                    ReferenceGetter::GetSecond<ContainerType, ItType>>;
+using IteratorSecond = IteratorWrapper<ItType, ReferenceGetter::GetSecond<ContainerType, ItType>>;
 
 template<typename ContainerType, typename ItType>
 using IteratorSecondPtrAsRef =
-    IteratorWrapper<ItType,
-                    ReferenceGetter::GetSecondPointerAsReference<ContainerType, ItType>>;
+    IteratorWrapper<ItType, ReferenceGetter::GetSecondPointerAsReference<ContainerType, ItType>>;
 
-} //namespace ::Threads
+}  // namespace Base::Threads
 
-#endif // BASE_Threads_IteratorWrapper_H
+#endif  // BASE_Threads_IteratorWrapper_H

@@ -29,6 +29,16 @@ namespace Base::Threads
 {
 
 template<typename T>
+ThrowingSharedPtr<T>::ThrowingSharedPtr(const std::shared_ptr<T>& shared)
+    : std::shared_ptr<T>(shared)
+{}
+
+template<typename T>
+ThrowingSharedPtr<T>::ThrowingSharedPtr(std::shared_ptr<T>&& shared)
+    : std::shared_ptr<T>(std::move(shared))
+{}
+
+template<typename T>
 constexpr T* ThrowingSharedPtr<T>::operator->()
 {
     if (!*this) {

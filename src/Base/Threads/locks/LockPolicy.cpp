@@ -122,6 +122,7 @@ void LockPolicy::_detachFromThread()
     isExecutingLockFree = false;
 
     for (auto mutex : mutexes) {
+        assert(threadExclusiveMutexes.count(mutex) || threadNonExclusiveMutexes.count(mutex));
         threadExclusiveMutexes.erase(mutex);
         threadNonExclusiveMutexes.erase(mutex);
         assert(!threadMutexLayers.empty());
@@ -199,6 +200,7 @@ void LockPolicy::_processLock(bool is_exclusive, bool is_lock_free)
 
         // Lock everything that was requested.
         threadMutexLayers.push(mutexes);
+        assert(threadMutexLayers.size() == 1);
         isLayerExclusive.push(is_exclusive);
         assert(isLayerExclusive.size() == threadMutexLayers.size());
         if (is_exclusive) {

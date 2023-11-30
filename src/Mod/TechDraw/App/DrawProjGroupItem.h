@@ -25,6 +25,7 @@
 
 #include <gp_Ax2.hxx>
 
+#include <Base/Threads/ThrowingSharedPtr.h>
 #include <App/DocumentObject.h>
 #include <App/PropertyStandard.h>
 #include <Mod/TechDraw/TechDrawGlobal.h>
@@ -66,8 +67,7 @@ public:
 
     void postHlrTasks() override;
 
-    std::shared_ptr<DrawProjGroup> getPGroup() const;
-    std::shared_ptr<DrawProjGroup> getPGroupOrNull() const;
+    Base::Threads::ThrowingSharedPtr<DrawProjGroup> getPGroup() const;
 
     double getRotateAngle();
     Base::Vector3d getXDirection() const override;

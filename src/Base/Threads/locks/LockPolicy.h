@@ -189,6 +189,7 @@ public:
     auto operator->() const;
 
     void release();
+    [[maybe_unused]] auto detachFromThread();
 
 protected:
     // clang-format off
@@ -205,8 +206,12 @@ private:
      * and lock on construction and unlock on destruction.
      * But, unfortunately, std::lock needs two or more mutexes,
      * and we do not want the code full of ifs.
+     *
+     * We use a shared_ptr because when a new thread is created,
+     * we want them both to hold the lock, while we store the new thread information:
+     * the std::thread instance.
      */
-    std::unique_ptr<locks_t> locks;
+    std::shared_ptr<locks_t> locks;
 
     FirstMutexHolder& firstMutexHolder;
 };

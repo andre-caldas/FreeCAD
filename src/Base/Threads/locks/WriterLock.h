@@ -174,9 +174,7 @@ public:
     operator bool() const;
 
 private:
-    // We use a shared_ptr, so we can keep the lock when setting
-    // MutexHolder::dedicatedThread
-    std::shared_ptr<ExclusiveLock<MutexHolder>> exclusiveLock;
+    std::unique_ptr<ExclusiveLock<MutexHolder>> exclusiveLock;
     std::unique_ptr<SharedLock> sharedLock;
 
     MutexHolder& mutexHolder;
@@ -207,7 +205,7 @@ private:
      *
      * @see resumeFromThread().
      */
-    [[maybe_unused]] std::shared_ptr<ExclusiveLock<MutexHolder>> moveFromThread();
+    [[maybe_unused]] auto moveFromThread();
 };
 
 }  // namespace Base::Threads

@@ -126,7 +126,7 @@ private:
     std::unordered_map<const Record*, std::unique_ptr<Record>> data;
 
     /// @brief Incremented on every insertion.
-    std::atomic_long counter;
+    std::atomic_long counter {0};
 
     /**
      * @brief Items oredered (in principle) by insetion order.

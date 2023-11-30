@@ -48,21 +48,21 @@ public:
     constexpr const T&& operator*() const&&;
     constexpr T&& operator*() &&;
 
-    using operator=;
-    using operator bool;
-    using emplace;
-    using has_value;
-    using reset;
-    using swap;
-    using value;
-    using value_or;
+    using std::optional<T>::operator=;
+    using std::optional<T>::operator bool;
+    using std::optional<T>::emplace;
+    using std::optional<T>::has_value;
+    using std::optional<T>::reset;
+    using std::optional<T>::swap;
+    using std::optional<T>::value;
+    using std::optional<T>::value_or;
 
-    using operator==;
-    using operator!=;
-    using operator<;
-    using operator<=;
-    using operator>;
-    using operator>=;
+    using std::optional<T>::operator==;
+    using std::optional<T>::operator!=;
+    using std::optional<T>::operator<;
+    using std::optional<T>::operator<=;
+    using std::optional<T>::operator>;
+    using std::optional<T>::operator>=;
 };
 
 }  // namespace Base::Threads

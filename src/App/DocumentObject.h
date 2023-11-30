@@ -30,6 +30,7 @@
 #include <App/PropertyLinks.h>
 #include <App/PropertyStandard.h>
 #include <Base/SmartPtrPy.h>
+#include <Base/Threads/ThrowingSharedPtr.h>
 #include <Base/Threads/ThreadSafeStruct.h>
 #include <Base/Threads/common_records/WeakPtrRecord.h>
 
@@ -154,17 +155,10 @@ public:
     Document* getDocument() const;
     /**
      * @brief Gets the document that owns this object.
-     * @throws RuntimeError when the object is not owned.
      * @return A shared_ptr to the @class Document instance.
      * @todo Rename this to getDocument() and eliminate the old getDocument().
      */
-    std::shared_ptr<Document> getDocumentNew() const;
-    /**
-     * @brief Gets the document that owns this object.
-     * @return A (possibly empty) shared_ptr to the @class Document instance.
-     * @attention The caller is responsible for checking the validity of the resulting pointer.
-     */
-    std::shared_ptr<Document> getDocumentOrNull() const;
+    Base::Threads::ThrowingSharedPtr<Document> getDocumentNew() const;
 
     /** Set the property touched -> changed, cause recomputation in Update()
      */

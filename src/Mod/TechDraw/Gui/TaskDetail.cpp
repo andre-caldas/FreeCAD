@@ -394,7 +394,7 @@ void TaskDetail::onHighlightMoved(QPointF dragEnd)
     DrawViewPart* dvp = getBaseFeat();
     DrawProjGroupItem* dpgi = dynamic_cast<DrawProjGroupItem*>(dvp);
     if (dpgi) {
-        auto dpg = dpgi->getPGroupOrNull();
+        auto dpg = dpgi->getPGroup();
         if (!dpg) {
             Base::Console().Message("TD::getAnchorScene - projection group is confused\n");
             //TODO::throw something.
@@ -519,7 +519,7 @@ QPointF TaskDetail::getAnchorScene()
         scale = dvp->getScale();
     } else {                       //part of projection group
 
-        auto dpg = dpgi->getPGroupOrNull();
+        auto dpg = dpgi->getPGroup();
         if (!dpg) {
             Base::Console().Message("TD::getAnchorScene - projection group is confused\n");
             //TODO::throw something.

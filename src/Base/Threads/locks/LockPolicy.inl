@@ -97,7 +97,7 @@ ExclusiveLock<FirstMutexHolder, MutexHolder...>::ExclusiveLock(bool is_lock_free
          * But there is only the option to list all mutexes at compile time.
          * Fortunately, mutexes = {container.getMutexPtr()...}.
          */
-        locks = std::make_unique<locks_t>(MutexPairPointer {first_holder}.getPair()->mutex,
+        locks = std::make_shared<locks_t>(MutexPairPointer {first_holder}.getPair()->mutex,
                                           MutexPairPointer {holder}.getPair()->mutex...);
     }
 }
@@ -128,6 +128,13 @@ template<typename FirstMutexHolder, typename... MutexHolder>
 void ExclusiveLock<FirstMutexHolder, MutexHolder...>::release()
 {
     locks.reset();
+}
+
+template<typename FirstMutexHolder, typename... MutexHolder>
+auto ExclusiveLock<FirstMutexHolder, MutexHolder...>::detachFromThread()
+{
+    LockPolicy::detachFromThread();
+    return locks;
 }
 
 }  // namespace Base::Threads

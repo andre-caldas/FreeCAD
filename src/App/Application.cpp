@@ -565,23 +565,14 @@ void Application::closeAllDocuments()
 
 Document* Application::getDocument(const char* Name) const
 {
-    return getDocumentOrNull(Name).get();
+    return getDocumentNew(Name).get();
 }
 
-std::shared_ptr<Document> Application::getDocumentNew(const char* Name) const
-{
-    auto doc = getDocumentOrNull(Name);
-    if(!doc) {
-        throw Base::RuntimeError(std::string("Document not found: ") + Name + ".");
-    }
-    return doc;
-}
-
-std::shared_ptr<Document> Application::getDocumentOrNull(const char* Name) const
+Base::Threads::ThrowingSharedPtr<Document> Application::getDocumentNew(const char* Name) const
 {
     auto pos = DocMap.find(Name);
     if (pos == DocMap.end()) {
-        return nullptr;
+        return {};
     }
     return pos->second;
 }

@@ -31,6 +31,7 @@
 
 #include <Base/Observer.h>
 #include <Base/Parameter.h>
+#include <Base/Threads/ThrowingSharedPtr.h>
 
 // forward declarations
 using PyObject = struct _object;
@@ -134,12 +135,7 @@ public:
     /// getDocumentNull(). After that, eliminate getDocument() and replace it with getDocumentNew().
     Document* getDocument(const char* Name) const;
     /// Retrieve a named document
-    /// @throw Base::RuntimeError() if document not found.
-    /// @return A valid std::shared_ptr.
-    std::shared_ptr<Document> getDocumentNew(const char* Name) const;
-    /// Retrieve a named document
-    /// @return A possibly invalid std::shared_ptr.
-    std::shared_ptr<Document> getDocumentOrNull(const char* Name) const;
+    Base::Threads::ThrowingSharedPtr<Document> getDocumentNew(const char* Name) const;
 
     /// Path matching mode for getDocumentByPath()
     enum class PathMatchMode {

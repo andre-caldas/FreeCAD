@@ -149,7 +149,7 @@ void WriterLock<MutexHolder>::markStart()
 }
 
 template<typename MutexHolder>
-std::shared_ptr<ExclusiveLock<MutexHolder>> WriterLock<MutexHolder>::moveFromThread()
+auto WriterLock<MutexHolder>::moveFromThread()
 {
     if (!exclusiveLock) {
         assert(false);
@@ -160,8 +160,7 @@ std::shared_ptr<ExclusiveLock<MutexHolder>> WriterLock<MutexHolder>::moveFromThr
     // Prevent this thread from hijacking back the lock.
     // Makes bool(lock) evaluate to false;
     mutexHolder.activeThread = std::thread::id {};
-    exclusiveLock->detachFromThread();
-    return exclusiveLock;
+    return exclusiveLock->detachFromThread();
 }
 
 template<typename MutexHolder>

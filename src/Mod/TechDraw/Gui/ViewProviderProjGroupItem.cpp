@@ -126,7 +126,7 @@ bool ViewProviderProjGroupItem::onDelete(const std::vector<std::string> &)
 
     // get the item and group
     TechDraw::DrawProjGroupItem* dpgi = static_cast<TechDraw::DrawProjGroupItem*>(getViewObject());
-    auto dpg = dpgi->getPGroupOrNull();
+    auto dpg = dpgi->getPGroup();
     // get the projection
     TechDraw::DrawProjGroupItem* proj = getObject();
     // check if it is the anchor projection
