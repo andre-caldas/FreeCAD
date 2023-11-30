@@ -222,7 +222,7 @@ void DrawProjGroup::reportReady()
 {
     //all the secondary views are ready so we can now figure out alignment
     if (AutoDistribute.getValue()) {
-        recomputeFeature();
+//        recomputeFeature();
     }
 }
 
