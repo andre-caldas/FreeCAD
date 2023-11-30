@@ -62,8 +62,10 @@ template<typename Struct>
 auto ThreadSafeStruct<Struct>::continueReading()
 {
     w_lock_t lock {*this, true};
-    lock.release();
-    lock.resumeReading();
+    if (lock) {
+        lock.release();
+        lock.resumeReading();
+    }
     return lock;
 }
 
