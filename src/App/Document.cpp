@@ -96,6 +96,7 @@ recompute path. Also, it enables more complicated dependencies beyond trees.
 #include <Base/Stream.h>
 #include <Base/Accessor/ReferenceToObject.h>
 #include <Base/Accessor/Exception.h>
+#include <Base/UnitsApi.h>
 
 #include "Document.h"
 #include "private/DocumentP.h"
@@ -825,6 +826,18 @@ Document::Document(const char* documentName)
                       0,
                       Prop_None,
                       "Additional tag to save the name of the company");
+    ADD_PROPERTY_TYPE(UnitSystem, (""), 0, Prop_None, "Unit system to use in this project");
+    // Set up the possible enum values for the unit system
+    int num = static_cast<int>(Base::UnitSystem::NumUnitSystemTypes);
+    std::vector<std::string> enumValsAsVector;
+    for (int i = 0; i < num; i++) {
+        QString item = Base::UnitsApi::getDescription(static_cast<Base::UnitSystem>(i));
+        enumValsAsVector.emplace_back(item.toStdString());
+    }
+    UnitSystem.setEnums(enumValsAsVector);
+    // Get the preferences/General unit system as the default for a new document
+    ParameterGrp::handle hGrpu = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Units");
+    UnitSystem.setValue(hGrpu->GetInt("UserSchema", 0));
     ADD_PROPERTY_TYPE(Comment, (""), 0, Prop_None, "Additional tag to save a comment");
     ADD_PROPERTY_TYPE(Meta, (), 0, Prop_None, "Map with additional meta information");
     ADD_PROPERTY_TYPE(Material, (), 0, Prop_None, "Map with material properties");
@@ -837,10 +850,14 @@ Document::Document(const char* documentName)
     auto paramGrp {App::GetApplication().GetParameterGroupByPath(
         "User parameter:BaseApp/Preferences/Document")};
     auto index = static_cast<int>(paramGrp->GetInt("prefLicenseType", 0));
-    const char* name = App::licenseItems.at(index).at(App::posnOfFullName);
-    const char* url = App::licenseItems.at(index).at(App::posnOfUrl);
-    std::string licenseUrl = (paramGrp->GetASCII("prefLicenseUrl", url));
-
+    const char* name = "";
+    const char* url = "";
+    std::string licenseUrl = "";
+    if (index >= 0 && index < App::countOfLicenses) {
+        name = App::licenseItems.at(index).at(App::posnOfFullName);
+        url = App::licenseItems.at(index).at(App::posnOfUrl);
+        licenseUrl = (paramGrp->GetASCII("prefLicenseUrl", url));
+    }
     ADD_PROPERTY_TYPE(License, (name), 0, Prop_None, "License string of the Item");
     ADD_PROPERTY_TYPE(
         LicenseURL, (licenseUrl.c_str()), 0, Prop_None, "URL to the license text/contract");
@@ -1121,7 +1138,7 @@ void Document::exportObjects(const std::vector<App::DocumentObject*>& obj, std::
 
     if(FC_LOG_INSTANCE.isEnabled(FC_LOGLEVEL_LOG)) {
         for(auto o : obj) {
-            if(o && o->getNameInDocument()) {
+            if(o && o->isAttachedToDocument()) {
                 FC_LOG("exporting " << o->getFullName());
                 if (!o->getPropertyByName("_ObjectUUID")) {
                     auto prop = static_cast<PropertyUUID*>(o->addDynamicProperty(
@@ -1487,7 +1504,7 @@ Document::importObjects(Base::XMLReader& reader)
 
     std::vector<App::DocumentObject*> objs = readObjects(reader);
     for(auto o : objs) {
-        if(o && o->getNameInDocument()) {
+        if(o && o->isAttachedToDocument()) {
             o->setStatus(App::ObjImporting,true);
             FC_LOG("importing " << o->getFullName());
             if (auto propUUID = Base::freecad_dynamic_cast<PropertyUUID>(
@@ -1514,7 +1531,7 @@ Document::importObjects(Base::XMLReader& reader)
     signalFinishImportObjects(objs);
 
     for(auto o : objs) {
-        if(o && o->getNameInDocument())
+        if(o && o->isAttachedToDocument())
             o->setStatus(App::ObjImporting,false);
     }
 
@@ -1712,7 +1729,7 @@ private:
         Base::FileInfo tmp(sourcename);
         if (!tmp.renameFile(targetname.c_str())) {
             throw Base::FileException(
-                "Cannot rename tmp save file to project file", targetname);
+                "Cannot rename tmp save file to project file", Base::FileInfo(targetname));
         }
     }
     void applyTimeStamp(const std::string& sourcename, const std::string& targetname) {
@@ -2420,7 +2437,7 @@ static void _buildDependencyList(const std::vector<App::DocumentObject*> &object
         while(!objs.empty()) {
             auto obj = objs.front();
             objs.pop_front();
-            if(!obj || !obj->getNameInDocument())
+            if(!obj || !obj->isAttachedToDocument())
                 continue;
 
             auto it = outLists.find(obj);
@@ -2447,7 +2464,7 @@ static void _buildDependencyList(const std::vector<App::DocumentObject*> &object
     if(objectMap && depList) {
         for (const auto &v : outLists) {
             for(auto obj : v.second) {
-                if(obj && obj->getNameInDocument())
+                if(obj && obj->isAttachedToDocument())
                     add_edge((*objectMap)[v.first],(*objectMap)[obj],*depList);
             }
         }
@@ -2842,7 +2859,7 @@ int Document::recompute(const std::vector<App::DocumentObject*> &objs, bool forc
             FC_LOG("Recompute pass " << passes);
             for (; idx < topoSortedObjects.size(); ++idx) {
                 auto obj = topoSortedObjects[idx];
-                if(!obj->getNameInDocument() || filter.find(obj)!=filter.end())
+                if(!obj->isAttachedToDocument() || filter.find(obj)!=filter.end())
                     continue;
                 // ask the object if it should be recomputed
                 bool doRecompute = false;
@@ -2899,7 +2916,7 @@ int Document::recompute(const std::vector<App::DocumentObject*> &objs, bool forc
     FC_TIME_LOG(t2, "Recompute");
 
     for(auto obj : topoSortedObjects) {
-        if(!obj->getNameInDocument())
+        if(!obj->isAttachedToDocument())
             continue;
         obj->setStatus(ObjectStatus::PendingRecompute,false);
         obj->setStatus(ObjectStatus::Recompute2,false);
@@ -3060,8 +3077,8 @@ std::vector<App::DocumentObject*> DocumentP::topologicalSort(const std::vector<A
 
     for (auto objectIt : objects) {
         // We now support externally linked objects
-        // if(!obj->getNameInDocument() || obj->getDocument()!=this)
-        if(!objectIt->getNameInDocument())
+        // if(!obj->isAttachedToDocument() || obj->getDocument()!=this)
+        if(!objectIt->isAttachedToDocument())
             continue;
         //we need inlist with unique entries
         auto in = objectIt->getInList();
@@ -3175,7 +3192,7 @@ bool Document::recomputeFeature(DocumentObject* Feat, bool recursive)
     d->clearRecomputeLog(Feat);
 
     // verify that the feature is (active) part of the document
-    if (Feat->getNameInDocument()) {
+    if (Feat->isAttachedToDocument()) {
         if(recursive) {
             bool hasError = false;
             recompute({Feat},true,&hasError);

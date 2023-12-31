@@ -36,10 +36,13 @@ YZ, and XZ planes.
 
 import math
 import lazy_loader.lazy_loader as lz
+from PySide.QtCore import QT_TRANSLATE_NOOP
 
 import FreeCAD
 import DraftVecUtils
 from FreeCAD import Vector
+from draftutils import gui_utils
+from draftutils import params
 from draftutils import utils
 from draftutils.messages import _wrn
 from draftutils.translate import translate
@@ -549,21 +552,21 @@ class PlaneBase:
                                                      force_projection)
 
     def set_to_top(self, offset=0):
-        """Sets the WP to the top position with an optional offset."""
+        """Set the WP to the top position with an optional offset."""
         self.u = Vector(1, 0, 0)
         self.v = Vector(0, 1, 0)
         self.axis = Vector(0, 0, 1)
         self.position = self.axis * offset
 
     def set_to_front(self, offset=0):
-        """Sets the WP to the front position with an optional offset."""
+        """Set the WP to the front position with an optional offset."""
         self.u = Vector(1, 0, 0)
         self.v = Vector(0, 0, 1)
         self.axis = Vector(0, -1, 0)
         self.position = self.axis * offset
 
     def set_to_side(self, offset=0):
-        """Sets the WP to the right side position with an optional offset."""
+        """Set the WP to the right side position with an optional offset."""
         self.u = Vector(0, 1, 0)
         self.v = Vector(0, 0, 1)
         self.axis = Vector(1, 0, 0)
@@ -615,15 +618,16 @@ class Plane(PlaneBase):
         Defaults to Vector(0, 0, 0).
         Vector for the `position` attribute (origin).
 
+    weak: bool, optional
+        Defaults to `True`.
+        If `True` the WP is in "Auto" mode and will adapt to the current view.
+
     Note that the u, v and w vectors are not checked for validity.
 
     Other attributes
     ----------------
-    weak: bool
-        A weak WP is in "Auto" mode and will adapt to the current view.
-
     stored: None/list
-        A placeholder for a stored state.
+        Placeholder for a stored state.
     """
 
     def __init__(self,
@@ -881,7 +885,7 @@ class Plane(PlaneBase):
         """Set up the working plane if it exists but is undefined.
 
         If `direction` and `point` are present,
-        it calls `alignToPointAndAxis(point, direction, 0, upvec)`.
+        it calls `align_to_point_and_axis(point, direction, 0, upvec)`.
 
         Otherwise, it gets the camera orientation to define
         a working plane that is perpendicular to the current view,
@@ -896,40 +900,26 @@ class Plane(PlaneBase):
 
         Parameters
         ----------
-        direction : Base::Vector3, optional
+        direction: Base.Vector, optional
             It defaults to `None`. It is the new `axis` of the plane.
-        point : Base::Vector3, optional
+        point: Base.Vector, optional
             It defaults to `None`. It is the new `position` of the plane.
-        upvec : Base::Vector3, optional
+        upvec: Base.Vector, optional
             It defaults to `None`. It is the new `v` orientation of the plane.
-        force : Bool
+        force: bool
             If True, it sets the plane even if the plane is not in weak mode
-
-        To do
-        -----
-        When the interface is not loaded it should fail and print
-        a message, `_wrn()`.
         """
         if self.weak or force:
-            if direction and point:
-                self.alignToPointAndAxis(point, direction, 0, upvec)
+            if direction is not None and point is not None:
+                super().align_to_point_and_axis(point, direction, 0, upvec)
             elif FreeCAD.GuiUp:
                 try:
-                    import FreeCADGui
-                    from pivy import coin
-                    view = FreeCADGui.ActiveDocument.ActiveView
-                    camera = view.getCameraNode()
-                    rot = camera.getField("orientation").getValue()
-                    coin_up = coin.SbVec3f(0, 1, 0)
-                    upvec = Vector(rot.multVec(coin_up).getValue())
-                    vdir = view.getViewDirection()
-                    # don't change the plane if the axis and v vector
-                    # are already correct:
-                    tol = Part.Precision.angular()
-                    if abs(math.pi - vdir.getAngle(self.axis)) > tol \
-                            or abs(math.pi - upvec.getAngle(self.v)) > tol:
-                        self.alignToPointAndAxis(Vector(0, 0, 0),
-                                                 vdir.negative(), 0, upvec)
+                    view = gui_utils.get_3d_view()
+                    if view is not None:
+                        cam = view.getCameraNode()
+                        rot = FreeCAD.Rotation(*cam.getField("orientation").getValue().getValue())
+                        self.u, self.v, self.axis = self._axes_from_view_rotation(rot)
+                        self.position = Vector()
                 except Exception:
                     pass
             if force:
@@ -938,17 +928,17 @@ class Plane(PlaneBase):
                 self.weak = True
 
     def reset(self):
-        """Reset the plane.
+        """Reset the WP.
 
-        Set `weak` to `True`.
+        Sets the `weak` attribute to `True`.
         """
         self.weak = True
 
     def setTop(self):
-        """sets the WP to top position and updates the GUI"""
-        self.alignToPointAndAxis(FreeCAD.Vector(0.0, 0.0, 0.0), FreeCAD.Vector(0, 0, 1), 0.0)
+        """Set the WP to the top position and updates the GUI."""
+        super().set_to_top()
+        self.weak = False
         if FreeCAD.GuiUp:
-            import FreeCADGui
             from draftutils.translate import translate
             if hasattr(FreeCADGui,"Snapper"):
                 FreeCADGui.Snapper.setGrid()
@@ -956,10 +946,10 @@ class Plane(PlaneBase):
                 FreeCADGui.draftToolBar.wplabel.setText(translate("draft", "Top"))
 
     def setFront(self):
-        """sets the WP to front position and updates the GUI"""
-        self.alignToPointAndAxis(FreeCAD.Vector(0.0, 0.0, 0.0), FreeCAD.Vector(0, 1, 0), 0.0)
+        """Set the WP to the front position and updates the GUI."""
+        super().set_to_front()
+        self.weak = False
         if FreeCAD.GuiUp:
-            import FreeCADGui
             from draftutils.translate import translate
             if hasattr(FreeCADGui,"Snapper"):
                 FreeCADGui.Snapper.setGrid()
@@ -967,10 +957,17 @@ class Plane(PlaneBase):
                 FreeCADGui.draftToolBar.wplabel.setText(translate("draft", "Front"))
 
     def setSide(self):
-        """sets the WP to top position and updates the GUI"""
-        self.alignToPointAndAxis(FreeCAD.Vector(0.0, 0.0, 0.0), FreeCAD.Vector(-1, 0, 0), 0.0)
+        """Set the WP to the left side position and updates the GUI.
+
+        Note that set_to_side from the parent class sets the WP to the right side position.
+        Which matches the Side option from Draft_SelectPlane.
+        """
+        self.u = Vector(0, -1, 0)
+        self.v = Vector(0, 0, 1)
+        self.axis = Vector(-1, 0, 0)
+        self.position = Vector()
+        self.weak = False
         if FreeCAD.GuiUp:
-            import FreeCADGui
             from draftutils.translate import translate
             if hasattr(FreeCADGui,"Snapper"):
                 FreeCADGui.Snapper.setGrid()
@@ -978,106 +975,32 @@ class Plane(PlaneBase):
                 FreeCADGui.draftToolBar.wplabel.setText(translate("draft", "Side"))
 
     def getRotation(self):
-        """Return a placement describing the plane orientation only.
-
-        If `FreeCAD.GuiUp` is `True`, that is, if the graphical interface
-        is loaded, it will test if the active object is an `Arch` container
-        and will calculate the placement accordingly.
-
-        Returns
-        -------
-        Base::Placement
-            A placement, comprised of a `Base` (`Base::Vector3`),
-            and a `Rotation` (`Base::Rotation`).
-        """
-        m = DraftVecUtils.getPlaneRotation(self.u, self.v)
-        p = FreeCAD.Placement(m)
-        # Arch active container
-        if FreeCAD.GuiUp:
-            import FreeCADGui
-            if FreeCADGui.ActiveDocument:
-                view = FreeCADGui.ActiveDocument.ActiveView
-                if view and hasattr(view,"getActiveOject"):
-                    a = view.getActiveObject("Arch")
-                    if a:
-                        p = a.Placement.inverse().multiply(p)
-        return p
+        """Return a placement describing the WP orientation only."""
+        return FreeCAD.Placement(Vector(), FreeCAD.Rotation(self.u, self.v, self.axis, "ZYX"))
 
     def getPlacement(self, rotated=False):
-        """Return the placement of the plane.
-
-        Parameters
-        ----------
-        rotated : bool, optional
-            It defaults to `False`. If it is `True`, it switches `axis`
-            with `-v` to produce a rotated placement.
-
-        Returns
-        -------
-        Base::Placement
-            A placement, comprised of a `Base` (`Base::Vector3`),
-            and a `Rotation` (`Base::Rotation`).
-        """
-        if rotated:
-            m = DraftVecUtils.getPlaneRotation(self.u, self.axis)
-        else:
-            m = DraftVecUtils.getPlaneRotation(self.u, self.v)
-        m.move(self.position)
-        p = FreeCAD.Placement(m)
-        # Arch active container if based on App Part
-        # if FreeCAD.GuiUp:
-        #    import FreeCADGui
-        #    view = FreeCADGui.ActiveDocument.ActiveView
-        #    a = view.getActiveObject("Arch")
-        #    if a:
-        #        p = a.Placement.inverse().multiply(p)
-        return p
+        """Return a placement calculated from the WP. The rotated argument is ignored."""
+        return super().get_placement()
 
     def getNormal(self):
-        """Return the normal vector of the plane (axis).
+        """Return the normal vector (axis) of the WP."""
+        return self.axis
 
-        Returns
-        -------
-        Base::Vector3
-            The `axis` attribute of the plane.
-        """
-        n = self.axis
-        # Arch active container if based on App Part
-        # if FreeCAD.GuiUp:
-        #    import FreeCADGui
-        #    view = FreeCADGui.ActiveDocument.ActiveView
-        #    a = view.getActiveObject("Arch")
-        #    if a:
-        #        n = a.Placement.inverse().Rotation.multVec(n)
-        return n
-
-    def setFromPlacement(self, pl, rebase=False):
-        """Set the plane from a placement.
-
-        It normally uses only the rotation, unless `rebase` is `True`.
+    def setFromPlacement(self, place, rebase=False):
+        """Align the WP to a placement.
 
         Parameters
         ----------
-        pl : Base::Placement or Base::Matrix4D
-            A placement, comprised of a `Base` (`Base::Vector3`),
-            and a `Rotation` (`Base::Rotation`),
-            or a `Base::Matrix4D` that defines a placement.
-        rebase : bool, optional
-            It defaults to `False`.
-            If `True`, it will use `pl.Base` as the new `position`
-            of the plane. Otherwise it will only consider `pl.Rotation`.
-
-        To do
-        -----
-        If `pl` is a `Base::Matrix4D`, it shouldn't try to use `pl.Base`
-        because a matrix has no `Base`.
+        place: Base.Placement
+            Placement.
+        rebase: bool, optional
+            Defaults to `False`.
+            If `False` the `position` of the WP is not changed.
         """
-        rot = FreeCAD.Placement(pl).Rotation
-        self.u = rot.multVec(FreeCAD.Vector(1, 0, 0))
-        self.v = rot.multVec(FreeCAD.Vector(0, 1, 0))
-        self.axis = rot.multVec(FreeCAD.Vector(0, 0, 1))
         if rebase:
-            self.position = pl.Base
+            super().align_to_placement(place)
+        else:
+            super()._axes_from_rotation(place.Rotation)
 
     def inverse(self):
         """Invert the direction of the plane.
@@ -1101,284 +1024,56 @@ class Plane(PlaneBase):
         Restores the attributes `u`, `v`, `axis`, `position` and `weak`
         from `stored`, and set `stored` to `None`.
         """
-        if self.stored:
-            self.u = self.stored[0]
-            self.v = self.stored[1]
-            self.axis = self.stored[2]
-            self.position = self.stored[3]
-            self.weak = self.stored[4]
+        if self.stored is not None:
+            self.u, self.v, self.axis, self.position, self.weak = self.stored
             self.stored = None
 
     def getLocalCoords(self, point):
-        """Return the coordinates of the given point, from the plane.
-
-        If the `point` was constructed using the plane as origin,
-        return the relative coordinates from the `point` to the plane.
-
-        A vector is calculated from the plane's `position`
-        to the external `point`, and this vector is projected onto
-        each of the `u`, `v` and `axis` of the plane to determine
-        the local, relative vector.
-
-        Parameters
-        ----------
-        point : Base::Vector3
-            The point external to the plane.
-
-        Returns
-        -------
-        Base::Vector3
-            The relative coordinates of the point from the plane.
-
-        See Also
-        --------
-        getGlobalCoords, getLocalRot, getGlobalRot
-
-        Notes
-        -----
-        The following graphic explains the coordinates.
-        ::
-                                  g GlobalCoords (1, 11)
-                                  |
-                                  |
-                                  |
-                              (n) p point (1, 6)
-                                  | LocalCoords (1, 1)
-                                  |
-            ----plane--------c-------- position (0, 5)
-
-        In the graphic
-
-            * `p` is an arbitrary point, external to the plane
-            * `c` is the plane's `position`
-            * `g` is the global coordinates of `p` when added to the plane
-            * `n` is the relative coordinates of `p` when referred to the plane
-
-        To do
-        -----
-        Maybe a better name would be getRelativeCoords?
+        """Translate a point from the global coordinate system to
+        the local (WP) coordinate system.
         """
-        pt = point.sub(self.position)
-        xv = DraftVecUtils.project(pt, self.u)
-        x = xv.Length
-        # If the angle between the projection xv and u
-        # is larger than 1 radian (57.29 degrees), use the negative
-        # of the magnitude. Why exactly 1 radian?
-        if xv.getAngle(self.u) > 1:
-            x = -x
-        yv = DraftVecUtils.project(pt, self.v)
-        y = yv.Length
-        if yv.getAngle(self.v) > 1:
-            y = -y
-        zv = DraftVecUtils.project(pt, self.axis)
-        z = zv.Length
-        if zv.getAngle(self.axis) > 1:
-            z = -z
-        return Vector(x, y, z)
+        return super().get_local_coords(point)
 
     def getGlobalCoords(self, point):
-        """Return the coordinates of the given point, added to the plane.
-
-        If the `point` was constructed using the plane as origin,
-        return the absolute coordinates from the `point`
-        to the global origin.
-
-        The `u`, `v`, and `axis` vectors scale the components of `point`,
-        and the result is added to the planes `position`.
-
-        Parameters
-        ----------
-        point : Base::Vector3
-            The external point.
-
-        Returns
-        -------
-        Base::Vector3
-            The coordinates of the point from the absolute origin.
-
-        See Also
-        --------
-        getLocalCoords, getLocalRot, getGlobalRot
-
-        Notes
-        -----
-        The following graphic explains the coordinates.
-        ::
-                                  g GlobalCoords (1, 11)
-                                  |
-                                  |
-                                  |
-                              (n) p point (1, 6)
-                                  | LocalCoords (1, 1)
-                                  |
-            ----plane--------c-------- position (0, 5)
-
-        In the graphic
-
-            * `p` is an arbitrary point, external to the plane
-            * `c` is the plane's `position`
-            * `g` is the global coordinates of `p` when added to the plane
-            * `n` is the relative coordinates of `p` when referred to the plane
-
+        """Translate a point from the local (WP) coordinate system to
+        the global coordinate system.
         """
-        vx = Vector(self.u).multiply(point.x)
-        vy = Vector(self.v).multiply(point.y)
-        vz = Vector(self.axis).multiply(point.z)
-        pt = (vx.add(vy)).add(vz)
-        return pt.add(self.position)
+        return super().get_global_coords(point)
 
-    def getLocalRot(self, point):
-        """Like getLocalCoords, but doesn't use the plane's position.
-
-        If the `point` was constructed using the plane as origin,
-        return the relative coordinates from the `point` to the plane.
-        However, in this case, the plane is assumed to have its `position`
-        at the global origin, therefore, the returned coordinates
-        will only consider the orientation of the plane.
-
-        The external `point` is a vector, which is projected onto
-        each of the `u`, `v` and `axis` of the plane to determine
-        the local, relative vector.
-
-        Parameters
-        ----------
-        point : Base::Vector3
-            The point external to the plane.
-
-        Returns
-        -------
-        Base::Vector3
-            The relative coordinates of the point from the plane,
-            if the plane had its `position` at the global origin.
-
-        See Also
-        --------
-        getLocalCoords, getGlobalCoords, getGlobalRot
+    def getLocalRot(self, vec):
+        """Translate a vector from the global coordinate system to
+        the local (WP) coordinate system.
         """
-        xv = DraftVecUtils.project(point, self.u)
-        x = xv.Length
-        if xv.getAngle(self.u) > 1:
-            x = -x
-        yv = DraftVecUtils.project(point, self.v)
-        y = yv.Length
-        if yv.getAngle(self.v) > 1:
-            y = -y
-        zv = DraftVecUtils.project(point, self.axis)
-        z = zv.Length
-        if zv.getAngle(self.axis) > 1:
-            z = -z
-        return Vector(x, y, z)
+        return super().get_local_coords(vec, as_vector=True)
 
-    def getGlobalRot(self, point):
-        """Like getGlobalCoords, but doesn't use the plane's position.
-
-        If the `point` was constructed using the plane as origin,
-        return the absolute coordinates from the `point`
-        to the global origin.
-        However, in this case, the plane is assumed to have its `position`
-        at the global origin, therefore, the returned coordinates
-        will only consider the orientation of the plane.
-
-        The `u`, `v`, and `axis` vectors scale the components of `point`.
-
-        Parameters
-        ----------
-        point : Base::Vector3
-            The external point.
-
-        Returns
-        -------
-        Base::Vector3
-            The coordinates of the point from the absolute origin.
-
-        See Also
-        --------
-        getGlobalCoords, getLocalCoords, getLocalRot
+    def getGlobalRot(self, vec):
+        """Translate a vector from the local (WP) coordinate system to
+        the global coordinate system.
         """
-        vx = Vector(self.u).multiply(point.x)
-        vy = Vector(self.v).multiply(point.y)
-        vz = Vector(self.axis).multiply(point.z)
-        pt = (vx.add(vy)).add(vz)
-        return pt
+        return super().get_global_coords(vec, as_vector=True)
 
-    def getClosestAxis(self, point):
-        """Return the closest axis of the plane to the given point (vector).
-
-        It tests the angle that the `point` vector makes with the unit vectors
-        `u`, `v`, and `axis`, as well their negatives.
-        The smallest angle indicates the closest axis.
+    def getClosestAxis(self, vec):
+        """Return the closest WP axis to a vector.
 
         Parameters
         ----------
-        point : Base::Vector3
-            The external point to test.
+        vec: Base.Vector
+            Vector.
 
         Returns
         -------
         str
-            * It is `'x'` if the closest axis is `u` or `-u`.
-            * It is `'y'` if the closest axis is `v` or `-v`.
-            * It is `'z'` if the closest axis is `axis` or `-axis`.
+            `'x'`, `'y'` or `'z'`.
         """
-        ax = point.getAngle(self.u)
-        ay = point.getAngle(self.v)
-        az = point.getAngle(self.axis)
-        bx = point.getAngle(self.u.negative())
-        by = point.getAngle(self.v.negative())
-        bz = point.getAngle(self.axis.negative())
-        b = min(ax, ay, az, bx, by, bz)
-        if b in [ax, bx]:
-            return "x"
-        elif b in [ay, by]:
-            return "y"
-        elif b in [az, bz]:
-            return "z"
-        else:
-            return None
+        return super().get_closest_axis(vec)
 
     def isGlobal(self):
-        """Return True if the plane axes are equal to the global axes.
-
-        Return `False` if any of `u`, `v`, or `axis` does not correspond
-        to `+X`, `+Y`, or `+Z`, respectively.
-        """
-        if self.u != Vector(1, 0, 0):
-            return False
-        if self.v != Vector(0, 1, 0):
-            return False
-        if self.axis != Vector(0, 0, 1):
-            return False
-        return True
+        """Return `True` if the WP matches the global coordinate system."""
+        return super().is_global()
 
     def isOrtho(self):
-        """Return True if the plane axes are orthogonal with the global axes.
-
-        Orthogonal means that the angle between `u` and the global axis `+Y`
-        is a multiple of 90 degrees, meaning 0, -90, 90, -180, 180,
-        -270, 270, or 360 degrees.
-        And similarly for `v` and `axis`.
-        All three axes should be orthogonal to the `+Y` axis.
-
-        Due to rounding errors, the angle difference is rounded
-        to 6 decimal digits to do the test.
-
-        Returns
-        -------
-        bool
-            Returns `True` if all three `u`, `v`, and `axis`
-            are orthogonal with the global axis `+Y`.
-            Otherwise it returns `False`.
-        """
-        ortho = [0, -1.570796, 1.570796,
-                 -3.141593, 3.141593,
-                 -4.712389, 4.712389, 6.283185]
-        # Shouldn't the angle difference be calculated with
-        # the other global axes `+X` and `+Z` as well?
-        if round(self.u.getAngle(Vector(0, 1, 0)), 6) in ortho:
-            if round(self.v.getAngle(Vector(0, 1, 0)), 6) in ortho:
-                if round(self.axis.getAngle(Vector(0, 1, 0)), 6) in ortho:
-                    return True
-        return False
+        """Return `True` if the WP axes are orthogonal to the global axes."""
+        return super().is_ortho()
 
     def getDeviation(self):
         """Return the angle between the u axis and the horizontal plane.
@@ -1409,15 +1104,15 @@ class Plane(PlaneBase):
 
     def getParameters(self):
         """Return a dictionary with the data which define the plane:
-        `u`, `v`, `axis`, `weak`.
+        `u`, `v`, `axis`, `position`, `weak`.
 
         Returns
         -------
         dict
             dictionary of the form:
-            {"position":position, "u":x, "v":v, "axis":axis, "weak":weak}
+            {"u":x, "v":v, "axis":axis, "position":position, "weak":weak}
         """
-        return {"position":self.position, "u":self.u, "v":self.v, "axis":self.axis, "weak":self.weak}
+        return super().get_parameters()
 
     def setFromParameters(self, data):
         """Set the plane according to data.
@@ -1426,17 +1121,702 @@ class Plane(PlaneBase):
         ----------
         data: dict
             dictionary of the form:
-            {"position":position, "u":x, "v":v, "axis":axis, "weak":weak}
+            {"u":x, "v":v, "axis":axis, "position":position, "weak":weak}
        """
-        self.position = data["position"]
-        self.u = data["u"]
-        self.v = data["v"]
-        self.axis = data["axis"]
-        self.weak = data["weak"]
+        super().set_parameters(data)
 
-        return None
+    def _get_prop_list(self):
+        return ["u",
+                "v",
+                "axis",
+                "position",
+                "weak"]
 
 plane = Plane
+
+
+class PlaneGui(PlaneBase):
+    """The PlaneGui class.
+    The class handles several GUI related aspects of the WP including a history.
+
+    Parameters
+    ----------
+    u: Base.Vector or WorkingPlane.Plane, optional
+        Defaults to Vector(1, 0, 0).
+        If a WP is provided:
+            A copy of the WP is created, all other parameters are then ignored.
+        If a vector is provided:
+            Unit vector for the `u` attribute (+X axis).
+
+    v: Base.Vector, optional
+        Defaults to Vector(0, 1, 0).
+        Unit vector for the `v` attribute (+Y axis).
+
+    w: Base.Vector, optional
+        Defaults to Vector(0, 0, 1).
+        Unit vector for the `axis` attribute (+Z axis).
+
+    pos: Base.Vector, optional
+        Defaults to Vector(0, 0, 0).
+        Vector for the `position` attribute (origin).
+
+    auto: bool, optional
+        Defaults to `True`.
+        If `True` the WP is in "Auto" mode and will adapt to the current view.
+
+    icon: str, optional
+        Defaults to ":/icons/view-axonometric.svg".
+        Path to the icon for the draftToolBar.
+
+    label: str, optional
+        Defaults to "Auto".
+        Label for the draftToolBar.
+
+    tip: str, optional
+        Defaults to "Current working plane: Auto".
+        Tooltip for the draftToolBar.
+
+    Note that the u, v and w vectors are not checked for validity.
+
+    Other attributes
+    ----------------
+    _view: Gui::View3DInventor
+        Reference to a 3D view.
+
+    _stored: dict
+        Dictionary for a temporary stored state.
+
+    _history: dict
+        Dictionary that holds up to 10 stored states.
+    """
+
+    def __init__(self,
+                 u=Vector(1, 0, 0), v=Vector(0, 1, 0), w=Vector(0, 0, 1),
+                 pos=Vector(0, 0, 0),
+                 auto=True,
+                 icon=":/icons/view-axonometric.svg",
+                 label=QT_TRANSLATE_NOOP("draft", "Auto"),
+                 tip=QT_TRANSLATE_NOOP("draft", "Current working plane:") + " " + QT_TRANSLATE_NOOP("draft", "Auto")):
+
+        if isinstance(u, PlaneGui):
+            self.match(u)
+        else:
+            super().__init__(u, v, w, pos)
+            self.auto = auto
+            self.icon = icon
+            self.label = label
+            self.tip = tip
+        self._view = None
+        self._stored = {}
+        self._history = {}
+
+    def copy(self):
+        """Return a new plane that is a copy of the present object."""
+        wp = PlaneGui()
+        self.match(source=self, target=wp)
+        return wp
+
+    def _save(self):
+        """Store the WP attributes."""
+        self._stored = self.get_parameters()
+
+    def _restore(self):
+        """Restore the WP attributes that were saved."""
+        if self._stored:
+            self.set_parameters(self._stored)
+            self._stored = {}
+            self._update_all(_hist_add=False)
+
+    def align_to_selection(self, offset=0, _hist_add=True):
+        """Align the WP to a selection with an optional offset.
+
+        The selection must define a plane.
+
+        Parameter
+        ---------
+        offset: float, optional
+            Defaults to zero.
+            Offset along the WP `axis`
+
+        Returns
+        -------
+        `True`/`False`
+            `True` if successful.
+        """
+        if not FreeCAD.GuiUp:
+            return False
+
+        sels = FreeCADGui.Selection.getSelectionEx("", 0)
+        if not sels:
+            return False
+
+        objs = []
+        for sel in sels:
+            for sub in sel.SubElementNames if sel.SubElementNames else [""]:
+                objs.append(Part.getShape(sel.Object, sub, needSubElement=True, retType=1))
+
+        if len(objs) != 1:
+            if all([obj[0].isNull() is False and obj[0].ShapeType in ["Edge", "Vertex"] for obj in objs]):
+                ret = self.align_to_edges_vertexes([obj[0] for obj in objs], offset, _hist_add)
+            else:
+                ret = False
+
+            if ret is False:
+                _wrn(translate("draft", "Selected shapes do not define a plane"))
+            return ret
+
+        shape, mtx, obj = objs[0]
+        place = FreeCAD.Placement(mtx)
+
+        typ = utils.get_type(obj)
+        if typ in ["App::Part", "PartDesign::Plane", "Axis", "SectionPlane"]:
+            ret = self.align_to_obj_placement(obj, offset, place, _hist_add)
+        elif typ == "WorkingPlaneProxy":
+            ret = self.align_to_wp_proxy(obj, offset, place, _hist_add)
+        elif typ == "BuildingPart":
+            ret = self.align_to_wp_proxy(obj, offset, place * obj.Placement, _hist_add)
+        elif shape.isNull():
+            ret = self.align_to_obj_placement(obj, offset, place, _hist_add)
+        elif shape.ShapeType == "Face":
+            ret = self.align_to_face(shape, offset, _hist_add)
+        elif shape.ShapeType == "Edge":
+            ret = self.align_to_edge_or_wire(shape, offset, _hist_add)
+        elif shape.Solids:
+            ret = self.align_to_obj_placement(obj, offset, place, _hist_add)
+        else:
+            ret = self.align_to_edges_vertexes(shape.Vertexes, offset, _hist_add)
+
+        if ret is False:
+            _wrn(translate("draft", "Selected shapes do not define a plane"))
+        return ret
+
+    def _handle_custom(self, _hist_add):
+        self.auto = False
+        self.icon = ":/icons/Draft_SelectPlane.svg"
+        self.label = self._get_label(translate("draft", "Custom"))
+        self.tip = self._get_tip(translate("draft", "Custom"))
+        self._update_all(_hist_add)
+
+    def align_to_3_points(self, p1, p2, p3, offset=0, _hist_add=True):
+        """See PlaneBase.align_to_3_points."""
+        if super().align_to_3_points(p1, p2, p3, offset) is False:
+            return False
+        self._handle_custom(_hist_add)
+        return True
+
+    def align_to_edges_vertexes(self, shapes, offset=0, _hist_add=True):
+        """See PlaneBase.align_to_edges_vertexes."""
+        if super().align_to_edges_vertexes(shapes, offset) is False:
+            return False
+        self._handle_custom(_hist_add)
+        return True
+
+    def align_to_edge_or_wire(self, shape, offset=0, _hist_add=True):
+        """See PlaneBase.align_to_edge_or_wire."""
+        if super().align_to_edge_or_wire(shape, offset) is False:
+            return False
+        self._handle_custom(_hist_add)
+        return True
+
+    def align_to_face(self, shape, offset=0, _hist_add=True):
+        """See PlaneBase.align_to_face."""
+        if super().align_to_face(shape, offset) is False:
+            return False
+        self._handle_custom(_hist_add)
+        return True
+
+    def align_to_placement(self, place, offset=0, _hist_add=True):
+        """See PlaneBase.align_to_placement."""
+        super().align_to_placement(place, offset)
+        self._handle_custom(_hist_add)
+        return True
+
+    def align_to_point_and_axis(self, point, axis, offset=0, upvec=Vector(1, 0, 0), _hist_add=True):
+        """See PlaneBase.align_to_point_and_axis."""
+        if super().align_to_point_and_axis(point, axis, offset, upvec) is False:
+            return False
+        self._handle_custom(_hist_add)
+        return True
+
+    def align_to_obj_placement(self, obj, offset=0, place=None, _hist_add=True):
+        """Align the WP to an object placement with an optional offset.
+
+        Parameters
+        ----------
+        obj: App::DocumentObject
+            Object to derive the Placement (if place is `None`), the icon and
+            the label from.
+        offset: float, optional
+            Defaults to zero.
+            Offset along the WP `axis`.
+        place: Base.Placement, optional
+            Defaults to `None`.
+            If `None` the Placement from obj is used.
+            Argument to be used if obj is inside a container.
+
+        Returns
+        -------
+        `True`/`False`
+            `True` if successful.
+        """
+        if hasattr(obj, "Placement") is False:
+            return False
+        if place is None:
+            place = obj.Placement
+        super().align_to_placement(place, offset)
+        self.auto = False
+        if utils.get_type(obj) == "WorkingPlaneProxy":
+            self.icon = ":/icons/Draft_PlaneProxy.svg"
+        elif FreeCAD.GuiUp \
+                and hasattr(obj, "ViewObject") \
+                and hasattr(obj.ViewObject, "Proxy") \
+                and hasattr(obj.ViewObject.Proxy, "getIcon"):
+            self.icon = obj.ViewObject.Proxy.getIcon()
+        else:
+            self.icon = ":/icons/Std_Placement.svg"
+        self.label = self._get_label(obj.Label)
+        self.tip = self._get_tip(obj.Label)
+        self._update_all(_hist_add)
+        return True
+
+    def align_to_wp_proxy(self, obj, offset=0, place=None, _hist_add=True):
+        """Align the WP to a WPProxy with an optional offset.
+
+        See align_to_obj_placement.
+
+        Also handles several WPProxy related features.
+        """
+        if self.align_to_obj_placement(obj, offset, place, _hist_add) is False:
+            return False
+
+        if not FreeCAD.GuiUp:
+            return True
+
+        vobj = obj.ViewObject
+
+        if hasattr(vobj, "AutoWorkingPlane") \
+                and vobj.AutoWorkingPlane is True:
+            self.auto = True
+
+        if hasattr(vobj, "CutView") \
+                and hasattr(vobj, "AutoCutView") \
+                and vobj.AutoCutView is True:
+            vobj.CutView = True
+
+        if hasattr(vobj, "RestoreView") \
+                and vobj.RestoreView is True \
+                and hasattr(vobj, "ViewData") \
+                and len(vobj.ViewData) >= 12:
+            vdat = vobj.ViewData
+            if self._view is not None:
+                try:
+                    if len(vdat) == 13 and vdat[12] == 1:
+                        camtype = "Perspective"
+                    else:
+                        camtype = "Orthographic"
+                    if self._view.getCameraType() != camtype:
+                        self._view.setCameraType(camtype)
+
+                    cam = self._view.getCameraNode()
+                    cam.position.setValue([vdat[0], vdat[1], vdat[2]])
+                    cam.orientation.setValue([vdat[3], vdat[4], vdat[5], vdat[6]])
+                    cam.nearDistance.setValue(vdat[7])
+                    cam.farDistance.setValue(vdat[8])
+                    cam.aspectRatio.setValue(vdat[9])
+                    cam.focalDistance.setValue(vdat[10])
+                    if camtype == "Orthographic":
+                        cam.height.setValue(vdat[11])
+                    else:
+                        cam.heightAngle.setValue(vdat[11])
+                except Exception:
+                    pass
+
+        if hasattr(vobj, "RestoreState") \
+                and vobj.RestoreState is True \
+                and hasattr(vobj, "VisibilityMap") \
+                and vobj.VisibilityMap:
+            for name, vis in vobj.VisibilityMap.items():
+                obj = FreeCADGui.ActiveDocument.getObject(name)
+                if obj:
+                    obj.Visibility = (vis == "True")
+
+        return True
+
+    def auto_align(self):
+        """Align the WP to the current view if self.auto is True."""
+        if self.auto and self._view is not None:
+            try:
+                cam = self._view.getCameraNode()
+                rot = FreeCAD.Rotation(*cam.getField("orientation").getValue().getValue())
+                self.u, self.v, self.axis = self._axes_from_view_rotation(rot)
+                self.position = Vector()
+            except Exception:
+                pass
+
+    def set_to_default(self):
+        """Set the WP to the default from the preferences."""
+        default_wp = params.get_param("defaultWP")
+        if default_wp == 0:
+            self.set_to_auto()
+        elif default_wp == 1:
+            self.set_to_top()
+        elif default_wp == 2:
+            self.set_to_front()
+        elif default_wp == 3:
+            self.set_to_side()
+
+    def set_to_auto(self): # Similar to Plane.reset.
+        """Set the WP to auto."""
+        self.auto = True
+        self.auto_align()
+        self.icon = ":/icons/view-axonometric.svg"
+        self.label = self._get_label(translate("draft", "Auto"))
+        self.tip = self._get_tip(translate("draft", "Auto"))
+        self._update_all()
+
+    def set_to_top(self, offset=0, center_on_view=False):
+        """Set the WP to the top position with an optional offset.
+
+        Parameters
+        ----------
+        offset: float, optional
+            Defaults to zero.
+            Offset along the WP `axis`.
+        center_on_view: bool, optional
+            Defaults to `False`.
+            If `True` the WP `position` is moved along the (offset) WP to the
+            center of the view
+        """
+        super().set_to_top(offset)
+        if center_on_view:
+            self._center_on_view()
+        self.auto = False
+        self.icon = ":/icons/view-top.svg"
+        self.label = self._get_label(translate("draft", "Top"))
+        self.tip = self._get_tip(translate("draft", "Top"))
+        self._update_all()
+
+    def set_to_front(self, offset=0, center_on_view=False):
+        """Set the WP to the front position with an optional offset.
+
+        Parameters
+        ----------
+        offset: float, optional
+            Defaults to zero.
+            Offset along the WP `axis`.
+        center_on_view: bool, optional
+            Defaults to `False`.
+            If `True` the WP `position` is moved along the (offset) WP to the
+            center of the view
+        """
+        super().set_to_front(offset)
+        if center_on_view:
+            self._center_on_view()
+        self.auto = False
+        self.icon = ":/icons/view-front.svg"
+        self.label = self._get_label(translate("draft", "Front"))
+        self.tip = self._get_tip(translate("draft", "Front"))
+        self._update_all()
+
+    def set_to_side(self, offset=0, center_on_view=False):
+        """Set the WP to the right side position with an optional offset.
+
+        Parameters
+        ----------
+        offset: float, optional
+            Defaults to zero.
+            Offset along the WP `axis`.
+        center_on_view: bool, optional
+            Defaults to `False`.
+            If `True` the WP `position` is moved along the (offset) WP to the
+            center of the view
+        """
+        super().set_to_side(offset)
+        if center_on_view:
+            self._center_on_view()
+        self.auto = False
+        self.icon = ":/icons/view-right.svg"
+        self.label = self._get_label(translate("draft", "Side"))
+        self.tip = self._get_tip(translate("draft", "Side"))
+        self._update_all()
+
+    def set_to_view(self, offset=0, center_on_view=False):
+        """Align the WP to the view with an optional offset.
+
+        Parameters
+        ----------
+        offset: float, optional
+            Defaults to zero.
+            Offset along the WP `axis`.
+        center_on_view: bool, optional
+            Defaults to `False`.
+            If `True` the WP `position` is moved along the (offset) WP to the
+            center of the view
+        """
+        if self._view is not None:
+            try:
+                cam = self._view.getCameraNode()
+                rot = FreeCAD.Rotation(*cam.getField("orientation").getValue().getValue())
+                self.u, self.v, self.axis = self._axes_from_view_rotation(rot)
+                self.position = self.axis * offset
+                if center_on_view:
+                    self._center_on_view()
+                self.auto = False
+                self.icon = ":/icons/Draft_SelectPlane.svg"
+                self.label = self._get_label(translate("draft", "Custom"))
+                self.tip = self._get_tip(translate("draft", "Custom"))
+                self._update_all()
+            except Exception:
+                pass
+
+    def set_to_position(self, pos):
+        """Set the `position` of the WP."""
+        self.position = pos
+        label = self.label.rstrip("*")
+        self.label = self._get_label(label)
+        self.tip = self._get_tip(label)
+        self._update_all()
+
+    def center_on_view(self):
+        """Move the WP `position` along the WP to the center of the view."""
+        self._center_on_view()
+        label = self.label.rstrip("*")
+        self.label = self._get_label(label)
+        self.tip = self._get_tip(label)
+        self._update_all()
+
+    def _center_on_view(self):
+        if self._view is not None:
+            try:
+                cam = self._view.getCameraNode()
+                pos = self.project_point(Vector(cam.position.getValue().getValue()),
+                                         direction=self._view.getViewDirection(),
+                                         force_projection=False)
+                if pos is not None:
+                    self.position = pos
+            except Exception:
+                pass
+
+    def align_view(self):
+        """Align the view to the WP."""
+        if self._view is not None:
+            try:
+                default_cam_dist = abs(params.get_param_view("NewDocumentCameraScale"))
+                cam = self._view.getCameraNode()
+                cur_cam_dist = abs(self.get_local_coords(Vector(cam.position.getValue().getValue())).z)
+                cam_dist = max(default_cam_dist, cur_cam_dist)
+                cam.position.setValue(self.position + DraftVecUtils.scaleTo(self.axis, cam_dist))
+                cam.orientation.setValue(self.get_placement().Rotation.Q)
+            except Exception:
+                pass
+
+    def _previous(self):
+        idx = self._history["idx"]
+        if idx == 0:
+            _wrn(translate("draft", "No previous working plane"))
+            return
+        idx -= 1
+        self.set_parameters(self._history["data_list"][idx])
+        self._history["idx"] = idx
+        self._update_all(_hist_add=False)
+
+    def _next(self):
+        idx = self._history["idx"]
+        if idx == len(self._history["data_list"]) - 1:
+            _wrn(translate("draft", "No next working plane"))
+            return
+        idx += 1
+        self.set_parameters(self._history["data_list"][idx])
+        self._history["idx"] = idx
+        self._update_all(_hist_add=False)
+
+    def _has_previous(self):
+        return bool(self._history) and self._history["idx"] != 0
+
+    def _has_next(self):
+        return bool(self._history) and self._history["idx"] != len(self._history["data_list"]) - 1
+
+    def _get_prop_list(self):
+        return ["u",
+                "v",
+                "axis",
+                "position",
+                "auto",
+                "icon",
+                "label",
+                "tip"]
+
+    def _get_label(self, label):
+        if self.auto or self.position.isEqual(Vector(), 0):
+            return label
+        else:
+            return label + "*"
+
+    def _get_tip(self, label):
+        tip = translate("draft", "Current working plane:")
+        tip += " " + label
+        if self.auto:
+            return tip
+        tip += "\n" + translate("draft", "Axes:")
+        tip += "\n    X = "
+        tip += self._format_vector(self.u)
+        tip += "\n    Y = "
+        tip += self._format_vector(self.v)
+        tip += "\n    Z = "
+        tip += self._format_vector(self.axis)
+        tip += "\n" + translate("draft", "Position:")
+        tip += "\n    X = "
+        tip += self._format_coord(self.position.x)
+        tip += "\n    Y = "
+        tip += self._format_coord(self.position.y)
+        tip += "\n    Z = "
+        tip += self._format_coord(self.position.z)
+        return tip
+
+    def _format_coord(self, coord):
+        return FreeCAD.Units.Quantity(coord, FreeCAD.Units.Length).UserString
+
+    def _format_vector(self, vec):
+        dec = params.get_param("Decimals", path="Units")
+        return f"({vec.x:.{dec}f}  {vec.y:.{dec}f}  {vec.z:.{dec}f})"
+
+    def _update_all(self, _hist_add=True):
+        if _hist_add is True:
+            self._update_history()
+        self._update_old_plane()  # Must happen before _update_grid.
+        self._update_grid()
+        self._update_gui()
+
+    def _update_history(self):
+        data = self.get_parameters()
+        if not self._history:
+            self._history = {"idx": 0, "data_list": [data]}
+            return
+        idx = self._history["idx"]
+        if data == self._history["data_list"][idx]:
+            return
+        if self.auto is True and self._history["data_list"][idx]["auto"] is True:
+            return
+
+        max_len = 10  # Max. length of data_list.
+        self._history["data_list"] = self._history["data_list"][(idx - (max_len - 2)):(idx + 1)]
+        self._history["data_list"].append(data)
+        self._history["idx"] = len(self._history["data_list"]) - 1
+
+    def _update_old_plane(self):
+        """ Update the old DraftWorkingPlane for compatibility.
+        The tracker and snapper code currently still depend on it.
+        """
+        if not hasattr(FreeCAD, "DraftWorkingPlane"):
+            FreeCAD.DraftWorkingPlane = Plane()
+        for prop in ["u", "v", "axis", "position"]:
+            setattr(FreeCAD.DraftWorkingPlane,
+                    prop,
+                    self._copy_value(getattr(self, prop)))
+        FreeCAD.DraftWorkingPlane.weak = self.auto
+
+    def _update_grid(self):
+        # Check for draftToolBar because the trackers (grid) depend on it for its colors.
+        if FreeCAD.GuiUp \
+                and hasattr(FreeCADGui, "draftToolBar") \
+                and hasattr(FreeCADGui, "Snapper") \
+                and self._view is not None:
+            FreeCADGui.Snapper.setGrid()
+            FreeCADGui.Snapper.restack()  # Required??
+
+    def _update_gui(self):
+        if FreeCAD.GuiUp \
+                and hasattr(FreeCADGui, "draftToolBar") \
+                and self._view is not None:
+            from PySide import QtGui
+            button = FreeCADGui.draftToolBar.wplabel
+            button.setIcon(QtGui.QIcon(self.icon))
+            button.setText(self.label)
+            button.setToolTip(self.tip)
+
+
+def get_working_plane(update=True):
+
+    if not hasattr(FreeCAD, "draft_working_planes"):
+        FreeCAD.draft_working_planes = [[], []]
+
+    view = gui_utils.get_3d_view()
+
+    if view is not None and view in FreeCAD.draft_working_planes[0]:
+        i = FreeCAD.draft_working_planes[0].index(view)
+        wp = FreeCAD.draft_working_planes[1][i]
+        if update is False:
+            wp._update_old_plane()  # Currently required for tracker and snapper code.
+            return wp
+        wp.auto_align()
+        wp._update_all(_hist_add=False)
+        return wp
+
+    wp = PlaneGui()
+    if FreeCAD.GuiUp:
+        wp._view = view  # Update _view before call to set_to_default, set_to_auto requires a 3D view.
+        wp.set_to_default()
+        if view is not None:
+            FreeCAD.draft_working_planes[0].append(view)
+            FreeCAD.draft_working_planes[1].append(wp)
+
+    return wp
+
+
+# View observer code to update the Draft Tray:
+if FreeCAD.GuiUp:
+    from PySide2 import QtWidgets
+    from draftutils.todo import ToDo
+
+    def _update_gui():
+        try:
+            view = gui_utils.get_3d_view()
+            if view is None:
+                return
+            if not hasattr(FreeCAD, "draft_working_planes"):
+                FreeCAD.draft_working_planes = [[], []]
+            if view in FreeCAD.draft_working_planes[0]:
+                i = FreeCAD.draft_working_planes[0].index(view)
+                wp = FreeCAD.draft_working_planes[1][i]
+                wp._update_gui()
+            else:
+                get_working_plane()
+        except Exception:
+            pass
+
+    def _view_observer_callback(sub_win):
+        if sub_win is None:
+            return
+        view = gui_utils.get_3d_view()
+        if view is None:
+            return
+        if not hasattr(FreeCADGui, "draftToolBar"):
+            return
+        tray = FreeCADGui.draftToolBar.tray
+        if tray is None:
+            return
+        if FreeCADGui.draftToolBar.tray.isVisible() is False:
+            return
+        ToDo.delay(_update_gui, None)
+
+    _view_observer_active = False
+
+    def _view_observer_start():
+        mw = FreeCADGui.getMainWindow()
+        mdi = mw.findChild(QtWidgets.QMdiArea)
+        global _view_observer_active
+        if not _view_observer_active:
+            mdi.subWindowActivated.connect(_view_observer_callback)
+            _view_observer_active = True
+            _view_observer_callback(mdi.activeSubWindow())  # Trigger initial update.
+
+    def _view_observer_stop():
+        mw = FreeCADGui.getMainWindow()
+        mdi = mw.findChild(QtWidgets.QMdiArea)
+        global _view_observer_active
+        if _view_observer_active:
+            mdi.subWindowActivated.disconnect(_view_observer_callback)
+            _view_observer_active = False
 
 
 # Compatibility function (V0.22, 2023):

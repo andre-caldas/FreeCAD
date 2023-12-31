@@ -61,7 +61,6 @@
 #include <Mod/TechDraw/App/DrawWeldSymbol.h>
 #include <Mod/TechDraw/App/Preferences.h>
 
-#include "MDIViewPage.h"
 #include "QGIDrawingTemplate.h"
 #include "QGILeaderLine.h"
 #include "QGIProjGroup.h"
@@ -911,7 +910,7 @@ void QGSPage::findMissingViews(const std::vector<App::DocumentObject*>& list,
         if (!hasQView(*it))
             missing.push_back(*it);
 
-        if ((*it)->getTypeId().isDerivedFrom(TechDraw::DrawViewCollection::getClassTypeId())) {
+        if ((*it)->isDerivedFrom<TechDraw::DrawViewCollection>()) {
             std::vector<App::DocumentObject*> missingChildViews;
             TechDraw::DrawViewCollection* collection =
                 dynamic_cast<TechDraw::DrawViewCollection*>(*it);
@@ -940,7 +939,7 @@ void QGSPage::fixOrphans(bool force)
     // if we ever have collections of collections, we'll need to revisit this
     TechDraw::DrawPage* thisPage = m_vpPage->getDrawPage();
 
-    if (!thisPage->getNameInDocument())
+    if (!thisPage->isAttachedToDocument())
         return;
 
     std::vector<App::DocumentObject*> pChildren = thisPage->getAllViews();
@@ -1050,26 +1049,6 @@ void QGSPage::redraw1View(TechDraw::DrawView* dView)
         if (dvName == qgivName) {
             (*it)->updateView(true);
         }
-    }
-}
-
-void QGSPage::setExportingPdf(bool enable)
-{
-    QList<QGraphicsItem*> sceneItems = items();
-    std::vector<QGIViewPart*> dvps;
-    for (auto& qgi : sceneItems) {
-        QGIViewPart* qgiPart = dynamic_cast<QGIViewPart*>(qgi);
-        QGIRichAnno* qgiRTA = dynamic_cast<QGIRichAnno*>(qgi);
-        if (qgiPart) {
-            qgiPart->setExporting(enable);
-            dvps.push_back(qgiPart);
-        }
-        if (qgiRTA) {
-            qgiRTA->setExportingPdf(enable);
-        }
-    }
-    for (auto& v : dvps) {
-        v->draw();
     }
 }
 
